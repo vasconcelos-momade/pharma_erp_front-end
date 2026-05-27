@@ -1,0 +1,830 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../../../core/errors/api_failure.dart';
+import '../../../../../core/theme/app_radius.dart';
+import '../../../../../core/theme/design_metrics.dart';
+import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/spacing.dart';
+import '../../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
+import '../../../../../shared/widgets/feedback/pharma_snackbar.dart';
+import '../../domain/entities/pdv_cart_line.dart';
+import '../../domain/entities/pdv_checkout.dart';
+import '../providers/pdv_checkout_provider.dart';
+
+Future<PdvCheckoutResult?> showFinalizarVendaDialog(
+  BuildContext context, {
+  required List<PdvCartLine> lines,
+  required double total,
+}) {
+  final breakpoint = pharmaDialogBreakpointForWidth(MediaQuery.sizeOf(context).width);
+  if (breakpoint == PharmaDialogBreakpoint.mobile) {
+    return Navigator.of(context).push<PdvCheckoutResult>(
+      MaterialPageRoute(
+        builder: (_) => FinalizarVendaDialog(
+          lines: lines,
+          total: total,
+          presentation: FinalizarVendaPresentation.screen,
+        ),
+      ),
+    );
+  }
+
+  return showPharmaResponsiveDialog<PdvCheckoutResult>(
+    context: context,
+    builder: (_) => FinalizarVendaDialog(
+      lines: lines,
+      total: total,
+      presentation: FinalizarVendaPresentation.dialog,
+    ),
+  );
+}
+
+enum FinalizarVendaPresentation {
+  dialog,
+  screen,
+}
+
+class FinalizarVendaDialog extends ConsumerStatefulWidget {
+  const FinalizarVendaDialog({
+    super.key,
+    required this.lines,
+    required this.total,
+    this.presentation = FinalizarVendaPresentation.dialog,
+  });
+
+  final List<PdvCartLine> lines;
+  final double total;
+  final FinalizarVendaPresentation presentation;
+
+  @override
+  ConsumerState<FinalizarVendaDialog> createState() =>
+      _FinalizarVendaDialogState();
+}
+
+class _FinalizarVendaDialogState
+    extends ConsumerState<FinalizarVendaDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _nomeController;
+  late final TextEditingController _idadeController;
+  late final TextEditingController _nidController;
+  late final TextEditingController _prescritorController;
+  late final TextEditingController _unidadeSanitariaController;
+  late final TextEditingController _valorRecebidoController;
+
+  PdvPaymentMethod _selectedMethod = PdvPaymentMethod.dinheiro;
+
+  bool get _requiresPrescription => widget.lines.any(
+        (line) => line.product?.requiresPrescription ?? false,
+      );
+
+  bool get _isCashPayment => _selectedMethod == PdvPaymentMethod.dinheiro;
+
+  double? get _valorRecebido => _parseCheckoutMoneyInput(
+        _valorRecebidoController.text,
+      );
+
+  double get _troco {
+    final recebido = _valorRecebido;
+    if (recebido == null || recebido <= widget.total) {
+      return 0;
+    }
+    return recebido - widget.total;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _nomeController = TextEditingController();
+    _idadeController = TextEditingController();
+    _nidController = TextEditingController();
+    _prescritorController = TextEditingController();
+    _unidadeSanitariaController = TextEditingController();
+    _valorRecebidoController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _nomeController.dispose();
+    _idadeController.dispose();
+    _nidController.dispose();
+    _prescritorController.dispose();
+    _unidadeSanitariaController.dispose();
+    _valorRecebidoController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final checkoutState = ref.read(pdvCheckoutProvider);
+    if (checkoutState.isSubmitting) {
+      return;
+    }
+
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
+
+    try {
+      final result = await ref.read(pdvCheckoutProvider.notifier).finalizarVenda(
+            metodoPagamento: _selectedMethod,
+            lines: widget.lines,
+            paciente: _requiresPrescription
+                ? PdvCheckoutPatient(
+                    nome: _nomeController.text.trim(),
+                    idade: int.tryParse(_idadeController.text.trim()) ?? 0,
+                    nid: _nidController.text.trim(),
+                    prescritor: _prescritorController.text.trim(),
+                    unidadeSanitaria: _unidadeSanitariaController.text.trim(),
+                  )
+                : null,
+          );
+
+      if (!mounted) {
+        return;
+      }
+      Navigator.of(context).pop(result);
+    } on ApiFailure catch (e) {
+      if (!mounted) {
+        return;
+      }
+      PharmaSnackbar.showError(context, e.message);
+    } catch (_) {
+      if (!mounted) {
+        return;
+      }
+      PharmaSnackbar.showError(
+        context,
+        'Falha ao finalizar a venda. Tente novamente.',
+      );
+    }
+  }
+
+  Widget _buildNomeField() {
+    return TextFormField(
+      controller: _nomeController,
+      decoration: const InputDecoration(
+        labelText: 'Nome do paciente',
+        prefixIcon: Icon(Icons.person_outline_rounded),
+      ),
+      validator: (value) {
+        if (!_requiresPrescription) {
+          return null;
+        }
+        if (value == null || value.trim().isEmpty) {
+          return 'Informe o nome do paciente.';
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildIdadeField() {
+    return TextFormField(
+      controller: _idadeController,
+      keyboardType: TextInputType.number,
+      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+      decoration: const InputDecoration(
+        labelText: 'Idade',
+        prefixIcon: Icon(Icons.cake_outlined),
+      ),
+      validator: (value) {
+        if (!_requiresPrescription) {
+          return null;
+        }
+        final idade = int.tryParse(value?.trim() ?? '');
+        if (idade == null || idade <= 0) {
+          return 'Informe uma idade válida.';
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildNidField() {
+    return TextFormField(
+      controller: _nidController,
+      decoration: const InputDecoration(
+        labelText: 'NID da receita/doente',
+        prefixIcon: Icon(Icons.badge_outlined),
+      ),
+      validator: (value) {
+        if (!_requiresPrescription) {
+          return null;
+        }
+        if (value == null || value.trim().isEmpty) {
+          return 'Informe o NID da receita/doente.';
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildPrescritorField() {
+    return TextFormField(
+      controller: _prescritorController,
+      decoration: const InputDecoration(
+        labelText: 'Prescritor',
+        prefixIcon: Icon(Icons.medical_information_outlined),
+      ),
+      validator: (value) {
+        if (!_requiresPrescription) {
+          return null;
+        }
+        if (value == null || value.trim().isEmpty) {
+          return 'Informe o prescritor.';
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildUnidadeSanitariaField() {
+    return TextFormField(
+      controller: _unidadeSanitariaController,
+      decoration: const InputDecoration(
+        labelText: 'Unidade Sanitaria',
+        prefixIcon: Icon(Icons.local_hospital_outlined),
+      ),
+      validator: (value) {
+        if (!_requiresPrescription) {
+          return null;
+        }
+        if (value == null || value.trim().isEmpty) {
+          return 'Informe a unidade sanitária.';
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildValorRecebidoField(bool enabled) {
+    return TextFormField(
+      controller: _valorRecebidoController,
+      enabled: enabled,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+      ],
+      onChanged: (_) => setState(() {}),
+      decoration: const InputDecoration(
+        labelText: 'Valor recebido',
+        prefixIcon: Icon(Icons.payments_outlined),
+        suffixText: 'MT',
+      ),
+      validator: (value) {
+        if (!_isCashPayment) {
+          return null;
+        }
+        final recebido = _parseCheckoutMoneyInput(value ?? '');
+        if (recebido == null) {
+          return 'Informe o valor recebido.';
+        }
+        if (recebido < widget.total) {
+          return 'O valor recebido deve cobrir o total da venda.';
+        }
+        return null;
+      },
+    );
+  }
+
+  Widget _buildTrocoCard(BuildContext context) {
+    final t = context.pharmaTokens;
+    final s = context.spacing;
+
+    return Container(
+      padding: EdgeInsets.all(s.md),
+      decoration: BoxDecoration(
+        color: t.brandGreen.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(AppRadius.card(t)),
+        border: Border.all(
+          color: t.brandGreen.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            'Troco',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: t.textPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          Text(
+            _formatCheckoutMoney(_troco),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: t.brandGreen,
+                  fontWeight: FontWeight.w800,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildActions(
+    BuildContext context,
+    PdvCheckoutState checkoutState,
+    FinalizarVendaPresentation presentation,
+  ) {
+    final t = context.pharmaTokens;
+    final s = context.spacing;
+
+    final confirmButton = FilledButton.icon(
+      onPressed: checkoutState.isSubmitting ? null : _submit,
+      icon: checkoutState.isSubmitting
+          ? SizedBox(
+              width: t.iconSm,
+              height: t.iconSm,
+              child: CircularProgressIndicator(
+                strokeWidth: s.xxs,
+              ),
+            )
+          : const Icon(Icons.check_circle_outline_rounded),
+      label: const Text('Confirmar Pagamento'),
+    );
+
+    if (presentation == FinalizarVendaPresentation.screen) {
+      return [
+        SizedBox(
+          width: double.infinity,
+          child: confirmButton,
+        ),
+      ];
+    }
+
+    return [
+      TextButton(
+        onPressed: checkoutState.isSubmitting
+            ? null
+            : () => Navigator.of(context).pop(),
+        child: const Text('Cancelar'),
+      ),
+      confirmButton,
+    ];
+  }
+
+  Widget _buildFormContent(
+    BuildContext context,
+    PdvCheckoutState checkoutState,
+  ) {
+    final t = context.pharmaTokens;
+    final s = context.spacing;
+
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _CheckoutSummaryCard(total: widget.total),
+          if (_requiresPrescription) ...[
+            SizedBox(height: s.lg),
+            Text(
+              'Dados do paciente',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: t.textPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+            SizedBox(height: s.xs),
+            Text(
+              'Itens com receita exigem identificação do paciente e prescritor.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: t.textMuted,
+                  ),
+            ),
+            SizedBox(height: s.md),
+            _ResponsiveFormGrid(
+              items: [
+                _ResponsiveFormGridItem(
+                  child: _buildNomeField(),
+                  mobileSpan: 2,
+                  tabletSpan: 2,
+                  desktopSpan: 2,
+                ),
+                _ResponsiveFormGridItem(
+                  child: _buildIdadeField(),
+                  mobileSpan: 1,
+                ),
+                _ResponsiveFormGridItem(
+                  child: _buildNidField(),
+                  mobileSpan: 1,
+                ),
+                _ResponsiveFormGridItem(
+                  child: _buildPrescritorField(),
+                  mobileSpan: 1,
+                  tabletSpan: 1,
+                  desktopSpan: 2,
+                ),
+                _ResponsiveFormGridItem(
+                  child: _buildUnidadeSanitariaField(),
+                  mobileSpan: 1,
+                  tabletSpan: 1,
+                  desktopSpan: 2,
+                ),
+              ],
+              mobileColumns: 2,
+              tabletColumns: 2,
+              desktopColumns: 4,
+            ),
+          ],
+          SizedBox(height: s.lg),
+          Text(
+            'Método de pagamento',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: t.textPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          SizedBox(height: s.md),
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final screenWidth = MediaQuery.sizeOf(context).width;
+              final columns = _responsiveColumnCount(
+                screenWidth,
+                mobileColumns: 2,
+                tabletColumns: 2,
+                desktopColumns: 4,
+              );
+              final spacing = s.sm;
+              final totalSpacing = spacing * (columns - 1);
+              final itemWidth =
+                  (constraints.maxWidth - totalSpacing) / columns;
+
+              return Wrap(
+                spacing: spacing,
+                runSpacing: spacing,
+                children: PdvPaymentMethod.values
+                    .map(
+                      (method) => SizedBox(
+                        width: itemWidth,
+                        child: _PaymentMethodCard(
+                          method: method,
+                          selected: method == _selectedMethod,
+                          onTap: checkoutState.isSubmitting
+                              ? null
+                              : () {
+                                  setState(() {
+                                    _selectedMethod = method;
+                                  });
+                                },
+                        ),
+                      ),
+                    )
+                    .toList(),
+              );
+            },
+          ),
+          if (_isCashPayment) ...[
+            SizedBox(height: s.md),
+            _ResponsiveFormGrid(
+              items: [
+                _ResponsiveFormGridItem(
+                  child: _buildValorRecebidoField(
+                    !checkoutState.isSubmitting,
+                  ),
+                ),
+                _ResponsiveFormGridItem(
+                  child: _buildTrocoCard(context),
+                ),
+              ],
+              mobileColumns: 1,
+              tabletColumns: 2,
+              desktopColumns: 2,
+            ),
+          ],
+          if (checkoutState.errorMessage != null) ...[
+            SizedBox(height: s.md),
+            Container(
+              padding: EdgeInsets.all(s.sm),
+              decoration: BoxDecoration(
+                color: t.posDanger.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(AppRadius.card(t)),
+                border: Border.all(
+                  color: t.posDanger.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Text(
+                checkoutState.errorMessage!,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: t.posDanger,
+                    ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+    final s = context.spacing;
+    final checkoutState = ref.watch(pdvCheckoutProvider);
+    final actions = _buildActions(context, checkoutState, widget.presentation);
+    final content = _buildFormContent(context, checkoutState);
+
+    if (widget.presentation == FinalizarVendaPresentation.screen) {
+      return PopScope(
+        canPop: !checkoutState.isSubmitting,
+        child: Scaffold(
+          backgroundColor: t.bgPrimary,
+          appBar: AppBar(
+            leading: BackButton(
+              onPressed: checkoutState.isSubmitting
+                  ? null
+                  : () => Navigator.of(context).pop(),
+            ),
+            title: const Text('Finalizar Venda'),
+          ),
+          body: SafeArea(
+            child: Column(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.all(s.lg),
+                    child: content,
+                  ),
+                ),
+                Container(
+                  padding: EdgeInsets.fromLTRB(s.lg, s.sm, s.lg, s.lg),
+                  decoration: BoxDecoration(
+                    color: t.bgPrimary,
+                    border: Border(
+                      top: BorderSide(
+                        color: t.border.withValues(alpha: 0.5),
+                      ),
+                    ),
+                  ),
+                  child: PharmaResponsiveDialogActions(
+                    breakpoint: PharmaDialogBreakpoint.mobile,
+                    children: actions,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
+    return PharmaResponsiveDialog(
+      title: Text(
+        'Finalizar Venda',
+        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              color: t.textPrimary,
+              fontWeight: FontWeight.w700,
+            ),
+      ),
+      content: content,
+      actions: actions,
+    );
+  }
+}
+
+class _CheckoutSummaryCard extends StatelessWidget {
+  const _CheckoutSummaryCard({required this.total});
+
+  final double total;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+    final s = context.spacing;
+
+    return Container(
+      padding: EdgeInsets.all(s.md),
+      decoration: BoxDecoration(
+        color: t.brandGreen.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppRadius.card(t)),
+        border: Border.all(
+          color: t.brandGreen.withValues(alpha: 0.25),
+        ),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            'Total a pagar',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: t.textPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          Text(
+            _formatCheckoutMoney(total),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: t.brandGreen,
+                  fontWeight: FontWeight.w800,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PaymentMethodCard extends StatelessWidget {
+  const _PaymentMethodCard({
+    required this.method,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final PdvPaymentMethod method;
+  final bool selected;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+    final s = context.spacing;
+    final descriptor = _descriptorFor(method);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.card(t)),
+        child: Ink(
+          padding: EdgeInsets.all(s.md),
+          decoration: BoxDecoration(
+            color: selected ? t.brandBlue.withValues(alpha: 0.14) : t.bgSecondary,
+            borderRadius: BorderRadius.circular(AppRadius.card(t)),
+            border: Border.all(
+              color: selected
+                  ? t.brandBlue
+                  : t.border.withValues(alpha: 0.5),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                descriptor.icon,
+                color: selected ? t.brandBlue : t.textSecondary,
+                size: t.iconMd,
+              ),
+              SizedBox(width: s.sm),
+              Expanded(
+                child: Text(
+                  descriptor.label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        color: t.textPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ),
+              Icon(
+                selected
+                    ? Icons.radio_button_checked_rounded
+                    : Icons.radio_button_off_rounded,
+                color: selected ? t.brandBlue : t.textMuted,
+                size: t.iconSm,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  ({IconData icon, String label}) _descriptorFor(PdvPaymentMethod value) {
+    switch (value) {
+      case PdvPaymentMethod.dinheiro:
+        return (icon: Icons.payments_outlined, label: 'Dinheiro');
+      case PdvPaymentMethod.mpesa:
+        return (icon: Icons.phone_android_rounded, label: 'M-Pesa');
+      case PdvPaymentMethod.emola:
+        return (icon: Icons.account_balance_wallet_outlined, label: 'E-Mola');
+      case PdvPaymentMethod.cartao:
+        return (icon: Icons.credit_card_rounded, label: 'Cartão');
+    }
+  }
+}
+
+class _ResponsiveFormGrid extends StatelessWidget {
+  const _ResponsiveFormGrid({
+    required this.items,
+    this.mobileColumns = 1,
+    this.tabletColumns = 2,
+    this.desktopColumns = 3,
+  });
+
+  final List<_ResponsiveFormGridItem> items;
+  final int mobileColumns;
+  final int tabletColumns;
+  final int desktopColumns;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.spacing;
+    final screenWidth = MediaQuery.sizeOf(context).width;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final columns = _responsiveColumnCount(
+          screenWidth,
+          mobileColumns: mobileColumns,
+          tabletColumns: tabletColumns,
+          desktopColumns: desktopColumns,
+        );
+        final spacing = s.md;
+        final totalSpacing = spacing * (columns - 1);
+        final baseItemWidth = (constraints.maxWidth - totalSpacing) / columns;
+
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          children: items.map((item) {
+            final span = item.spanForWidth(
+              screenWidth,
+              maxColumns: columns,
+            );
+            final width = (baseItemWidth * span) + (spacing * (span - 1));
+            return SizedBox(
+              width: width,
+              child: item.child,
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
+}
+
+class _ResponsiveFormGridItem {
+  const _ResponsiveFormGridItem({
+    required this.child,
+    this.mobileSpan = 1,
+    this.tabletSpan = 1,
+    this.desktopSpan = 1,
+  });
+
+  final Widget child;
+  final int mobileSpan;
+  final int tabletSpan;
+  final int desktopSpan;
+
+  int spanForWidth(double width, {required int maxColumns}) {
+    final span = switch (_layoutBreakpointForWidth(width)) {
+      _ResponsiveLayoutBreakpoint.mobile => mobileSpan,
+      _ResponsiveLayoutBreakpoint.tablet => tabletSpan,
+      _ResponsiveLayoutBreakpoint.desktop => desktopSpan,
+    };
+    if (span < 1) {
+      return 1;
+    }
+    if (span > maxColumns) {
+      return maxColumns;
+    }
+    return span;
+  }
+}
+
+enum _ResponsiveLayoutBreakpoint {
+  mobile,
+  tablet,
+  desktop,
+}
+
+_ResponsiveLayoutBreakpoint _layoutBreakpointForWidth(double width) {
+  if (width < DesignMetrics.breakpointMobile) {
+    return _ResponsiveLayoutBreakpoint.mobile;
+  }
+  if (width < DesignMetrics.breakpointTablet) {
+    return _ResponsiveLayoutBreakpoint.tablet;
+  }
+  return _ResponsiveLayoutBreakpoint.desktop;
+}
+
+int _responsiveColumnCount(
+  double width, {
+  int mobileColumns = 1,
+  int tabletColumns = 2,
+  int desktopColumns = 4,
+}) {
+  return switch (_layoutBreakpointForWidth(width)) {
+    _ResponsiveLayoutBreakpoint.mobile => mobileColumns,
+    _ResponsiveLayoutBreakpoint.tablet => tabletColumns,
+    _ResponsiveLayoutBreakpoint.desktop => desktopColumns,
+  };
+}
+
+double? _parseCheckoutMoneyInput(String raw) {
+  final normalized = raw.trim().replaceAll(' ', '').replaceAll(',', '.');
+  if (normalized.isEmpty) {
+    return null;
+  }
+  return double.tryParse(normalized);
+}
+
+String _formatCheckoutMoney(num value) {
+  final amount = value.toDouble();
+  final hasDecimals = amount != amount.truncateToDouble();
+  return '${amount.toStringAsFixed(hasDecimals ? 2 : 0)} MT';
+}

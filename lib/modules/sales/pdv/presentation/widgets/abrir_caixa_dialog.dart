@@ -1,0 +1,477 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/spacing.dart';
+import '../../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
+import '../../../../../shared/widgets/feedback/pharma_snackbar.dart';
+import '../../domain/entities/caixa_disponivel.dart';
+import '../../domain/entities/caixa_sessao.dart';
+import '../providers/caixa_sessao_provider.dart';
+
+double? parseCaixaMoneyInput(String raw) {
+  final normalized = raw.trim().replaceAll(' ', '').replaceAll(',', '.');
+  if (normalized.isEmpty) {
+    return null;
+  }
+  return double.tryParse(normalized);
+}
+
+/// Valor de abertura: vazio → 0; apenas negativos são inválidos.
+double parseCaixaMoneyInputOrZero(String raw) {
+  final parsed = parseCaixaMoneyInput(raw);
+  return parsed ?? 0;
+}
+
+String formatCaixaMoney(num value) {
+  return '${value.toStringAsFixed(2)} MT';
+}
+
+Future<void> showAbrirCaixaDialog(BuildContext context) {
+  return showPharmaResponsiveDialog<void>(
+    context: context,
+    builder: (_) => const AbrirCaixaDialog(),
+  );
+}
+
+Future<void> showFecharCaixaDialog(
+  BuildContext context, {
+  required CaixaSessao sessao,
+}) {
+  return showPharmaResponsiveDialog<void>(
+    context: context,
+    builder: (_) => FecharCaixaDialog(sessao: sessao),
+  );
+}
+
+class AbrirCaixaDialog extends ConsumerStatefulWidget {
+  const AbrirCaixaDialog({super.key});
+
+  @override
+  ConsumerState<AbrirCaixaDialog> createState() => _AbrirCaixaDialogState();
+}
+
+class _AbrirCaixaDialogState extends ConsumerState<AbrirCaixaDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _valorController = TextEditingController(text: '0');
+  CaixaDisponivel? _selectedCaixa;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref
+          .read(caixaSessaoProvider.notifier)
+          .loadCaixasDisponiveis(force: true)
+          .catchError((_) {});
+    });
+  }
+
+  @override
+  void dispose() {
+    _valorController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
+
+    final caixa = _selectedCaixa;
+    if (caixa == null) {
+      PharmaSnackbar.show(
+        context,
+        message: 'Selecione um terminal antes de continuar.',
+        icon: Icons.warning_amber_rounded,
+      );
+      return;
+    }
+
+    final valorAbertura = parseCaixaMoneyInputOrZero(_valorController.text);
+    if (valorAbertura < 0) {
+      PharmaSnackbar.show(
+        context,
+        message: 'O valor de abertura nao pode ser negativo.',
+        icon: Icons.warning_amber_rounded,
+      );
+      return;
+    }
+
+    try {
+      await ref.read(caixaSessaoProvider.notifier).abrirCaixa(
+            caixaId: caixa.caixaId,
+            valorAbertura: valorAbertura,
+          );
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      PharmaSnackbar.show(
+        context,
+        message: 'Caixa aberto com sucesso.',
+        icon: Icons.lock_open_rounded,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      final message = ref.read(caixaSessaoProvider).errorMessage ??
+          'Nao foi possivel abrir o caixa.';
+      PharmaSnackbar.show(
+        context,
+        message: message,
+        icon: Icons.error_outline_rounded,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+    final s = context.spacing;
+    final caixaState = ref.watch(caixaSessaoProvider);
+    final caixas = caixaState.caixasDisponiveis;
+    final selectedValue = caixas.contains(_selectedCaixa) ? _selectedCaixa : null;
+
+    return PharmaResponsiveDialog(
+      title: const Text('Abrir Caixa'),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (caixaState.errorMessage != null)
+              Padding(
+                padding: EdgeInsets.only(bottom: s.md),
+                child: Text(
+                  caixaState.errorMessage!,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: t.posDanger,
+                      ),
+                ),
+              ),
+            DropdownButtonFormField<CaixaDisponivel>(
+              initialValue: selectedValue,
+              isExpanded: true,
+              items: caixas
+                  .map(
+                    (caixa) => DropdownMenuItem<CaixaDisponivel>(
+                      value: caixa,
+                      child: Text(
+                        caixa.displayName,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 1,
+                      ),
+                    ),
+                  )
+                  .toList(),
+              onChanged: caixaState.isSubmitting
+                  ? null
+                  : (value) {
+                      setState(() {
+                        _selectedCaixa = value;
+                      });
+                    },
+              decoration: const InputDecoration(
+                labelText: 'Selecionar Terminal',
+                prefixIcon: Icon(Icons.devices_other_outlined),
+              ),
+              validator: (value) {
+                if (value == null) {
+                  return 'Selecione um terminal.';
+                }
+                return null;
+              },
+            ),
+            SizedBox(height: s.md),
+            TextFormField(
+              controller: _valorController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+              ],
+              decoration: const InputDecoration(
+                labelText: 'Valor de abertura',
+                prefixIcon: Icon(Icons.payments_outlined),
+                suffixText: 'MT',
+              ),
+              validator: (value) {
+                final text = value?.trim() ?? '';
+                if (text.isEmpty) {
+                  return null;
+                }
+                final parsed = parseCaixaMoneyInput(text);
+                if (parsed == null) {
+                  return 'Valor invalido.';
+                }
+                if (parsed < 0) {
+                  return 'O valor nao pode ser negativo.';
+                }
+                return null;
+              },
+            ),
+            if (caixaState.isLoading) ...[
+              SizedBox(height: s.md),
+              LinearProgressIndicator(minHeight: s.xxs),
+            ],
+            if (!caixaState.isLoading && caixas.isEmpty) ...[
+              SizedBox(height: s.md),
+              Text(
+                'Nenhum terminal disponivel para abertura de caixa.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: t.textMuted,
+                    ),
+              ),
+            ],
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed:
+              caixaState.isSubmitting ? null : () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton.icon(
+          onPressed: caixaState.isSubmitting || caixas.isEmpty ? null : _submit,
+          icon: caixaState.isSubmitting
+              ? SizedBox(
+                  width: t.iconSm,
+                  height: t.iconSm,
+                  child: CircularProgressIndicator(strokeWidth: s.xxs),
+                )
+              : const Icon(Icons.lock_open_rounded),
+          label: const Text('Abrir Caixa'),
+        ),
+      ],
+    );
+  }
+}
+
+class FecharCaixaDialog extends ConsumerStatefulWidget {
+  const FecharCaixaDialog({required this.sessao, super.key});
+
+  final CaixaSessao sessao;
+
+  @override
+  ConsumerState<FecharCaixaDialog> createState() => _FecharCaixaDialogState();
+}
+
+class _FecharCaixaDialogState extends ConsumerState<FecharCaixaDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _valorContadoController;
+  final _observacoesController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _valorContadoController = TextEditingController(
+      text: widget.sessao.sistema.toStringAsFixed(2),
+    );
+  }
+
+  @override
+  void dispose() {
+    _valorContadoController.dispose();
+    _observacoesController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (!(_formKey.currentState?.validate() ?? false)) {
+      return;
+    }
+
+    final valorContado = parseCaixaMoneyInput(_valorContadoController.text);
+    if (valorContado == null || valorContado < 0) {
+      PharmaSnackbar.show(
+        context,
+        message: 'Informe um valor contado valido.',
+        icon: Icons.warning_amber_rounded,
+      );
+      return;
+    }
+
+    try {
+      await ref.read(caixaSessaoProvider.notifier).fecharCaixa(
+            sessaoId: widget.sessao.id,
+            valorContado: valorContado,
+            observacoes: _observacoesController.text.trim().isEmpty
+                ? null
+                : _observacoesController.text.trim(),
+          );
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      PharmaSnackbar.show(
+        context,
+        message: 'Caixa fechado com sucesso.',
+        icon: Icons.lock_outline_rounded,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      final message = ref.read(caixaSessaoProvider).errorMessage ??
+          'Nao foi possivel fechar o caixa.';
+      PharmaSnackbar.show(
+        context,
+        message: message,
+        icon: Icons.error_outline_rounded,
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+    final s = context.spacing;
+    final caixaState = ref.watch(caixaSessaoProvider);
+
+    return PharmaResponsiveDialog(
+      title: const Text('Fechar Caixa'),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              padding: EdgeInsets.all(s.md),
+              decoration: BoxDecoration(
+                color: t.bgSecondary,
+                borderRadius: BorderRadius.circular(t.radiusMd),
+                border: Border.all(color: t.border.withValues(alpha: 0.5)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Valor de sistema',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: t.textMuted,
+                        ),
+                  ),
+                  SizedBox(height: s.xs),
+                  Text(
+                    formatCaixaMoney(widget.sessao.sistema),
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: t.textPrimary,
+                          fontWeight: FontWeight.w800,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: s.md),
+            TextFormField(
+              controller: _valorContadoController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+              ],
+              decoration: const InputDecoration(
+                labelText: 'Valor contado',
+                prefixIcon: Icon(Icons.account_balance_wallet_outlined),
+                suffixText: 'MT',
+              ),
+              validator: (value) {
+                final parsed = parseCaixaMoneyInput(value ?? '');
+                if (parsed == null || parsed < 0) {
+                  return 'Informe um valor valido.';
+                }
+                return null;
+              },
+            ),
+            SizedBox(height: s.md),
+            TextFormField(
+              controller: _observacoesController,
+              maxLines: 3,
+              decoration: const InputDecoration(
+                labelText: 'Observacoes do fecho',
+                prefixIcon: Icon(Icons.notes_rounded),
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed:
+              caixaState.isSubmitting ? null : () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton.icon(
+          onPressed: caixaState.isSubmitting ? null : _submit,
+          icon: caixaState.isSubmitting
+              ? SizedBox(
+                  width: t.iconSm,
+                  height: t.iconSm,
+                  child: CircularProgressIndicator(strokeWidth: s.xxs),
+                )
+              : const Icon(Icons.lock_outline_rounded),
+          label: const Text('Fechar Caixa'),
+        ),
+      ],
+    );
+  }
+}
+
+class CaixaFechadoBanner extends StatelessWidget {
+  const CaixaFechadoBanner({
+    super.key,
+    required this.onAbrirCaixa,
+    this.compact = false,
+  });
+
+  final VoidCallback onAbrirCaixa;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+    final s = context.spacing;
+
+    return Material(
+      color: t.posDanger.withValues(alpha: compact ? 0.1 : 0.12),
+      borderRadius: BorderRadius.circular(t.radiusMd),
+      child: Padding(
+        padding: EdgeInsets.all(compact ? s.sm : s.md),
+        child: Row(
+          children: [
+            Icon(
+              Icons.lock_outline_rounded,
+              color: t.posDanger,
+              size: compact ? t.iconSm : t.iconMd,
+            ),
+            SizedBox(width: s.sm),
+            Expanded(
+              child: Text(
+                'Abra o caixa para iniciar as operacoes.',
+                style: (compact
+                        ? Theme.of(context).textTheme.labelMedium
+                        : Theme.of(context).textTheme.bodyMedium)
+                    ?.copyWith(
+                  color: compact ? t.posDanger : t.textPrimary,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            FilledButton.tonalIcon(
+              onPressed: onAbrirCaixa,
+              icon: Icon(Icons.lock_open_rounded, size: t.iconSm),
+              label: const Text('Abrir caixa'),
+              style: FilledButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+                padding: EdgeInsets.symmetric(
+                  horizontal: compact ? s.sm : s.md,
+                  vertical: compact ? s.xs : s.sm,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
