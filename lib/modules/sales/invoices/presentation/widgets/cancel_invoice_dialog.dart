@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
-import '../../../../../shared/widgets/feedback/pharma_snackbar.dart';
 import '../../domain/entities/invoice_summary.dart';
 
 class CancelInvoiceDialog extends StatefulWidget {
@@ -113,17 +112,9 @@ class _CancelInvoiceDialogState extends State<CancelInvoiceDialog> {
                       flex: 2,
                       child: FilledButton(
                         onPressed: () {
-                          final motivo = _reasonController.text.trim();
-                          if (motivo.isEmpty) {
-                            PharmaSnackbar.showError(
-                              context,
-                              'Informe o motivo do cancelamento.',
-                            );
-                            return;
-                          }
                           Navigator.of(context).pop(
                             CancelInvoicePayload(
-                              motivo: motivo,
+                              motivo: _reasonController.text.trim(),
                               observacoes: _notesController.text.trim().isEmpty
                                   ? null
                                   : _notesController.text.trim(),

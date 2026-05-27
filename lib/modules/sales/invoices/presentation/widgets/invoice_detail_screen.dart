@@ -3,10 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
-import '../../../../../core/ui/layout/pharma_screen_layout.dart';
+import '../../../../../shared/responsive/pharma_screen_layout.dart';
 import '../../domain/entities/invoice_summary.dart';
 import '../providers/invoice_action_provider.dart';
-import 'cancel_invoice_dialog.dart';
 import 'invoice_detail_widgets.dart';
 import 'invoice_formatters.dart';
 import 'invoice_status_badge.dart';
@@ -25,7 +24,6 @@ class InvoiceDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.pharmaTokens;
     final s = context.spacing;
-    final isMobile = PharmaScreenLayout.isMobile(context);
     final actionState = ref.watch(invoiceActionProvider);
     final isCancelling =
         actionState.isSubmitting && actionState.activeInvoiceId == invoice.id;

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
-import '../../../../../core/ui/layout/pharma_screen_layout.dart';
+import '../../../../../shared/responsive/pharma_screen_layout.dart';
 import '../../domain/entities/invoice_summary.dart';
 import 'invoice_formatters.dart';
 import 'invoice_status_badge.dart';
@@ -34,10 +34,13 @@ class InvoicesResults extends StatelessWidget {
             embedded: embedded,
           );
         }
-        return InvoiceDesktopTable(
-          invoices: invoices,
-          onView: onView,
-          onCancel: onCancel,
+        return SingleChildScrollView(
+          padding: EdgeInsets.zero,
+          child: InvoiceDesktopTable(
+            invoices: invoices,
+            onView: onView,
+            onCancel: onCancel,
+          ),
         );
       },
     );
@@ -60,113 +63,108 @@ class InvoiceCardList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.spacing;
-    return ListView.separated(
-      padding: embedded ? EdgeInsets.zero : EdgeInsets.symmetric(horizontal: s.lg),
-      physics: embedded ? const NeverScrollableScrollPhysics() : null,
-      shrinkWrap: embedded,
-      itemBuilder: (context, index) => InvoiceCard(
-        invoice: invoices[index],
-        onView: onView,
-        onCancel: onCancel,
-      ),
-      separatorBuilder: (context, index) => SizedBox(height: s.sm),
-      itemCount: invoices.length,
-    );
-  }
-}
-
-class InvoiceCard extends StatelessWidget {
-  const InvoiceCard({
-    super.key,
-    required this.invoice,
-    required this.onView,
-    required this.onCancel,
-  });
-
-  final InvoiceSummary invoice;
-  final ValueChanged<InvoiceSummary> onView;
-  final ValueChanged<InvoiceSummary> onCancel;
-
-  @override
-  Widget build(BuildContext context) {
     final t = context.pharmaTokens;
     final s = context.spacing;
-    return InkWell(
-      onTap: () => onView(invoice),
-      borderRadius: BorderRadius.circular(t.radiusMd),
-      child: Container(
-        padding: EdgeInsets.all(s.md),
-        decoration: BoxDecoration(
-          color: t.card,
-          borderRadius: BorderRadius.circular(t.radiusMd),
-          border: Border.all(color: t.border.withValues(alpha: 0.5)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        invoice.numero,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                              color: t.textPrimary,
-                              fontWeight: FontWeight.w800,
-                            ),
-                      ),
-                      SizedBox(height: s.xs),
-                      Text(
-                        invoice.cliente?.nome ?? 'Consumidor final',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: t.textMuted,
-                            ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                InvoiceStatusBadge(status: invoice.estado),
-              ],
-            ),
-            SizedBox(height: s.md),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                MetaChip(label: formatDateTime(invoice.createdAt)),
-                Text(
-                  formatMoney(invoice.total),
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: t.brandGreen,
-                        fontWeight: FontWeight.w800,
-                      ),
+    return ListView.separated(
+      shrinkWrap: embedded,
+      physics: embedded
+          ? const NeverScrollableScrollPhysics()
+          : const AlwaysScrollableScrollPhysics(),
+      itemCount: invoices.length,
+      separatorBuilder: (context, index) => SizedBox(height: s.sm),
+      itemBuilder: (context, index) {
+        final invoice = invoices[index];
+        return Material(
+          color: Colors.transparent,
+          child: Ink(
+            decoration: BoxDecoration(
+              color: t.card,
+              borderRadius: BorderRadius.circular(t.radiusXl),
+              border: Border.all(color: t.border.withValues(alpha: 0.55)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.22),
+                  blurRadius: 20,
+                  offset: const Offset(0, 10),
                 ),
               ],
             ),
-            SizedBox(height: s.sm),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                OutlinedButton.icon(
-                  onPressed: () => onView(invoice),
-                  icon: const Icon(Icons.visibility_outlined),
-                  label: const Text('Ver'),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(t.radiusXl),
+              onTap: () => onView(invoice),
+              child: Padding(
+                padding: EdgeInsets.all(s.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            invoice.numero,
+                            style:
+                                Theme.of(context).textTheme.titleMedium?.copyWith(
+                                      color: t.textPrimary,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                          ),
+                        ),
+                        InvoiceStatusBadge(status: invoice.estado),
+                      ],
+                    ),
+                    SizedBox(height: s.xs),
+                    Text(
+                      invoice.cliente?.nome ?? 'Consumidor final',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: t.textSecondary,
+                          ),
+                    ),
+                    SizedBox(height: s.sm),
+                    Wrap(
+                      spacing: s.sm,
+                      runSpacing: s.xs,
+                      children: [
+                        MetaChip(label: formatDateTime(invoice.createdAt)),
+                        MetaChip(label: formatMoney(invoice.total)),
+                        MetaChip(
+                          label: invoice.terminal?.codigo ??
+                              invoice.terminal?.nome ??
+                              'Sem terminal',
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: s.md),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        OutlinedButton.icon(
+                          onPressed: () => onView(invoice),
+                          icon: const Icon(Icons.visibility_outlined),
+                          label: const Text('Ver'),
+                        ),
+                        SizedBox(height: s.sm),
+                        OutlinedButton.icon(
+                          onPressed: null,
+                          icon: const Icon(Icons.print_outlined),
+                          label: const Text('Imprimir'),
+                        ),
+                        SizedBox(height: s.sm),
+                        FilledButton.icon(
+                          onPressed: invoice.isCancelled
+                              ? null
+                              : () => onCancel(invoice),
+                          icon: const Icon(Icons.block_rounded),
+                          label: const Text('Cancelar'),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-                SizedBox(width: s.sm),
-                FilledButton.icon(
-                  onPressed: invoice.isCancelled ? null : () => onCancel(invoice),
-                  icon: const Icon(Icons.block_rounded),
-                  label: const Text('Cancelar'),
-                ),
-              ],
+              ),
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }

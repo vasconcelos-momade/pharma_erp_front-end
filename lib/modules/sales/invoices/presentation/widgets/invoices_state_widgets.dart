@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
-import '../../../../../core/ui/layout/pharma_screen_layout.dart';
+import '../../../../../shared/responsive/pharma_screen_layout.dart';
 import '../providers/invoice_list_provider.dart';
 
 class InvoicesLoadingSkeleton extends StatelessWidget {
@@ -15,95 +14,27 @@ class InvoicesLoadingSkeleton extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
     final s = context.spacing;
-    final screen = context.pharmaScreen;
-    final isMobile = screen == PharmaScreenSize.mobile;
+    final isMobile = context.pharmaScreen == PharmaScreenSize.mobile;
     final itemCount = isMobile ? 6 : 8;
 
     return ListView.separated(
-      padding: embedded ? EdgeInsets.zero : EdgeInsets.symmetric(horizontal: s.lg),
-      physics: const NeverScrollableScrollPhysics(),
-      shrinkWrap: true,
-      itemBuilder: (context, index) => _InvoiceSkeletonCard(),
-      separatorBuilder: (context, index) => SizedBox(height: s.sm),
+      shrinkWrap: embedded,
+      physics: embedded
+          ? const NeverScrollableScrollPhysics()
+          : const AlwaysScrollableScrollPhysics(),
       itemCount: itemCount,
-    );
-  }
-}
-
-class _InvoiceSkeletonCard extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
-    final s = context.spacing;
-    return Container(
-      padding: EdgeInsets.all(s.md),
-      decoration: BoxDecoration(
-        color: t.card,
-        borderRadius: BorderRadius.circular(t.radiusMd),
-        border: Border.all(color: t.border.withValues(alpha: 0.5)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 140,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: t.bgSoft,
-                  borderRadius: BorderRadius.circular(t.radiusSm),
-                ),
-              ),
-              const Spacer(),
-              Container(
-                width: 80,
-                height: 28,
-                decoration: BoxDecoration(
-                  color: t.bgSoft,
-                  borderRadius: BorderRadius.circular(t.radius3xl),
-                ),
-              ),
-            ],
+      separatorBuilder: (_, _) => SizedBox(height: s.sm),
+      itemBuilder: (context, index) {
+        final height = isMobile ? 142.0 : 58.0;
+        return Container(
+          height: height,
+          decoration: BoxDecoration(
+            color: t.card.withValues(alpha: 0.65),
+            borderRadius: BorderRadius.circular(t.radiusXl),
+            border: Border.all(color: t.border.withValues(alpha: 0.35)),
           ),
-          SizedBox(height: s.sm),
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  height: 18,
-                  decoration: BoxDecoration(
-                    color: t.bgSoft,
-                    borderRadius: BorderRadius.circular(t.radiusSm),
-                  ),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: s.sm),
-          Row(
-            children: [
-              Container(
-                width: 100,
-                height: 16,
-                decoration: BoxDecoration(
-                  color: t.bgSoft,
-                  borderRadius: BorderRadius.circular(t.radiusSm),
-                ),
-              ),
-              const Spacer(),
-              Container(
-                width: 80,
-                height: 20,
-                decoration: BoxDecoration(
-                  color: t.bgSoft,
-                  borderRadius: BorderRadius.circular(t.radiusSm),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -117,58 +48,44 @@ class InvoicesInfoBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
     final s = context.spacing;
-
-    if (state.showingCachedData) {
-      return Material(
-        color: t.brandBlue.withValues(alpha: 0.12),
+    final isWarning = state.errorMessage != null;
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(s.md),
+      decoration: BoxDecoration(
+        color: isWarning
+            ? t.posWarning.withValues(alpha: 0.12)
+            : t.brandBlue.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(t.radiusMd),
-        child: Padding(
-          padding: EdgeInsets.all(s.md),
-          child: Row(
-            children: [
-              Icon(Icons.wifi_off_rounded, color: t.brandBlue, size: t.iconMd),
-              SizedBox(width: s.sm),
-              Expanded(
-                child: Text(
-                  'A exibir dados em cache. Verifique a conexão.',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: t.brandBlue,
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-              ),
-            ],
-          ),
+        border: Border.all(
+          color: isWarning
+              ? t.posWarning.withValues(alpha: 0.35)
+              : t.brandBlue.withValues(alpha: 0.25),
         ),
-      );
-    }
-
-    if (state.errorMessage != null && state.hasItems) {
-      return Material(
-        color: t.posWarning.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(t.radiusMd),
-        child: Padding(
-          padding: EdgeInsets.all(s.md),
-          child: Row(
-            children: [
-              Icon(Icons.warning_amber_rounded, color: t.posWarning, size: t.iconMd),
-              SizedBox(width: s.sm),
-              Expanded(
-                child: Text(
-                  state.errorMessage!,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: t.posWarning,
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-              ),
-            ],
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isWarning
+                ? Icons.cloud_off_rounded
+                : Icons.history_toggle_off_rounded,
+            color: isWarning ? t.posWarning : t.brandBlue,
           ),
-        ),
-      );
-    }
-
-    return const SizedBox.shrink();
+          SizedBox(width: s.sm),
+          Expanded(
+            child: Text(
+              state.errorMessage != null
+                  ? 'A mostrar cache em memória. ${state.errorMessage}'
+                  : 'A mostrar cache instantânea enquanto a API sincroniza.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: t.textPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -186,18 +103,17 @@ class InvoicesErrorState extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
     final s = context.spacing;
-
     return Center(
-      child: Padding(
-        padding: EdgeInsets.all(s.xl),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 420),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline_rounded, color: t.posDanger, size: 64),
-            SizedBox(height: s.lg),
+            Icon(Icons.receipt_long_rounded, size: 42, color: t.posDanger),
+            SizedBox(height: s.md),
             Text(
               'Falha ao carregar faturas',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: t.textPrimary,
                     fontWeight: FontWeight.w800,
                   ),
@@ -210,7 +126,7 @@ class InvoicesErrorState extends StatelessWidget {
                   ),
               textAlign: TextAlign.center,
             ),
-            SizedBox(height: s.xl),
+            SizedBox(height: s.lg),
             FilledButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh_rounded),
@@ -232,42 +148,37 @@ class InvoicesEmptyState extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
     final s = context.spacing;
-
     return Center(
-      child: Padding(
-        padding: EdgeInsets.all(s.xl),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.receipt_long_rounded, color: t.textMuted, size: 64),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.inbox_outlined, size: 40, color: t.textMuted),
+          SizedBox(height: s.md),
+          Text(
+            'Nenhuma fatura encontrada',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: t.textPrimary,
+                  fontWeight: FontWeight.w800,
+                ),
+          ),
+          SizedBox(height: s.sm),
+          Text(
+            onClearFilters != null
+                ? 'Tenta limpar os filtros para ver mais resultados.'
+                : 'Ainda não existem faturas disponíveis para esta unidade.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: t.textMuted,
+                ),
+          ),
+          if (onClearFilters != null) ...[
             SizedBox(height: s.lg),
-            Text(
-              onClearFilters != null ? 'Nenhuma fatura encontrada' : 'Ainda sem faturas',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: t.textPrimary,
-                    fontWeight: FontWeight.w800,
-                  ),
+            OutlinedButton.icon(
+              onPressed: onClearFilters,
+              icon: const Icon(Icons.filter_alt_off_outlined),
+              label: const Text('Limpar filtros'),
             ),
-            SizedBox(height: s.sm),
-            Text(
-              onClearFilters != null
-                  ? 'Tente ajustar os filtros ou a pesquisa.'
-                  : 'As faturas emitidas aparecerão aqui.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: t.textMuted,
-                  ),
-              textAlign: TextAlign.center,
-            ),
-            if (onClearFilters != null) ...[
-              SizedBox(height: s.xl),
-              OutlinedButton.icon(
-                onPressed: onClearFilters,
-                icon: const Icon(Icons.filter_list_off_rounded),
-                label: const Text('Limpar filtros'),
-              ),
-            ],
           ],
-        ),
+        ],
       ),
     );
   }

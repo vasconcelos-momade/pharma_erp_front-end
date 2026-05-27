@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
+import '../../../../../shared/responsive/pharma_screen_layout.dart';
 
 class InvoicePagination extends StatelessWidget {
   const InvoicePagination({
@@ -25,69 +26,106 @@ class InvoicePagination extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
     final s = context.spacing;
-    final isMobile = MediaQuery.sizeOf(context).width < 600;
+    final screen = context.pharmaScreen;
+    final pageSizeOptions = const [10, 25, 50, 100];
 
-    return Material(
-      color: t.bgPrimary,
-      borderRadius: BorderRadius.circular(t.radiusMd),
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: s.md, vertical: s.sm),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            if (!isMobile)
-              Row(
-                children: [
-                  Text(
-                    'Página $page',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: t.textMuted,
-                        ),
-                  ),
-                  SizedBox(width: s.md),
-                  SizedBox(
-                    width: 120,
-                    child: DropdownButtonFormField<int>(
-                      value: pageSize,
-                      decoration: const InputDecoration(
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        isDense: true,
-                      ),
-                      items: const [
-                        DropdownMenuItem(value: 10, child: Text('10')),
-                        DropdownMenuItem(value: 20, child: Text('20')),
-                        DropdownMenuItem(value: 50, child: Text('50')),
-                        DropdownMenuItem(value: 100, child: Text('100')),
-                      ],
-                      onChanged: isBusy
-                          ? null
-                          : (value) {
-                              if (value != null && onPageSizeChanged != null) {
-                                onPageSizeChanged!(value);
-                              }
-                            },
-                    ),
-                  ),
-                ],
+    if (screen == PharmaScreenSize.mobile) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Text(
+                'Página $page',
+                style: Theme.of(context).textTheme.labelLarge,
               ),
-            Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.chevron_left_rounded),
+              const Spacer(),
+              DropdownButton<int>(
+                value: pageSizeOptions.contains(pageSize)
+                    ? pageSize
+                    : pageSizeOptions.first,
+                items: pageSizeOptions
+                    .map(
+                      (value) => DropdownMenuItem<int>(
+                        value: value,
+                        child: Text('$value itens'),
+                      ),
+                    )
+                    .toList(growable: false),
+                onChanged: isBusy
+                    ? null
+                    : (value) => value != null ? onPageSizeChanged?.call(value) : null,
+              ),
+            ],
+          ),
+          SizedBox(height: s.sm),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
                   onPressed: isBusy ? null : onPrev,
+                  icon: const Icon(Icons.chevron_left_rounded),
+                  label: const Text('Anterior'),
                 ),
-                SizedBox(width: s.sm),
-                IconButton(
-                  icon: const Icon(Icons.chevron_right_rounded),
+              ),
+              SizedBox(width: s.sm),
+              Expanded(
+                child: FilledButton.icon(
                   onPressed: isBusy || !hasMore ? null : onNext,
+                  icon: const Icon(Icons.chevron_right_rounded),
+                  label: const Text('Próxima'),
                 ),
-              ],
-            ),
-          ],
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+
+    return Row(
+      children: [
+        Text(
+          'Página $page',
+          style: Theme.of(context).textTheme.labelLarge,
         ),
-      ),
+        SizedBox(width: s.lg),
+        Text(
+          hasMore ? 'Mais resultados disponíveis' : 'Fim da lista',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: context.pharmaTokens.textMuted,
+              ),
+        ),
+        const Spacer(),
+        DropdownButton<int>(
+          value: pageSizeOptions.contains(pageSize)
+              ? pageSize
+              : pageSizeOptions.first,
+          items: pageSizeOptions
+              .map(
+                (value) => DropdownMenuItem<int>(
+                  value: value,
+                  child: Text('$value / página'),
+                ),
+              )
+              .toList(growable: false),
+          onChanged: isBusy
+              ? null
+              : (value) => value != null ? onPageSizeChanged?.call(value) : null,
+        ),
+        SizedBox(width: s.md),
+        OutlinedButton.icon(
+          onPressed: isBusy ? null : onPrev,
+          icon: const Icon(Icons.chevron_left_rounded),
+          label: const Text('Anterior'),
+        ),
+        SizedBox(width: s.sm),
+        FilledButton.icon(
+          onPressed: isBusy || !hasMore ? null : onNext,
+          icon: const Icon(Icons.chevron_right_rounded),
+          label: const Text('Próxima'),
+        ),
+      ],
     );
   }
 }

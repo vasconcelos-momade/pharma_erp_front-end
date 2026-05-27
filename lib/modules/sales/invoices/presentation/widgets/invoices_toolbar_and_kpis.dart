@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
-import '../../../../../core/ui/layout/pharma_screen_layout.dart';
+import '../../../../../shared/responsive/pharma_screen_layout.dart';
+import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
+import '../../domain/entities/invoice_summary.dart';
 import '../providers/invoice_list_provider.dart';
 
 class InvoicesToolbarV2 extends ConsumerWidget {
@@ -20,95 +22,101 @@ class InvoicesToolbarV2 extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.pharmaTokens;
     final s = context.spacing;
-    final isMobile = PharmaScreenLayout.isMobile(context);
-    final isTablet = PharmaScreenLayout.isTablet(context);
-    final query = ref.read(invoiceListProvider).query;
+    final screen = context.pharmaScreen;
+    final query = state.query;
+    final notifier = ref.read(invoiceListProvider.notifier);
 
-    return Material(
-      color: t.bgPrimary,
-      borderRadius: BorderRadius.circular(t.radiusMd),
-      elevation: 0,
-      child: Padding(
-        padding: isMobile ? EdgeInsets.all(s.md) : t.density.cardPadding,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (isMobile || isTablet)
-              Row(
-                children: [
-                Expanded(
-                  child: TextField(
-                    controller: searchController,
-                    onChanged: (value) =>
-                        ref.read(invoiceListProvider.notifier).search(value),
-                    decoration: InputDecoration(
-                      isDense: isMobile,
-                      hintText: 'Pesquisar fatura',
-                      prefixIcon: Icon(Icons.search_rounded, color: t.brandBlue),
-                      suffixIcon: query.search.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.close),
-                              onPressed: () {
-                                searchController.clear();
-                                ref.read(invoiceListProvider.notifier).clearSearch();
-                              },
-                            )
-                          : null,
-                    ),
-                  ),
-                ),
-                if (isTablet) ...[
-                  SizedBox(width: s.md),
-                  IconButton(
-                    icon: const Icon(Icons.filter_list_rounded),
-                    onPressed: () {},
-                  ),
-                ],
-              ],
-            ),
-            if (!isMobile && !isTablet)
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: searchController,
-                      onChanged: (value) =>
-                          ref.read(invoiceListProvider.notifier).search(value),
-                      decoration: InputDecoration(
-                        hintText: 'Pesquisar fatura',
-                        prefixIcon: Icon(Icons.search_rounded, color: t.brandBlue),
-                        suffixIcon: query.search.isNotEmpty
-                            ? IconButton(
-                                icon: const Icon(Icons.close),
-                                onPressed: () {
-                                  searchController.clear();
-                                  ref.read(invoiceListProvider.notifier).clearSearch();
-                                },
-                              )
-                            : null,
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: s.md),
-                  OutlinedButton.icon(
-                    icon: const Icon(Icons.filter_list_rounded),
-                    label: const Text('Filtrar'),
-                    onPressed: () {},
-                  ),
-                  SizedBox(width: s.sm),
-                  FilledButton.icon(
-                    icon: const Icon(Icons.refresh_rounded),
-                    label: const Text('Actualizar'),
-                    onPressed: state.isLoading
-                        ? null
-                        : () => ref.read(invoiceListProvider.notifier).refresh(),
-                  ),
-                ],
-              ),
-          ],
+    final searchField = TextField(
+      controller: searchController,
+      onChanged: notifier.onSearchChanged,
+      decoration: InputDecoration(
+        hintText: 'Pesquisar nº da fatura, cliente ou terminal',
+        prefixIcon: const Icon(Icons.search_rounded),
+        filled: true,
+        fillColor: t.card,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(t.radiusXl),
+          borderSide: BorderSide(color: t.border.withValues(alpha: 0.45)),
         ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(t.radiusXl),
+          borderSide: BorderSide(color: t.border.withValues(alpha: 0.45)),
+        ),
+        isDense: true,
       ),
     );
+
+    final chips = <Widget>[
+      for (final filter in InvoiceQuickFilter.values.where(
+        (f) => f != InvoiceQuickFilter.none,
+      ))
+        Padding(
+          padding: EdgeInsets.only(right: s.sm),
+          child: FilterChip(
+            selected: query.quickFilter == filter,
+            label: Text(_quickFilterLabel(filter)),
+            onSelected: (_) => notifier.setQuickFilter(filter),
+          ),
+        ),
+      if (query.hasFilters)
+        Padding(
+          padding: EdgeInsets.only(right: s.sm),
+          child: TextButton.icon(
+            onPressed: notifier.clearFilters,
+            icon: const Icon(Icons.filter_alt_off_outlined),
+            label: const Text('Limpar'),
+          ),
+        ),
+    ];
+
+    if (screen == PharmaScreenSize.mobile) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          searchField,
+          SizedBox(height: s.sm),
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(children: chips),
+          ),
+        ],
+      );
+    }
+
+    return Row(
+      children: [
+        Expanded(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: searchField,
+          ),
+        ),
+        SizedBox(width: s.md),
+        Expanded(
+          flex: 2,
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Wrap(
+              spacing: 0,
+              runSpacing: s.sm,
+              children: chips,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _quickFilterLabel(InvoiceQuickFilter filter) {
+    return switch (filter) {
+      InvoiceQuickFilter.today => 'Hoje',
+      InvoiceQuickFilter.week => 'Semana',
+      InvoiceQuickFilter.month => 'Mês',
+      InvoiceQuickFilter.cancelled => 'Canceladas',
+      InvoiceQuickFilter.paid => 'Pagas',
+      InvoiceQuickFilter.pending => 'Pendentes',
+      InvoiceQuickFilter.none => 'Todas',
+    };
   }
 }
 
@@ -130,124 +138,59 @@ class InvoicesKpiGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
     final s = context.spacing;
-    final isMobile = PharmaScreenLayout.isMobile(context);
-    final isTablet = PharmaScreenLayout.isTablet(context);
-
-    final items = [
-      (
-        'Total',
-        '$totalInvoices',
-        t.brandBlue,
-        Icons.receipt_long_rounded,
-      ),
-      (
-        'Pagas',
-        '$paid',
-        t.brandGreen,
-        Icons.check_circle_outline_rounded,
-      ),
-      (
-        'Pendentes',
-        '$pending',
-        t.posWarning,
-        Icons.access_time_rounded,
-      ),
-      (
-        'Anuladas',
-        '$cancelled',
-        t.posDanger,
-        Icons.block_rounded,
-      ),
-    ];
-
-    final crossAxisCount = isMobile ? 2 : (isTablet ? 4 : 4);
-
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: crossAxisCount,
-        mainAxisSpacing: s.sm,
-        crossAxisSpacing: s.sm,
-        childAspectRatio: isMobile ? 2.2 : 2.8,
-      ),
-      itemCount: items.length,
-      itemBuilder: (context, index) {
-        final (title, value, color, icon) = items[index];
-        return _KpiCard(
-          title: title,
-          value: value,
-          color: color,
-          icon: icon,
-        );
-      },
-    );
-  }
-}
-
-class _KpiCard extends StatelessWidget {
-  const _KpiCard({
-    required this.title,
-    required this.value,
-    required this.color,
-    required this.icon,
-  });
-
-  final String title;
-  final String value;
-  final Color color;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
-    final s = context.spacing;
-    return Container(
-      decoration: BoxDecoration(
-        color: t.card,
-        borderRadius: BorderRadius.circular(t.radiusMd),
-        border: Border.all(color: t.border.withValues(alpha: 0.55),
-      ),
-      child: Padding(
-        padding: EdgeInsets.all(s.sm),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+    final screen = context.pharmaScreen;
+    return LayoutBuilder(
+      builder: (context, c) {
+        final cross = switch (screen) {
+          PharmaScreenSize.mobile => 1,
+          PharmaScreenSize.tablet => 2,
+          PharmaScreenSize.desktop => 4,
+        };
+        final aspect = switch (screen) {
+          PharmaScreenSize.mobile => 2.35,
+          PharmaScreenSize.tablet => 1.7,
+          PharmaScreenSize.desktop => 1.45,
+        };
+        return GridView.count(
+          crossAxisCount: cross,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisSpacing: screen == PharmaScreenSize.mobile ? 10 : s.md,
+          mainAxisSpacing: screen == PharmaScreenSize.mobile ? 10 : s.md,
+          childAspectRatio: aspect,
           children: [
-            Container(
-              padding: EdgeInsets.all(s.sm),
-              decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(t.radiusMd),
+            EnterpriseStatCard(
+              title: 'Visíveis',
+              value: '$totalInvoices',
+              subtitle: hasFilters ? 'Com filtros activos' : 'Lista actual',
+              icon: Icons.receipt_long_outlined,
+              accent: StatCardAccent.info,
             ),
-            child: Icon(icon, color: color, size: t.iconSm),
-          ),
-            SizedBox(width: s.sm),
-            Expanded(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: t.textMuted,
-                        ),
-                  ),
-                  Text(
-                    value,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: t.textPrimary,
-                          fontWeight: FontWeight.w800,
-                        ),
-                  ),
-                ],
-              ),
+            EnterpriseStatCard(
+              title: 'Pagas',
+              value: '$paid',
+              subtitle: 'Liquidadas no POS',
+              icon: Icons.check_circle_outline_rounded,
+              accent: StatCardAccent.positive,
+            ),
+            EnterpriseStatCard(
+              title: 'Pendentes',
+              value: '$pending',
+              subtitle: 'Emitidas/parciais',
+              icon: Icons.timelapse_rounded,
+              accent: StatCardAccent.warning,
+            ),
+            EnterpriseStatCard(
+              title: 'Canceladas',
+              value: '$cancelled',
+              subtitle: 'Com reversão aplicada',
+              icon: Icons.block_rounded,
+              accent: StatCardAccent.danger,
             ),
           ],
-        ),
-      ),
+        );
+      },
     );
   }
 }
