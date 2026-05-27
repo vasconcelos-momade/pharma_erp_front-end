@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../../core/utils/browser_file_handler.dart';
 import '../../../../../core/errors/api_failure.dart';
 import '../../data/repositories/invoice_repository_impl.dart';
 import '../../services/invoice_cache_policy.dart';
@@ -44,6 +45,93 @@ class InvoiceActionController extends Notifier<InvoiceActionState> {
   @override
   InvoiceActionState build() => const InvoiceActionState();
 
+  Future<void> exportPdf({
+    required String invoiceId,
+  }) async {
+    state = state.copyWith(
+      isSubmitting: true,
+      activeInvoiceId: invoiceId,
+      lastAction: 'pdf',
+      clearError: true,
+    );
+
+    try {
+      final document = await ref.read(invoiceRepositoryProvider).getInvoicePdf(
+            invoiceId,
+          );
+
+      await BrowserFileHandler.openBytes(
+        bytes: document.bytes,
+        fileName: document.fileName,
+        contentType: document.contentType,
+      );
+
+      state = state.copyWith(
+        isSubmitting: false,
+        clearActiveInvoice: true,
+        clearError: true,
+      );
+    } on ApiFailure catch (e) {
+      state = state.copyWith(
+        isSubmitting: false,
+        clearActiveInvoice: true,
+        errorMessage: e.message,
+      );
+      rethrow;
+    } catch (e) {
+      state = state.copyWith(
+        isSubmitting: false,
+        clearActiveInvoice: true,
+        errorMessage: e.toString(),
+      );
+      rethrow;
+    }
+  }
+
+  Future<void> downloadPrintArtifact({
+    required String invoiceId,
+  }) async {
+    state = state.copyWith(
+      isSubmitting: true,
+      activeInvoiceId: invoiceId,
+      lastAction: 'print',
+      clearError: true,
+    );
+
+    try {
+      final artifact =
+          await ref.read(invoiceRepositoryProvider).getInvoicePrintArtifact(
+                invoiceId,
+              );
+
+      await BrowserFileHandler.downloadBytes(
+        bytes: artifact.bytes,
+        fileName: artifact.fileName,
+        contentType: artifact.contentType,
+      );
+
+      state = state.copyWith(
+        isSubmitting: false,
+        clearActiveInvoice: true,
+        clearError: true,
+      );
+    } on ApiFailure catch (e) {
+      state = state.copyWith(
+        isSubmitting: false,
+        clearActiveInvoice: true,
+        errorMessage: e.message,
+      );
+      rethrow;
+    } catch (e) {
+      state = state.copyWith(
+        isSubmitting: false,
+        clearActiveInvoice: true,
+        errorMessage: e.toString(),
+      );
+      rethrow;
+    }
+  }
+
   Future<void> cancelInvoice({
     required String invoiceId,
     required String motivo,
@@ -67,15 +155,7 @@ class InvoiceActionController extends Notifier<InvoiceActionState> {
       // Mantém a lista sincronizada mesmo quando o estado anterior vinha de cache.
       unawaited(ref.read(invoiceListProvider.notifier).refresh());
 
-      final selected = ref.read(invoiceDetailProvider).selected;
-      if (selected?.id == invoiceId) {
-        ref.read(invoiceDetailProvider.notifier).open(
-              selected!.copyWith(
-                estado: 'ANULADA',
-                cancelledAt: DateTime.now(),
-              ),
-            );
-      }
+      ref.read(invoiceDetailProvider.notifier).markCancelled(invoiceId: invoiceId);
 
       state = state.copyWith(
         isSubmitting: false,

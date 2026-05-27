@@ -1,6 +1,9 @@
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/contracts/pagination_response.dart';
+import '../../domain/entities/invoice_detail.dart';
 import '../../domain/entities/invoice_summary.dart';
 import '../../domain/repositories/invoice_repository.dart';
 import '../datasources/invoice_remote_datasource.dart';
@@ -21,6 +24,25 @@ class InvoiceRepositoryImpl implements InvoiceRepository {
       pageSize: response.pageSize,
       hasMore: response.hasMore,
     );
+  }
+
+  @override
+  Future<InvoiceDetail> getInvoiceDetail(String invoiceId) async {
+    final response = await _remoteDataSource.getInvoiceDetail(invoiceId);
+    return response.toEntity();
+  }
+
+  @override
+  Future<({Uint8List bytes, String fileName, String contentType})> getInvoicePdf(
+    String invoiceId,
+  ) {
+    return _remoteDataSource.getInvoicePdf(invoiceId);
+  }
+
+  @override
+  Future<({Uint8List bytes, String fileName, String contentType})>
+  getInvoicePrintArtifact(String invoiceId) {
+    return _remoteDataSource.getInvoicePrintArtifact(invoiceId);
   }
 
   @override

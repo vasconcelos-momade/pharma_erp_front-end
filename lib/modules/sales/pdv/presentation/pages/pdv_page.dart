@@ -9,8 +9,10 @@ import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/widgets/feedback/pharma_snackbar.dart';
 import '../../../../pharmacy/products/domain/entities/product.dart';
 import '../../../../pharmacy/products/presentation/providers/product_provider.dart';
+import '../../../invoices/presentation/providers/invoice_action_provider.dart';
 import '../../../../../core/errors/api_failure.dart';
 import '../../domain/entities/pdv_cart_line.dart';
+import '../../domain/entities/pdv_checkout.dart';
 import '../../domain/entities/pdv_service.dart';
 import '../providers/caixa_sessao_provider.dart';
 import '../providers/pdv_cart_provider.dart';
@@ -310,6 +312,92 @@ class _PdvPageState extends ConsumerState<PdvPage>
     PharmaSnackbar.showSuccess(
       context,
       'Pagamento confirmado. Fatura ${result.numero} — total ${_formatMoney(result.total)} (valores do servidor).',
+    );
+
+    await _showCheckoutActions(result);
+  }
+
+  Future<void> _showCheckoutActions(PdvCheckoutResult result) async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Fatura emitida'),
+          content: Text(
+            'A fatura ${result.numero} foi emitida com sucesso. Deseja descarregar o PDF ou o ficheiro de reimpressão?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Fechar'),
+            ),
+            OutlinedButton.icon(
+              onPressed: () async {
+                Navigator.of(dialogContext).pop();
+                try {
+                  await ref
+                      .read(invoiceActionProvider.notifier)
+                      .downloadPrintArtifact(invoiceId: result.id);
+                  if (!mounted) {
+                    return;
+                  }
+                  PharmaSnackbar.showSuccess(
+                    context,
+                    'Artefacto de impressão descarregado com sucesso.',
+                  );
+                } on ApiFailure catch (e) {
+                  if (!mounted) {
+                    return;
+                  }
+                  PharmaSnackbar.showError(context, e.message);
+                } catch (_) {
+                  if (!mounted) {
+                    return;
+                  }
+                  PharmaSnackbar.showError(
+                    context,
+                    'Não foi possível obter o artefacto de impressão.',
+                  );
+                }
+              },
+              icon: const Icon(Icons.print_outlined),
+              label: const Text('Reimprimir'),
+            ),
+            FilledButton.icon(
+              onPressed: () async {
+                Navigator.of(dialogContext).pop();
+                try {
+                  await ref
+                      .read(invoiceActionProvider.notifier)
+                      .exportPdf(invoiceId: result.id);
+                  if (!mounted) {
+                    return;
+                  }
+                  PharmaSnackbar.showSuccess(
+                    context,
+                    'PDF da fatura preparado no navegador.',
+                  );
+                } on ApiFailure catch (e) {
+                  if (!mounted) {
+                    return;
+                  }
+                  PharmaSnackbar.showError(context, e.message);
+                } catch (_) {
+                  if (!mounted) {
+                    return;
+                  }
+                  PharmaSnackbar.showError(
+                    context,
+                    'Não foi possível exportar o PDF da fatura.',
+                  );
+                }
+              },
+              icon: const Icon(Icons.picture_as_pdf_outlined),
+              label: const Text('Exportar PDF'),
+            ),
+          ],
+        );
+      },
     );
   }
 

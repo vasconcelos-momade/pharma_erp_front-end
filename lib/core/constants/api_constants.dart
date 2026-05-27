@@ -21,8 +21,14 @@ abstract final class ApiConstants {
       '/tenant/pos/sales/draft/items/$itemId/decrement';
   static const tenantPosFinalizarVenda = '/tenant/pos/finalizar';
   static const tenantPosFaturas = '/tenant/pos/faturas';
+  static String tenantPosFaturaDetalhe(String invoiceId) =>
+      '/tenant/pos/faturas/$invoiceId';
   static String tenantPosCancelarFatura(String invoiceId) =>
       '/tenant/pos/faturas/$invoiceId/cancel';
+  static String tenantPosFaturaPdf(String invoiceId) =>
+      '/tenant/pos/faturas/$invoiceId/pdf';
+  static String tenantPosFaturaPrint(String invoiceId) =>
+      '/tenant/pos/faturas/$invoiceId/print';
   static const tenantPosAbrirSessaoCaixa = '/tenant/pos/sessions/open';
   static const tenantPosFecharSessaoCaixa = '/tenant/pos/sessions/close';
   static const tenantPosSessaoCaixaAtual = '/tenant/pos/sessions/current';
