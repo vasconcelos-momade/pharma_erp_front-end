@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/responsive/pharma_screen_layout.dart';
+import '../../../../../shared/widgets/feedback/pharma_snackbar.dart';
+import '../../domain/entities/invoice_detail.dart';
 import '../../domain/entities/invoice_summary.dart';
 import '../providers/invoice_action_provider.dart';
+import '../providers/invoice_detail_provider.dart';
 import 'invoice_detail_widgets.dart';
 import 'invoice_formatters.dart';
 import 'invoice_status_badge.dart';
@@ -25,8 +29,11 @@ class InvoiceDetailScreen extends ConsumerWidget {
     final t = context.pharmaTokens;
     final s = context.spacing;
     final actionState = ref.watch(invoiceActionProvider);
+    final detailState = ref.watch(invoiceDetailProvider);
+    final detail = detailState.detail?.id == invoice.id ? detailState.detail : null;
     final isCancelling =
         actionState.isSubmitting && actionState.activeInvoiceId == invoice.id;
+    final canCancel = detail?.permissions.canCancel ?? !invoice.isCancelled;
 
     return Scaffold(
       backgroundColor: t.bgPrimary,
@@ -39,102 +46,15 @@ class InvoiceDetailScreen extends ConsumerWidget {
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.all(s.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        invoice.cliente?.nome ?? 'Consumidor final',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: t.textMuted,
-                            ),
-                      ),
-                      SizedBox(height: s.md),
-                      InvoiceStatusBadge(status: invoice.estado),
-                      SizedBox(height: s.lg),
-                      DetailSection(
-                        title: 'Dados da fatura',
-                        children: [
-                          DetailRow(label: 'Número', value: invoice.numero),
-                          DetailRow(label: 'Série', value: invoice.serie ?? '-'),
-                          DetailRow(label: 'Data', value: formatDateTime(invoice.createdAt)),
-                          DetailRow(
-                            label: 'Cancelada em',
-                            value: formatDateTime(invoice.cancelledAt),
-                          ),
-                          DetailRow(
-                            label: 'Método de pagamento',
-                            value: invoice.tipoPagamento ?? '-',
-                          ),
-                          DetailRow(
-                            label: 'Terminal',
-                            value: invoice.terminal?.codigo ?? invoice.terminal?.nome ?? '-',
-                          ),
-                          DetailRow(
-                            label: 'Operador',
-                            value: invoice.user?.name ?? '-',
-                          ),
-                        ],
-                      ),
-                      SizedBox(height: s.lg),
-                      DetailSection(
-                        title: 'Totais',
-                        children: [
-                          DetailRow(label: 'Subtotal', value: formatMoney(invoice.subtotal)),
-                          DetailRow(label: 'IVA', value: formatMoney(invoice.ivaTotal)),
-                          DetailRow(label: 'Total', value: formatMoney(invoice.total)),
-                        ],
-                      ),
-                      SizedBox(height: s.lg),
-                      DetailSection(
-                        title: 'Itens e pagamentos',
-                        children: [
-                          DetailRow(label: 'Linhas registadas', value: '${invoice.itemCount}'),
-                          DetailRow(label: 'Pagamentos', value: '${invoice.paymentCount}'),
-                          const DetailHint(
-                            text:
-                                'Detalhe completo, lotes FEFO, PDF e reimpressão ficam preparados no layout e dependem do endpoint de detalhe/impressão.',
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              SizedBox(height: s.lg),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  OutlinedButton.icon(
-                    onPressed: null,
-                    icon: const Icon(Icons.print_outlined),
-                    label: const Text('Reimprimir'),
-                  ),
-                  SizedBox(height: s.sm),
-                  OutlinedButton.icon(
-                    onPressed: null,
-                    icon: const Icon(Icons.picture_as_pdf_outlined),
-                    label: const Text('Exportar PDF'),
-                  ),
-                  SizedBox(height: s.sm),
-                  FilledButton.icon(
-                    onPressed: isCancelling ? null : onCancel,
-                    icon: isCancelling
-                        ? SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.block_rounded),
-                    label: const Text('Cancelar fatura'),
-                  ),
-                ],
-              ),
-            ],
+          child: _InvoiceDetailScaffold(
+            invoice: invoice,
+            detail: detail,
+            isLoading: detailState.isLoading && detail == null,
+            errorMessage: detailState.errorMessage,
+            isCancelling: isCancelling,
+            canCancel: canCancel,
+            onRetry: () => ref.read(invoiceDetailProvider.notifier).refresh(),
+            onCancel: isCancelling || !canCancel ? null : onCancel,
           ),
         ),
       ),
@@ -156,165 +76,577 @@ class InvoiceDetailPanel extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.pharmaTokens;
     final s = context.spacing;
     final isMobile = PharmaScreenLayout.isMobile(context);
     final actionState = ref.watch(invoiceActionProvider);
+    final detailState = ref.watch(invoiceDetailProvider);
+    final detail = detailState.detail?.id == invoice.id ? detailState.detail : null;
     final isCancelling =
         actionState.isSubmitting && actionState.activeInvoiceId == invoice.id;
+    final canCancel = detail?.permissions.canCancel ?? !invoice.isCancelled;
 
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.all(s.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
+        child: _InvoiceDetailScaffold(
+          invoice: invoice,
+          detail: detail,
+          isLoading: detailState.isLoading && detail == null,
+          errorMessage: detailState.errorMessage,
+          isCancelling: isCancelling,
+          canCancel: canCancel,
+          headerTrailing: IconButton(
+            onPressed: onClose,
+            icon: const Icon(Icons.close_rounded),
+          ),
+          actionsAsColumn: isMobile,
+          onRetry: () => ref.read(invoiceDetailProvider.notifier).refresh(),
+          onCancel: isCancelling || !canCancel ? null : onCancel,
+        ),
+      ),
+    );
+  }
+}
+
+class _InvoiceDetailScaffold extends StatelessWidget {
+  const _InvoiceDetailScaffold({
+    required this.invoice,
+    required this.detail,
+    required this.isLoading,
+    required this.errorMessage,
+    required this.isCancelling,
+    required this.canCancel,
+    required this.onRetry,
+    this.onCancel,
+    this.headerTrailing,
+    this.actionsAsColumn = true,
+  });
+
+  final InvoiceSummary invoice;
+  final InvoiceDetail? detail;
+  final bool isLoading;
+  final String? errorMessage;
+  final bool isCancelling;
+  final bool canCancel;
+  final VoidCallback onRetry;
+  final VoidCallback? onCancel;
+  final Widget? headerTrailing;
+  final bool actionsAsColumn;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+    final s = context.spacing;
+    final status = detail?.estado ?? invoice.estado;
+    final customerName = detail?.cliente?.nome ?? invoice.cliente?.nome ?? 'Consumidor final';
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (headerTrailing != null)
+          Row(
+            children: [
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                invoice.numero,
-                                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                      color: t.textPrimary,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                              ),
-                              SizedBox(height: s.xs),
-                              Text(
-                                invoice.cliente?.nome ?? 'Consumidor final',
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      color: t.textMuted,
-                                    ),
-                              ),
-                            ],
+                    Text(
+                      invoice.numero,
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            color: t.textPrimary,
+                            fontWeight: FontWeight.w800,
                           ),
-                        ),
-                        IconButton(
-                          onPressed: onClose,
-                          icon: const Icon(Icons.close_rounded),
-                        ),
-                      ],
                     ),
-                    SizedBox(height: s.md),
-                    InvoiceStatusBadge(status: invoice.estado),
-                    SizedBox(height: s.lg),
-                    DetailSection(
-                      title: 'Dados da fatura',
-                      children: [
-                        DetailRow(label: 'Número', value: invoice.numero),
-                        DetailRow(label: 'Série', value: invoice.serie ?? '-'),
-                        DetailRow(label: 'Data', value: formatDateTime(invoice.createdAt)),
-                        DetailRow(
-                          label: 'Cancelada em',
-                          value: formatDateTime(invoice.cancelledAt),
-                        ),
-                        DetailRow(
-                          label: 'Método de pagamento',
-                          value: invoice.tipoPagamento ?? '-',
-                        ),
-                        DetailRow(
-                          label: 'Terminal',
-                          value: invoice.terminal?.codigo ?? invoice.terminal?.nome ?? '-',
-                        ),
-                        DetailRow(
-                          label: 'Operador',
-                          value: invoice.user?.name ?? '-',
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: s.lg),
-                    DetailSection(
-                      title: 'Totais',
-                      children: [
-                        DetailRow(label: 'Subtotal', value: formatMoney(invoice.subtotal)),
-                        DetailRow(label: 'IVA', value: formatMoney(invoice.ivaTotal)),
-                        DetailRow(label: 'Total', value: formatMoney(invoice.total)),
-                      ],
-                    ),
-                    SizedBox(height: s.lg),
-                    DetailSection(
-                      title: 'Itens e pagamentos',
-                      children: [
-                        DetailRow(label: 'Linhas registadas', value: '${invoice.itemCount}'),
-                        DetailRow(label: 'Pagamentos', value: '${invoice.paymentCount}'),
-                        const DetailHint(
-                          text:
-                              'Detalhe completo, lotes FEFO, PDF e reimpressão ficam preparados no layout e dependem do endpoint de detalhe/impressão.',
-                        ),
-                      ],
+                    SizedBox(height: s.xs),
+                    Text(
+                      customerName,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: t.textMuted,
+                          ),
                     ),
                   ],
                 ),
               ),
+              headerTrailing!,
+            ],
+          )
+        else
+          Text(
+            customerName,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: t.textMuted,
+                ),
+          ),
+        SizedBox(height: s.md),
+        InvoiceStatusBadge(status: status),
+        SizedBox(height: s.lg),
+        Expanded(
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (isLoading)
+                  _DetailLoadingState(invoice: invoice)
+                else if (detail != null)
+                  _LoadedInvoiceDetail(detail: detail!)
+                else
+                  _DetailErrorState(
+                    message: errorMessage ?? 'Falha ao carregar detalhe da fatura.',
+                    onRetry: onRetry,
+                  ),
+              ],
             ),
-            SizedBox(height: s.lg),
-            if (isMobile)
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  OutlinedButton.icon(
-                    onPressed: null,
-                    icon: const Icon(Icons.print_outlined),
-                    label: const Text('Reimprimir'),
-                  ),
-                  SizedBox(height: s.sm),
-                  OutlinedButton.icon(
-                    onPressed: null,
-                    icon: const Icon(Icons.picture_as_pdf_outlined),
-                    label: const Text('Exportar PDF'),
-                  ),
-                  SizedBox(height: s.sm),
-                  FilledButton.icon(
-                    onPressed: isCancelling ? null : onCancel,
-                    icon: isCancelling
-                        ? SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.block_rounded),
-                    label: const Text('Cancelar fatura'),
-                  ),
-                ],
-              )
-            else
-              Wrap(
-                spacing: s.sm,
-                runSpacing: s.sm,
-                children: [
-                  OutlinedButton.icon(
-                    onPressed: null,
-                    icon: const Icon(Icons.print_outlined),
-                    label: const Text('Reimprimir'),
-                  ),
-                  OutlinedButton.icon(
-                    onPressed: null,
-                    icon: const Icon(Icons.picture_as_pdf_outlined),
-                    label: const Text('Exportar PDF'),
-                  ),
-                  FilledButton.icon(
-                    onPressed: isCancelling ? null : onCancel,
-                    icon: isCancelling
-                        ? SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.block_rounded),
-                    label: const Text('Cancelar fatura'),
-                  ),
-                ],
-              ),
+          ),
+        ),
+        SizedBox(height: s.lg),
+        _DetailActions(
+          invoice: invoice,
+          actionsAsColumn: actionsAsColumn,
+          isCancelling: isCancelling,
+          canCancel: canCancel,
+          onCancel: onCancel,
+        ),
+      ],
+    );
+  }
+}
+
+class _LoadedInvoiceDetail extends StatelessWidget {
+  const _LoadedInvoiceDetail({required this.detail});
+
+  final InvoiceDetail detail;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.spacing;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        DetailSection(
+          title: 'Dados da fatura',
+          children: [
+            DetailRow(label: 'Número', value: detail.numero),
+            DetailRow(label: 'Série', value: detail.serie ?? '-'),
+            DetailRow(label: 'Tipo', value: detail.tipo),
+            DetailRow(label: 'Data', value: formatDateTime(detail.createdAt)),
+            DetailRow(label: 'Actualizada em', value: formatDateTime(detail.updatedAt)),
+            DetailRow(label: 'Cancelada em', value: formatDateTime(detail.cancelledAt)),
+            DetailRow(label: 'Método de pagamento', value: detail.tipoPagamento ?? '-'),
+            DetailRow(label: 'Operação fiscal', value: detail.tipoOperacao ?? '-'),
+            DetailRow(
+              label: 'Terminal',
+              value: detail.terminal?.codigo ?? detail.terminal?.nome ?? '-',
+            ),
+            DetailRow(label: 'Operador', value: detail.user?.name ?? '-'),
+            DetailRow(
+              label: 'Responsável anulação',
+              value: detail.cancelledBy?.name ?? detail.anulacao?.user?.name ?? '-',
+            ),
           ],
         ),
+        SizedBox(height: s.lg),
+        DetailSection(
+          title: 'Totais',
+          children: [
+            DetailRow(label: 'Subtotal', value: formatMoney(detail.subtotal)),
+            DetailRow(label: 'Desconto', value: formatMoney(detail.desconto)),
+            DetailRow(label: 'IVA', value: formatMoney(detail.ivaTotal)),
+            DetailRow(label: 'Total', value: formatMoney(detail.total)),
+            DetailRow(label: 'Moeda', value: detail.moeda),
+          ],
+        ),
+        SizedBox(height: s.lg),
+        DetailSection(
+          title: 'Itens',
+          children: [
+            DetailRow(label: 'Linhas registadas', value: '${detail.summary.itemCount}'),
+            SizedBox(height: s.sm),
+            ...detail.items.map((item) => _DetailItemTile(item: item)),
+          ],
+        ),
+        SizedBox(height: s.lg),
+        DetailSection(
+          title: 'Pagamentos',
+          children: [
+            DetailRow(label: 'Pagamentos', value: '${detail.summary.paymentCount}'),
+            SizedBox(height: s.sm),
+            if (detail.payments.isEmpty)
+              const DetailHint(text: 'Sem pagamentos registados para esta fatura.')
+            else
+              ...detail.payments.map((payment) => _DetailPaymentTile(payment: payment)),
+          ],
+        ),
+        if (detail.anulacao != null) ...[
+          SizedBox(height: s.lg),
+          DetailSection(
+            title: 'Anulação',
+            children: [
+              DetailRow(label: 'Motivo', value: detail.anulacao!.motivo),
+              DetailRow(
+                label: 'Observações',
+                value: detail.anulacao!.observacoes ?? '-',
+              ),
+              DetailRow(
+                label: 'Data',
+                value: formatDateTime(detail.anulacao!.createdAt),
+              ),
+              DetailRow(
+                label: 'Utilizador',
+                value: detail.anulacao!.user?.name ?? '-',
+              ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _DetailItemTile extends StatelessWidget {
+  const _DetailItemTile({required this.item});
+
+  final InvoiceDetailItem item;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+    final s = context.spacing;
+    final hasLotes = item.lotes.isNotEmpty;
+
+    return Container(
+      width: double.infinity,
+      margin: EdgeInsets.only(bottom: s.sm),
+      padding: EdgeInsets.all(s.sm),
+      decoration: BoxDecoration(
+        color: t.bgSecondary.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(t.radiusMd),
+        border: Border.all(color: t.border.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            item.descricao,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: t.textPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          SizedBox(height: s.xs),
+          Wrap(
+            spacing: s.sm,
+            runSpacing: s.xs,
+            children: [
+              _InlineMeta(label: 'Tipo', value: item.tipo.toUpperCase()),
+              _InlineMeta(label: 'Qtd', value: item.quantidade.toStringAsFixed(item.quantidade % 1 == 0 ? 0 : 2)),
+              _InlineMeta(label: 'Unit.', value: formatMoney(item.precoUnit)),
+              _InlineMeta(label: 'IVA', value: '${item.taxaAplicada.toStringAsFixed(item.taxaAplicada % 1 == 0 ? 0 : 2)}%'),
+              _InlineMeta(label: 'Total', value: formatMoney(item.total)),
+            ],
+          ),
+          if (item.codigoRegraFiscal != null || item.motivoIsencao != null) ...[
+            SizedBox(height: s.xs),
+            Text(
+              [
+                if (item.codigoRegraFiscal != null) 'Regra: ${item.codigoRegraFiscal}',
+                if (item.motivoIsencao != null) 'Motivo isenção: ${item.motivoIsencao}',
+              ].join(' | '),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: t.textMuted,
+                  ),
+            ),
+          ],
+          if (hasLotes) ...[
+            SizedBox(height: s.sm),
+            ...item.lotes.map(
+              (lote) => Padding(
+                padding: EdgeInsets.only(bottom: s.xs),
+                child: Text(
+                  'Lote ${lote.codigo} · ${lote.quantidade.toStringAsFixed(lote.quantidade % 1 == 0 ? 0 : 2)} un. · FEFO ${lote.ordemFefo}',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: t.textSecondary,
+                      ),
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailPaymentTile extends StatelessWidget {
+  const _DetailPaymentTile({required this.payment});
+
+  final InvoiceDetailPayment payment;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+    final s = context.spacing;
+
+    return Container(
+      width: double.infinity,
+      margin: EdgeInsets.only(bottom: s.sm),
+      padding: EdgeInsets.all(s.sm),
+      decoration: BoxDecoration(
+        color: t.bgSecondary.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(t.radiusMd),
+        border: Border.all(color: t.border.withValues(alpha: 0.35)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            payment.metodo,
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                  color: t.textPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+          SizedBox(height: s.xs),
+          Wrap(
+            spacing: s.sm,
+            runSpacing: s.xs,
+            children: [
+              _InlineMeta(label: 'Valor', value: formatMoney(payment.valor)),
+              _InlineMeta(label: 'Estado', value: payment.status),
+              _InlineMeta(label: 'Data', value: formatDateTime(payment.createdAt)),
+            ],
+          ),
+          if (payment.referencia != null) ...[
+            SizedBox(height: s.xs),
+            Text(
+              'Referência: ${payment.referencia}',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: t.textMuted,
+                  ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _DetailActions extends ConsumerWidget {
+  const _DetailActions({
+    required this.invoice,
+    required this.actionsAsColumn,
+    required this.isCancelling,
+    required this.canCancel,
+    this.onCancel,
+  });
+
+  final InvoiceSummary invoice;
+  final bool actionsAsColumn;
+  final bool isCancelling;
+  final bool canCancel;
+  final VoidCallback? onCancel;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final s = context.spacing;
+    final actionState = ref.watch(invoiceActionProvider);
+    final controller = ref.read(invoiceActionProvider.notifier);
+    final isBusy =
+        actionState.isSubmitting && actionState.activeInvoiceId == invoice.id;
+    final isPrinting = isBusy && actionState.lastAction == 'print';
+    final isExportingPdf = isBusy && actionState.lastAction == 'pdf';
+
+    Future<void> exportPdf() async {
+      try {
+        await controller.exportPdf(invoiceId: invoice.id);
+        if (!context.mounted) {
+          return;
+        }
+        PharmaSnackbar.showSuccess(context, 'PDF da fatura preparado no navegador.');
+      } on ApiFailure catch (e) {
+        if (!context.mounted) {
+          return;
+        }
+        PharmaSnackbar.showError(context, e.message);
+      } catch (_) {
+        if (!context.mounted) {
+          return;
+        }
+        PharmaSnackbar.showError(
+          context,
+          'Não foi possível exportar o PDF da fatura.',
+        );
+      }
+    }
+
+    Future<void> downloadPrintArtifact() async {
+      try {
+        await controller.downloadPrintArtifact(invoiceId: invoice.id);
+        if (!context.mounted) {
+          return;
+        }
+        PharmaSnackbar.showSuccess(
+          context,
+          'Artefacto de impressão descarregado com sucesso.',
+        );
+      } on ApiFailure catch (e) {
+        if (!context.mounted) {
+          return;
+        }
+        PharmaSnackbar.showError(context, e.message);
+      } catch (_) {
+        if (!context.mounted) {
+          return;
+        }
+        PharmaSnackbar.showError(
+          context,
+          'Não foi possível obter o artefacto de impressão.',
+        );
+      }
+    }
+
+    final children = <Widget>[
+      OutlinedButton.icon(
+        onPressed: isBusy ? null : downloadPrintArtifact,
+        icon: isPrinting
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.print_outlined),
+        label: const Text('Reimprimir'),
+      ),
+      OutlinedButton.icon(
+        onPressed: isBusy ? null : exportPdf,
+        icon: isExportingPdf
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.picture_as_pdf_outlined),
+        label: const Text('Exportar PDF'),
+      ),
+      FilledButton.icon(
+        onPressed: isBusy || isCancelling || !canCancel ? null : onCancel,
+        icon: isCancelling
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.block_rounded),
+        label: const Text('Cancelar fatura'),
+      ),
+    ];
+
+    if (actionsAsColumn) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          children[0],
+          SizedBox(height: s.sm),
+          children[1],
+          SizedBox(height: s.sm),
+          children[2],
+        ],
+      );
+    }
+
+    return Wrap(
+      spacing: s.sm,
+      runSpacing: s.sm,
+      children: children,
+    );
+  }
+}
+
+class _DetailLoadingState extends StatelessWidget {
+  const _DetailLoadingState({required this.invoice});
+
+  final InvoiceSummary invoice;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.spacing;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        DetailSection(
+          title: 'Dados da fatura',
+          children: [
+            DetailRow(label: 'Número', value: invoice.numero),
+            DetailRow(label: 'Cliente', value: invoice.cliente?.nome ?? 'Consumidor final'),
+            const DetailHint(text: 'A carregar detalhe completo da fatura...'),
+          ],
+        ),
+        SizedBox(height: s.lg),
+        const Center(child: CircularProgressIndicator()),
+      ],
+    );
+  }
+}
+
+class _DetailErrorState extends StatelessWidget {
+  const _DetailErrorState({
+    required this.message,
+    required this.onRetry,
+  });
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+    final s = context.spacing;
+    return DetailSection(
+      title: 'Detalhe indisponível',
+      children: [
+        Text(
+          message,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: t.textPrimary,
+              ),
+        ),
+        SizedBox(height: s.md),
+        OutlinedButton.icon(
+          onPressed: onRetry,
+          icon: const Icon(Icons.refresh_rounded),
+          label: const Text('Tentar novamente'),
+        ),
+      ],
+    );
+  }
+}
+
+class _InlineMeta extends StatelessWidget {
+  const _InlineMeta({
+    required this.label,
+    required this.value,
+  });
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+    return RichText(
+      text: TextSpan(
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: t.textMuted,
+            ),
+        children: [
+          TextSpan(text: '$label: '),
+          TextSpan(
+            text: value,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: t.textPrimary,
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+        ],
       ),
     );
   }

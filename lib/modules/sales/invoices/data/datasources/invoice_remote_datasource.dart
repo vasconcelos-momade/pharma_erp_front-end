@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -7,10 +10,20 @@ import '../../../../../core/contracts/pagination_response.dart';
 import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/network/dio/dio_provider.dart';
 import '../../domain/entities/invoice_summary.dart';
+import '../models/invoice_detail_model.dart';
 import '../models/invoice_summary_model.dart';
 
 abstract class InvoiceRemoteDataSource {
   Future<PaginationResponse<InvoiceSummaryModel>> listInvoices(InvoiceQuery query);
+
+  Future<InvoiceDetailModel> getInvoiceDetail(String invoiceId);
+
+  Future<({Uint8List bytes, String fileName, String contentType})> getInvoicePdf(
+    String invoiceId,
+  );
+
+  Future<({Uint8List bytes, String fileName, String contentType})>
+  getInvoicePrintArtifact(String invoiceId);
 
   Future<void> cancelInvoice({
     required String invoiceId,
@@ -70,6 +83,91 @@ class InvoiceRemoteDataSourceImpl implements InvoiceRemoteDataSource {
   }
 
   @override
+  Future<InvoiceDetailModel> getInvoiceDetail(String invoiceId) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        ApiConstants.tenantPosFaturaDetalhe(invoiceId),
+      );
+      final data = response.data;
+      if (data == null) {
+        throw const ApiFailure('Falha ao carregar detalhe da fatura.');
+      }
+      return InvoiceDetailModel.fromJson(ApiEnvelope.unwrapMap(data));
+    } on DioException catch (e) {
+      throw ApiFailure.fromDio(e);
+    }
+  }
+
+  @override
+  Future<({Uint8List bytes, String fileName, String contentType})> getInvoicePdf(
+    String invoiceId,
+  ) async {
+    try {
+      final response = await _dio.get<List<int>>(
+        ApiConstants.tenantPosFaturaPdf(invoiceId),
+        options: Options(responseType: ResponseType.bytes),
+      );
+
+      final rawBytes = response.data;
+      if (rawBytes == null || rawBytes.isEmpty) {
+        throw const ApiFailure('Falha ao carregar PDF da fatura.');
+      }
+
+      final headers = response.headers;
+      final disposition = headers.value('content-disposition');
+      final contentType =
+          headers.value(Headers.contentTypeHeader) ?? 'application/pdf';
+
+      return (
+        bytes: Uint8List.fromList(rawBytes),
+        fileName: _extractFileName(
+          disposition,
+          fallback: 'fatura-$invoiceId.pdf',
+        ),
+        contentType: contentType,
+      );
+    } on DioException catch (e) {
+      throw ApiFailure.fromDio(e);
+    }
+  }
+
+  @override
+  Future<({Uint8List bytes, String fileName, String contentType})>
+  getInvoicePrintArtifact(String invoiceId) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        ApiConstants.tenantPosFaturaPrint(invoiceId),
+      );
+      final data = response.data;
+      if (data == null) {
+        throw const ApiFailure('Falha ao carregar artefacto de impressão.');
+      }
+
+      final payload = ApiEnvelope.unwrapMap(data);
+      final payloadBase64 = payload['payloadBase64']?.toString();
+      if (payloadBase64 == null || payloadBase64.isEmpty) {
+        throw const ApiFailure('Resposta inválida do artefacto de impressão.');
+      }
+
+      return (
+        bytes: base64Decode(payloadBase64),
+        fileName:
+            payload['fileName']?.toString().trim().isNotEmpty == true
+            ? payload['fileName'].toString().trim()
+            : 'fatura-$invoiceId.escpos',
+        contentType:
+            payload['contentType']?.toString().trim().isNotEmpty == true
+            ? payload['contentType'].toString().trim()
+            : 'application/octet-stream',
+      );
+    } on DioException catch (e) {
+      throw ApiFailure.fromDio(e);
+    } on FormatException {
+      throw const ApiFailure('Payload de impressão inválido.');
+    }
+  }
+
+  @override
   Future<void> cancelInvoice({
     required String invoiceId,
     required String motivo,
@@ -106,6 +204,38 @@ class InvoiceRemoteDataSourceImpl implements InvoiceRemoteDataSource {
     if (value is String) {
       return int.tryParse(value) ?? fallback;
     }
+    return fallback;
+  }
+
+  String _extractFileName(String? disposition, {required String fallback}) {
+    if (disposition == null || disposition.trim().isEmpty) {
+      return fallback;
+    }
+
+    final utf8Match = RegExp(
+      r'''filename\*=UTF-8''([^;]+)''',
+      caseSensitive: false,
+    ).firstMatch(disposition);
+    if (utf8Match != null) {
+      return Uri.decodeComponent(utf8Match.group(1)!).trim();
+    }
+
+    final quotedMatch = RegExp(
+      r'filename="([^"]+)"',
+      caseSensitive: false,
+    ).firstMatch(disposition);
+    if (quotedMatch != null) {
+      return quotedMatch.group(1)!.trim();
+    }
+
+    final plainMatch = RegExp(
+      r'filename=([^;]+)',
+      caseSensitive: false,
+    ).firstMatch(disposition);
+    if (plainMatch != null) {
+      return plainMatch.group(1)!.trim();
+    }
+
     return fallback;
   }
 }
