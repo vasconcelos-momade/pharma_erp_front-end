@@ -13,6 +13,7 @@ class InvoiceDetailModel {
     required this.desconto,
     required this.ivaTotal,
     required this.total,
+    required this.troco,
     required this.moeda,
     required this.tipoPagamento,
     required this.tipoOperacao,
@@ -23,6 +24,7 @@ class InvoiceDetailModel {
     required this.documents,
     this.cancelledAt,
     this.qrCode,
+    this.valorRecebido,
     this.cliente,
     this.terminal,
     this.user,
@@ -42,10 +44,12 @@ class InvoiceDetailModel {
   final double desconto;
   final double ivaTotal;
   final double total;
+  final double troco;
   final String moeda;
   final String? tipoPagamento;
   final String? tipoOperacao;
   final String? qrCode;
+  final double? valorRecebido;
   final InvoiceDetailCustomerModel? cliente;
   final InvoiceDetailTerminalModel? terminal;
   final InvoiceDetailUserModel? user;
@@ -72,10 +76,14 @@ class InvoiceDetailModel {
       desconto: _asDouble(json['desconto']),
       ivaTotal: _asDouble(json['ivaTotal']),
       total: _asDouble(json['total']),
+      troco: _asDouble(json['troco']),
       moeda: _asString(json['moeda'], fallback: 'MT'),
       tipoPagamento: _asNullableString(json['tipoPagamento']),
       tipoOperacao: _asNullableString(json['tipoOperacao']),
       qrCode: _asNullableString(json['qrCode']),
+      valorRecebido: json['valorRecebido'] == null
+          ? null
+          : _asDouble(json['valorRecebido']),
       cliente: json['cliente'] is Map<String, dynamic>
           ? InvoiceDetailCustomerModel.fromJson(
               json['cliente'] as Map<String, dynamic>,
@@ -145,10 +153,12 @@ class InvoiceDetailModel {
       desconto: desconto,
       ivaTotal: ivaTotal,
       total: total,
+      troco: troco,
       moeda: moeda,
       tipoPagamento: tipoPagamento,
       tipoOperacao: tipoOperacao,
       qrCode: qrCode,
+      valorRecebido: valorRecebido,
       cliente: cliente?.toEntity(),
       terminal: terminal?.toEntity(),
       user: user?.toEntity(),

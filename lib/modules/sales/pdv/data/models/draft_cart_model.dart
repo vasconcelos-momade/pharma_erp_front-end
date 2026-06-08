@@ -14,10 +14,13 @@ class DraftCartItemModel {
     required this.valorIva,
     required this.total,
     required this.ivaPercentual,
+    required this.ivaLabel,
     this.taxRule,
     required this.requiresPrescription,
+    this.tipoDispensacao,
+    required this.requiresDoubleCheck,
+    required this.requiresPsychotropicBook,
     this.estoqueAtual,
-    this.estoqueDisponivel,
     this.tipoServicoClinico,
   });
 
@@ -33,10 +36,13 @@ class DraftCartItemModel {
   final double valorIva;
   final double total;
   final double ivaPercentual;
+  final String ivaLabel;
   final ProductTaxRule? taxRule;
   final bool requiresPrescription;
+  final String? tipoDispensacao;
+  final bool requiresDoubleCheck;
+  final bool requiresPsychotropicBook;
   final double? estoqueAtual;
-  final double? estoqueDisponivel;
   final String? tipoServicoClinico;
 
   bool get isProduto => tipo == 'produto';
@@ -59,11 +65,13 @@ class DraftCartItemModel {
       valorIva: _toDouble(json['valorIva']),
       total: _toDouble(json['total']),
       ivaPercentual: _toDouble(json['ivaPercentual']),
+      ivaLabel: json['ivaLabel'] as String? ?? 'IVA',
       taxRule: _parseTaxRule(json['taxRule']),
       requiresPrescription: json['requiresPrescription'] as bool? ?? false,
+      tipoDispensacao: json['tipoDispensacao'] as String?,
+      requiresDoubleCheck: json['requiresDoubleCheck'] as bool? ?? false,
+      requiresPsychotropicBook: json['requiresPsychotropicBook'] as bool? ?? false,
       estoqueAtual: json['estoqueAtual'] == null ? null : _toDouble(json['estoqueAtual']),
-      estoqueDisponivel:
-          json['estoqueDisponivel'] == null ? null : _toDouble(json['estoqueDisponivel']),
       tipoServicoClinico: json['tipoServicoClinico'] as String?,
     );
   }
@@ -97,6 +105,26 @@ class DraftCartItemModel {
   }
 }
 
+class DraftCartCheckoutModel {
+  const DraftCartCheckoutModel({
+    required this.requiresPatientDetails,
+    required this.taxLabel,
+  });
+
+  final bool requiresPatientDetails;
+  final String taxLabel;
+
+  factory DraftCartCheckoutModel.fromJson(Map<String, dynamic> json) {
+    return DraftCartCheckoutModel(
+      requiresPatientDetails:
+          json['requiresPatientDetails'] as bool? ??
+          json['requiresPrescription'] as bool? ??
+          false,
+      taxLabel: json['taxLabel'] as String? ?? 'IVA',
+    );
+  }
+}
+
 class DraftCartModel {
   const DraftCartModel({
     required this.id,
@@ -108,6 +136,7 @@ class DraftCartModel {
     required this.ivaTotal,
     required this.total,
     required this.items,
+    this.checkout,
   });
 
   final String id;
@@ -119,6 +148,7 @@ class DraftCartModel {
   final double ivaTotal;
   final double total;
   final List<DraftCartItemModel> items;
+  final DraftCartCheckoutModel? checkout;
 
   bool get hasDraft => id.isNotEmpty;
 
@@ -141,6 +171,11 @@ class DraftCartModel {
       ivaTotal: DraftCartItemModel._toDouble(json['ivaTotal']),
       total: DraftCartItemModel._toDouble(json['total']),
       items: items,
+      checkout: json['checkout'] is Map<String, dynamic>
+          ? DraftCartCheckoutModel.fromJson(
+              json['checkout'] as Map<String, dynamic>,
+            )
+          : null,
     );
   }
 
@@ -155,6 +190,10 @@ class DraftCartModel {
       ivaTotal: 0,
       total: 0,
       items: const [],
+      checkout: const DraftCartCheckoutModel(
+        requiresPatientDetails: false,
+        taxLabel: 'IVA',
+      ),
     );
   }
 }

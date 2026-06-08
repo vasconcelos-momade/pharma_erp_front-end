@@ -252,6 +252,13 @@ class _LoadedInvoiceDetail extends StatelessWidget {
             DetailRow(label: 'Desconto', value: formatMoney(detail.desconto)),
             DetailRow(label: 'IVA', value: formatMoney(detail.ivaTotal)),
             DetailRow(label: 'Total', value: formatMoney(detail.total)),
+            DetailRow(
+              label: 'Valor recebido',
+              value: detail.valorRecebido == null
+                  ? '-'
+                  : formatMoney(detail.valorRecebido!),
+            ),
+            DetailRow(label: 'Troco', value: formatMoney(detail.troco)),
             DetailRow(label: 'Moeda', value: detail.moeda),
           ],
         ),
@@ -461,7 +468,10 @@ class _DetailActions extends ConsumerWidget {
         if (!context.mounted) {
           return;
         }
-        PharmaSnackbar.showSuccess(context, 'PDF da fatura preparado no navegador.');
+        PharmaSnackbar.showSuccess(
+          context,
+          'PDF da fatura disponibilizado com sucesso.',
+        );
       } on ApiFailure catch (e) {
         if (!context.mounted) {
           return;
@@ -478,15 +488,15 @@ class _DetailActions extends ConsumerWidget {
       }
     }
 
-    Future<void> downloadPrintArtifact() async {
+    Future<void> printReceipt() async {
       try {
-        await controller.downloadPrintArtifact(invoiceId: invoice.id);
+        await controller.printReceipt(invoiceId: invoice.id);
         if (!context.mounted) {
           return;
         }
         PharmaSnackbar.showSuccess(
           context,
-          'Artefacto de impressão descarregado com sucesso.',
+          'Recibo de reimpressão disponibilizado com sucesso.',
         );
       } on ApiFailure catch (e) {
         if (!context.mounted) {
@@ -499,14 +509,14 @@ class _DetailActions extends ConsumerWidget {
         }
         PharmaSnackbar.showError(
           context,
-          'Não foi possível obter o artefacto de impressão.',
+          'Não foi possível preparar o recibo para impressão.',
         );
       }
     }
 
     final children = <Widget>[
       OutlinedButton.icon(
-        onPressed: isBusy ? null : downloadPrintArtifact,
+        onPressed: isBusy ? null : printReceipt,
         icon: isPrinting
             ? const SizedBox(
                 width: 16,

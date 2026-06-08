@@ -8,7 +8,6 @@ import '../../../../pharmacy/products/presentation/providers/product_provider.da
 import '../../../invoices/services/invoice_cache_policy.dart';
 import '../../../invoices/presentation/providers/invoice_list_provider.dart';
 import '../../data/repositories/pdv_cart_repository_impl.dart';
-import '../../domain/entities/pdv_cart_line.dart';
 import '../../domain/entities/pdv_checkout.dart';
 import 'caixa_sessao_provider.dart';
 import 'pdv_cart_provider.dart';
@@ -40,8 +39,8 @@ class PdvCheckoutController extends Notifier<PdvCheckoutState> {
 
   Future<PdvCheckoutResult> finalizarVenda({
     required PdvPaymentMethod metodoPagamento,
-    required List<PdvCartLine> lines,
     PdvCheckoutPatient? paciente,
+    double? valorRecebido,
   }) async {
     final sessao = ref.read(caixaSessaoProvider).sessaoAtual;
     final cartState = ref.read(pdvCartProvider);
@@ -62,8 +61,8 @@ class PdvCheckoutController extends Notifier<PdvCheckoutState> {
             terminalId: terminalId,
             idempotencyKey: idempotencyKey,
             metodoPagamento: metodoPagamento,
-            lines: lines,
             paciente: paciente,
+            valorRecebido: valorRecebido,
           );
       if (result.cartReset) {
         ref

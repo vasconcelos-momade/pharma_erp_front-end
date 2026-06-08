@@ -45,6 +45,9 @@ class DensityTokens {
   final EdgeInsets buttonPadding;
   final EdgeInsets inputPadding;
 
+  /// Margens do conteúdo principal (shell das páginas de módulo).
+  EdgeInsets get pageInsets => EdgeInsets.fromLTRB(gutter, md, gutter, lg);
+
   static const DensityTokens mobile = DensityTokens(
     level: DensityLevel.mobile,
     xxs: 2,
@@ -55,8 +58,8 @@ class DensityTokens {
     xl: 16,
     xxl: 20,
     xxxl: 24,
-    gutter: 16,
-    page: 24,
+    gutter: 12,
+    page: 12,
     cardPadding: EdgeInsets.all(12),
     buttonPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
     inputPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -72,8 +75,8 @@ class DensityTokens {
     xl: 20,
     xxl: 24,
     xxxl: 32,
-    gutter: 24,
-    page: 32,
+    gutter: 16,
+    page: 16,
     cardPadding: EdgeInsets.all(16),
     buttonPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     inputPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -89,8 +92,8 @@ class DensityTokens {
     xl: 20,
     xxl: 24,
     xxxl: 32,
-    gutter: 24,
-    page: 32,
+    gutter: 16,
+    page: 16,
     cardPadding: EdgeInsets.all(16),
     buttonPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
     inputPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),

@@ -11,7 +11,9 @@ import '../models/draft_sale_model.dart';
 import '../models/finalizar_venda_model.dart';
 
 abstract class PdvRemoteDataSource {
-  Future<DraftCartModel> getDraftCart({required String idempotencyKey});
+  Future<DraftCartModel> getDraftCart({
+    required String idempotencyKey,
+  });
   Future<DraftCartModel> addDraftCartItem({
     required String idempotencyKey,
     String? produtoId,
@@ -100,11 +102,15 @@ class PdvRemoteDataSourceImpl implements PdvRemoteDataSource {
   }
 
   @override
-  Future<DraftCartModel> getDraftCart({required String idempotencyKey}) async {
+  Future<DraftCartModel> getDraftCart({
+    required String idempotencyKey,
+  }) async {
     return _mutateDraftCart(
       _dio.get<Map<String, dynamic>>(
         ApiConstants.tenantPosDraftCart,
-        queryParameters: {'idempotencyKey': idempotencyKey},
+        queryParameters: {
+          'idempotencyKey': idempotencyKey,
+        },
       ),
     );
   }

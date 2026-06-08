@@ -3,6 +3,7 @@ import '../entities/product.dart';
 
 abstract class ProductRepository {
   Future<String?> fetchCatalogVersion();
+  Future<List<Product>> listCatalogProducts();
 
   Future<PaginationResponse<Product>> searchProducts({
     String? query,

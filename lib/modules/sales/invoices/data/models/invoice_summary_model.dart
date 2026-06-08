@@ -8,10 +8,12 @@ class InvoiceSummaryModel {
     required this.subtotal,
     required this.ivaTotal,
     required this.total,
+    required this.troco,
     required this.estado,
     required this.tipoPagamento,
     required this.createdAt,
     this.cancelledAt,
+    this.valorRecebido,
     this.cliente,
     this.terminal,
     this.user,
@@ -25,10 +27,12 @@ class InvoiceSummaryModel {
   final double subtotal;
   final double ivaTotal;
   final double total;
+  final double troco;
   final String estado;
   final String? tipoPagamento;
   final DateTime createdAt;
   final DateTime? cancelledAt;
+  final double? valorRecebido;
   final InvoiceCustomerSummaryModel? cliente;
   final InvoiceTerminalSummaryModel? terminal;
   final InvoiceUserSummaryModel? user;
@@ -43,10 +47,14 @@ class InvoiceSummaryModel {
       subtotal: _asDouble(json['subtotal']),
       ivaTotal: _asDouble(json['ivaTotal']),
       total: _asDouble(json['total']),
+      troco: _asDouble(json['troco']),
       estado: _asString(json['estado']),
       tipoPagamento: _asNullableString(json['tipoPagamento']),
       createdAt: _asDate(json['createdAt']) ?? DateTime.now(),
       cancelledAt: _asDate(json['cancelledAt']),
+      valorRecebido: json['valorRecebido'] == null
+          ? null
+          : _asDouble(json['valorRecebido']),
       cliente: json['cliente'] is Map<String, dynamic>
           ? InvoiceCustomerSummaryModel.fromJson(
               json['cliente'] as Map<String, dynamic>,
@@ -75,10 +83,12 @@ class InvoiceSummaryModel {
       subtotal: subtotal,
       ivaTotal: ivaTotal,
       total: total,
+      troco: troco,
       estado: estado,
       tipoPagamento: tipoPagamento,
       createdAt: createdAt,
       cancelledAt: cancelledAt,
+      valorRecebido: valorRecebido,
       cliente: cliente?.toEntity(),
       terminal: terminal?.toEntity(),
       user: user?.toEntity(),

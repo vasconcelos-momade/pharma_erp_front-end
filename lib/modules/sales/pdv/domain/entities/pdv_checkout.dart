@@ -49,6 +49,7 @@ class PdvCheckoutResult {
     required this.subtotal,
     required this.ivaTotal,
     required this.total,
+    this.troco = 0,
     this.items = const [],
     required this.cartReset,
     required this.nextCartIdempotencyKey,
@@ -60,6 +61,7 @@ class PdvCheckoutResult {
   final double subtotal;
   final double ivaTotal;
   final double total;
+  final double troco;
   final List<PdvCheckoutLine> items;
   final bool cartReset;
   final String nextCartIdempotencyKey;

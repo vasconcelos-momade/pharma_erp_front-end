@@ -1,21 +1,19 @@
 class PdvStockValidationModel {
   const PdvStockValidationModel({
-    required this.permitido,
-    required this.estoqueDisponivel,
-    required this.quantidadeDisponivel,
+    required this.canAdd,
+    required this.maximumAllowedQuantity,
     required this.mensagem,
   });
 
-  final bool permitido;
-  final bool estoqueDisponivel;
-  final int quantidadeDisponivel;
+  final bool canAdd;
+  final int maximumAllowedQuantity;
   final String mensagem;
 
   factory PdvStockValidationModel.fromJson(Map<String, dynamic> json) {
     return PdvStockValidationModel(
-      permitido: json['permitido'] as bool? ?? false,
-      estoqueDisponivel: json['estoqueDisponivel'] as bool? ?? false,
-      quantidadeDisponivel: _toInt(json['quantidadeDisponivel']),
+      canAdd: json['canAdd'] as bool? ?? json['permitido'] as bool? ?? false,
+      maximumAllowedQuantity:
+          _toInt(json['maximumAllowedQuantity'] ?? json['quantidadeDisponivel']),
       mensagem: json['mensagem'] as String? ?? 'Falha ao validar stock.',
     );
   }

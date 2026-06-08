@@ -11,4 +11,5 @@ abstract final class StorageConstants {
   static const apiKeyCloud = 'api.key.cloud';
   static const deviceId = 'device.id';
   static const connectionMode = 'network.connection_mode';
+  static const thermalPrinterDefault = 'printing.thermal.default';
 }

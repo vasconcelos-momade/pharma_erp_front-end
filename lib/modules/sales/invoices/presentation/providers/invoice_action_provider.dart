@@ -2,8 +2,11 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../../core/utils/browser_file_handler.dart';
 import '../../../../../core/errors/api_failure.dart';
+import '../../../../../core/security/secure_storage_service.dart';
+import '../../../../../core/utils/browser_file_handler.dart';
+import '../../../../../platform/printing/thermal/printer_connection.dart';
+import '../../../../../platform/printing/thermal/thermal_printer_service.dart';
 import '../../data/repositories/invoice_repository_impl.dart';
 import '../../services/invoice_cache_policy.dart';
 import 'invoice_detail_provider.dart';
@@ -45,6 +48,31 @@ class InvoiceActionController extends Notifier<InvoiceActionState> {
   @override
   InvoiceActionState build() => const InvoiceActionState();
 
+  Future<void> _openInvoicePdf(String invoiceId) async {
+    final document = await ref.read(invoiceRepositoryProvider).getInvoicePdf(
+          invoiceId,
+        );
+
+    await BrowserFileHandler.openBytes(
+      bytes: document.bytes,
+      fileName: document.fileName,
+      contentType: document.contentType,
+    );
+  }
+
+  Future<PrinterConnection?> _readDefaultPrinterConnection() async {
+    final raw = await ref.read(secureStorageProvider).readThermalPrinterDefault();
+    if (raw == null || raw.trim().isEmpty) {
+      return null;
+    }
+
+    try {
+      return PrinterConnection.fromStorageValue(raw);
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<void> exportPdf({
     required String invoiceId,
   }) async {
@@ -56,15 +84,7 @@ class InvoiceActionController extends Notifier<InvoiceActionState> {
     );
 
     try {
-      final document = await ref.read(invoiceRepositoryProvider).getInvoicePdf(
-            invoiceId,
-          );
-
-      await BrowserFileHandler.openBytes(
-        bytes: document.bytes,
-        fileName: document.fileName,
-        contentType: document.contentType,
-      );
+      await _openInvoicePdf(invoiceId);
 
       state = state.copyWith(
         isSubmitting: false,
@@ -88,7 +108,7 @@ class InvoiceActionController extends Notifier<InvoiceActionState> {
     }
   }
 
-  Future<void> downloadPrintArtifact({
+  Future<void> printReceipt({
     required String invoiceId,
   }) async {
     state = state.copyWith(
@@ -99,16 +119,32 @@ class InvoiceActionController extends Notifier<InvoiceActionState> {
     );
 
     try {
+      final connection = await _readDefaultPrinterConnection();
+      if (connection == null) {
+        await _openInvoicePdf(invoiceId);
+        state = state.copyWith(
+          isSubmitting: false,
+          clearActiveInvoice: true,
+          clearError: true,
+        );
+        return;
+      }
+
       final artifact =
           await ref.read(invoiceRepositoryProvider).getInvoicePrintArtifact(
                 invoiceId,
               );
 
-      await BrowserFileHandler.downloadBytes(
-        bytes: artifact.bytes,
-        fileName: artifact.fileName,
-        contentType: artifact.contentType,
-      );
+      try {
+        await ThermalPrinterService.printReceipt(
+          bytes: artifact.bytes,
+          fileName: artifact.fileName,
+          contentType: artifact.contentType,
+          connection: connection,
+        );
+      } catch (_) {
+        await _openInvoicePdf(invoiceId);
+      }
 
       state = state.copyWith(
         isSubmitting: false,

@@ -24,9 +24,8 @@ class PdvStockRepositoryImpl implements PdvStockRepository {
 
   PdvStockValidation _toEntity(PdvStockValidationModel model) {
     return PdvStockValidation(
-      permitido: model.permitido,
-      estoqueDisponivel: model.estoqueDisponivel,
-      quantidadeDisponivel: model.quantidadeDisponivel,
+      canAdd: model.canAdd,
+      maximumAllowedQuantity: model.maximumAllowedQuantity,
       mensagem: model.mensagem,
     );
   }

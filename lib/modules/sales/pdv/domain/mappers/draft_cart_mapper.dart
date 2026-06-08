@@ -12,10 +12,10 @@ abstract final class DraftCartMapper {
       id: item.produtoId ?? '',
       nome: item.nome,
       ativo: true,
-      tipoDispensacao: 'VENDA_LIVRE',
+      tipoDispensacao: item.tipoDispensacao ?? 'VENDA_LIVRE',
       requiresPrescription: item.requiresPrescription,
-      requiresDoubleCheck: false,
-      requiresPsychotropicBook: false,
+      requiresDoubleCheck: item.requiresDoubleCheck,
+      requiresPsychotropicBook: item.requiresPsychotropicBook,
       precoVenda: item.precoUnit,
       estoqueAtual: item.estoqueAtual ?? 0,
       estoqueMinimo: 0,
@@ -38,17 +38,26 @@ abstract final class DraftCartMapper {
         serviceFromItem(item),
         item.quantidade,
         faturaItemId: item.id,
+        lineTotal: item.total,
+        baseCalculo: item.baseCalculo,
+        valorIva: item.valorIva,
+        ivaLabel: item.ivaLabel,
       );
     }
     return PdvCartLine.product(
       productFromItem(item),
       item.quantidade,
       faturaItemId: item.id,
+      lineTotal: item.total,
+      baseCalculo: item.baseCalculo,
+      valorIva: item.valorIva,
+      ivaLabel: item.ivaLabel,
     );
   }
 
   static PdvCart toEntity(DraftCartModel model) {
     final lines = model.items.map(lineFromItem).toList();
+    final checkout = model.checkout;
 
     return PdvCart(
       draftFaturaId: model.hasDraft ? model.id : null,
@@ -58,6 +67,8 @@ abstract final class DraftCartMapper {
       tax: model.ivaTotal,
       discount: model.desconto,
       total: model.total,
+      taxLabel: checkout?.taxLabel ?? 'IVA',
+      requiresPatientDetails: checkout?.requiresPatientDetails ?? false,
     );
   }
 }

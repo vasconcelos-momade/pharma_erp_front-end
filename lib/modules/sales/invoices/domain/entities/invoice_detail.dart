@@ -11,6 +11,7 @@ class InvoiceDetail {
     required this.desconto,
     required this.ivaTotal,
     required this.total,
+    required this.troco,
     required this.moeda,
     required this.tipoPagamento,
     required this.tipoOperacao,
@@ -21,6 +22,7 @@ class InvoiceDetail {
     required this.documents,
     this.cancelledAt,
     this.qrCode,
+    this.valorRecebido,
     this.cliente,
     this.terminal,
     this.user,
@@ -40,10 +42,12 @@ class InvoiceDetail {
   final double desconto;
   final double ivaTotal;
   final double total;
+  final double troco;
   final String moeda;
   final String? tipoPagamento;
   final String? tipoOperacao;
   final String? qrCode;
+  final double? valorRecebido;
   final InvoiceDetailCustomer? cliente;
   final InvoiceDetailTerminal? terminal;
   final InvoiceDetailUser? user;
@@ -77,10 +81,12 @@ class InvoiceDetail {
       desconto: desconto,
       ivaTotal: ivaTotal,
       total: total,
+      troco: troco,
       moeda: moeda,
       tipoPagamento: tipoPagamento,
       tipoOperacao: tipoOperacao,
       qrCode: qrCode,
+      valorRecebido: valorRecebido,
       cliente: cliente,
       terminal: terminal,
       user: user,

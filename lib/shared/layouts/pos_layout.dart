@@ -202,7 +202,7 @@ class PosLayout extends ConsumerWidget {
           ),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
+              padding: t.density.pageInsets,
               child: child,
             ),
           ),

@@ -103,6 +103,17 @@ class SecureStorageService {
     return id;
   }
 
+  Future<void> writeThermalPrinterDefault(String? json) async {
+    if (json == null || json.isEmpty) {
+      await _storage.delete(key: StorageConstants.thermalPrinterDefault);
+      return;
+    }
+    await _storage.write(key: StorageConstants.thermalPrinterDefault, value: json);
+  }
+
+  Future<String?> readThermalPrinterDefault() =>
+      _storage.read(key: StorageConstants.thermalPrinterDefault);
+
   Future<void> clearAuth() async {
     await Future.wait<void>([
       _storage.delete(key: StorageConstants.accessToken),

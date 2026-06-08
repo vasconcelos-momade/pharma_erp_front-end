@@ -18,9 +18,9 @@ abstract final class AppSpacing {
   static const double xl = 20;
   static const double xxl = 24;
   static const double xxxl = 32;
-  static const double gutter = 24;
-  static const double page = 32;
+  static const double gutter = 16;
+  static const double page = 16;
 
-  static const EdgeInsets pagePadding = EdgeInsets.fromLTRB(lg, lg, lg, xxxl);
+  static const EdgeInsets pagePadding = EdgeInsets.fromLTRB(gutter, md, gutter, lg);
   static const EdgeInsets cardPadding = EdgeInsets.all(lg);
 }

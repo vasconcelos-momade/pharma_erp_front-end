@@ -9,22 +9,21 @@ import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
 import '../../../../../shared/widgets/feedback/pharma_snackbar.dart';
-import '../../domain/entities/pdv_cart_line.dart';
 import '../../domain/entities/pdv_checkout.dart';
 import '../providers/pdv_checkout_provider.dart';
 
 Future<PdvCheckoutResult?> showFinalizarVendaDialog(
   BuildContext context, {
-  required List<PdvCartLine> lines,
   required double total,
+  required bool requiresPatientDetails,
 }) {
   final breakpoint = pharmaDialogBreakpointForWidth(MediaQuery.sizeOf(context).width);
   if (breakpoint == PharmaDialogBreakpoint.mobile) {
     return Navigator.of(context).push<PdvCheckoutResult>(
       MaterialPageRoute(
         builder: (_) => FinalizarVendaDialog(
-          lines: lines,
           total: total,
+          requiresPatientDetails: requiresPatientDetails,
           presentation: FinalizarVendaPresentation.screen,
         ),
       ),
@@ -34,8 +33,8 @@ Future<PdvCheckoutResult?> showFinalizarVendaDialog(
   return showPharmaResponsiveDialog<PdvCheckoutResult>(
     context: context,
     builder: (_) => FinalizarVendaDialog(
-      lines: lines,
       total: total,
+      requiresPatientDetails: requiresPatientDetails,
       presentation: FinalizarVendaPresentation.dialog,
     ),
   );
@@ -49,13 +48,13 @@ enum FinalizarVendaPresentation {
 class FinalizarVendaDialog extends ConsumerStatefulWidget {
   const FinalizarVendaDialog({
     super.key,
-    required this.lines,
     required this.total,
+    required this.requiresPatientDetails,
     this.presentation = FinalizarVendaPresentation.dialog,
   });
 
-  final List<PdvCartLine> lines;
   final double total;
+  final bool requiresPatientDetails;
   final FinalizarVendaPresentation presentation;
 
   @override
@@ -75,23 +74,11 @@ class _FinalizarVendaDialogState
 
   PdvPaymentMethod _selectedMethod = PdvPaymentMethod.dinheiro;
 
-  bool get _requiresPrescription => widget.lines.any(
-        (line) => line.product?.requiresPrescription ?? false,
-      );
-
   bool get _isCashPayment => _selectedMethod == PdvPaymentMethod.dinheiro;
 
   double? get _valorRecebido => _parseCheckoutMoneyInput(
         _valorRecebidoController.text,
       );
-
-  double get _troco {
-    final recebido = _valorRecebido;
-    if (recebido == null || recebido <= widget.total) {
-      return 0;
-    }
-    return recebido - widget.total;
-  }
 
   @override
   void initState() {
@@ -128,8 +115,8 @@ class _FinalizarVendaDialogState
     try {
       final result = await ref.read(pdvCheckoutProvider.notifier).finalizarVenda(
             metodoPagamento: _selectedMethod,
-            lines: widget.lines,
-            paciente: _requiresPrescription
+            valorRecebido: _isCashPayment ? _valorRecebido : null,
+            paciente: widget.requiresPatientDetails
                 ? PdvCheckoutPatient(
                     nome: _nomeController.text.trim(),
                     idade: int.tryParse(_idadeController.text.trim()) ?? 0,
@@ -168,11 +155,11 @@ class _FinalizarVendaDialogState
         prefixIcon: Icon(Icons.person_outline_rounded),
       ),
       validator: (value) {
-        if (!_requiresPrescription) {
+        if (!widget.requiresPatientDetails) {
           return null;
         }
         if (value == null || value.trim().isEmpty) {
-          return 'Informe o nome do paciente.';
+          return 'Campo obrigatório.';
         }
         return null;
       },
@@ -189,12 +176,11 @@ class _FinalizarVendaDialogState
         prefixIcon: Icon(Icons.cake_outlined),
       ),
       validator: (value) {
-        if (!_requiresPrescription) {
+        if (!widget.requiresPatientDetails) {
           return null;
         }
-        final idade = int.tryParse(value?.trim() ?? '');
-        if (idade == null || idade <= 0) {
-          return 'Informe uma idade válida.';
+        if (value == null || value.trim().isEmpty) {
+          return 'Campo obrigatório.';
         }
         return null;
       },
@@ -209,11 +195,11 @@ class _FinalizarVendaDialogState
         prefixIcon: Icon(Icons.badge_outlined),
       ),
       validator: (value) {
-        if (!_requiresPrescription) {
+        if (!widget.requiresPatientDetails) {
           return null;
         }
         if (value == null || value.trim().isEmpty) {
-          return 'Informe o NID da receita/doente.';
+          return 'Campo obrigatório.';
         }
         return null;
       },
@@ -228,11 +214,11 @@ class _FinalizarVendaDialogState
         prefixIcon: Icon(Icons.medical_information_outlined),
       ),
       validator: (value) {
-        if (!_requiresPrescription) {
+        if (!widget.requiresPatientDetails) {
           return null;
         }
         if (value == null || value.trim().isEmpty) {
-          return 'Informe o prescritor.';
+          return 'Campo obrigatório.';
         }
         return null;
       },
@@ -247,11 +233,11 @@ class _FinalizarVendaDialogState
         prefixIcon: Icon(Icons.local_hospital_outlined),
       ),
       validator: (value) {
-        if (!_requiresPrescription) {
+        if (!widget.requiresPatientDetails) {
           return null;
         }
         if (value == null || value.trim().isEmpty) {
-          return 'Informe a unidade sanitária.';
+          return 'Campo obrigatório.';
         }
         return null;
       },
@@ -266,7 +252,6 @@ class _FinalizarVendaDialogState
       inputFormatters: [
         FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
       ],
-      onChanged: (_) => setState(() {}),
       decoration: const InputDecoration(
         labelText: 'Valor recebido',
         prefixIcon: Icon(Icons.payments_outlined),
@@ -278,48 +263,10 @@ class _FinalizarVendaDialogState
         }
         final recebido = _parseCheckoutMoneyInput(value ?? '');
         if (recebido == null) {
-          return 'Informe o valor recebido.';
-        }
-        if (recebido < widget.total) {
-          return 'O valor recebido deve cobrir o total da venda.';
+          return 'Campo obrigatório.';
         }
         return null;
       },
-    );
-  }
-
-  Widget _buildTrocoCard(BuildContext context) {
-    final t = context.pharmaTokens;
-    final s = context.spacing;
-
-    return Container(
-      padding: EdgeInsets.all(s.md),
-      decoration: BoxDecoration(
-        color: t.brandGreen.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(AppRadius.card(t)),
-        border: Border.all(
-          color: t.brandGreen.withValues(alpha: 0.2),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            'Troco',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: t.textPrimary,
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
-          Text(
-            _formatCheckoutMoney(_troco),
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: t.brandGreen,
-                  fontWeight: FontWeight.w800,
-                ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -379,7 +326,7 @@ class _FinalizarVendaDialogState
         mainAxisSize: MainAxisSize.min,
         children: [
           _CheckoutSummaryCard(total: widget.total),
-          if (_requiresPrescription) ...[
+          if (widget.requiresPatientDetails) ...[
             SizedBox(height: s.lg),
             Text(
               'Dados do paciente',
@@ -390,7 +337,7 @@ class _FinalizarVendaDialogState
             ),
             SizedBox(height: s.xs),
             Text(
-              'Itens com receita exigem identificação do paciente e prescritor.',
+              'O backend exigiu identificação do paciente e do prescritor para concluir esta venda.',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: t.textMuted,
                   ),
@@ -479,21 +426,14 @@ class _FinalizarVendaDialogState
           ),
           if (_isCashPayment) ...[
             SizedBox(height: s.md),
-            _ResponsiveFormGrid(
-              items: [
-                _ResponsiveFormGridItem(
-                  child: _buildValorRecebidoField(
-                    !checkoutState.isSubmitting,
+            Text(
+              'O valor recebido é enviado ao backend e qualquer validação ou troco vem apenas na resposta final da venda.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: t.textMuted,
                   ),
-                ),
-                _ResponsiveFormGridItem(
-                  child: _buildTrocoCard(context),
-                ),
-              ],
-              mobileColumns: 1,
-              tabletColumns: 2,
-              desktopColumns: 2,
             ),
+            SizedBox(height: s.sm),
+            _buildValorRecebidoField(!checkoutState.isSubmitting),
           ],
           if (checkoutState.errorMessage != null) ...[
             SizedBox(height: s.md),

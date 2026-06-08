@@ -8,6 +8,10 @@ class PdvCartLine {
     required this.nome,
     required this.precoUnitario,
     required this.qty,
+    required this.lineTotal,
+    required this.baseCalculo,
+    required this.valorIva,
+    required this.ivaLabel,
     this.faturaItemId,
     this.product,
     this.service,
@@ -17,13 +21,22 @@ class PdvCartLine {
     Product product,
     int qty, {
     String? faturaItemId,
+    double? lineTotal,
+    double? baseCalculo,
+    double? valorIva,
+    String? ivaLabel,
   }) {
+    final total = lineTotal ?? product.precoVenda * qty;
     return PdvCartLine._(
       id: 'produto:${product.id}',
       faturaItemId: faturaItemId,
       nome: product.nome,
       precoUnitario: product.precoVenda,
       qty: qty,
+      lineTotal: total,
+      baseCalculo: baseCalculo ?? total,
+      valorIva: valorIva ?? 0,
+      ivaLabel: ivaLabel ?? 'IVA',
       product: product,
     );
   }
@@ -35,13 +48,22 @@ class PdvCartLine {
     PdvService service,
     int qty, {
     String? faturaItemId,
+    double? lineTotal,
+    double? baseCalculo,
+    double? valorIva,
+    String? ivaLabel,
   }) {
+    final total = lineTotal ?? service.preco * qty;
     return PdvCartLine._(
       id: 'servico:${service.id}',
       faturaItemId: faturaItemId,
       nome: service.nome,
       precoUnitario: service.preco,
       qty: qty,
+      lineTotal: total,
+      baseCalculo: baseCalculo ?? total,
+      valorIva: valorIva ?? 0,
+      ivaLabel: ivaLabel ?? 'IVA',
       service: service,
     );
   }
@@ -50,6 +72,10 @@ class PdvCartLine {
   final String nome;
   final double precoUnitario;
   final int qty;
+  final double lineTotal;
+  final double baseCalculo;
+  final double valorIva;
+  final String ivaLabel;
   /// ID do `fatura_itens` no backend (obrigatório para +/- e remover via API).
   final String? faturaItemId;
   final Product? product;

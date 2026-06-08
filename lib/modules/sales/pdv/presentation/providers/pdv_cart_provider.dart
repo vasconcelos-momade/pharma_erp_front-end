@@ -33,6 +33,7 @@ class PdvCartState {
   double get tax => cart.tax;
   double get discount => cart.discount;
   double get total => cart.total;
+  bool get requiresPatientDetails => cart.requiresPatientDetails;
 
   bool isLineBusy(String lineId) => isMutating && busyLineId == lineId;
 
@@ -113,17 +114,7 @@ class PdvCartController extends Notifier<PdvCartState> {
             idempotencyKey: ctx.idempotencyKey,
           );
       _didLoadForSession = true;
-      _applyCart(
-        PdvCart(
-          draftFaturaId: cart.draftFaturaId,
-          idempotencyKey: ctx.idempotencyKey,
-          lines: cart.lines,
-          subtotal: cart.subtotal,
-          tax: cart.tax,
-          discount: cart.discount,
-          total: cart.total,
-        ),
-      );
+      _applyCart(cart.copyWith(idempotencyKey: ctx.idempotencyKey));
     } on ApiFailure {
       state = state.copyWith(isLoading: false, clearBusyLineId: true);
       rethrow;
@@ -266,7 +257,9 @@ class PdvCartController extends Notifier<PdvCartState> {
 }
 
 extension on PdvCart {
-  PdvCart copyWith({String? idempotencyKey}) {
+  PdvCart copyWith({
+    String? idempotencyKey,
+  }) {
     return PdvCart(
       draftFaturaId: draftFaturaId,
       idempotencyKey: idempotencyKey ?? this.idempotencyKey,
@@ -275,6 +268,8 @@ extension on PdvCart {
       tax: tax,
       discount: discount,
       total: total,
+      taxLabel: taxLabel,
+      requiresPatientDetails: requiresPatientDetails,
     );
   }
 }

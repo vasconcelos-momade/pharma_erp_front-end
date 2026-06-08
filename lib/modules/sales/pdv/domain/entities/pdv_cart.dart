@@ -10,6 +10,8 @@ class PdvCart {
     this.tax = 0,
     this.discount = 0,
     this.total = 0,
+    this.taxLabel = 'IVA',
+    this.requiresPatientDetails = false,
   });
 
   final String? draftFaturaId;
@@ -19,17 +21,8 @@ class PdvCart {
   final double tax;
   final double discount;
   final double total;
+  final String taxLabel;
+  final bool requiresPatientDetails;
 
   bool get isEmpty => lines.isEmpty;
-
-  String get taxLabel {
-    if (tax <= 0) {
-      return 'IVA (isento)';
-    }
-    if (subtotal <= 0) {
-      return 'IVA';
-    }
-    final pct = (tax / subtotal * 100).round();
-    return 'IVA ($pct%)';
-  }
 }

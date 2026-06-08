@@ -34,6 +34,14 @@ abstract final class ApiConstants {
   static const tenantPosSessaoCaixaAtual = '/tenant/pos/sessions/current';
   static const tenantPosCaixasDisponiveis = '/tenant/pos/caixas/available';
   static const tenantPosTaxRules = '/tenant/pos/tax-rules';
+  static const tenantFornecedores = '/tenant/fornecedores';
+  static const tenantCompras = '/tenant/compras';
+  static String tenantCompraDetalhe(String compraId) => '/tenant/compras/$compraId';
+  static String tenantCompraItens(String compraId) => '/tenant/compras/$compraId/items';
+  static String tenantCompraItemRemover(String compraId, String itemId) =>
+      '/tenant/compras/$compraId/items/$itemId';
+  static String tenantCompraConfirmar(String compraId) =>
+      '/tenant/compras/$compraId/confirmar';
 
   static const headerAuthorization = 'Authorization';
   static const headerTenantId = 'x-tenant-id';

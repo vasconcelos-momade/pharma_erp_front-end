@@ -77,8 +77,8 @@ class FinalizarVendaRequestModel {
   final String? clienteId;
   final String terminalId;
   final MetodoPagamentoModel metodoPagamento;
-  final List<FinalizarVendaItemRequestModel> items;
   final String? idempotencyKey;
+  final double? valorRecebido;
   final PacienteCheckoutModel? paciente;
   final ReceitaCheckoutModel? receita;
   final String? observacoes;
@@ -87,8 +87,8 @@ class FinalizarVendaRequestModel {
     this.clienteId,
     required this.terminalId,
     required this.metodoPagamento,
-    required this.items,
     this.idempotencyKey,
+    this.valorRecebido,
     this.paciente,
     this.receita,
     this.observacoes,
@@ -100,7 +100,7 @@ class FinalizarVendaRequestModel {
       'terminalId': terminalId,
       'metodoPagamento': metodoPagamento.apiValue,
       if (idempotencyKey != null) 'idempotencyKey': idempotencyKey,
-      'items': items.map((e) => e.toJson()).toList(),
+      if (valorRecebido != null) 'valorRecebido': valorRecebido,
       if (paciente != null) 'paciente': paciente!.toJson(),
       if (receita != null) 'receita': receita!.toJson(),
       if (observacoes != null) 'observacoes': observacoes,
@@ -174,6 +174,7 @@ class FinalizarVendaResponseModel {
   final double subtotal;
   final double ivaTotal;
   final double total;
+  final double troco;
   final List<FinalizarVendaLineModel> items;
   final bool cartReset;
   final String nextCartIdempotencyKey;
@@ -185,6 +186,7 @@ class FinalizarVendaResponseModel {
     required this.subtotal,
     required this.ivaTotal,
     required this.total,
+    this.troco = 0,
     this.items = const [],
     required this.cartReset,
     required this.nextCartIdempotencyKey,
@@ -200,6 +202,7 @@ class FinalizarVendaResponseModel {
       subtotal: _toDouble(json['subtotal'], fallback: total),
       ivaTotal: _toDouble(json['ivaTotal']),
       total: total,
+      troco: _toDouble(json['troco']),
       items: rawItems
           .whereType<Map<String, dynamic>>()
           .map(FinalizarVendaLineModel.fromJson)

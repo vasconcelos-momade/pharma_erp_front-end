@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../app/providers/ui_cache_notifier.dart';
-import '../../../../../core/contracts/pagination_response.dart';
+import '../../../../../core/contracts/pagination_response.dart' show PaginationResponse, PaginationSummary;
 import '../../../../../core/errors/api_failure.dart';
 import '../../data/repositories/invoice_repository_impl.dart';
 import '../../domain/entities/invoice_summary.dart';
@@ -27,6 +27,7 @@ class InvoiceListState {
     this.isInitialized = false,
     this.showingCachedData = false,
     this.lastSyncedAt,
+    this.summary = const PaginationSummary(),
   });
 
   final List<InvoiceSummary> items;
@@ -37,6 +38,7 @@ class InvoiceListState {
   final bool isInitialized;
   final bool showingCachedData;
   final DateTime? lastSyncedAt;
+  final PaginationSummary summary;
 
   bool get isBusy =>
       viewState == InvoiceViewState.loading ||
@@ -51,6 +53,7 @@ class InvoiceListState {
     bool? isInitialized,
     bool? showingCachedData,
     DateTime? lastSyncedAt,
+    PaginationSummary? summary,
     bool clearError = false,
   }) {
     return InvoiceListState(
@@ -62,6 +65,7 @@ class InvoiceListState {
       isInitialized: isInitialized ?? this.isInitialized,
       showingCachedData: showingCachedData ?? this.showingCachedData,
       lastSyncedAt: lastSyncedAt ?? this.lastSyncedAt,
+      summary: summary ?? this.summary,
     );
   }
 }
@@ -191,6 +195,7 @@ class InvoiceListController extends Notifier<InvoiceListState> {
             pageSize: cached.pageSize,
           ),
           hasMore: cached.hasMore,
+          summary: cached.summary ?? const PaginationSummary(),
           viewState: cached.items.isEmpty
               ? InvoiceViewState.empty
               : InvoiceViewState.loaded,
@@ -230,6 +235,7 @@ class InvoiceListController extends Notifier<InvoiceListState> {
           pageSize: response.pageSize,
         ),
         hasMore: response.hasMore,
+        summary: response.summary ?? const PaginationSummary(),
         viewState: newState,
         isInitialized: true,
         showingCachedData: false,
@@ -267,22 +273,9 @@ class InvoiceListController extends Notifier<InvoiceListState> {
       if (invoice.id != invoiceId) {
         return invoice;
       }
-      return InvoiceSummary(
-        id: invoice.id,
-        numero: invoice.numero,
-        serie: invoice.serie,
-        subtotal: invoice.subtotal,
-        ivaTotal: invoice.ivaTotal,
-        total: invoice.total,
+      return invoice.copyWith(
         estado: 'ANULADA',
-        tipoPagamento: invoice.tipoPagamento,
-        createdAt: invoice.createdAt,
         cancelledAt: DateTime.now(),
-        cliente: invoice.cliente,
-        terminal: invoice.terminal,
-        user: invoice.user,
-        itemCount: invoice.itemCount,
-        paymentCount: invoice.paymentCount,
       );
     }).toList(growable: false);
 

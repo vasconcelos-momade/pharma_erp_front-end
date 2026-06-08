@@ -14,16 +14,20 @@ ERP para farmácia em **Flutter** — arranque modular (auth, farmácia, vendas/
 # Uma vez (ou após mudar pubspec.yaml / pubspec.lock)
 flutter pub get
 
-# Web Chrome na porta 5000 — sem repetir "Downloading packages..." em cada run
+# Web Chrome — SEM baixar pacotes de novo (use sempre --no-pub no dia-a-dia)
+bash scripts/run_web.sh
+# equivalente:
 flutter run -d chrome --web-port=5000 --no-pub
 
-# Ou script equivalente
-bash scripts/dev_web.sh
-# Após alterar dependências:
-bash scripts/dev_web.sh --deps
-```
+# Evite isto no dia-a-dia (resolve/baixa pacotes em cada arranque):
+# flutter run -d chrome --web-port=5000
 
-No Cursor/VS Code, use a configuracao **pharma_erp (Web — Chrome, port 5000)** (ja inclui `--no-pub` e `--web-port=5000`).
+# Após alterar dependências (pub get + arranque):
+bash scripts/dev_web.sh --deps
+
+# Análise estática (pub get + flutter analyze)
+bash scripts/analyze.sh
+```
 
 Variáveis locais: copie ou crie um ficheiro **`.env`** na raiz (não é versionado; ver `.gitignore`). Os valores podem ser lidos em `lib/core/config/env.dart` à medida que configurar o projecto.
 

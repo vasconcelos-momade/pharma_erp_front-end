@@ -41,15 +41,9 @@ class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
       _sidebarExpanded = false;
     }
 
-    Widget body = Align(
-      alignment: Alignment.topCenter,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: AppDimensions.contentMaxWidth),
-        child: Padding(
-          padding: PharmaScreenLayout.pagePadding(context),
-          child: widget.child,
-        ),
-      ),
+    Widget body = Padding(
+      padding: PharmaScreenLayout.pagePadding(context),
+      child: widget.child,
     );
 
     if (isTablet && !isDesktop) {

@@ -71,11 +71,15 @@ class InvoiceRemoteDataSourceImpl implements InvoiceRemoteDataSource {
               .toList()
           : <InvoiceSummaryModel>[];
 
+      final rawSummary = meta['summary'];
       return PaginationResponse<InvoiceSummaryModel>(
         items: items,
         page: _asInt(meta['page'], fallback: query.page),
         pageSize: _asInt(meta['pageSize'], fallback: query.pageSize),
         hasMore: meta['hasMore'] == true,
+        summary: rawSummary is Map<String, dynamic>
+            ? PaginationSummary.fromJson(rawSummary)
+            : null,
       );
     } on DioException catch (e) {
       throw ApiFailure.fromDio(e);

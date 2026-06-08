@@ -1,6 +1,7 @@
 import 'dart:async';
+import 'dart:js_interop';
 import 'dart:typed_data';
-import 'dart:convert';
+
 import 'package:web/web.dart' as web;
 
 Future<void> openBytesImpl({
@@ -32,9 +33,11 @@ Future<void> downloadBytesImpl({
 }
 
 String _createObjectUrl(Uint8List bytes, String contentType) {
-  final base64 = base64Encode(bytes);
-  final dataUrl = 'data:$contentType;base64,$base64';
-  return dataUrl;
+  final blob = web.Blob(
+    <JSUint8Array>[bytes.toJS].toJS,
+    web.BlobPropertyBag(type: contentType),
+  );
+  return web.URL.createObjectURL(blob);
 }
 
 void _scheduleRevoke(String url) {

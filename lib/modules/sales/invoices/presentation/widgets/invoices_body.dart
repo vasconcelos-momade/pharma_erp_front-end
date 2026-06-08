@@ -31,10 +31,11 @@ class InvoicesBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final s = context.spacing;
     final query = listState.query;
-    final totalInvoices = listState.items.length;
-    final cancelled = listState.items.where((invoice) => invoice.isCancelled).length;
-    final paid = listState.items.where((invoice) => invoice.isPaid).length;
-    final pending = listState.items.where((invoice) => invoice.isPending).length;
+    final summary = listState.summary;
+    final totalInvoices = summary.total;
+    final cancelled = summary.cancelled;
+    final paid = summary.paid;
+    final pending = summary.pending;
 
     if (PharmaScreenLayout.isMobile(context)) {
       return InvoicesMobileContent(

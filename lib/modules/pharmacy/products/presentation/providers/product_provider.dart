@@ -198,3 +198,110 @@ final productListProvider =
     NotifierProvider.autoDispose<ProductListController, ProductListState>(
   ProductListController.new,
 );
+
+class PurchaseProductListController extends Notifier<ProductListState> {
+  Timer? _debounce;
+  int _requestId = 0;
+
+  @override
+  ProductListState build() {
+    ref.onDispose(() {
+      _debounce?.cancel();
+    });
+    Future.microtask(fetchCurrentPage);
+    return const ProductListState();
+  }
+
+  void onSearchChanged(String value) {
+    final normalized = value.trim();
+    if (normalized == state.query) {
+      return;
+    }
+
+    _debounce?.cancel();
+    state = state.copyWith(
+      query: normalized,
+      page: 1,
+      isLoading: true,
+      clearError: true,
+    );
+
+    _debounce = Timer(const Duration(milliseconds: 350), () {
+      fetchCurrentPage();
+    });
+  }
+
+  Future<void> goToPage(int page) async {
+    if (page < 1 || page == state.page) {
+      return;
+    }
+    state = state.copyWith(page: page, isLoading: true, clearError: true);
+    await fetchCurrentPage();
+  }
+
+  Future<void> refreshCurrentPage() async {
+    await fetchCurrentPage(force: true);
+  }
+
+  Future<void> fetchCurrentPage({bool force = false}) async {
+    final requestId = ++_requestId;
+    final isBarcode = _looksLikeBarcode(state.query);
+
+    state = state.copyWith(isLoading: true, clearError: true);
+
+    try {
+      final repository = ref.read(productRepositoryProvider);
+      final response = await repository.searchProducts(
+        query: isBarcode ? null : state.query,
+        barcode: isBarcode ? state.query : null,
+        page: state.page,
+        pageSize: state.pageSize,
+      );
+
+      if (requestId != _requestId) {
+        return;
+      }
+
+      state = state.copyWith(
+        items: response.items.where((product) => product.ativo).toList(),
+        page: response.page,
+        pageSize: response.pageSize,
+        hasMore: response.hasMore,
+        isLoading: false,
+        isInitialized: true,
+        clearError: true,
+      );
+    } on ApiFailure catch (e) {
+      if (requestId != _requestId) {
+        return;
+      }
+      state = state.copyWith(
+        isLoading: false,
+        isInitialized: true,
+        errorMessage: e.message,
+      );
+    } catch (e) {
+      if (requestId != _requestId) {
+        return;
+      }
+      state = state.copyWith(
+        isLoading: false,
+        isInitialized: true,
+        errorMessage: e.toString(),
+      );
+    }
+  }
+
+  bool _looksLikeBarcode(String value) {
+    final trimmed = value.trim();
+    if (trimmed.length < 8) {
+      return false;
+    }
+    return RegExp(r'^\d+$').hasMatch(trimmed);
+  }
+}
+
+final purchaseProductListProvider =
+    NotifierProvider.autoDispose<PurchaseProductListController, ProductListState>(
+  PurchaseProductListController.new,
+);

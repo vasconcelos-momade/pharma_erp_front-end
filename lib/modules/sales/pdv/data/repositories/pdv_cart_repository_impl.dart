@@ -2,7 +2,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../pharmacy/products/domain/entities/product.dart';
 import '../../domain/entities/pdv_cart.dart';
-import '../../domain/entities/pdv_cart_line.dart';
 import '../../domain/entities/pdv_checkout.dart';
 import '../../domain/entities/pdv_service.dart';
 import '../../domain/mappers/draft_cart_mapper.dart';
@@ -98,14 +97,15 @@ class PdvCartRepositoryImpl implements PdvCartRepository {
     required String terminalId,
     required String idempotencyKey,
     required PdvPaymentMethod metodoPagamento,
-    required List<PdvCartLine> lines,
     PdvCheckoutPatient? paciente,
+    double? valorRecebido,
   }) async {
     final response = await _remote.finalizarVenda(
       FinalizarVendaRequestModel(
         terminalId: terminalId,
         metodoPagamento: _toMetodoPagamentoModel(metodoPagamento),
         idempotencyKey: idempotencyKey,
+        valorRecebido: valorRecebido,
         paciente: paciente == null
             ? null
             : PacienteCheckoutModel(
@@ -120,16 +120,6 @@ class PdvCartRepositoryImpl implements PdvCartRepository {
                 prescritor: paciente.prescritor,
                 unidadeSanitaria: paciente.unidadeSanitaria,
               ),
-        items: lines
-            .map(
-              (line) => FinalizarVendaItemRequestModel(
-                tipo: line.isProduct ? 'produto' : 'servico',
-                produtoId: line.product?.id,
-                servicoId: line.service?.id,
-                quantidade: line.qty,
-              ),
-            )
-            .toList(),
       ),
     );
 
@@ -140,6 +130,7 @@ class PdvCartRepositoryImpl implements PdvCartRepository {
       subtotal: response.subtotal,
       ivaTotal: response.ivaTotal,
       total: response.total,
+      troco: response.troco,
       items: response.items
           .map(
             (line) => PdvCheckoutLine(

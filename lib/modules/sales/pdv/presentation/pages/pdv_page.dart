@@ -301,8 +301,8 @@ class _PdvPageState extends ConsumerState<PdvPage>
 
     final result = await showFinalizarVendaDialog(
       context,
-      lines: cartState.lines,
       total: cartState.total,
+      requiresPatientDetails: cartState.requiresPatientDetails,
     );
 
     if (!mounted || result == null) {
@@ -324,7 +324,7 @@ class _PdvPageState extends ConsumerState<PdvPage>
         return AlertDialog(
           title: const Text('Fatura emitida'),
           content: Text(
-            'A fatura ${result.numero} foi emitida com sucesso. Deseja descarregar o PDF ou o ficheiro de reimpressão?',
+            'A fatura ${result.numero} foi emitida com sucesso. Deseja abrir o PDF ou preparar o recibo de reimpressão?',
           ),
           actions: [
             TextButton(
@@ -337,13 +337,13 @@ class _PdvPageState extends ConsumerState<PdvPage>
                 try {
                   await ref
                       .read(invoiceActionProvider.notifier)
-                      .downloadPrintArtifact(invoiceId: result.id);
+                      .printReceipt(invoiceId: result.id);
                   if (!mounted) {
                     return;
                   }
                   PharmaSnackbar.showSuccess(
                     context,
-                    'Artefacto de impressão descarregado com sucesso.',
+                    'Recibo de reimpressão disponibilizado com sucesso.',
                   );
                 } on ApiFailure catch (e) {
                   if (!mounted) {
@@ -356,7 +356,7 @@ class _PdvPageState extends ConsumerState<PdvPage>
                   }
                   PharmaSnackbar.showError(
                     context,
-                    'Não foi possível obter o artefacto de impressão.',
+                    'Não foi possível preparar o recibo para impressão.',
                   );
                 }
               },
@@ -375,7 +375,7 @@ class _PdvPageState extends ConsumerState<PdvPage>
                   }
                   PharmaSnackbar.showSuccess(
                     context,
-                    'PDF da fatura preparado no navegador.',
+                    'PDF da fatura disponibilizado com sucesso.',
                   );
                 } on ApiFailure catch (e) {
                   if (!mounted) {
@@ -771,22 +771,23 @@ class _ProductCatalogList extends StatelessWidget {
       separatorBuilder: (_, _) => SizedBox(height: s.sm),
       itemBuilder: (context, i) {
         final product = items[i];
-        final isOutOfStock = product.isOutOfStock;
-        final stockColor = isOutOfStock ? tokens.posDanger : tokens.textMuted;
+        final stockIndisponivel = product.estoqueAtual <= 0;
+        final stockColor =
+            stockIndisponivel ? tokens.posDanger : tokens.textMuted;
         final lineId = 'produto:${product.id}';
         final isAddingThis = addingProductId == lineId;
-        final canInteract = !isOutOfStock && canAdd && !isAddingThis;
+        final canInteract = canAdd && !isAddingThis;
 
         return Material(
           color: Colors.transparent,
           child: Ink(
             decoration: BoxDecoration(
-              color: isOutOfStock
+              color: stockIndisponivel
                   ? tokens.posDanger.withValues(alpha: 0.05)
                   : tokens.card,
               borderRadius: BorderRadius.circular(tokens.radiusMd),
               border: Border.all(
-                color: isOutOfStock
+                color: stockIndisponivel
                     ? tokens.posDanger.withValues(alpha: 0.35)
                     : tokens.border.withValues(alpha: 0.45),
               ),
@@ -836,21 +837,21 @@ class _ProductCatalogList extends StatelessWidget {
                                 .bodySmall
                                 ?.copyWith(color: stockColor),
                           ),
-                          if (product.isPsychotropic || isOutOfStock)
+                          if (product.requiresPsychotropicBook || stockIndisponivel)
                             Padding(
                               padding: EdgeInsets.only(top: s.xs),
                               child: Wrap(
                                 spacing: s.xs,
                                 runSpacing: s.xs,
                                 children: [
-                                  if (product.isPsychotropic)
+                                  if (product.requiresPsychotropicBook)
                                     Chip(
                                       visualDensity: VisualDensity.compact,
                                       label: const Text('Psicotrópico'),
                                       backgroundColor: tokens.psychotropic
                                           .withValues(alpha: 0.2),
                                     ),
-                                  if (isOutOfStock)
+                                  if (stockIndisponivel)
                                     Chip(
                                       avatar: Icon(
                                         Icons.warning_amber_rounded,
@@ -1291,7 +1292,7 @@ class _CartPane extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Text(
-                                    _formatMoney(line.qty * line.precoUnitario),
+                                    _formatMoney(line.lineTotal),
                                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                                           color: t.brandGreen,
                                           fontWeight: FontWeight.w800,

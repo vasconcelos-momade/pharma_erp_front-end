@@ -23,6 +23,7 @@ class InvoiceRepositoryImpl implements InvoiceRepository {
       page: response.page,
       pageSize: response.pageSize,
       hasMore: response.hasMore,
+      summary: response.summary,
     );
   }
 

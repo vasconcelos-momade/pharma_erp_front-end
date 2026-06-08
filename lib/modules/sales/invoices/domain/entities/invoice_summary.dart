@@ -6,10 +6,12 @@ class InvoiceSummary {
     required this.subtotal,
     required this.ivaTotal,
     required this.total,
+    required this.troco,
     required this.estado,
     required this.tipoPagamento,
     required this.createdAt,
     this.cancelledAt,
+    this.valorRecebido,
     this.cliente,
     this.terminal,
     this.user,
@@ -23,10 +25,12 @@ class InvoiceSummary {
   final double subtotal;
   final double ivaTotal;
   final double total;
+  final double troco;
   final String estado;
   final String? tipoPagamento;
   final DateTime createdAt;
   final DateTime? cancelledAt;
+  final double? valorRecebido;
   final InvoiceCustomerSummary? cliente;
   final InvoiceTerminalSummary? terminal;
   final InvoiceUserSummary? user;
@@ -50,10 +54,12 @@ class InvoiceSummary {
       subtotal: subtotal,
       ivaTotal: ivaTotal,
       total: total,
+      troco: troco,
       estado: estado ?? this.estado,
       tipoPagamento: tipoPagamento,
       createdAt: createdAt,
       cancelledAt: cancelledAt ?? this.cancelledAt,
+      valorRecebido: valorRecebido,
       cliente: cliente,
       terminal: terminal,
       user: user,

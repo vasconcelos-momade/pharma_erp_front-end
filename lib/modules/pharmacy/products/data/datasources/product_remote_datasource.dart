@@ -11,6 +11,7 @@ import '../models/product_model.dart';
 
 abstract class ProductRemoteDataSource {
   Future<String?> fetchCatalogVersion();
+  Future<List<ProductModel>> listCatalogProducts();
 
   Future<PaginationResponse<ProductModel>> searchProducts({
     String? query,
@@ -62,6 +63,28 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
       if (embedded != null && embedded.isNotEmpty) {
         PdvCatalogCachePolicy.setCatalogVersion(embedded);
       }
+    }
+  }
+
+  @override
+  Future<List<ProductModel>> listCatalogProducts() async {
+    try {
+      final response = await _dio.get<dynamic>(ApiConstants.tenantProdutos);
+      final data = response.data;
+      if (data == null) {
+        return const <ProductModel>[];
+      }
+
+      final items = data is List
+          ? data
+          : ApiEnvelope.unwrapList(data);
+
+      return items
+          .whereType<Map<String, dynamic>>()
+          .map(ProductModel.fromJson)
+          .toList(growable: false);
+    } on DioException catch (e) {
+      throw ApiFailure.fromDio(e);
     }
   }
 

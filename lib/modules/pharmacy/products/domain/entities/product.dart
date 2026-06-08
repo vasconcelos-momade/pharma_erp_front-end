@@ -42,11 +42,4 @@ class Product {
     this.createdAt,
     this.taxRule,
   });
-
-  bool get isOutOfStock => estoqueAtual <= 0;
-
-  bool get isPsychotropic =>
-      tipoDispensacao == 'PSICOTROPICO' ||
-      tipoDispensacao == 'NARCOTICO' ||
-      requiresPsychotropicBook;
 }

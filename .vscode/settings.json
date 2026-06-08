@@ -1,0 +1,7 @@
+{
+  "dart.flutterRunAdditionalArgs": [
+    "--no-pub",
+    "--web-port=5000"
+  ],
+  "dart.runPubGetOnPubspecChanges": true
+}

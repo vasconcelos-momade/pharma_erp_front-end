@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../core/theme/design_tokens.dart';
 import 'breakpoints.dart';
 
 /// Segmentação de ecrã para UX enterprise (mobile / tablet / desktop).
@@ -50,13 +51,8 @@ abstract final class PharmaScreenLayout {
     };
   }
 
-  static EdgeInsets pagePadding(BuildContext context) {
-    return switch (sizeOf(context)) {
-      PharmaScreenSize.mobile => const EdgeInsets.fromLTRB(10, 10, 10, 12),
-      PharmaScreenSize.tablet => const EdgeInsets.fromLTRB(16, 14, 16, 20),
-      PharmaScreenSize.desktop => const EdgeInsets.fromLTRB(24, 20, 24, 32),
-    };
-  }
+  static EdgeInsets pagePadding(BuildContext context) =>
+      context.pharmaTokens.density.pageInsets;
 }
 
 extension PharmaScreenSizeContext on BuildContext {

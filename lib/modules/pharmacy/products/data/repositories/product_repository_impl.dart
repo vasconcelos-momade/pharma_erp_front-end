@@ -15,6 +15,12 @@ class ProductRepositoryImpl implements ProductRepository {
   Future<String?> fetchCatalogVersion() => _remoteDataSource.fetchCatalogVersion();
 
   @override
+  Future<List<Product>> listCatalogProducts() async {
+    final items = await _remoteDataSource.listCatalogProducts();
+    return items.map(_toEntity).toList(growable: false);
+  }
+
+  @override
   Future<PaginationResponse<Product>> searchProducts({
     String? query,
     String? barcode,
