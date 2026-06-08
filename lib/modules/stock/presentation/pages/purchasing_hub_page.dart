@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/design_tokens.dart';
@@ -12,16 +13,127 @@ import '../providers/compra_provider.dart';
 
 String _formatMoney(num value) => '${value.toStringAsFixed(2)} MT';
 
+String _formatQuantity(num value) {
+  return value.toStringAsFixed(2).replaceFirst(RegExp(r'\.?0+$'), '');
+}
+
 String _formatDate(DateTime value) {
   return '${value.day.toString().padLeft(2, '0')}/'
       '${value.month.toString().padLeft(2, '0')}/'
       '${value.year}';
 }
 
+String _formatDisplayDate(String value) {
+  final parsed = DateTime.tryParse(value);
+  if (parsed == null) {
+    return value;
+  }
+  return _formatDate(parsed);
+}
+
 String _formatIsoDate(DateTime value) {
   return '${value.year.toString().padLeft(4, '0')}-'
       '${value.month.toString().padLeft(2, '0')}-'
       '${value.day.toString().padLeft(2, '0')}';
+}
+
+DateTime? _parseDateInputValue(String? value) {
+  final normalized = value?.trim() ?? '';
+  if (normalized.isEmpty) {
+    return null;
+  }
+
+  final parsed = DateTime.tryParse(normalized);
+  if (parsed != null) {
+    return parsed;
+  }
+
+  final match = RegExp(r'^\d{4}-\d{2}-\d{2}').firstMatch(normalized);
+  if (match != null) {
+    return DateTime.tryParse(match.group(0)!);
+  }
+
+  final displayMatch = RegExp(r'^(\d{2})/(\d{2})/(\d{4})$').firstMatch(normalized);
+  if (displayMatch != null) {
+    final day = int.tryParse(displayMatch.group(1)!);
+    final month = int.tryParse(displayMatch.group(2)!);
+    final year = int.tryParse(displayMatch.group(3)!);
+    if (day != null && month != null && year != null) {
+      final parsed = DateTime(year, month, day);
+      if (parsed.year == year && parsed.month == month && parsed.day == day) {
+        return parsed;
+      }
+    }
+  }
+
+  return null;
+}
+
+String _normalizeDateInputValue(String? value) {
+  final parsed = _parseDateInputValue(value);
+  if (parsed == null) {
+    return value?.trim() ?? '';
+  }
+  return _formatDate(parsed);
+}
+
+class _DateTextInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
+    final limitedDigits = digits.length > 8 ? digits.substring(0, 8) : digits;
+    final formatted = _formatDigits(limitedDigits);
+    final digitsBeforeCursor = _countDigitsBeforeCursor(newValue);
+    final selectionOffset = _selectionOffsetForDigits(
+      formatted,
+      digitsBeforeCursor.clamp(0, limitedDigits.length),
+    );
+
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: selectionOffset),
+      composing: TextRange.empty,
+    );
+  }
+
+  int _countDigitsBeforeCursor(TextEditingValue value) {
+    final cursor = value.selection.baseOffset.clamp(0, value.text.length);
+    return RegExp(r'\d').allMatches(value.text.substring(0, cursor)).length;
+  }
+
+  int _selectionOffsetForDigits(String formatted, int digitsBeforeCursor) {
+    if (digitsBeforeCursor <= 0) {
+      return 0;
+    }
+
+    var seenDigits = 0;
+    for (var i = 0; i < formatted.length; i++) {
+      if (RegExp(r'\d').hasMatch(formatted[i])) {
+        seenDigits++;
+        if (seenDigits == digitsBeforeCursor) {
+          return i + 1;
+        }
+      }
+    }
+
+    return formatted.length;
+  }
+
+  String _formatDigits(String digits) {
+    final buffer = StringBuffer();
+
+    for (var i = 0; i < digits.length; i++) {
+      if ((i == 2 || i == 4) && buffer.isNotEmpty) {
+        buffer.write('/');
+      }
+      buffer.write(digits[i]);
+    }
+
+    return buffer.toString();
+  }
 }
 
 class PurchasingHubPage extends ConsumerStatefulWidget {
@@ -47,14 +159,17 @@ class _PurchasingHubPageState extends ConsumerState<PurchasingHubPage> {
   }
 
   Future<void> _startPurchase() async {
-    final fornecedorId = await showDialog<String>(
+    final result = await showDialog<NovaCompraDialogResult>(
       context: context,
-      builder: (_) => const _FornecedorDialog(),
+      builder: (_) => const _NovaCompraDialog(),
     );
-    if (!mounted || fornecedorId == null) {
+    if (!mounted || result == null) {
       return;
     }
-    await ref.read(compraProvider.notifier).startPurchase(fornecedorId);
+    await ref.read(compraProvider.notifier).startPurchase(
+          fornecedorId: result.fornecedorId,
+          numeroDocumento: result.numeroDocumento,
+        );
   }
 
   Future<void> _handleProduct(Product product) async {
@@ -77,9 +192,65 @@ class _PurchasingHubPageState extends ConsumerState<PurchasingHubPage> {
     }
 
     await ref.read(compraProvider.notifier).addItemToActivePurchase(
-          product: product,
           draft: draft,
         );
+  }
+
+  Future<void> _handleEditPurchaseItem(CompraItem item) async {
+    final compraState = ref.read(compraProvider);
+    if (!compraState.canEditActivePurchase) {
+      PharmaSnackbar.showError(
+        context,
+        'Seleccione uma compra pendente antes de editar itens.',
+      );
+      return;
+    }
+
+    final draft = await showDialog<CompraItemDraft>(
+      context: context,
+      builder: (_) => _CompraItemDialog(item: item),
+    );
+
+    if (!mounted || draft == null) {
+      return;
+    }
+
+    await ref.read(compraProvider.notifier).updateItemInActivePurchase(
+          item: item,
+          draft: draft,
+        );
+  }
+
+  Future<void> _confirmRemovePurchaseItem(CompraItem item) async {
+    final t = context.pharmaTokens;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Confirmar remoção'),
+        content: Text(
+          'Deseja remover o item "${item.produtoNome}" da compra?\n\n'
+          'Lote: ${item.numeroLote.isNotEmpty ? item.numeroLote : '—'}\n'
+          'Quantidade: ${item.quantidade.toStringAsFixed(item.quantidade.truncateToDouble() == item.quantidade ? 0 : 2)}',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            style: TextButton.styleFrom(foregroundColor: t.posDanger),
+            child: const Text('Remover'),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted || confirmed != true) {
+      return;
+    }
+
+    await ref.read(compraProvider.notifier).removeItemFromActivePurchase(item.id);
   }
 
   @override
@@ -157,8 +328,8 @@ class _PurchasingHubPageState extends ConsumerState<PurchasingHubPage> {
             _RightPane(
               state: compraState,
               onConfirm: ref.read(compraProvider.notifier).confirmActivePurchase,
-              onRemoveItem:
-                  ref.read(compraProvider.notifier).removeItemFromActivePurchase,
+              onEditItem: _handleEditPurchaseItem,
+              onRemoveItem: _confirmRemovePurchaseItem,
             ),
           ] else
             SizedBox(
@@ -198,9 +369,8 @@ class _PurchasingHubPageState extends ConsumerState<PurchasingHubPage> {
                       state: compraState,
                       onConfirm:
                           ref.read(compraProvider.notifier).confirmActivePurchase,
-                      onRemoveItem: ref
-                          .read(compraProvider.notifier)
-                          .removeItemFromActivePurchase,
+                      onEditItem: _handleEditPurchaseItem,
+                      onRemoveItem: _confirmRemovePurchaseItem,
                     ),
                   ),
                 ],
@@ -552,6 +722,19 @@ class _ProductCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
     final s = context.spacing;
+    final statusLabel = product.ativo ? 'Activo' : 'Inactivo';
+    final productDetails = [
+      product.substanciaActiva,
+      product.dosagem,
+      [product.forma, product.apresentacao]
+          .whereType<String>()
+          .where((value) => value.isNotEmpty)
+          .join(' / '),
+    ]
+        .whereType<String>()
+        .where((value) => value.isNotEmpty)
+        .join(' • ');
+
     return InkWell(
       onTap: enabled ? onTap : null,
       borderRadius: BorderRadius.circular(t.radiusMd),
@@ -576,30 +759,23 @@ class _ProductCard extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  if (product.substanciaActiva != null || product.dosagem != null)
+                  if (productDetails.isNotEmpty)
                     Padding(
                       padding: EdgeInsets.only(top: s.xs),
                       child: Text(
-                        [
-                          product.substanciaActiva,
-                          product.dosagem,
-                          product.apresentacao,
-                        ].whereType<String>().where((value) => value.isNotEmpty).join(' • '),
+                        productDetails,
                         style: TextStyle(color: t.textMuted, fontSize: 12),
                       ),
                     ),
                 ],
               ),
             ),
-            SizedBox(width: s.sm),
-            Text(
-              _formatMoney(product.precoVenda),
-              style: TextStyle(
-                color: t.brandGreen,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
             SizedBox(width: s.md),
+            _InfoTag(
+              label: statusLabel,
+              color: product.ativo ? t.brandGreen : t.textMuted,
+            ),
+            SizedBox(width: s.sm),
             IconButton(
               onPressed: enabled ? onTap : null,
               icon: const Icon(Icons.add_shopping_cart_rounded),
@@ -656,7 +832,9 @@ class _CompraResumoCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Compra ${purchase.id}',
+                        purchase.numeroDocumento.isNotEmpty
+                            ? 'Doc. ${purchase.numeroDocumento}'
+                            : 'Compra ${purchase.id}',
                         style: TextStyle(
                           color: t.textPrimary,
                           fontWeight: FontWeight.w800,
@@ -666,6 +844,11 @@ class _CompraResumoCard extends StatelessWidget {
                         'Fornecedor: ${purchase.fornecedorNome}',
                         style: TextStyle(color: t.textMuted),
                       ),
+                      if (purchase.numeroDocumento.isNotEmpty)
+                        Text(
+                          'ID interno: ${purchase.id}',
+                          style: TextStyle(color: t.textMuted, fontSize: 12),
+                        ),
                     ],
                   ),
                 ),
@@ -713,12 +896,14 @@ class _RightPane extends StatelessWidget {
   const _RightPane({
     required this.state,
     required this.onConfirm,
+    required this.onEditItem,
     required this.onRemoveItem,
   });
 
   final CompraState state;
   final Future<void> Function() onConfirm;
-  final Future<void> Function(String itemId) onRemoveItem;
+  final Future<void> Function(CompraItem item) onEditItem;
+  final Future<void> Function(CompraItem item) onRemoveItem;
 
   @override
   Widget build(BuildContext context) {
@@ -786,6 +971,7 @@ class _RightPane extends StatelessWidget {
                   : _PurchaseItemsTable(
                       items: activePurchase.items,
                       isEditable: activePurchase.status.isEditable,
+                      onEdit: onEditItem,
                       onRemove: onRemoveItem,
                     ),
             ),
@@ -807,68 +993,545 @@ class _PurchaseItemsTable extends StatelessWidget {
   const _PurchaseItemsTable({
     required this.items,
     required this.isEditable,
+    required this.onEdit,
     required this.onRemove,
   });
 
   final List<CompraItem> items;
   final bool isEditable;
-  final ValueChanged<String> onRemove;
+  final ValueChanged<CompraItem> onEdit;
+  final ValueChanged<CompraItem> onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+
+        if (width < 768) {
+          return _PurchaseItemsCardList(
+            items: items,
+            isEditable: isEditable,
+            onEdit: onEdit,
+            onRemove: onRemove,
+          );
+        }
+
+        if (width < 1200) {
+          return _PurchaseItemsTabletTable(
+            items: items,
+            isEditable: isEditable,
+            onEdit: onEdit,
+            onRemove: onRemove,
+          );
+        }
+
+        return _PurchaseItemsDesktopTable(
+          items: items,
+          isEditable: isEditable,
+          onEdit: onEdit,
+          onRemove: onRemove,
+        );
+      },
+    );
+  }
+}
+
+class _PurchaseItemsDesktopTable extends StatelessWidget {
+  const _PurchaseItemsDesktopTable({
+    required this.items,
+    required this.isEditable,
+    required this.onEdit,
+    required this.onRemove,
+  });
+
+  final List<CompraItem> items;
+  final bool isEditable;
+  final ValueChanged<CompraItem> onEdit;
+  final ValueChanged<CompraItem> onRemove;
 
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
     final s = context.spacing;
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.vertical,
+    return Scrollbar(
+      thumbVisibility: true,
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
-        child: DataTable(
-          headingRowColor: WidgetStateProperty.all(t.bgPrimary.withValues(alpha: 0.1)),
-          columnSpacing: s.lg,
-          columns: const [
-            DataColumn(label: Text('Produto')),
-            DataColumn(label: Text('Lote')),
-            DataColumn(label: Text('Preço Compra')),
-            DataColumn(label: Text('Preço Venda')),
-            DataColumn(label: Text('Validade')),
-            DataColumn(label: Text('Qtd')),
-            DataColumn(label: Text('Subtotal')),
-            DataColumn(label: Text('Ações')),
-          ],
-          rows: items.map((item) {
-            return DataRow(
-              cells: [
-                DataCell(Text(item.produtoNome)),
-                DataCell(Text(item.numeroLote)),
-                DataCell(Text(_formatMoney(item.precoCompra))),
-                DataCell(Text(item.precoVenda != null ? _formatMoney(item.precoVenda!) : '-')),
-                DataCell(Text(item.dataValidade)),
-                DataCell(Text(item.quantidade.toStringAsFixed(0))),
-                DataCell(Text(_formatMoney(item.subtotal))),
-                DataCell(
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.edit_outlined, size: 20),
-                        onPressed: isEditable ? () {} : null,
-                        tooltip: 'Editar item',
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline_rounded, size: 20),
-                        onPressed: isEditable ? () => onRemove(item.id) : null,
-                        color: t.posDanger,
-                        tooltip: 'Remover item',
-                      ),
-                    ],
-                  ),
-                ),
+        child: SizedBox(
+          width: 1200,
+          child: SingleChildScrollView(
+            child: DataTable(
+              headingRowColor: WidgetStateProperty.all(
+                t.bgPrimary.withValues(alpha: 0.1),
+              ),
+              columnSpacing: s.lg,
+              columns: const [
+                DataColumn(label: Text('Produto')),
+                DataColumn(label: Text('Lote')),
+                DataColumn(label: Text('Validade')),
+                DataColumn(label: Text('Preço Compra')),
+                DataColumn(label: Text('Preço Venda')),
+                DataColumn(label: Text('Qtd')),
+                DataColumn(label: Text('Subtotal')),
+                DataColumn(label: Text('Ações')),
               ],
-            );
-          }).toList(),
+              rows: items.map((item) {
+                return DataRow(
+                  cells: [
+                    DataCell(SizedBox(width: 260, child: Text(item.produtoNome))),
+                    DataCell(SizedBox(width: 150, child: Text(item.numeroLote))),
+                    DataCell(
+                      SizedBox(
+                        width: 130,
+                        child: Text(_formatDisplayDate(item.dataValidade)),
+                      ),
+                    ),
+                    DataCell(
+                      SizedBox(
+                        width: 130,
+                        child: Text(_formatMoney(item.precoCompra)),
+                      ),
+                    ),
+                    DataCell(
+                      SizedBox(
+                        width: 130,
+                        child: Text(
+                          item.precoVenda != null
+                              ? _formatMoney(item.precoVenda!)
+                              : '-',
+                        ),
+                      ),
+                    ),
+                    DataCell(
+                      SizedBox(
+                        width: 90,
+                        child: Text(_formatQuantity(item.quantidade)),
+                      ),
+                    ),
+                    DataCell(
+                      SizedBox(
+                        width: 130,
+                        child: Text(_formatMoney(item.subtotal)),
+                      ),
+                    ),
+                    DataCell(
+                      SizedBox(
+                        width: 140,
+                        child: _PurchaseItemActionButtons(
+                          item: item,
+                          isEditable: isEditable,
+                          onEdit: onEdit,
+                          onRemove: onRemove,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
+            ),
+          ),
         ),
       ),
+    );
+  }
+}
+
+class _PurchaseItemsTabletTable extends StatelessWidget {
+  const _PurchaseItemsTabletTable({
+    required this.items,
+    required this.isEditable,
+    required this.onEdit,
+    required this.onRemove,
+  });
+
+  final List<CompraItem> items;
+  final bool isEditable;
+  final ValueChanged<CompraItem> onEdit;
+  final ValueChanged<CompraItem> onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+    final s = context.spacing;
+
+    return Scrollbar(
+      thumbVisibility: true,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: SizedBox(
+          width: 920,
+          child: SingleChildScrollView(
+            child: DataTable(
+              headingRowColor: WidgetStateProperty.all(
+                t.bgPrimary.withValues(alpha: 0.1),
+              ),
+              columnSpacing: s.md,
+              columns: const [
+                DataColumn(label: Text('Produto')),
+                DataColumn(label: Text('Lote')),
+                DataColumn(label: Text('Preço Compra')),
+                DataColumn(label: Text('Qtd')),
+                DataColumn(label: Text('Subtotal')),
+                DataColumn(label: Text('Ações')),
+              ],
+              rows: items.map((item) {
+                return DataRow(
+                  cells: [
+                    DataCell(
+                      SizedBox(
+                        width: 260,
+                        child: Tooltip(
+                          message:
+                              'Validade: ${_formatDisplayDate(item.dataValidade)}\n'
+                              'Preço venda: ${item.precoVenda != null ? _formatMoney(item.precoVenda!) : '-'}',
+                          child: Text(
+                            item.produtoNome,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ),
+                    ),
+                    DataCell(
+                      SizedBox(width: 140, child: Text(item.numeroLote)),
+                    ),
+                    DataCell(
+                      SizedBox(
+                        width: 130,
+                        child: Text(_formatMoney(item.precoCompra)),
+                      ),
+                    ),
+                    DataCell(
+                      SizedBox(
+                        width: 80,
+                        child: Text(_formatQuantity(item.quantidade)),
+                      ),
+                    ),
+                    DataCell(
+                      SizedBox(
+                        width: 130,
+                        child: Text(_formatMoney(item.subtotal)),
+                      ),
+                    ),
+                    DataCell(
+                      SizedBox(
+                        width: 170,
+                        child: _PurchaseItemActionButtons(
+                          item: item,
+                          isEditable: isEditable,
+                          onEdit: onEdit,
+                          onRemove: onRemove,
+                          showDetailsButton: true,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PurchaseItemsCardList extends StatelessWidget {
+  const _PurchaseItemsCardList({
+    required this.items,
+    required this.isEditable,
+    required this.onEdit,
+    required this.onRemove,
+  });
+
+  final List<CompraItem> items;
+  final bool isEditable;
+  final ValueChanged<CompraItem> onEdit;
+  final ValueChanged<CompraItem> onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.spacing;
+
+    return ListView.separated(
+      itemCount: items.length,
+      separatorBuilder: (_, _) => SizedBox(height: s.sm),
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return _PurchaseItemCard(
+          item: item,
+          isEditable: isEditable,
+          onEdit: onEdit,
+          onRemove: onRemove,
+        );
+      },
+    );
+  }
+}
+
+class _PurchaseItemCard extends StatelessWidget {
+  const _PurchaseItemCard({
+    required this.item,
+    required this.isEditable,
+    required this.onEdit,
+    required this.onRemove,
+  });
+
+  final CompraItem item;
+  final bool isEditable;
+  final ValueChanged<CompraItem> onEdit;
+  final ValueChanged<CompraItem> onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+    final s = context.spacing;
+
+    return Container(
+      padding: EdgeInsets.all(s.md),
+      decoration: BoxDecoration(
+        color: t.bgPrimary.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(t.radiusMd),
+        border: Border.all(color: t.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            item.produtoNome,
+            style: TextStyle(
+              color: t.textPrimary,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          SizedBox(height: s.sm),
+          Wrap(
+            spacing: s.md,
+            runSpacing: s.sm,
+            children: [
+              _PurchaseItemInfo(label: 'Lote', value: item.numeroLote),
+              _PurchaseItemInfo(
+                label: 'Validade',
+                value: _formatDisplayDate(item.dataValidade),
+              ),
+              _PurchaseItemInfo(
+                label: 'Preço compra',
+                value: _formatMoney(item.precoCompra),
+              ),
+              _PurchaseItemInfo(
+                label: 'Preço venda',
+                value: item.precoVenda != null
+                    ? _formatMoney(item.precoVenda!)
+                    : '-',
+              ),
+              _PurchaseItemInfo(
+                label: 'Quantidade',
+                value: _formatQuantity(item.quantidade),
+              ),
+              _PurchaseItemInfo(
+                label: 'Subtotal',
+                value: _formatMoney(item.subtotal),
+              ),
+            ],
+          ),
+          SizedBox(height: s.md),
+          Wrap(
+            spacing: s.sm,
+            runSpacing: s.sm,
+            children: [
+              OutlinedButton.icon(
+                onPressed: isEditable ? () => onEdit(item) : null,
+                icon: const Icon(Icons.edit_outlined),
+                label: const Text('Editar'),
+              ),
+              OutlinedButton.icon(
+                onPressed: isEditable ? () => onRemove(item) : null,
+                icon: const Icon(Icons.delete_outline_rounded),
+                label: const Text('Remover'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: t.posDanger,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PurchaseItemInfo extends StatelessWidget {
+  const _PurchaseItemInfo({
+    required this.label,
+    required this.value,
+  });
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+
+    return RichText(
+      text: TextSpan(
+        style: TextStyle(
+          color: t.textMuted,
+          fontSize: 12,
+        ),
+        children: [
+          TextSpan(
+            text: '$label: ',
+            style: TextStyle(
+              color: t.textPrimary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          TextSpan(text: value),
+        ],
+      ),
+    );
+  }
+}
+
+class _PurchaseItemActionButtons extends StatelessWidget {
+  const _PurchaseItemActionButtons({
+    required this.item,
+    required this.isEditable,
+    required this.onEdit,
+    required this.onRemove,
+    this.showDetailsButton = false,
+  });
+
+  final CompraItem item;
+  final bool isEditable;
+  final ValueChanged<CompraItem> onEdit;
+  final ValueChanged<CompraItem> onRemove;
+  final bool showDetailsButton;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (showDetailsButton)
+          IconButton(
+            icon: const Icon(Icons.info_outline_rounded, size: 20),
+            onPressed: () => _showPurchaseItemDetails(context, item),
+            tooltip: 'Ver detalhes',
+          ),
+        IconButton(
+          icon: const Icon(Icons.edit_outlined, size: 20),
+          onPressed: isEditable ? () => onEdit(item) : null,
+          tooltip: 'Editar item',
+        ),
+        IconButton(
+          icon: const Icon(Icons.delete_outline_rounded, size: 20),
+          onPressed: isEditable ? () => onRemove(item) : null,
+          color: t.posDanger,
+          tooltip: 'Remover item',
+        ),
+      ],
+    );
+  }
+}
+
+Future<void> _showPurchaseItemDetails(BuildContext context, CompraItem item) {
+  return showDialog<void>(
+    context: context,
+    builder: (dialogContext) {
+      final s = dialogContext.spacing;
+
+      return AlertDialog(
+        title: Text(item.produtoNome),
+        content: SizedBox(
+          width: 420,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _DialogDetailRow(label: 'Lote', value: item.numeroLote),
+              SizedBox(height: s.sm),
+              _DialogDetailRow(
+                label: 'Validade',
+                value: _formatDisplayDate(item.dataValidade),
+              ),
+              SizedBox(height: s.sm),
+              _DialogDetailRow(
+                label: 'Preço compra',
+                value: _formatMoney(item.precoCompra),
+              ),
+              SizedBox(height: s.sm),
+              _DialogDetailRow(
+                label: 'Preço venda',
+                value: item.precoVenda != null
+                    ? _formatMoney(item.precoVenda!)
+                    : '-',
+              ),
+              SizedBox(height: s.sm),
+              _DialogDetailRow(
+                label: 'Quantidade',
+                value: _formatQuantity(item.quantidade),
+              ),
+              SizedBox(height: s.sm),
+              _DialogDetailRow(
+                label: 'Subtotal',
+                value: _formatMoney(item.subtotal),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Fechar'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+class _DialogDetailRow extends StatelessWidget {
+  const _DialogDetailRow({
+    required this.label,
+    required this.value,
+  });
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 120,
+          child: Text(
+            label,
+            style: TextStyle(
+              color: t.textMuted,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(
+              color: t.textPrimary,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -894,7 +1557,9 @@ class _ActivePurchaseHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'ID ${purchase.id}',
+            purchase.numeroDocumento.isNotEmpty
+                ? 'Documento ${purchase.numeroDocumento}'
+                : 'Compra #${purchase.id}',
             style: TextStyle(
               color: t.textPrimary,
               fontWeight: FontWeight.w800,
@@ -906,7 +1571,9 @@ class _ActivePurchaseHeader extends StatelessWidget {
             runSpacing: s.sm,
             children: [
               _InfoTag(label: purchase.status.label, color: purchase.status.isEditable ? t.posWarning : t.brandGreen),
-              _InfoTag(label: 'Fornecedor ${purchase.fornecedorId}', color: t.brandBlue),
+              if (purchase.numeroDocumento.isNotEmpty)
+                _InfoTag(label: 'Nº doc. ${purchase.numeroDocumento}', color: t.brandBlue),
+              _InfoTag(label: 'Fornecedor ${purchase.fornecedorNome}', color: t.brandBlue),
               _InfoTag(label: 'Data ${_formatDate(purchase.data)}', color: t.textMuted),
             ],
           ),
@@ -1108,16 +1775,51 @@ class _EmptyPane extends StatelessWidget {
   }
 }
 
-class _FornecedorDialog extends ConsumerStatefulWidget {
-  const _FornecedorDialog();
+class NovaCompraDialogResult {
+  const NovaCompraDialogResult({
+    required this.fornecedorId,
+    required this.numeroDocumento,
+  });
 
-  @override
-  ConsumerState<_FornecedorDialog> createState() => _FornecedorDialogState();
+  final String fornecedorId;
+  final String numeroDocumento;
 }
 
-class _FornecedorDialogState extends ConsumerState<_FornecedorDialog> {
+class _NovaCompraDialog extends ConsumerStatefulWidget {
+  const _NovaCompraDialog();
+
+  @override
+  ConsumerState<_NovaCompraDialog> createState() => _NovaCompraDialogState();
+}
+
+class _NovaCompraDialogState extends ConsumerState<_NovaCompraDialog> {
+  final _formKey = GlobalKey<FormState>();
+  final _numeroDocumentoController = TextEditingController();
   String? _selectedId;
   String _search = '';
+
+  @override
+  void dispose() {
+    _numeroDocumentoController.dispose();
+    super.dispose();
+  }
+
+  bool get _canSubmit {
+    final numeroDocumento = _numeroDocumentoController.text.trim();
+    return _selectedId != null && numeroDocumento.isNotEmpty;
+  }
+
+  void _submit() {
+    if (_formKey.currentState?.validate() != true || !_canSubmit) {
+      return;
+    }
+    Navigator.of(context).pop(
+      NovaCompraDialogResult(
+        fornecedorId: _selectedId!,
+        numeroDocumento: _numeroDocumentoController.text.trim(),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1125,21 +1827,41 @@ class _FornecedorDialogState extends ConsumerState<_FornecedorDialog> {
     final s = context.spacing;
 
     return AlertDialog(
-      title: const Text('Selecionar fornecedor'),
+      title: const Text('Nova Compra'),
       content: SizedBox(
         width: 400,
-        height: 500,
-        child: Column(
-          children: [
-            TextField(
-              decoration: const InputDecoration(
-                labelText: 'Pesquisar fornecedor',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
+        height: 560,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              TextFormField(
+                controller: _numeroDocumentoController,
+                decoration: const InputDecoration(
+                  labelText: 'Número do Documento *',
+                  hintText: 'Ex.: FT-2026/00123',
+                  prefixIcon: Icon(Icons.description_outlined),
+                  border: OutlineInputBorder(),
+                ),
+                textInputAction: TextInputAction.next,
+                onChanged: (_) => setState(() {}),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Informe o número do documento';
+                  }
+                  return null;
+                },
               ),
-              onChanged: (val) => setState(() => _search = val),
-            ),
-            SizedBox(height: s.md),
+              SizedBox(height: s.md),
+              TextField(
+                decoration: const InputDecoration(
+                  labelText: 'Pesquisar fornecedor',
+                  prefixIcon: Icon(Icons.search),
+                  border: OutlineInputBorder(),
+                ),
+                onChanged: (val) => setState(() => _search = val),
+              ),
+              SizedBox(height: s.md),
             Expanded(
               child: suppliersAsync.when(
                 data: (suppliers) {
@@ -1176,7 +1898,8 @@ class _FornecedorDialogState extends ConsumerState<_FornecedorDialog> {
                 error: (err, _) => Center(child: Text('Erro: $err')),
               ),
             ),
-          ],
+            ],
+          ),
         ),
       ),
       actions: [
@@ -1185,9 +1908,7 @@ class _FornecedorDialogState extends ConsumerState<_FornecedorDialog> {
           child: const Text('Cancelar'),
         ),
         FilledButton.icon(
-          onPressed: _selectedId == null
-              ? null
-              : () => Navigator.of(context).pop(_selectedId),
+          onPressed: _canSubmit ? _submit : null,
           icon: const Icon(Icons.check_rounded),
           label: const Text('Iniciar compra'),
         ),
@@ -1197,9 +1918,17 @@ class _FornecedorDialogState extends ConsumerState<_FornecedorDialog> {
 }
 
 class _CompraItemDialog extends StatefulWidget {
-  const _CompraItemDialog({required this.product});
+  const _CompraItemDialog({
+    this.product,
+    this.item,
+  }) : assert(product != null || item != null);
 
-  final Product product;
+  final Product? product;
+  final CompraItem? item;
+
+  bool get isEditing => item != null;
+  String get productName => item?.produtoNome ?? product!.nome;
+  String get productId => item?.produtoId ?? product!.id;
 
   @override
   State<_CompraItemDialog> createState() => _CompraItemDialogState();
@@ -1216,19 +1945,31 @@ class _CompraItemDialogState extends State<_CompraItemDialog> {
   @override
   void initState() {
     super.initState();
-    _loteController = TextEditingController(text: widget.product.lote ?? '');
-    _precoCompraController = TextEditingController();
+    _loteController = TextEditingController(
+      text: widget.item?.numeroLote ?? widget.product?.lote ?? '',
+    );
+    _precoCompraController = TextEditingController(
+      text: widget.item != null
+          ? widget.item!.precoCompra.toStringAsFixed(2)
+          : '',
+    );
     _precoVendaController = TextEditingController(
-      text: widget.product.precoVenda > 0
-          ? widget.product.precoVenda.toStringAsFixed(2)
+      text: widget.item?.precoVenda != null
+          ? widget.item!.precoVenda!.toStringAsFixed(2)
           : '',
     );
     _dataValidadeController = TextEditingController(
-      text: widget.product.dataValidade != null
-          ? _formatIsoDate(widget.product.dataValidade!)
-          : '2027-12-31',
+      text: widget.item != null
+          ? _normalizeDateInputValue(widget.item!.dataValidade)
+          : (widget.product?.dataValidade != null
+                ? _formatDate(widget.product!.dataValidade!)
+                : _formatDate(DateTime(2027, 12, 31))),
     );
-    _quantidadeController = TextEditingController(text: '1');
+    _quantidadeController = TextEditingController(
+      text: widget.item != null
+          ? _formatQuantity(widget.item!.quantidade)
+          : '1',
+    );
   }
 
   @override
@@ -1247,9 +1988,12 @@ class _CompraItemDialogState extends State<_CompraItemDialog> {
     }
     Navigator.of(context).pop(
       CompraItemDraft(
-        product: widget.product,
+        produtoId: widget.productId,
+        produtoNome: widget.productName,
         numeroLote: _loteController.text.trim(),
-        dataValidade: _dataValidadeController.text.trim(),
+        dataValidade: _formatIsoDate(
+          _parseDateInputValue(_dataValidadeController.text.trim())!,
+        ),
         quantidade: _parseNumber(_quantidadeController.text),
         precoCompra: _parseNumber(_precoCompraController.text),
         precoVenda: _precoVendaController.text.trim().isEmpty
@@ -1259,19 +2003,40 @@ class _CompraItemDialogState extends State<_CompraItemDialog> {
     );
   }
 
+  Future<void> _pickExpiryDate() async {
+    final initialDate =
+        _parseDateInputValue(_dataValidadeController.text.trim()) ??
+        widget.product?.dataValidade ??
+        DateTime.now().add(const Duration(days: 365));
+    final now = DateTime.now();
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: initialDate.isBefore(now) ? now : initialDate,
+      firstDate: DateTime(now.year - 1),
+      lastDate: DateTime(now.year + 20),
+    );
+    if (pickedDate == null) {
+      return;
+    }
+    _dataValidadeController.text = _formatDate(pickedDate);
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = context.spacing;
     return AlertDialog(
-      title: Text('Adicionar ${widget.product.nome}'),
+      title: Text(
+        widget.isEditing
+            ? 'Editar ${widget.productName}'
+            : 'Adicionar ${widget.productName}',
+      ),
       content: SizedBox(
         width: 540,
         child: Form(
           key: _formKey,
           child: SingleChildScrollView(
-            child: Wrap(
-              spacing: s.md,
-              runSpacing: s.md,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _DialogField(
                   controller: _loteController,
@@ -1279,29 +2044,50 @@ class _CompraItemDialogState extends State<_CompraItemDialog> {
                   hint: 'Ex.: LOTE-2026-001',
                   validator: _requiredValidator,
                 ),
+                SizedBox(height: s.md),
+                _DialogField(
+                  controller: _dataValidadeController,
+                  label: 'Data de validade',
+                  hint: 'DD/MM/AAAA',
+                  validator: _dateValidator,
+                  keyboardType: TextInputType.datetime,
+                  inputFormatters: [
+                    _DateTextInputFormatter(),
+                  ],
+                  onEditingComplete: () {
+                    _dataValidadeController.text = _normalizeDateInputValue(
+                      _dataValidadeController.text,
+                    );
+                  },
+                  suffixIcon: IconButton(
+                    onPressed: _pickExpiryDate,
+                    icon: const Icon(Icons.calendar_today_outlined),
+                    tooltip: 'Selecionar data',
+                  ),
+                ),
+                SizedBox(height: s.md),
                 _DialogField(
                   controller: _precoCompraController,
                   label: 'Preço de compra',
                   hint: 'Ex.: 44.10',
                   validator: _positiveNumberValidator,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 ),
+                SizedBox(height: s.md),
                 _DialogField(
                   controller: _precoVendaController,
                   label: 'Preço de venda',
                   hint: 'Opcional',
                   validator: _optionalPositiveNumberValidator,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 ),
-                _DialogField(
-                  controller: _dataValidadeController,
-                  label: 'Data de validade',
-                  hint: 'AAAA-MM-DD',
-                  validator: _dateValidator,
-                ),
+                SizedBox(height: s.md),
                 _DialogField(
                   controller: _quantidadeController,
                   label: 'Quantidade',
                   hint: 'Ex.: 10',
                   validator: _positiveNumberValidator,
+                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
                 ),
               ],
             ),
@@ -1315,8 +2101,10 @@ class _CompraItemDialogState extends State<_CompraItemDialog> {
         ),
         FilledButton.icon(
           onPressed: _submit,
-          icon: const Icon(Icons.add_task_rounded),
-          label: const Text('Adicionar item'),
+          icon: Icon(
+            widget.isEditing ? Icons.save_outlined : Icons.add_task_rounded,
+          ),
+          label: Text(widget.isEditing ? 'Guardar alterações' : 'Adicionar item'),
         ),
       ],
     );
@@ -1334,8 +2122,8 @@ class _CompraItemDialogState extends State<_CompraItemDialog> {
     if (normalized.isEmpty) {
       return 'Campo obrigatorio';
     }
-    if (!RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(normalized)) {
-      return 'Use o formato AAAA-MM-DD';
+    if (_parseDateInputValue(normalized) == null) {
+      return 'Use o formato DD/MM/AAAA';
     }
     return null;
   }
@@ -1375,24 +2163,42 @@ class _DialogField extends StatelessWidget {
     required this.label,
     required this.hint,
     this.validator,
+    this.keyboardType,
+    this.inputFormatters,
+    this.readOnly = false,
+    this.onTap,
+    this.onEditingComplete,
+    this.suffixIcon,
   });
 
   final TextEditingController controller;
   final String label;
   final String hint;
   final String? Function(String?)? validator;
+  final TextInputType? keyboardType;
+  final List<TextInputFormatter>? inputFormatters;
+  final bool readOnly;
+  final VoidCallback? onTap;
+  final VoidCallback? onEditingComplete;
+  final Widget? suffixIcon;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 240,
+      width: double.infinity,
       child: TextFormField(
         controller: controller,
         validator: validator,
+        keyboardType: keyboardType,
+        inputFormatters: inputFormatters,
+        readOnly: readOnly,
+        onTap: onTap,
+        onEditingComplete: onEditingComplete,
         decoration: InputDecoration(
           labelText: label,
           hintText: hint,
           border: const OutlineInputBorder(),
+          suffixIcon: suffixIcon,
         ),
       ),
     );

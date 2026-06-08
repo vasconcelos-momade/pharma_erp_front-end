@@ -21,6 +21,11 @@ abstract class CompraRemoteDataSource {
     required String compraId,
     required CompraItemRequestModel request,
   });
+  Future<CompraDetalheModel> atualizarItem({
+    required String compraId,
+    required String itemId,
+    required CompraItemRequestModel request,
+  });
   Future<CompraDetalheModel> removerItem({
     required String compraId,
     required String itemId,
@@ -130,6 +135,28 @@ class CompraRemoteDataSourceImpl implements CompraRemoteDataSource {
         _expectMap(
           response.data,
           fallback: 'Resposta inválida ao adicionar item na compra.',
+        ),
+      );
+    } on DioException catch (e) {
+      throw ApiFailure.fromDio(e);
+    }
+  }
+
+  @override
+  Future<CompraDetalheModel> atualizarItem({
+    required String compraId,
+    required String itemId,
+    required CompraItemRequestModel request,
+  }) async {
+    try {
+      final response = await _dio.patch<Map<String, dynamic>>(
+        ApiConstants.tenantCompraItem(compraId, itemId),
+        data: request.toJson(),
+      );
+      return CompraDetalheModel.fromJson(
+        _expectMap(
+          response.data,
+          fallback: 'Resposta inválida ao actualizar item da compra.',
         ),
       );
     } on DioException catch (e) {

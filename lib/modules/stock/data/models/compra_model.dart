@@ -39,21 +39,25 @@ class FornecedorResumoModel {
 class CriarCompraPendenteRequestModel {
   const CriarCompraPendenteRequestModel({
     required this.fornecedorId,
+    required this.numeroDocumento,
   });
 
   final String fornecedorId;
+  final String numeroDocumento;
 
   factory CriarCompraPendenteRequestModel.fromEntity(
     CriarCompraPendenteRequest entity,
   ) {
     return CriarCompraPendenteRequestModel(
       fornecedorId: entity.fornecedorId,
+      numeroDocumento: entity.numeroDocumento,
     );
   }
 
   Map<String, dynamic> toJson() {
     return <String, dynamic>{
       'fornecedorId': fornecedorId,
+      'numeroDocumento': numeroDocumento,
     };
   }
 }
@@ -101,6 +105,7 @@ class CompraItemRequestModel {
 class CompraResumoModel {
   const CompraResumoModel({
     required this.id,
+    required this.numeroDocumento,
     required this.fornecedorId,
     required this.fornecedorNome,
     required this.status,
@@ -110,6 +115,7 @@ class CompraResumoModel {
   });
 
   final String id;
+  final String numeroDocumento;
   final String fornecedorId;
   final String fornecedorNome;
   final CompraStatus status;
@@ -122,6 +128,7 @@ class CompraResumoModel {
     final fornecedor = json['fornecedor'];
     return CompraResumoModel(
       id: _stringValue(json, const ['id', 'compraId']),
+      numeroDocumento: _stringValue(json, const ['numeroDocumento']),
       fornecedorId: _stringValue(json, const ['fornecedorId']),
       fornecedorNome: _stringValue(
         json,
@@ -133,7 +140,7 @@ class CompraResumoModel {
       status: CompraStatusX.fromApi(_stringValue(json, const ['status'])),
       data: _dateValue(json, const ['data', 'createdAt']),
       total: _toDouble(_dynamicValue(json, const ['total'])),
-      totalItens: _toInt(_dynamicValue(json, const ['totalItens', 'itensCount'])) ??
+      totalItens: _toInt(_dynamicValue(json, const ['totalItens', 'itensCount', 'itemCount'])) ??
           (items is List ? items.length : 0),
     );
   }
@@ -141,6 +148,7 @@ class CompraResumoModel {
   CompraResumo toEntity() {
     return CompraResumo(
       id: id,
+      numeroDocumento: numeroDocumento,
       fornecedorId: fornecedorId,
       fornecedorNome: fornecedorNome,
       status: status,
@@ -213,6 +221,7 @@ class CompraItemModel {
 class CompraDetalheModel {
   const CompraDetalheModel({
     required this.id,
+    required this.numeroDocumento,
     required this.fornecedorId,
     required this.fornecedorNome,
     required this.status,
@@ -222,6 +231,7 @@ class CompraDetalheModel {
   });
 
   final String id;
+  final String numeroDocumento;
   final String fornecedorId;
   final String fornecedorNome;
   final CompraStatus status;
@@ -234,6 +244,7 @@ class CompraDetalheModel {
     final fornecedor = json['fornecedor'];
     return CompraDetalheModel(
       id: _stringValue(json, const ['id', 'compraId']),
+      numeroDocumento: _stringValue(json, const ['numeroDocumento']),
       fornecedorId: _stringValue(json, const ['fornecedorId']),
       fornecedorNome: _stringValue(
         json,
@@ -257,6 +268,7 @@ class CompraDetalheModel {
   CompraDetalhe toEntity() {
     return CompraDetalhe(
       id: id,
+      numeroDocumento: numeroDocumento,
       fornecedorId: fornecedorId,
       fornecedorNome: fornecedorNome,
       status: status,

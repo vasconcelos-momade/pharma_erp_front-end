@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/errors/api_failure.dart';
-import '../../../pharmacy/products/domain/entities/product.dart';
 import '../../data/repositories/compra_repository_impl.dart';
 import '../../domain/entities/compra.dart';
 
@@ -14,7 +13,8 @@ final supplierListProvider = FutureProvider<List<FornecedorResumo>>((ref) async 
 
 class CompraItemDraft {
   const CompraItemDraft({
-    required this.product,
+    required this.produtoId,
+    required this.produtoNome,
     required this.numeroLote,
     required this.dataValidade,
     required this.quantidade,
@@ -22,7 +22,8 @@ class CompraItemDraft {
     this.precoVenda,
   });
 
-  final Product product;
+  final String produtoId;
+  final String produtoNome;
   final String numeroLote;
   final String dataValidade;
   final double quantidade;
@@ -152,11 +153,22 @@ class CompraController extends Notifier<CompraState> {
     }
   }
 
-  Future<void> startPurchase(String fornecedorId) async {
+  Future<void> startPurchase({
+    required String fornecedorId,
+    required String numeroDocumento,
+  }) async {
     final normalizedFornecedorId = fornecedorId.trim();
+    final normalizedNumeroDocumento = numeroDocumento.trim();
     if (normalizedFornecedorId.isEmpty) {
       state = state.copyWith(
         errorMessage: 'Informe o fornecedor para iniciar a compra.',
+        clearSuccess: true,
+      );
+      return;
+    }
+    if (normalizedNumeroDocumento.isEmpty) {
+      state = state.copyWith(
+        errorMessage: 'Informe o número do documento para iniciar a compra.',
         clearSuccess: true,
       );
       return;
@@ -171,7 +183,10 @@ class CompraController extends Notifier<CompraState> {
     try {
       final repository = ref.read(compraRepositoryProvider);
       final summary = await repository.criarCompraPendente(
-        CriarCompraPendenteRequest(fornecedorId: normalizedFornecedorId),
+        CriarCompraPendenteRequest(
+          fornecedorId: normalizedFornecedorId,
+          numeroDocumento: normalizedNumeroDocumento,
+        ),
       );
       final detail = await repository.obterCompra(summary.id);
       final nextPending = <CompraResumo>[
@@ -211,7 +226,6 @@ class CompraController extends Notifier<CompraState> {
   }
 
   Future<void> addItemToActivePurchase({
-    required Product product,
     required CompraItemDraft draft,
   }) async {
     final activePurchase = state.activePurchase;
@@ -233,7 +247,7 @@ class CompraController extends Notifier<CompraState> {
       final updated = await ref.read(compraRepositoryProvider).adicionarItem(
             compraId: activePurchase.id,
             request: CompraItemRequest(
-              produtoId: product.id,
+              produtoId: draft.produtoId,
               numeroLote: draft.numeroLote,
               dataValidade: draft.dataValidade,
               quantidade: draft.quantidade,
@@ -247,7 +261,63 @@ class CompraController extends Notifier<CompraState> {
       state = state.copyWith(
         isAddingItem: false,
         activePurchase: updated,
-        successMessage: '${product.nome} adicionado a compra activa.',
+        successMessage: '${draft.produtoNome} adicionado a compra activa.',
+        clearError: true,
+      );
+    } on ApiFailure catch (e) {
+      state = state.copyWith(
+        isAddingItem: false,
+        errorMessage: e.message,
+        clearSuccess: true,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isAddingItem: false,
+        errorMessage: e.toString(),
+        clearSuccess: true,
+      );
+    }
+  }
+
+  Future<void> updateItemInActivePurchase({
+    required CompraItem item,
+    required CompraItemDraft draft,
+  }) async {
+    final activePurchase = state.activePurchase;
+    if (activePurchase == null || !activePurchase.status.isEditable) {
+      state = state.copyWith(
+        errorMessage: 'Seleccione uma compra pendente para editar itens.',
+        clearSuccess: true,
+      );
+      return;
+    }
+
+    state = state.copyWith(
+      isAddingItem: true,
+      clearError: true,
+      clearSuccess: true,
+    );
+
+    try {
+      final updated = await ref.read(compraRepositoryProvider).atualizarItem(
+            compraId: activePurchase.id,
+            itemId: item.id,
+            request: CompraItemRequest(
+              produtoId: draft.produtoId,
+              numeroLote: draft.numeroLote,
+              dataValidade: draft.dataValidade,
+              quantidade: draft.quantidade,
+              precoCompra: draft.precoCompra,
+              precoVenda: draft.precoVenda,
+            ),
+          );
+
+      await _refreshPendingOnly();
+
+      state = state.copyWith(
+        isAddingItem: false,
+        activePurchase: updated,
+        successMessage: '${draft.produtoNome} actualizado na compra.',
         clearError: true,
       );
     } on ApiFailure catch (e) {
@@ -408,6 +478,7 @@ class CompraController extends Notifier<CompraState> {
       // Mantem a lista actual caso a actualização silenciosa falhe.
     }
   }
+
 }
 
 final compraProvider = NotifierProvider.autoDispose<CompraController, CompraState>(

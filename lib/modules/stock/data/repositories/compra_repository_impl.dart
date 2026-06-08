@@ -49,6 +49,20 @@ class CompraRepositoryImpl implements CompraRepository {
   }
 
   @override
+  Future<CompraDetalhe> atualizarItem({
+    required String compraId,
+    required String itemId,
+    required CompraItemRequest request,
+  }) async {
+    final response = await _remoteDataSource.atualizarItem(
+      compraId: compraId,
+      itemId: itemId,
+      request: CompraItemRequestModel.fromEntity(request),
+    );
+    return response.toEntity();
+  }
+
+  @override
   Future<CompraDetalhe> removerItem({
     required String compraId,
     required String itemId,

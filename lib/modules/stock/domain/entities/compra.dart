@@ -62,9 +62,11 @@ extension CompraStatusX on CompraStatus {
 class CriarCompraPendenteRequest {
   const CriarCompraPendenteRequest({
     required this.fornecedorId,
+    required this.numeroDocumento,
   });
 
   final String fornecedorId;
+  final String numeroDocumento;
 }
 
 class CompraItemRequest {
@@ -88,6 +90,7 @@ class CompraItemRequest {
 class CompraResumo {
   const CompraResumo({
     required this.id,
+    required this.numeroDocumento,
     required this.fornecedorId,
     required this.fornecedorNome,
     required this.status,
@@ -97,6 +100,7 @@ class CompraResumo {
   });
 
   final String id;
+  final String numeroDocumento;
   final String fornecedorId;
   final String fornecedorNome;
   final CompraStatus status;
@@ -132,6 +136,7 @@ class CompraItem {
 class CompraDetalhe {
   const CompraDetalhe({
     required this.id,
+    required this.numeroDocumento,
     required this.fornecedorId,
     required this.fornecedorNome,
     required this.status,
@@ -141,6 +146,7 @@ class CompraDetalhe {
   });
 
   final String id;
+  final String numeroDocumento;
   final String fornecedorId;
   final String fornecedorNome;
   final CompraStatus status;
@@ -152,6 +158,7 @@ class CompraDetalhe {
 
   CompraDetalhe copyWith({
     String? id,
+    String? numeroDocumento,
     String? fornecedorId,
     String? fornecedorNome,
     CompraStatus? status,
@@ -161,6 +168,7 @@ class CompraDetalhe {
   }) {
     return CompraDetalhe(
       id: id ?? this.id,
+      numeroDocumento: numeroDocumento ?? this.numeroDocumento,
       fornecedorId: fornecedorId ?? this.fornecedorId,
       fornecedorNome: fornecedorNome ?? this.fornecedorNome,
       status: status ?? this.status,

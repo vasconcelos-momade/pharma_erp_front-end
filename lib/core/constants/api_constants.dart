@@ -38,10 +38,26 @@ abstract final class ApiConstants {
   static const tenantCompras = '/tenant/compras';
   static String tenantCompraDetalhe(String compraId) => '/tenant/compras/$compraId';
   static String tenantCompraItens(String compraId) => '/tenant/compras/$compraId/items';
-  static String tenantCompraItemRemover(String compraId, String itemId) =>
+  static String tenantCompraItem(String compraId, String itemId) =>
       '/tenant/compras/$compraId/items/$itemId';
+  static String tenantCompraItemRemover(String compraId, String itemId) =>
+      tenantCompraItem(compraId, itemId);
   static String tenantCompraConfirmar(String compraId) =>
       '/tenant/compras/$compraId/confirmar';
+
+  static const tenantInventarios = '/tenant/inventarios';
+  static String tenantInventarioDetalhe(String inventarioId) =>
+      '/tenant/inventarios/$inventarioId';
+  static String tenantInventarioItens(String inventarioId) =>
+      '/tenant/inventarios/$inventarioId/itens';
+  static String tenantInventarioIniciarContagem(String inventarioId) =>
+      '/tenant/inventarios/$inventarioId/iniciar-contagem';
+  static String tenantInventarioItem(String inventarioId, String itemId) =>
+      '/tenant/inventarios/$inventarioId/itens/$itemId';
+  static String tenantInventarioReconciliar(String inventarioId) =>
+      '/tenant/inventarios/$inventarioId/reconciliar';
+  static String tenantInventarioCancelar(String inventarioId) =>
+      '/tenant/inventarios/$inventarioId/cancelar';
 
   static const headerAuthorization = 'Authorization';
   static const headerTenantId = 'x-tenant-id';

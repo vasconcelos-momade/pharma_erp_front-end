@@ -9,6 +9,11 @@ abstract class CompraRepository {
     required String compraId,
     required CompraItemRequest request,
   });
+  Future<CompraDetalhe> atualizarItem({
+    required String compraId,
+    required String itemId,
+    required CompraItemRequest request,
+  });
   Future<CompraDetalhe> removerItem({
     required String compraId,
     required String itemId,

@@ -17,6 +17,7 @@ import '../../modules/pharmacy/psychotropics/presentation/pages/psychotropics_bo
 import '../../modules/pharmacy/sanitary/presentation/pages/regulatory_page.dart';
 import '../../modules/sales/invoices/presentation/pages/invoices_page.dart';
 import '../../modules/sales/pdv/presentation/pages/pdv_page.dart';
+import '../../modules/stock/presentation/pages/inventory_hub_page.dart';
 import '../../modules/stock/presentation/pages/purchasing_hub_page.dart';
 import '../../shared/layouts/app_main_shell.dart';
 import '../../shared/layouts/pos_shell_layout.dart';
@@ -206,7 +207,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: AppRoutePaths.stockInventory,
             name: 'stock-inventory',
-            builder: (context, state) => const StockInventoryPage(),
+            builder: (context, state) => const InventoryHubPage(),
           ),
           GoRoute(
             path: AppRoutePaths.salesCustomers,
