@@ -19,6 +19,7 @@ import '../../modules/sales/invoices/presentation/pages/invoices_page.dart';
 import '../../modules/sales/pdv/presentation/pages/pdv_page.dart';
 import '../../modules/stock/presentation/pages/inventory_hub_page.dart';
 import '../../modules/stock/presentation/pages/purchasing_hub_page.dart';
+import '../../modules/stock/presentation/pages/transfer_hub_page.dart';
 import '../../shared/layouts/app_main_shell.dart';
 import '../../shared/layouts/pos_shell_layout.dart';
 import '../../shared/presentation/stub_pages.dart';
@@ -197,7 +198,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: AppRoutePaths.stockTransfers,
             name: 'stock-transfers',
-            builder: (context, state) => const StockTransfersPage(),
+            builder: (context, state) => const TransferHubPage(),
           ),
           GoRoute(
             path: AppRoutePaths.stockAdjustments,

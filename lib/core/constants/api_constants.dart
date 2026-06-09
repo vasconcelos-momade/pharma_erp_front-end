@@ -59,6 +59,23 @@ abstract final class ApiConstants {
   static String tenantInventarioCancelar(String inventarioId) =>
       '/tenant/inventarios/$inventarioId/cancelar';
 
+  static const tenantTransferencias = '/tenant/transferencias';
+  static String tenantTransferenciaDetalhe(String transferenciaId) =>
+      '/tenant/transferencias/$transferenciaId';
+  static String tenantTransferenciaItens(String transferenciaId) =>
+      '/tenant/transferencias/$transferenciaId/items';
+  static String tenantTransferenciaConfirmar(String transferenciaId) =>
+      '/tenant/transferencias/$transferenciaId/confirmar';
+  static String tenantTransferenciaCancelar(String transferenciaId) =>
+      '/tenant/transferencias/$transferenciaId/cancelar';
+  static String tenantProdutoLotes(String produtoId) =>
+      '/tenant/produtos/$produtoId/lotes';
+  static String tenantTransferenciaItem(
+    String transferenciaId,
+    String itemId,
+  ) =>
+      '/tenant/transferencias/$transferenciaId/items/$itemId';
+
   static const headerAuthorization = 'Authorization';
   static const headerTenantId = 'x-tenant-id';
   static const headerBranchId = 'x-branch-id';
