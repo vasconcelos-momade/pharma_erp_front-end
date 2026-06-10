@@ -685,7 +685,7 @@ class _RightPane extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: t.card,
-        borderRadius: BorderRadius.circular(t.radiusLg),
+        borderRadius: BorderRadius.circular(t.radiusXl),
         border: Border.all(color: t.border.withValues(alpha: 0.35)),
       ),
       padding: EdgeInsets.all(s.lg),

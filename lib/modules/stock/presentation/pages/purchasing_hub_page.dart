@@ -2165,8 +2165,6 @@ class _DialogField extends StatelessWidget {
     this.validator,
     this.keyboardType,
     this.inputFormatters,
-    this.readOnly = false,
-    this.onTap,
     this.onEditingComplete,
     this.suffixIcon,
   });
@@ -2177,8 +2175,6 @@ class _DialogField extends StatelessWidget {
   final String? Function(String?)? validator;
   final TextInputType? keyboardType;
   final List<TextInputFormatter>? inputFormatters;
-  final bool readOnly;
-  final VoidCallback? onTap;
   final VoidCallback? onEditingComplete;
   final Widget? suffixIcon;
 
@@ -2191,8 +2187,6 @@ class _DialogField extends StatelessWidget {
         validator: validator,
         keyboardType: keyboardType,
         inputFormatters: inputFormatters,
-        readOnly: readOnly,
-        onTap: onTap,
         onEditingComplete: onEditingComplete,
         decoration: InputDecoration(
           labelText: label,

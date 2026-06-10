@@ -208,7 +208,7 @@ class TransferenciaController extends Notifier<TransferenciaState> {
   Future<void> selectConfirmedTransfer(String transferenciaId) async {
     await _loadTransfer(
       transferenciaId,
-      tabAfterLoad: TransferenciaTab.confirmadas,
+      tabAfterLoad: TransferenciaTab.concluidas,
     );
   }
 
