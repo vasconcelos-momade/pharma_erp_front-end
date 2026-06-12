@@ -18,8 +18,7 @@ import '../../modules/pharmacy/sanitary/presentation/pages/regulatory_page.dart'
 import '../../modules/sales/invoices/presentation/pages/invoices_page.dart';
 import '../../modules/sales/pdv/presentation/pages/pdv_page.dart';
 import '../../modules/stock/presentation/pages/inventory_hub_page.dart';
-import '../../modules/stock/presentation/pages/purchasing_hub_page.dart';
-import '../../modules/stock/presentation/pages/transfer_hub_page.dart';
+import '../../modules/stock/presentation/pages/requisicao_hub_page.dart';
 import '../../shared/layouts/app_main_shell.dart';
 import '../../shared/layouts/pos_shell_layout.dart';
 import '../../shared/presentation/stub_pages.dart';
@@ -182,8 +181,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: AppRoutePaths.purchasing,
-            name: 'purchasing',
-            builder: (context, state) => const PurchasingHubPage(),
+            redirect: (context, state) => AppRoutePaths.stockRequisitions,
+          ),
+          GoRoute(
+            path: AppRoutePaths.comprasLegacy,
+            redirect: (context, state) => AppRoutePaths.stockRequisitions,
           ),
           GoRoute(
             path: AppRoutePaths.reports,
@@ -196,15 +198,19 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const StockMovementsPage(),
           ),
           GoRoute(
-            path: AppRoutePaths.stockTransfers,
-            name: 'stock-transfers',
-            builder: (context, state) => const TransferHubPage(),
+            path: AppRoutePaths.stockRequisitions,
+            name: 'stock-requests',
+            builder: (context, state) => const RequisicaoHubPage(),
           ),
           GoRoute(
-            path: AppRoutePaths.stockAdjustments,
-            name: 'stock-adjustments',
-            builder: (context, state) => const StockAdjustmentsPage(),
+            path: AppRoutePaths.stockRequisitionsLegacy,
+            redirect: (context, state) => AppRoutePaths.stockRequisitions,
           ),
+          GoRoute(
+            path: AppRoutePaths.stockTransfersLegacy,
+            redirect: (context, state) => AppRoutePaths.stockRequisitions,
+          ),
+
           GoRoute(
             path: AppRoutePaths.stockInventory,
             name: 'stock-inventory',

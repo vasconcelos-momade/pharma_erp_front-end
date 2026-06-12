@@ -1,0 +1,385 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../../core/theme/spacing.dart';
+import '../../domain/entities/fornecedor.dart';
+import '../providers/fornecedor_provider.dart';
+
+enum CriarRequisicaoModalTipo { compra, entrada, saida }
+
+class CriarRequisicaoDialogResult {
+  const CriarRequisicaoDialogResult({
+    required this.tipo,
+    this.fornecedorId,
+    this.fornecedorNome,
+    this.numeroDocumento,
+    this.origem,
+    this.destino,
+    this.observacao,
+  });
+
+  final CriarRequisicaoModalTipo tipo;
+  final String? fornecedorId;
+  final String? fornecedorNome;
+  final String? numeroDocumento;
+  final String? origem;
+  final String? destino;
+  final String? observacao;
+}
+
+class CriarRequisicaoDialog extends ConsumerStatefulWidget {
+  const CriarRequisicaoDialog({
+    super.key,
+    this.initialTipo = CriarRequisicaoModalTipo.compra,
+  });
+
+  final CriarRequisicaoModalTipo initialTipo;
+
+  @override
+  ConsumerState<CriarRequisicaoDialog> createState() =>
+      _CriarRequisicaoDialogState();
+}
+
+class _CriarRequisicaoDialogState extends ConsumerState<CriarRequisicaoDialog>
+    with SingleTickerProviderStateMixin {
+  final _formKey = GlobalKey<FormState>();
+  final _numeroDocumentoController = TextEditingController();
+  final _origemController = TextEditingController();
+  final _destinoController = TextEditingController();
+  final _observacaoController = TextEditingController();
+  final _fornecedorSearchController = TextEditingController();
+
+  late TabController _tabController;
+  String? _selectedFornecedorId;
+  String? _selectedFornecedorNome;
+  FornecedorResumo? _selectedFornecedorDropdown;
+  String _fornecedorSearch = '';
+
+  @override
+  void initState() {
+    super.initState();
+    final initialIndex = switch (widget.initialTipo) {
+      CriarRequisicaoModalTipo.compra => 0,
+      CriarRequisicaoModalTipo.entrada => 1,
+      CriarRequisicaoModalTipo.saida => 2,
+    };
+    _tabController = TabController(
+      length: 3,
+      vsync: this,
+      initialIndex: initialIndex,
+    );
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    _numeroDocumentoController.dispose();
+    _origemController.dispose();
+    _destinoController.dispose();
+    _observacaoController.dispose();
+    _fornecedorSearchController.dispose();
+    super.dispose();
+  }
+
+  CriarRequisicaoModalTipo get _activeTipo => switch (_tabController.index) {
+        0 => CriarRequisicaoModalTipo.compra,
+        1 => CriarRequisicaoModalTipo.entrada,
+        2 => CriarRequisicaoModalTipo.saida,
+        _ => CriarRequisicaoModalTipo.compra,
+      };
+
+  bool get _canSubmit {
+    switch (_activeTipo) {
+      case CriarRequisicaoModalTipo.compra:
+        return _selectedFornecedorId != null &&
+            _numeroDocumentoController.text.trim().isNotEmpty;
+      case CriarRequisicaoModalTipo.entrada:
+        return _origemController.text.trim().isNotEmpty &&
+            _selectedFornecedorDropdown != null;
+      case CriarRequisicaoModalTipo.saida:
+        return _destinoController.text.trim().isNotEmpty &&
+            _selectedFornecedorDropdown != null;
+    }
+  }
+
+  void _submit() {
+    if (_formKey.currentState?.validate() != true || !_canSubmit) {
+      return;
+    }
+
+    switch (_activeTipo) {
+      case CriarRequisicaoModalTipo.compra:
+        Navigator.of(context).pop(
+          CriarRequisicaoDialogResult(
+            tipo: CriarRequisicaoModalTipo.compra,
+            fornecedorId: _selectedFornecedorId,
+            fornecedorNome: _selectedFornecedorNome,
+            numeroDocumento: _numeroDocumentoController.text.trim(),
+          ),
+        );
+      case CriarRequisicaoModalTipo.entrada:
+        Navigator.of(context).pop(
+          CriarRequisicaoDialogResult(
+            tipo: CriarRequisicaoModalTipo.entrada,
+            fornecedorId: _selectedFornecedorDropdown?.id,
+            fornecedorNome: _selectedFornecedorDropdown?.nome,
+            origem: _origemController.text.trim(),
+            observacao: _observacaoController.text.trim().isEmpty
+                ? null
+                : _observacaoController.text.trim(),
+          ),
+        );
+      case CriarRequisicaoModalTipo.saida:
+        Navigator.of(context).pop(
+          CriarRequisicaoDialogResult(
+            tipo: CriarRequisicaoModalTipo.saida,
+            fornecedorId: _selectedFornecedorDropdown?.id,
+            fornecedorNome: _selectedFornecedorDropdown?.nome,
+            destino: _destinoController.text.trim(),
+            observacao: _observacaoController.text.trim().isEmpty
+                ? null
+                : _observacaoController.text.trim(),
+          ),
+        );
+    }
+  }
+
+  Widget _buildCompraTab(List<FornecedorResumo> fornecedores) {
+    final s = context.spacing;
+    final filtered = fornecedores
+        .where(
+          (supplier) =>
+              supplier.nome.toLowerCase().contains(_fornecedorSearch.toLowerCase()) ||
+              supplier.id.toLowerCase().contains(_fornecedorSearch.toLowerCase()),
+        )
+        .toList();
+
+    return Column(
+      children: [
+        TextFormField(
+          controller: _numeroDocumentoController,
+          decoration: const InputDecoration(
+            labelText: 'Número do Documento *',
+            hintText: 'Ex.: FT-2026/00123',
+            prefixIcon: Icon(Icons.description_outlined),
+            border: OutlineInputBorder(),
+          ),
+          onChanged: (_) => setState(() {}),
+          validator: (value) {
+            if (_activeTipo != CriarRequisicaoModalTipo.compra) {
+              return null;
+            }
+            if (value == null || value.trim().isEmpty) {
+              return 'Informe o número do documento';
+            }
+            return null;
+          },
+        ),
+        SizedBox(height: s.md),
+        TextField(
+          controller: _fornecedorSearchController,
+          decoration: const InputDecoration(
+            labelText: 'Pesquisar fornecedor',
+            prefixIcon: Icon(Icons.search),
+            border: OutlineInputBorder(),
+          ),
+          onChanged: (value) => setState(() => _fornecedorSearch = value),
+        ),
+        SizedBox(height: s.md),
+        Expanded(
+          child: filtered.isEmpty
+              ? const Center(child: Text('Nenhum fornecedor encontrado'))
+              : ListView.separated(
+                  itemCount: filtered.length,
+                  separatorBuilder: (_, _) => const Divider(),
+                  itemBuilder: (context, index) {
+                    final supplier = filtered[index];
+                    final isSelected = _selectedFornecedorId == supplier.id;
+                    return ListTile(
+                      selected: isSelected,
+                      title: Text(supplier.nome),
+                      subtitle: Text('ID: ${supplier.id}'),
+                      onTap: () => setState(() {
+                        _selectedFornecedorId = supplier.id;
+                        _selectedFornecedorNome = supplier.nome;
+                      }),
+                      trailing: isSelected
+                          ? const Icon(Icons.check_circle, color: Colors.green)
+                          : null,
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEntradaTab(List<FornecedorResumo> fornecedores) {
+    return Column(
+      children: [
+        TextFormField(
+          controller: _origemController,
+          decoration: const InputDecoration(
+            labelText: 'Origem *',
+            border: OutlineInputBorder(),
+          ),
+          onChanged: (_) => setState(() {}),
+          validator: (value) {
+            if (_activeTipo != CriarRequisicaoModalTipo.entrada) {
+              return null;
+            }
+            if (value == null || value.trim().isEmpty) {
+              return 'Informe a origem';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 12),
+        DropdownButtonFormField<FornecedorResumo>(
+          decoration: const InputDecoration(
+            labelText: 'Fornecedor *',
+            border: OutlineInputBorder(),
+          ),
+          initialValue: _selectedFornecedorDropdown,
+          items: fornecedores
+              .map(
+                (f) => DropdownMenuItem(
+                  value: f,
+                  child: Text(f.nome),
+                ),
+              )
+              .toList(),
+          onChanged: (value) => setState(() => _selectedFornecedorDropdown = value),
+          validator: (value) {
+            if (_activeTipo != CriarRequisicaoModalTipo.entrada) {
+              return null;
+            }
+            return value == null ? 'Seleccione um fornecedor' : null;
+          },
+        ),
+        const SizedBox(height: 12),
+        TextFormField(
+          controller: _observacaoController,
+          decoration: const InputDecoration(
+            labelText: 'Observação',
+            border: OutlineInputBorder(),
+          ),
+          minLines: 2,
+          maxLines: 4,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSaidaTab(List<FornecedorResumo> fornecedores) {
+    return Column(
+      children: [
+        TextFormField(
+          controller: _destinoController,
+          decoration: const InputDecoration(
+            labelText: 'Destino *',
+            border: OutlineInputBorder(),
+          ),
+          onChanged: (_) => setState(() {}),
+          validator: (value) {
+            if (_activeTipo != CriarRequisicaoModalTipo.saida) {
+              return null;
+            }
+            if (value == null || value.trim().isEmpty) {
+              return 'Informe o destino';
+            }
+            return null;
+          },
+        ),
+        const SizedBox(height: 12),
+        DropdownButtonFormField<FornecedorResumo>(
+          decoration: const InputDecoration(
+            labelText: 'Fornecedor *',
+            border: OutlineInputBorder(),
+          ),
+          initialValue: _selectedFornecedorDropdown,
+          items: fornecedores
+              .map(
+                (f) => DropdownMenuItem(
+                  value: f,
+                  child: Text(f.nome),
+                ),
+              )
+              .toList(),
+          onChanged: (value) => setState(() => _selectedFornecedorDropdown = value),
+          validator: (value) {
+            if (_activeTipo != CriarRequisicaoModalTipo.saida) {
+              return null;
+            }
+            return value == null ? 'Seleccione um fornecedor' : null;
+          },
+        ),
+        const SizedBox(height: 12),
+        TextFormField(
+          controller: _observacaoController,
+          decoration: const InputDecoration(
+            labelText: 'Observação',
+            border: OutlineInputBorder(),
+          ),
+          minLines: 2,
+          maxLines: 4,
+        ),
+      ],
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final suppliersAsync = ref.watch(supplierListProvider);
+
+    return AlertDialog(
+      title: const Text('Criar Requisição'),
+      content: SizedBox(
+        width: 420,
+        height: 520,
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              TabBar(
+                controller: _tabController,
+                onTap: (_) => setState(() {}),
+                tabs: const [
+                  Tab(text: 'Compra'),
+                  Tab(text: 'Entrada'),
+                  Tab(text: 'Saída'),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: suppliersAsync.when(
+                  loading: () => const Center(child: CircularProgressIndicator()),
+                  error: (err, _) => Center(child: Text('Erro: $err')),
+                  data: (fornecedores) => TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildCompraTab(fornecedores),
+                      _buildEntradaTab(fornecedores),
+                      _buildSaidaTab(fornecedores),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton.icon(
+          onPressed: _canSubmit ? _submit : null,
+          icon: const Icon(Icons.check_rounded),
+          label: const Text('Iniciar requisição'),
+        ),
+      ],
+    );
+  }
+}

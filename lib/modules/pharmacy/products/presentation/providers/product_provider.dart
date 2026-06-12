@@ -199,12 +199,13 @@ final productListProvider =
   ProductListController.new,
 );
 
-class PurchaseProductListController extends Notifier<ProductListState> {
+class RequisicaoProductListController extends Notifier<ProductListState> {
   Timer? _debounce;
   int _requestId = 0;
 
   @override
   ProductListState build() {
+    ref.keepAlive();
     ref.onDispose(() {
       _debounce?.cancel();
     });
@@ -301,7 +302,11 @@ class PurchaseProductListController extends Notifier<ProductListState> {
   }
 }
 
-final purchaseProductListProvider =
-    NotifierProvider.autoDispose<PurchaseProductListController, ProductListState>(
-  PurchaseProductListController.new,
+/// Catálogo de produtos para requisições (Compra, Entrada e Saída).
+final requisicaoProductListProvider =
+    NotifierProvider<RequisicaoProductListController, ProductListState>(
+  RequisicaoProductListController.new,
 );
+
+@Deprecated('Use requisicaoProductListProvider')
+final purchaseProductListProvider = requisicaoProductListProvider;

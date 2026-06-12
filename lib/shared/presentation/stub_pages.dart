@@ -315,22 +315,22 @@ class StockMovementsPage extends StatelessWidget {
   }
 }
 
-class StockTransfersPage extends StatelessWidget {
-  const StockTransfersPage({super.key});
+class StockRequisitionsPage extends StatelessWidget {
+  const StockRequisitionsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
     return EnterpriseModuleHub(
-      title: 'Transferências entre armazéns',
-      subtitle: 'Workflow de aprovação, picking FEFO e conferência.',
+      title: 'Requisições de stock',
+      subtitle: 'Rascunhos, confirmação documental e movimentos entre armazéns.',
       tag: 'Stock',
       child: EnterpriseDataTable(
         columns: _cols(t, ['Ref.', 'Origem', 'Destino', 'Estado']),
         rowCount: 3,
         rowBuilder: (c, i) => DataRow(
           cells: [
-            DataCell(Text('TRF-2026-$i', style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w800))),
+            DataCell(Text('REQ-2026-$i', style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w800))),
             DataCell(Text('Arm. A', style: TextStyle(color: t.textSecondary))),
             DataCell(Text('Arm. B', style: TextStyle(color: t.textSecondary))),
             DataCell(Text(i == 1 ? 'Em trânsito' : 'Concluído', style: TextStyle(color: i == 1 ? t.posWarning : t.brandGreen, fontWeight: FontWeight.w800))),
@@ -340,6 +340,9 @@ class StockTransfersPage extends StatelessWidget {
     );
   }
 }
+
+@Deprecated('Use StockRequisitionsPage')
+typedef StockTransfersPage = StockRequisitionsPage;
 
 class StockAdjustmentsPage extends StatelessWidget {
   const StockAdjustmentsPage({super.key});

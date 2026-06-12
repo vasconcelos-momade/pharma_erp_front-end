@@ -17,7 +17,7 @@ class StockDashboardPage extends StatelessWidget {
     final t = context.pharmaTokens;
     return EnterpriseModuleHub(
       title: 'Painel de stock',
-      subtitle: 'Movimentos, perdas, transferências e progresso de inventário.',
+      subtitle: 'Movimentos, perdas, requisições e progresso de inventário.',
       tag: 'Painéis',
       kpis: const [
         EnterpriseStatCard(title: 'Entradas 7d', value: '1 842', icon: Icons.move_to_inbox, accent: StatCardAccent.info),

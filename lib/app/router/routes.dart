@@ -32,12 +32,18 @@ abstract final class AppRoutePaths {
   static const String auditLogs = '/audit/logs';
   static const String auditPsych = '/audit/psychotropics';
 
+  /// Rota legada de compras — redireccionada para [stockRequisitions].
   static const String purchasing = '/purchasing';
+  /// Alias legado `/compras` — redireccionado para [stockRequisitions].
+  static const String comprasLegacy = '/compras';
   static const String reports = '/reports';
 
   static const String stockMovements = '/stock/movements';
-  static const String stockTransfers = '/stock/transfers';
-  static const String stockAdjustments = '/stock/adjustments';
+  static const String stockRequisitions = '/stock/requests';
+  /// Rota legada PT — redireccionada para [stockRequisitions].
+  static const String stockRequisitionsLegacy = '/stock/requisicoes';
+  /// Rota legada — redireccionada para [stockRequisitions].
+  static const String stockTransfersLegacy = '/stock/transferencias';
   static const String stockInventory = '/stock/inventory';
 
   static const String salesCustomers = '/sales/customers';
@@ -83,11 +89,13 @@ abstract final class AppRouteTitles {
       AppRoutePaths.auditTimeline => 'Cronologia',
       AppRoutePaths.auditLogs => 'Logs',
       AppRoutePaths.auditPsych => 'Auditoria psicotrópicos',
-      AppRoutePaths.purchasing => 'Compras & logística',
+      AppRoutePaths.purchasing => 'Requisições',
+      AppRoutePaths.comprasLegacy => 'Requisições',
       AppRoutePaths.reports => 'Relatórios',
       AppRoutePaths.stockMovements => 'Movimentos',
-      AppRoutePaths.stockTransfers => 'Transferências',
-      AppRoutePaths.stockAdjustments => 'Ajustes',
+      AppRoutePaths.stockRequisitions => 'Requisições',
+      AppRoutePaths.stockRequisitionsLegacy => 'Requisições',
+      AppRoutePaths.stockTransfersLegacy => 'Requisições',
       AppRoutePaths.stockInventory => 'Inventário',
       AppRoutePaths.salesCustomers => 'Clientes',
       AppRoutePaths.salesInvoices => 'Faturas',

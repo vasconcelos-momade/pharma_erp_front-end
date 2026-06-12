@@ -122,7 +122,7 @@ Cada domínio (ex.: `auth`, `pharmacy`, `sales`) deve manter-se o mais **autóno
 - **`dashboard/`**: painéis (executivo, finanças, stock, farmácia).
 - **`pharmacy/`**: produtos (com `engine/` de preços e código de barras), receitas, psicotrópicos, lotes (FEFO, validade, alocação), saneamento, incineração.
 - **`sales/`**: PDV (motores de carrinho, preços, descontos, pagamento, recibo, stock, impostos), clientes, facturas.
-- **`stock/`**: inventário, movimentos, transferências, ajustes.
+- **`stock/`**: inventário, movimentos, requisições, ajustes.
 - **`finance/`**: fluxo de caixa, despesas, relatórios, tesouraria.
 - **`audit/`**: logs de actividade, entidades, timeline, psicotrópicos.
 - **`users/`**, **`settings/`**: gestão de utilizadores e configurações.
