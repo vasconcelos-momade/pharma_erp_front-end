@@ -11,6 +11,7 @@ import '../../domain/entities/requisicao.dart';
 import '../providers/requisicao_provider.dart';
 import '../widgets/criar_requisicao_dialog.dart';
 import '../widgets/requisicao_products_tab.dart';
+import '../widgets/requisicao_resumo_card.dart';
 import '../widgets/requisicao_stock_flow_view.dart';
 
 String _formatMoney(num value) => '${value.toStringAsFixed(2)} MT';
@@ -639,199 +640,35 @@ class _LeftPaneState extends State<_LeftPane> with SingleTickerProviderStateMixi
                 onGoToPage: widget.onGoToPage,
                 onSelectProduct: widget.onSelectProduct,
               ),
-            RequisicaoTab.pendentes => _ComprasTab(
+            RequisicaoTab.pendentes => RequisicaoResumoListTab(
                 title: 'Requisições Pendentes',
                 subtitle:
                     'Selecione uma requisição pendente para carregar os itens e voltar automaticamente para a tab Produtos.',
                 isLoading: widget.isLoadingLists,
-                purchases: widget.pendingRequisicoes,
+                requisicoes: widget.pendingRequisicoes,
                 activeRequisicaoId: widget.activeRequisicaoId,
                 emptyTitle: 'Nenhuma requisição pendente',
                 emptySubtitle:
                     'Inicie uma nova requisição para criar o registo no backend.',
+                emptyIcon: Icons.assignment_outlined,
                 onSelect: widget.onSelectPendingPurchase,
               ),
-            RequisicaoTab.historico => _ComprasTab(
+            RequisicaoTab.historico => RequisicaoResumoListTab(
                 title: 'Requisições Finalizadas',
                 subtitle:
                     'Apenas visualização. Abra um card para consultar a requisição no painel da direita.',
                 isLoading: widget.isLoadingLists,
-                purchases: widget.historyRequisicoes,
+                requisicoes: widget.historyRequisicoes,
                 activeRequisicaoId: widget.activeRequisicaoId,
                 emptyTitle: 'Nenhuma requisição finalizada',
                 emptySubtitle:
                     'As requisições confirmadas aparecerão aqui automaticamente.',
+                emptyIcon: Icons.assignment_outlined,
                 onSelect: widget.onSelectFinalizedPurchase,
               ),
           },
         ),
       ],
-    );
-  }
-}
-
-class _ComprasTab extends StatelessWidget {
-  const _ComprasTab({
-    required this.title,
-    required this.subtitle,
-    required this.isLoading,
-    required this.purchases,
-    required this.activeRequisicaoId,
-    required this.emptyTitle,
-    required this.emptySubtitle,
-    required this.onSelect,
-  });
-
-  final String title;
-  final String subtitle;
-  final bool isLoading;
-  final List<RequisicaoResumo> purchases;
-  final String? activeRequisicaoId;
-  final String emptyTitle;
-  final String emptySubtitle;
-  final ValueChanged<String> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
-    final s = context.spacing;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            color: t.textPrimary,
-            fontWeight: FontWeight.w800,
-            fontSize: 18,
-          ),
-        ),
-        SizedBox(height: s.xs),
-        Text(subtitle, style: TextStyle(color: t.textMuted)),
-        SizedBox(height: s.sm),
-        if (isLoading) const LinearProgressIndicator(),
-        SizedBox(height: s.sm),
-        Expanded(
-          child: purchases.isEmpty
-              ? _EmptyPane(
-                  icon: Icons.assignment_outlined,
-                  title: emptyTitle,
-                  subtitle: emptySubtitle,
-                )
-              : ListView.separated(
-                  itemCount: purchases.length,
-                  separatorBuilder: (_, _) => SizedBox(height: s.sm),
-                  itemBuilder: (context, index) {
-                    final purchase = purchases[index];
-                    return _RequisicaoResumoCard(
-                      purchase: purchase,
-                      selected: purchase.id == activeRequisicaoId,
-                      onTap: () => onSelect(purchase.id),
-                    );
-                  },
-                ),
-        ),
-      ],
-    );
-  }
-}
-
-class _RequisicaoResumoCard extends StatelessWidget {
-  const _RequisicaoResumoCard({
-    required this.purchase,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final RequisicaoResumo purchase;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
-    final s = context.spacing;
-    final isFinalized = purchase.status == RequisicaoStatus.concluida;
-    final accent = purchase.status.isEditable ? t.posWarning : t.brandGreen;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(t.radiusMd),
-      child: Container(
-        padding: EdgeInsets.all(s.md),
-        decoration: BoxDecoration(
-          color: selected ? t.brandBlue.withValues(alpha: 0.08) : t.bgPrimary,
-          borderRadius: BorderRadius.circular(t.radiusMd),
-          border: Border.all(
-            color: selected ? t.brandBlue.withValues(alpha: 0.4) : t.border,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        purchase.numeroDocumento.isNotEmpty
-                            ? 'Doc. ${purchase.numeroDocumento}'
-                            : 'Requisição ${purchase.id}',
-                        style: TextStyle(
-                          color: t.textPrimary,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      Text(
-                        'Fornecedor: ${purchase.fornecedorNome ?? 'N/A'}',
-                        style: TextStyle(color: t.textMuted),
-                      ),
-                      if (purchase.numeroDocumento.isNotEmpty)
-                        Text(
-                          'ID interno: ${purchase.id}',
-                          style: TextStyle(color: t.textMuted, fontSize: 12),
-                        ),
-                    ],
-                  ),
-                ),
-                _InfoTag(label: purchase.status.label, color: accent),
-              ],
-            ),
-            SizedBox(height: s.sm),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Data: ${_formatDate(purchase.createdAt)}',
-                        style: TextStyle(color: t.textMuted)),
-                    Text('Itens: ${purchase.totalItens}',
-                        style: TextStyle(color: t.textMuted)),
-                  ],
-                ),
-                if (isFinalized)
-                  Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.print_outlined, size: 20),
-                        onPressed: () {},
-                        tooltip: 'Imprimir requisição',
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.visibility_outlined, size: 20),
-                        onPressed: onTap,
-                        tooltip: 'Ver detalhes',
-                      ),
-                    ],
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

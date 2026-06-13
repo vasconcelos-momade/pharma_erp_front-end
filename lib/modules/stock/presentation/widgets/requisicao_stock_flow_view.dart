@@ -7,12 +7,11 @@ import '../../../../core/theme/spacing.dart';
 import '../../../../shared/widgets/feedback/pharma_snackbar.dart';
 import '../../../pharmacy/products/domain/entities/product.dart';
 import '../../../pharmacy/products/presentation/providers/product_provider.dart';
-import '../../domain/entities/fornecedor.dart';
 import '../../domain/entities/requisicao.dart';
 import '../../data/repositories/requisicao_repository_impl.dart';
-import '../providers/fornecedor_provider.dart';
 import '../providers/requisicao_provider.dart';
 import 'requisicao_products_tab.dart';
+import 'requisicao_resumo_card.dart';
 
 String stockFlowFormatQuantity(num value) {
   return value.toStringAsFixed(2).replaceFirst(RegExp(r'\.?0+$'), '');
@@ -24,10 +23,101 @@ String stockFlowFormatDate(DateTime value) {
       '${value.year}';
 }
 
+DateTime? stockFlowParseDateInput(String? value) {
+  final normalized = value?.trim() ?? '';
+  if (normalized.isEmpty) {
+    return null;
+  }
+
+  final parsed = DateTime.tryParse(normalized);
+  if (parsed != null) {
+    return parsed;
+  }
+
+  final match = RegExp(r'^\d{4}-\d{2}-\d{2}').firstMatch(normalized);
+  if (match != null) {
+    return DateTime.tryParse(match.group(0)!);
+  }
+
+  final displayMatch = RegExp(r'^(\d{2})/(\d{2})/(\d{4})$').firstMatch(normalized);
+  if (displayMatch != null) {
+    final day = int.tryParse(displayMatch.group(1)!);
+    final month = int.tryParse(displayMatch.group(2)!);
+    final year = int.tryParse(displayMatch.group(3)!);
+    if (day != null && month != null && year != null) {
+      final candidate = DateTime(year, month, day);
+      if (candidate.year == year &&
+          candidate.month == month &&
+          candidate.day == day) {
+        return candidate;
+      }
+    }
+  }
+
+  return null;
+}
+
+String stockFlowNormalizeDateInput(String? value) {
+  final parsed = stockFlowParseDateInput(value);
+  if (parsed == null) {
+    return value?.trim() ?? '';
+  }
+  return stockFlowFormatDate(parsed);
+}
+
+bool stockFlowSameCalendarDay(DateTime a, DateTime b) {
+  return a.year == b.year && a.month == b.month && a.day == b.day;
+}
+
+class _StockFlowDateTextInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digits = newValue.text.replaceAll(RegExp(r'\D'), '');
+    final limitedDigits = digits.length > 8 ? digits.substring(0, 8) : digits;
+    final buffer = StringBuffer();
+
+    for (var i = 0; i < limitedDigits.length; i++) {
+      if ((i == 2 || i == 4) && buffer.isNotEmpty) {
+        buffer.write('/');
+      }
+      buffer.write(limitedDigits[i]);
+    }
+
+    final formatted = buffer.toString();
+    var digitsBeforeCursor = 0;
+    final cursor = newValue.selection.baseOffset.clamp(0, newValue.text.length);
+    digitsBeforeCursor =
+        RegExp(r'\d').allMatches(newValue.text.substring(0, cursor)).length;
+    digitsBeforeCursor = digitsBeforeCursor.clamp(0, limitedDigits.length);
+
+    var selectionOffset = 0;
+    var seenDigits = 0;
+    for (var i = 0; i < formatted.length; i++) {
+      if (RegExp(r'\d').hasMatch(formatted[i])) {
+        seenDigits++;
+        if (seenDigits == digitsBeforeCursor) {
+          selectionOffset = i + 1;
+          break;
+        }
+      }
+    }
+    if (selectionOffset == 0) {
+      selectionOffset = formatted.length;
+    }
+
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: selectionOffset),
+      composing: TextRange.empty,
+    );
+  }
+}
+
 String stockFlowFormatRouteLabel(String? origem, String? destino) {
-  final from = (origem == null || origem.trim().isEmpty) ? 'Sem origem' : origem;
-  final to = (destino == null || destino.trim().isEmpty) ? 'Sem destino' : destino;
-  return '$from -> $to';
+  return formatRequisicaoRouteLabel(origem, destino);
 }
 
 class RequisicaoStockFlowView extends ConsumerStatefulWidget {
@@ -416,7 +506,7 @@ class _LeftPaneState extends State<_LeftPane>
               ),
               Tab(
                 text:
-                    'Histórico (${widget.requisicaoState.historyRequisicoes.length})',
+                    'Finalizadas (${widget.requisicaoState.historyRequisicoes.length})',
               ),
             ],
           ),
@@ -433,136 +523,33 @@ class _LeftPaneState extends State<_LeftPane>
                 onGoToPage: widget.onGoToPage,
                 onSelectProduct: widget.onSelectProduct,
               ),
-            RequisicaoTab.pendentes => _RequisicaoListTab(
-                title: 'Requisições pendentes',
-                emptyTitle: 'Nenhuma requisição pendente',
-                emptySubtitle:
-                    'Inicie uma requisição para criar o documento.',
+            RequisicaoTab.pendentes => RequisicaoResumoListTab(
+                title: 'Requisições Pendentes',
+                subtitle:
+                    'Selecione uma requisição pendente para carregar os itens e voltar automaticamente para a tab Produtos.',
+                isLoading: widget.requisicaoState.isLoadingLists,
                 requisicoes: widget.requisicaoState.pendingRequisicoes,
                 activeRequisicaoId: widget.requisicaoState.activeRequisicao?.id,
-                isLoading: widget.requisicaoState.isLoadingLists,
+                emptyTitle: 'Nenhuma requisição pendente',
+                emptySubtitle:
+                    'Inicie uma nova requisição para criar o registo no backend.',
+                emptyIcon: Icons.assignment_outlined,
                 onSelect: widget.onSelectPendingRequisition,
               ),
-            RequisicaoTab.historico => _RequisicaoListTab(
-                title: 'Histórico de requisições',
-                emptyTitle: 'Nenhuma requisição no histórico',
-                emptySubtitle:
-                    'Requisições aprovadas, rejeitadas ou canceladas aparecem aqui.',
+            RequisicaoTab.historico => RequisicaoResumoListTab(
+                title: 'Requisições Finalizadas',
+                subtitle:
+                    'Apenas visualização. Abra um card para consultar a requisição no painel da direita.',
+                isLoading: widget.requisicaoState.isLoadingLists,
                 requisicoes: widget.requisicaoState.historyRequisicoes,
                 activeRequisicaoId: widget.requisicaoState.activeRequisicao?.id,
-                isLoading: widget.requisicaoState.isLoadingLists,
+                emptyTitle: 'Nenhuma requisição finalizada',
+                emptySubtitle:
+                    'As requisições confirmadas aparecerão aqui automaticamente.',
+                emptyIcon: Icons.assignment_outlined,
                 onSelect: widget.onSelectHistoryRequisition,
               ),
           },
-        ),
-      ],
-    );
-  }
-}
-
-class _RequisicaoListTab extends StatelessWidget {
-  const _RequisicaoListTab({
-    required this.title,
-    required this.emptyTitle,
-    required this.emptySubtitle,
-    required this.requisicoes,
-    required this.activeRequisicaoId,
-    required this.isLoading,
-    required this.onSelect,
-  });
-
-  final String title;
-  final String emptyTitle;
-  final String emptySubtitle;
-  final List<RequisicaoResumo> requisicoes;
-  final String? activeRequisicaoId;
-  final bool isLoading;
-  final ValueChanged<String> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
-    final s = context.spacing;
-
-    if (isLoading && requisicoes.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (requisicoes.isEmpty) {
-      return _EmptyPane(
-        icon: Icons.assignment_outlined,
-        title: emptyTitle,
-        subtitle: emptySubtitle,
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: TextStyle(
-            color: t.textPrimary,
-            fontWeight: FontWeight.w800,
-            fontSize: 16,
-          ),
-        ),
-        SizedBox(height: s.sm),
-        Expanded(
-          child: ListView.separated(
-            itemCount: requisicoes.length,
-            separatorBuilder: (_, _) =>
-                Divider(color: t.border.withValues(alpha: 0.25)),
-            itemBuilder: (context, index) {
-              final item = requisicoes[index];
-              final isActive = item.id == activeRequisicaoId;
-              return ListTile(
-                tileColor: isActive
-                    ? t.brandBlue.withValues(alpha: 0.08)
-                    : Colors.transparent,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                leading: CircleAvatar(
-                  backgroundColor: item.status.isPositive
-                      ? t.brandGreen.withValues(alpha: 0.14)
-                      : item.status == RequisicaoStatus.rejeitada ||
-                              item.status == RequisicaoStatus.cancelada
-                          ? t.posDanger.withValues(alpha: 0.12)
-                          : t.brandBlue.withValues(alpha: 0.14),
-                  child: Icon(
-                    item.status.isPositive
-                        ? Icons.check_circle_outline
-                        : item.status == RequisicaoStatus.rejeitada
-                            ? Icons.block_outlined
-                            : item.status == RequisicaoStatus.cancelada
-                                ? Icons.cancel_outlined
-                                : Icons.description_outlined,
-                    color: item.status.isPositive
-                        ? t.brandGreen
-                        : item.status == RequisicaoStatus.rejeitada ||
-                                item.status == RequisicaoStatus.cancelada
-                            ? t.posDanger
-                            : t.brandBlue,
-                  ),
-                ),
-                title: Text(
-                  item.numeroDocumento,
-                  style: TextStyle(
-                    color: t.textPrimary,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                subtitle: Text(
-                  '${stockFlowFormatRouteLabel(item.origem, item.destino)}\n'
-                  '${item.status.label} • ${stockFlowFormatQuantity(item.quantidadeTotal)} itens',
-                  style: TextStyle(color: t.textMuted),
-                ),
-                isThreeLine: true,
-                onTap: () => onSelect(item.id),
-              );
-            },
-          ),
         ),
       ],
     );
@@ -953,15 +940,24 @@ class _RequisicaoLoteDialog extends ConsumerStatefulWidget {
 
 class _RequisicaoLoteDialogState extends ConsumerState<_RequisicaoLoteDialog> {
   final _formKey = GlobalKey<FormState>();
-  final _quantidadeController = TextEditingController(text: '1');
+  late final TextEditingController _loteController;
+  late final TextEditingController _dataValidadeController;
+  late final TextEditingController _quantidadeController;
   List<ProdutoLoteDisponivel> _lotes = const [];
-  ProdutoLoteDisponivel? _selectedLote;
-  bool _loading = true;
+  bool _loadingLotes = true;
+  bool _submitting = false;
   String? _error;
 
   @override
   void initState() {
     super.initState();
+    _loteController = TextEditingController(text: widget.product.lote ?? '');
+    _dataValidadeController = TextEditingController(
+      text: widget.product.dataValidade != null
+          ? stockFlowFormatDate(widget.product.dataValidade!)
+          : stockFlowFormatDate(DateTime(2027, 12, 31)),
+    );
+    _quantidadeController = TextEditingController(text: '1');
     _loadLotes();
   }
 
@@ -973,296 +969,248 @@ class _RequisicaoLoteDialogState extends ConsumerState<_RequisicaoLoteDialog> {
       if (!mounted) return;
       setState(() {
         _lotes = lotes;
-        _selectedLote = lotes.isNotEmpty ? lotes.first : null;
-        _loading = false;
+        _loadingLotes = false;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _error = e.toString();
-        _loading = false;
+        _loadingLotes = false;
       });
     }
   }
 
   @override
   void dispose() {
+    _loteController.dispose();
+    _dataValidadeController.dispose();
     _quantidadeController.dispose();
     super.dispose();
   }
 
-  void _submit() {
-    if (!_formKey.currentState!.validate() || _selectedLote == null) {
+  ProdutoLoteDisponivel? _findLote(String numeroLote, DateTime dataValidade) {
+    final normalized = numeroLote.trim().toLowerCase();
+    final exactMatches = _lotes.where(
+      (lote) =>
+          lote.numeroLote.trim().toLowerCase() == normalized &&
+          stockFlowSameCalendarDay(lote.dataValidade, dataValidade),
+    );
+    if (exactMatches.isNotEmpty) {
+      return exactMatches.first;
+    }
+
+    final byNumero = _lotes
+        .where((lote) => lote.numeroLote.trim().toLowerCase() == normalized)
+        .toList();
+    if (byNumero.length == 1) {
+      return byNumero.first;
+    }
+
+    return null;
+  }
+
+  Future<void> _pickExpiryDate() async {
+    final now = DateTime.now();
+    final initialDate =
+        stockFlowParseDateInput(_dataValidadeController.text.trim()) ??
+        widget.product.dataValidade ??
+        now.add(const Duration(days: 365));
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: initialDate.isBefore(now) ? now : initialDate,
+      firstDate: DateTime(now.year - 1),
+      lastDate: DateTime(now.year + 20),
+    );
+    if (pickedDate == null) {
+      return;
+    }
+    _dataValidadeController.text = stockFlowFormatDate(pickedDate);
+  }
+
+  Future<void> _submit() async {
+    if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    Navigator.of(context).pop(
-      RequisicaoItemDraft(
-        produtoId: widget.product.id,
-        produtoNome: widget.product.nome,
-        quantidadeSolicitada:
-            double.parse(_quantidadeController.text.replaceAll(',', '.')),
-        loteId: _selectedLote!.id,
-      ),
+    final numeroLote = _loteController.text.trim();
+    final dataValidade =
+        stockFlowParseDateInput(_dataValidadeController.text.trim());
+    if (dataValidade == null) {
+      return;
+    }
+
+    final quantidade = double.parse(
+      _quantidadeController.text.trim().replaceAll(',', '.'),
     );
+
+    setState(() {
+      _submitting = true;
+      _error = null;
+    });
+
+    try {
+      var matchedLote = _findLote(numeroLote, dataValidade);
+      String? loteId = matchedLote?.id;
+
+      if (loteId == null && widget.tipo == RequisicaoTipo.entrada) {
+        final fornecedorId =
+            ref.read(requisicaoProvider).activeRequisicao?.fornecedorId;
+        if (fornecedorId == null || fornecedorId.trim().isEmpty) {
+          setState(() {
+            _error =
+                'Associe um fornecedor à requisição antes de registar um novo lote.';
+          });
+          return;
+        }
+
+        final created = await ref.read(requisicaoProvider.notifier).criarLote(
+              produtoId: widget.product.id,
+              fornecedorId: fornecedorId,
+              numeroLote: numeroLote,
+              dataValidade: dataValidade,
+            );
+        if (!mounted) {
+          return;
+        }
+        if (created == null) {
+          return;
+        }
+        loteId = created.loteId;
+      }
+
+      if (loteId == null) {
+        setState(() {
+          _error = 'Lote não encontrado para este produto.';
+        });
+        return;
+      }
+
+      matchedLote ??= _lotes.where((lote) => lote.id == loteId).firstOrNull;
+
+      if (widget.tipo.isOutbound &&
+          matchedLote != null &&
+          quantidade > matchedLote.quantidadeAtual) {
+        setState(() {
+          _error = 'Quantidade superior ao stock do lote.';
+        });
+        return;
+      }
+
+      if (!mounted) {
+        return;
+      }
+
+      Navigator.of(context).pop(
+        RequisicaoItemDraft(
+          produtoId: widget.product.id,
+          produtoNome: widget.product.nome,
+          quantidadeSolicitada: quantidade,
+          loteId: loteId,
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _submitting = false);
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
+    final s = context.spacing;
+    final isBusy = _loadingLotes || _submitting;
+
     return AlertDialog(
       title: Text('Adicionar ${widget.product.nome}'),
       content: SizedBox(
         width: 480,
-        child: _loading
-            ? const Center(child: CircularProgressIndicator())
-            : _error != null
-                ? Text(_error!, style: TextStyle(color: t.posDanger))
-                : Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (_lotes.isNotEmpty) ...[
-                          Text(
-                            'Seleccione o lote (FEFO)',
-                            style: TextStyle(
-                              color: t.textPrimary,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          SizedBox(
-                            height: 180,
-                            child: ListView.separated(
-                              itemCount: _lotes.length,
-                              separatorBuilder: (_, _) => const Divider(height: 1),
-                              itemBuilder: (context, index) {
-                                final lote = _lotes[index];
-                                final selected = _selectedLote?.id == lote.id;
-                                return ListTile(
-                                  dense: true,
-                                  selected: selected,
-                                  title: Text(lote.numeroLote),
-                                  subtitle: Text(
-                                    'Validade: ${stockFlowFormatDate(lote.dataValidade)} • '
-                                    'Stock: ${stockFlowFormatQuantity(lote.quantidadeAtual)}',
-                                  ),
-                                  onTap: () =>
-                                      setState(() => _selectedLote = lote),
-                                );
-                              },
-                            ),
-                          ),
-                        ],
-                        if (_lotes.isEmpty) ...[
-                          const Text(
-                            'Nenhum lote disponível para este produto. Crie um novo lote!',
-                          ),
-                        ],
-                        const SizedBox(height: 12),
-                        TextFormField(
-                          controller: _quantidadeController,
-                          keyboardType:
-                              const TextInputType.numberWithOptions(
-                            decimal: true,
-                          ),
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(
-                              RegExp(r'[0-9.,]'),
-                            ),
-                          ],
-                          decoration:
-                              const InputDecoration(labelText: 'Quantidade'),
-                          validator: (value) {
-                            final parsed = double.tryParse(
-                              (value ?? '').replaceAll(',', '.'),
-                            );
-                            if (parsed == null || parsed <= 0) {
-                              return 'Informe uma quantidade válida';
-                            }
-                            if (widget.tipo.isOutbound &&
-                                _selectedLote != null &&
-                                parsed > _selectedLote!.quantidadeAtual) {
-                              return 'Quantidade superior ao stock do lote';
-                            }
-                            return null;
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
-        ),
-        OutlinedButton.icon(
-          onPressed: _loading ? null : _abrirCriarLote,
-          icon: const Icon(Icons.add_circle_outline),
-          label: const Text('Novo Lote'),
-        ),
-        FilledButton(
-          onPressed: _loading || _selectedLote == null ? null : _submit,
-          child: const Text('Adicionar'),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _abrirCriarLote() async {
-    final result = await showDialog<CriarLoteResult>(
-      context: context,
-      builder: (_) => _CriarLoteDialog(productId: widget.product.id),
-    );
-    if (!mounted || result == null) return;
-    await _loadLotes();
-    if (!mounted) return;
-    final created = _lotes.where((lote) => lote.id == result.loteId);
-    setState(() {
-      _selectedLote = created.isNotEmpty ? created.first : _selectedLote;
-    });
-  }
-}
-
-class _CriarLoteDialog extends ConsumerStatefulWidget {
-  const _CriarLoteDialog({
-    required this.productId,
-  });
-
-  final String productId;
-
-  @override
-  ConsumerState<_CriarLoteDialog> createState() => _CriarLoteDialogState();
-}
-
-class _CriarLoteDialogState extends ConsumerState<_CriarLoteDialog> {
-  final _formKey = GlobalKey<FormState>();
-  final _numeroLoteController = TextEditingController();
-  final _precoCompraController = TextEditingController();
-  FornecedorResumo? _selectedFornecedor;
-  DateTime? _dataValidade;
-  bool _loading = false;
-
-  @override
-  void dispose() {
-    _numeroLoteController.dispose();
-    _precoCompraController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _selectDate() async {
-    final selected = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now().add(const Duration(days: 30)),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365 * 10)),
-    );
-    if (selected != null) {
-      setState(() => _dataValidade = selected);
-    }
-  }
-
-  Future<void> _submit() async {
-    if (!_formKey.currentState!.validate() ||
-        _selectedFornecedor == null ||
-        _dataValidade == null) {
-      return;
-    }
-
-    setState(() => _loading = true);
-    try {
-      final result = await ref.read(requisicaoProvider.notifier).criarLote(
-            produtoId: widget.productId,
-            fornecedorId: _selectedFornecedor!.id,
-            numeroLote: _numeroLoteController.text.trim(),
-            dataValidade: _dataValidade!,
-            precoCompra: double.tryParse(_precoCompraController.text.replaceAll(',', '.')),
-          );
-      if (!mounted) return;
-      if (result != null) {
-        Navigator.of(context).pop(result);
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _loading = false);
-      }
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
-    final fornecedoresAsync = ref.watch(supplierListProvider);
-
-    return AlertDialog(
-      title: const Text('Novo Lote'),
-      content: SizedBox(
-        width: 480,
-        child: fornecedoresAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, stack) => Text(
-            'Erro ao carregar fornecedores: $error',
-            style: TextStyle(color: t.posDanger),
-          ),
-          data: (fornecedores) => Form(
-            key: _formKey,
+        child: Form(
+          key: _formKey,
+          child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                DropdownButtonFormField<FornecedorResumo>(
-                  decoration: const InputDecoration(
-                    labelText: 'Fornecedor',
+                if (_loadingLotes)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 12),
+                    child: LinearProgressIndicator(),
                   ),
-                  initialValue: _selectedFornecedor,
-                  items: fornecedores
-                      .map(
-                        (f) => DropdownMenuItem(
-                          value: f,
-                          child: Text(f.nome),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) => setState(() => _selectedFornecedor = value),
-                  validator: (value) => value == null ? 'Seleccione um fornecedor' : null,
-                ),
-                const SizedBox(height: 12),
+                if (_error != null) ...[
+                  Text(
+                    _error!,
+                    style: TextStyle(color: t.posDanger),
+                  ),
+                  SizedBox(height: s.sm),
+                ],
                 TextFormField(
-                  controller: _numeroLoteController,
+                  controller: _loteController,
                   decoration: const InputDecoration(
-                    labelText: 'Número do Lote',
+                    labelText: 'Lote',
+                    hintText: 'Ex.: LOTE-2026-001',
+                    border: OutlineInputBorder(),
                   ),
                   validator: (value) =>
-                      value == null || value.trim().isEmpty ? 'Informe o número do lote' : null,
+                      value == null || value.trim().isEmpty
+                          ? 'Informe o número do lote'
+                          : null,
                 ),
-                const SizedBox(height: 12),
-                InkWell(
-                  onTap: _selectDate,
-                  child: InputDecorator(
-                    decoration: const InputDecoration(
-                      labelText: 'Data de Validade',
-                      suffixIcon: Icon(Icons.calendar_today),
-                    ),
-                    child: Text(
-                      _dataValidade == null
-                          ? 'Seleccione a data'
-                          : stockFlowFormatDate(_dataValidade!),
+                SizedBox(height: s.md),
+                TextFormField(
+                  controller: _dataValidadeController,
+                  keyboardType: TextInputType.datetime,
+                  inputFormatters: [
+                    _StockFlowDateTextInputFormatter(),
+                  ],
+                  decoration: InputDecoration(
+                    labelText: 'Prazo de validade',
+                    hintText: 'DD/MM/AAAA',
+                    border: const OutlineInputBorder(),
+                    suffixIcon: IconButton(
+                      onPressed: isBusy ? null : _pickExpiryDate,
+                      icon: const Icon(Icons.calendar_today_outlined),
+                      tooltip: 'Selecionar data',
                     ),
                   ),
+                  onEditingComplete: () {
+                    _dataValidadeController.text = stockFlowNormalizeDateInput(
+                      _dataValidadeController.text,
+                    );
+                  },
+                  validator: (value) {
+                    final normalized = value?.trim() ?? '';
+                    if (normalized.isEmpty) {
+                      return 'Informe o prazo de validade';
+                    }
+                    if (stockFlowParseDateInput(normalized) == null) {
+                      return 'Use o formato DD/MM/AAAA';
+                    }
+                    return null;
+                  },
                 ),
-                const SizedBox(height: 12),
+                SizedBox(height: s.md),
                 TextFormField(
-                  controller: _precoCompraController,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                  controller: _quantidadeController,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   inputFormatters: [
                     FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
                   ],
                   decoration: const InputDecoration(
-                    labelText: 'Preço de Compra (opcional)',
+                    labelText: 'Quantidade',
+                    border: OutlineInputBorder(),
                   ),
+                  validator: (value) {
+                    final parsed = double.tryParse(
+                      (value ?? '').replaceAll(',', '.'),
+                    );
+                    if (parsed == null || parsed <= 0) {
+                      return 'Informe uma quantidade válida';
+                    }
+                    return null;
+                  },
                 ),
               ],
             ),
@@ -1271,18 +1219,18 @@ class _CriarLoteDialogState extends ConsumerState<_CriarLoteDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: _loading ? null : () => Navigator.of(context).pop(),
+          onPressed: isBusy ? null : () => Navigator.of(context).pop(),
           child: const Text('Cancelar'),
         ),
         FilledButton(
-          onPressed: _loading ? null : _submit,
-          child: _loading
+          onPressed: isBusy ? null : _submit,
+          child: _submitting
               ? const SizedBox(
                   width: 16,
                   height: 16,
                   child: CircularProgressIndicator(strokeWidth: 2),
                 )
-              : const Text('Criar Lote'),
+              : const Text('Adicionar'),
         ),
       ],
     );
