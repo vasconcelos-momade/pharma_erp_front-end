@@ -12,7 +12,8 @@ import '../../../../core/network/connectivity/connection_status.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../shared/layouts/auth_layout.dart';
-import '../../../../shared/widgets/feedback/pharma_snackbar.dart';
+import '../../../../shared/widgets/feedback/pharma_feedback.dart';
+import '../../../../shared/widgets/buttons/pharma_button_loader.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -49,7 +50,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         if (msg.contains('Sem ligação ao servidor')) {
           msg = '$msg\n${ApiHostResolver.connectionHintForPlatform()}';
         }
-        PharmaSnackbar.showError(context, msg);
+        await PharmaFeedback.criticalError(
+          context: context,
+          title: 'Falha no início de sessão',
+          message: msg,
+        );
       }
       return;
     }
@@ -252,14 +257,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             FilledButton(
                               onPressed: loading ? null : _submit,
                               child: loading
-                                  ? SizedBox(
-                                      height: 22,
-                                      width: 22,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        color: t.bgPrimary,
-                                      ),
-                                    )
+                                  ? PharmaButtonLoader(color: t.bgPrimary)
                                   : const Text('Entrar'),
                             ),
                             const SizedBox(height: AppSpacing.md),

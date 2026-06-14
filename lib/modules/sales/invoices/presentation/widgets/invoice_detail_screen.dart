@@ -5,7 +5,9 @@ import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/responsive/pharma_screen_layout.dart';
-import '../../../../../shared/widgets/feedback/pharma_snackbar.dart';
+import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
+import '../../../../../shared/widgets/buttons/pharma_button_loader.dart';
+
 import '../../domain/entities/invoice_detail.dart';
 import '../../domain/entities/invoice_summary.dart';
 import '../providers/invoice_action_provider.dart';
@@ -468,7 +470,7 @@ class _DetailActions extends ConsumerWidget {
         if (!context.mounted) {
           return;
         }
-        PharmaSnackbar.showSuccess(
+        PharmaFeedback.success(
           context,
           'PDF da fatura disponibilizado com sucesso.',
         );
@@ -476,12 +478,12 @@ class _DetailActions extends ConsumerWidget {
         if (!context.mounted) {
           return;
         }
-        PharmaSnackbar.showError(context, e.message);
+        PharmaFeedback.error(context, e.message);
       } catch (_) {
         if (!context.mounted) {
           return;
         }
-        PharmaSnackbar.showError(
+        PharmaFeedback.error(
           context,
           'Não foi possível exportar o PDF da fatura.',
         );
@@ -494,7 +496,7 @@ class _DetailActions extends ConsumerWidget {
         if (!context.mounted) {
           return;
         }
-        PharmaSnackbar.showSuccess(
+        PharmaFeedback.success(
           context,
           'Recibo de reimpressão disponibilizado com sucesso.',
         );
@@ -502,12 +504,12 @@ class _DetailActions extends ConsumerWidget {
         if (!context.mounted) {
           return;
         }
-        PharmaSnackbar.showError(context, e.message);
+        PharmaFeedback.error(context, e.message);
       } catch (_) {
         if (!context.mounted) {
           return;
         }
-        PharmaSnackbar.showError(
+        PharmaFeedback.error(
           context,
           'Não foi possível preparar o recibo para impressão.',
         );
@@ -518,33 +520,21 @@ class _DetailActions extends ConsumerWidget {
       OutlinedButton.icon(
         onPressed: isBusy ? null : printReceipt,
         icon: isPrinting
-            ? const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
+            ? const PharmaButtonLoader()
             : const Icon(Icons.print_outlined),
         label: const Text('Reimprimir'),
       ),
       OutlinedButton.icon(
         onPressed: isBusy ? null : exportPdf,
         icon: isExportingPdf
-            ? const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
+            ? const PharmaButtonLoader()
             : const Icon(Icons.picture_as_pdf_outlined),
         label: const Text('Exportar PDF'),
       ),
       FilledButton.icon(
         onPressed: isBusy || isCancelling || !canCancel ? null : onCancel,
         icon: isCancelling
-            ? const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
+            ? const PharmaButtonLoader()
             : const Icon(Icons.block_rounded),
         label: const Text('Cancelar fatura'),
       ),

@@ -5,8 +5,9 @@ import '../../../../core/theme/spacing.dart';
 import '../../domain/entities/requisicao.dart';
 
 String formatRequisicaoRouteLabel(String? origem, String? destino) {
-  final from =
-      (origem == null || origem.trim().isEmpty) ? 'Sem origem' : origem.trim();
+  final from = (origem == null || origem.trim().isEmpty)
+      ? 'Sem origem'
+      : origem.trim();
   final to = (destino == null || destino.trim().isEmpty)
       ? 'Sem destino'
       : destino.trim();
@@ -71,74 +72,111 @@ class RequisicaoResumoCard extends StatelessWidget {
             color: selected ? t.brandBlue.withValues(alpha: 0.4) : t.border,
           ),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final compact = constraints.maxWidth < 440;
+
+            final header = Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        requisicao.numeroDocumento.isNotEmpty
-                            ? 'Doc. ${requisicao.numeroDocumento}'
-                            : 'Requisição ${requisicao.id}',
-                        style: TextStyle(
-                          color: t.textPrimary,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      Text(
-                        _requisicaoSecondaryLine(requisicao),
-                        style: TextStyle(color: t.textMuted),
-                      ),
-                      if (requisicao.numeroDocumento.isNotEmpty)
-                        Text(
-                          'ID interno: ${requisicao.id}',
-                          style: TextStyle(color: t.textMuted, fontSize: 12),
-                        ),
-                    ],
+                Text(
+                  requisicao.numeroDocumento.isNotEmpty
+                      ? 'Doc. ${requisicao.numeroDocumento}'
+                      : 'Requisição ${requisicao.id}',
+                  style: TextStyle(
+                    color: t.textPrimary,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
-                _RequisicaoInfoTag(label: requisicao.status.label, color: accent),
-              ],
-            ),
-            SizedBox(height: s.sm),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Data: ${_formatRequisicaoDate(requisicao.createdAt)}',
-                      style: TextStyle(color: t.textMuted),
-                    ),
-                    Text(
-                      'Itens: ${requisicao.totalItens}',
-                      style: TextStyle(color: t.textMuted),
-                    ),
-                  ],
+                Text(
+                  _requisicaoSecondaryLine(requisicao),
+                  style: TextStyle(color: t.textMuted),
                 ),
-                if (isFinalized)
-                  Row(
+                if (requisicao.numeroDocumento.isNotEmpty)
+                  Text(
+                    'ID interno: ${requisicao.id}',
+                    style: TextStyle(color: t.textMuted, fontSize: 12),
+                  ),
+              ],
+            );
+
+            final actionButtons = isFinalized
+                ? Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        icon: const Icon(Icons.print_outlined, size: 20),
+                        icon: Icon(Icons.print_outlined, size: t.iconSm),
                         onPressed: () {},
                         tooltip: 'Imprimir requisição',
                       ),
                       IconButton(
-                        icon: const Icon(Icons.visibility_outlined, size: 20),
+                        icon: Icon(Icons.visibility_outlined, size: t.iconSm),
                         onPressed: onTap,
                         tooltip: 'Ver detalhes',
                       ),
                     ],
+                  )
+                : const SizedBox.shrink();
+
+            if (compact) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  header,
+                  SizedBox(height: s.sm),
+                  _RequisicaoInfoTag(
+                    label: requisicao.status.label,
+                    color: accent,
                   ),
+                  SizedBox(height: s.sm),
+                  Text(
+                    'Data: ${_formatRequisicaoDate(requisicao.createdAt)}',
+                    style: TextStyle(color: t.textMuted),
+                  ),
+                  Text(
+                    'Itens: ${requisicao.totalItens}',
+                    style: TextStyle(color: t.textMuted),
+                  ),
+                  if (isFinalized) ...[SizedBox(height: s.sm), actionButtons],
+                ],
+              );
+            }
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(child: header),
+                    _RequisicaoInfoTag(
+                      label: requisicao.status.label,
+                      color: accent,
+                    ),
+                  ],
+                ),
+                SizedBox(height: s.sm),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Data: ${_formatRequisicaoDate(requisicao.createdAt)}',
+                          style: TextStyle(color: t.textMuted),
+                        ),
+                        Text(
+                          'Itens: ${requisicao.totalItens}',
+                          style: TextStyle(color: t.textMuted),
+                        ),
+                      ],
+                    ),
+                    if (isFinalized) actionButtons,
+                  ],
+                ),
               ],
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
@@ -281,10 +319,7 @@ class _RequisicaoInfoTag extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(
-          color: t.textPrimary,
-          fontWeight: FontWeight.w600,
-        ),
+        style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w600),
       ),
     );
   }

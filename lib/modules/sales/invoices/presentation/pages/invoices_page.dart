@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/responsive/pharma_screen_layout.dart';
-import '../../../../../shared/widgets/feedback/pharma_snackbar.dart';
+import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../domain/entities/invoice_summary.dart';
 import '../providers/invoice_action_provider.dart';
@@ -45,11 +45,11 @@ class _SalesInvoicesPageState extends ConsumerState<SalesInvoicesPage> {
       }
       final previousSubmitting = previous?.isSubmitting ?? false;
       if (previousSubmitting && !next.isSubmitting && next.errorMessage == null) {
-        PharmaSnackbar.showSuccess(context, 'Fatura cancelada com sucesso.');
+        PharmaFeedback.success(context, 'Fatura cancelada com sucesso.');
       }
       if (next.errorMessage != null &&
           next.errorMessage != previous?.errorMessage) {
-        PharmaSnackbar.showError(context, next.errorMessage!);
+        PharmaFeedback.error(context, next.errorMessage!);
       }
     });
 

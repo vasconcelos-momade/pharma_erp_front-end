@@ -1,15 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/theme/dimensions.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/spacing.dart';
-import '../../../../shared/widgets/feedback/pharma_snackbar.dart';
+import '../../../../shared/responsive/breakpoints.dart';
+import '../../../../shared/widgets/feedback/pharma_feedback.dart';
+import '../../../../shared/widgets/buttons/pharma_button_loader.dart';
+import '../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
 import '../../../../shared/widgets/layout/module_page_frame.dart';
 import '../../../pharmacy/products/domain/entities/product.dart';
 import '../../../pharmacy/products/presentation/providers/product_provider.dart';
 import '../../domain/entities/requisicao.dart';
 import '../providers/requisicao_provider.dart';
 import '../widgets/criar_requisicao_dialog.dart';
+import '../widgets/editar_requisicao_dialog.dart';
 import '../widgets/requisicao_products_tab.dart';
 import '../widgets/requisicao_resumo_card.dart';
 import '../widgets/requisicao_stock_flow_view.dart';
@@ -63,7 +68,9 @@ DateTime? _parseDateInputValue(String? value) {
     return DateTime.tryParse(match.group(0)!);
   }
 
-  final displayMatch = RegExp(r'^(\d{2})/(\d{2})/(\d{4})$').firstMatch(normalized);
+  final displayMatch = RegExp(
+    r'^(\d{2})/(\d{2})/(\d{4})$',
+  ).firstMatch(normalized);
   if (displayMatch != null) {
     final day = int.tryParse(displayMatch.group(1)!);
     final month = int.tryParse(displayMatch.group(2)!);
@@ -160,10 +167,10 @@ class _RequisicaoHubPageState extends ConsumerState<RequisicaoHubPage> {
   bool get _isCompraMode => _selectedTipo == 'compra';
 
   RequisicaoTipo get _stockTipo => switch (_selectedTipo) {
-        'entrada' => RequisicaoTipo.entrada,
-        'saida' => RequisicaoTipo.saida,
-        _ => RequisicaoTipo.compra,
-      };
+    'entrada' => RequisicaoTipo.entrada,
+    'saida' => RequisicaoTipo.saida,
+    _ => RequisicaoTipo.compra,
+  };
 
   void _changeTipo(String tipo) {
     if (tipo == _selectedTipo) {
@@ -198,15 +205,6 @@ class _RequisicaoHubPageState extends ConsumerState<RequisicaoHubPage> {
     super.dispose();
   }
 
-  Future<void> _refreshPage() async {
-    await ref.read(requisicaoProductListProvider.notifier).refreshCurrentPage();
-    if (_isCompraMode) {
-      await ref.read(requisicaoCompraProvider.notifier).refreshLists();
-    } else {
-      await ref.read(requisicaoProvider.notifier).refreshLists();
-    }
-  }
-
   Future<void> _criarRequisicao() async {
     final initialTab = switch (_selectedTipo) {
       'entrada' => CriarRequisicaoModalTipo.entrada,
@@ -223,7 +221,9 @@ class _RequisicaoHubPageState extends ConsumerState<RequisicaoHubPage> {
 
     switch (result.tipo) {
       case CriarRequisicaoModalTipo.compra:
-        await ref.read(requisicaoCompraProvider.notifier).startRequisition(
+        await ref
+            .read(requisicaoCompraProvider.notifier)
+            .startRequisition(
               fornecedorId: result.fornecedorId!,
               numeroDocumento: result.numeroDocumento!,
               tipo: RequisicaoTipo.compra,
@@ -232,7 +232,9 @@ class _RequisicaoHubPageState extends ConsumerState<RequisicaoHubPage> {
           _changeTipo('compra');
         }
       case CriarRequisicaoModalTipo.entrada:
-        await ref.read(requisicaoProvider.notifier).startRequisition(
+        await ref
+            .read(requisicaoProvider.notifier)
+            .startRequisition(
               numeroDocumento: _autoDocumento('ENT'),
               fornecedorId: result.fornecedorId,
               origem: result.origem,
@@ -243,7 +245,9 @@ class _RequisicaoHubPageState extends ConsumerState<RequisicaoHubPage> {
           _changeTipo('entrada');
         }
       case CriarRequisicaoModalTipo.saida:
-        await ref.read(requisicaoProvider.notifier).startRequisition(
+        await ref
+            .read(requisicaoProvider.notifier)
+            .startRequisition(
               numeroDocumento: _autoDocumento('SAI'),
               fornecedorId: result.fornecedorId,
               destino: result.destino,
@@ -259,7 +263,7 @@ class _RequisicaoHubPageState extends ConsumerState<RequisicaoHubPage> {
   Future<void> _handleProduct(Product product) async {
     final compraState = ref.read(requisicaoCompraProvider);
     if (!compraState.canEditActiveRequisicao) {
-      PharmaSnackbar.showError(
+      PharmaFeedback.error(
         context,
         'Inicie ou seleccione uma requisição pendente antes de adicionar itens.',
       );
@@ -275,15 +279,15 @@ class _RequisicaoHubPageState extends ConsumerState<RequisicaoHubPage> {
       return;
     }
 
-    await ref.read(requisicaoCompraProvider.notifier).addCompraItemToActiveRequisition(
-          draft: draft,
-        );
+    await ref
+        .read(requisicaoCompraProvider.notifier)
+        .addCompraItemToActiveRequisition(draft: draft);
   }
 
   Future<void> _handleEditCompraItem(RequisicaoItem item) async {
     final compraState = ref.read(requisicaoCompraProvider);
     if (!compraState.canEditActiveRequisicao) {
-      PharmaSnackbar.showError(
+      PharmaFeedback.error(
         context,
         'Seleccione uma requisição pendente antes de editar itens.',
       );
@@ -299,102 +303,83 @@ class _RequisicaoHubPageState extends ConsumerState<RequisicaoHubPage> {
       return;
     }
 
-    await ref.read(requisicaoCompraProvider.notifier).updateCompraItemInActiveRequisition(
-          item: item,
-          draft: draft,
-        );
+    await ref
+        .read(requisicaoCompraProvider.notifier)
+        .updateCompraItemInActiveRequisition(item: item, draft: draft);
+  }
+
+  Future<void> _handleEditCompraHeader() async {
+    final compraState = ref.read(requisicaoCompraProvider);
+    final requisicao = compraState.activeRequisicao;
+    if (requisicao == null || !requisicao.status.isEditable) {
+      PharmaFeedback.error(
+        context,
+        'Seleccione uma requisição pendente antes de editar o cabeçalho.',
+      );
+      return;
+    }
+
+    final result = await showDialog<EditarRequisicaoDialogResult>(
+      context: context,
+      builder: (_) => EditarRequisicaoDialog(requisicao: requisicao),
+    );
+
+    if (!mounted || result == null) {
+      return;
+    }
+
+    await ref
+        .read(requisicaoCompraProvider.notifier)
+        .updateActiveRequisitionHeader(request: result.toRequest());
   }
 
   List<Widget> _buildTopActions({required bool isCreating}) {
     return [
-      SizedBox(
-        width: 360,
-        child: SegmentedButton<String>(
-          segments: const [
-            ButtonSegment<String>(
-              value: 'compra',
-              icon: Icon(Icons.shopping_cart_outlined),
-              label: Text('Compra'),
-            ),
-            ButtonSegment<String>(
-              value: 'entrada',
-              icon: Icon(Icons.arrow_downward_rounded),
-              label: Text('Entrada'),
-            ),
-            ButtonSegment<String>(
-              value: 'saida',
-              icon: Icon(Icons.arrow_upward_rounded),
-              label: Text('Saída'),
-            ),
-          ],
-          selected: {_selectedTipo},
-          onSelectionChanged: (selection) {
-            if (selection.isNotEmpty) {
-              _changeTipo(selection.first);
-            }
-          },
-        ),
-      ),
-      OutlinedButton.icon(
-        onPressed: _refreshPage,
-        icon: const Icon(Icons.refresh_rounded),
-        label: const Text('Atualizar'),
-      ),
-      FilledButton.icon(
-        onPressed: isCreating ? null : _criarRequisicao,
-        icon: isCreating
-            ? const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : const Icon(Icons.add_rounded),
-        label: const Text('Criar Requisição'),
+      _RequisicaoTopActionsBar(
+        selectedTipo: _selectedTipo,
+        isCreating: isCreating,
+        onSelectTipo: _changeTipo,
+        onCreate: _criarRequisicao,
       ),
     ];
   }
 
   Future<void> _confirmRemoveCompraItem(RequisicaoItem item) async {
-    final t = context.pharmaTokens;
-    final confirmed = await showDialog<bool>(
+    final confirmed = await PharmaFeedback.confirm(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Confirmar remoção'),
-        content: Text(
+      title: 'Confirmar remoção',
+      message:
           'Deseja remover o item "${item.produtoNome}" da requisição?\n\n'
           'Lote: ${item.numeroLote?.isNotEmpty == true ? item.numeroLote : '—'}\n'
           'Quantidade: ${item.quantidade.toStringAsFixed(item.quantidade.truncateToDouble() == item.quantidade ? 0 : 2)}',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            style: TextButton.styleFrom(foregroundColor: t.posDanger),
-            child: const Text('Remover'),
-          ),
-        ],
-      ),
+      confirmText: 'Remover',
+      cancelText: 'Cancelar',
+      destructive: true,
     );
 
     if (!mounted || confirmed != true) {
       return;
     }
 
-    await ref.read(requisicaoCompraProvider.notifier).removeItemFromActiveRequisition(item.id);
+    await ref
+        .read(requisicaoCompraProvider.notifier)
+        .removeItemFromActiveRequisition(item.id);
   }
 
   @override
   Widget build(BuildContext context) {
     final compraState = ref.watch(requisicaoCompraProvider);
     final requisicaoState = ref.watch(requisicaoProvider);
-    final isCreating = compraState.isCreatingRequisicao ||
+    final t = context.pharmaTokens;
+    final isMobileScreen =
+        MediaQuery.sizeOf(context).width < Breakpoints.tablet;
+    final isCreating =
+        compraState.isCreatingRequisicao ||
         requisicaoState.isCreatingRequisicao;
 
     if (!_isCompraMode) {
       return ModulePageFrame(
+        scrollable: false,
         actions: _buildTopActions(isCreating: isCreating),
         child: RequisicaoStockFlowView(
           searchController: _searchController,
@@ -403,14 +388,30 @@ class _RequisicaoHubPageState extends ConsumerState<RequisicaoHubPage> {
       );
     }
 
+    Future<void> showMobilePurchasePane() {
+      return Navigator.of(context).push<void>(
+        MaterialPageRoute(
+          builder: (_) => _MobilePurchasePaneScreen(
+            onConfirm: ref
+                .read(requisicaoCompraProvider.notifier)
+                .approveActiveRequisition,
+            onEditHeader: _handleEditCompraHeader,
+            onEditItem: _handleEditCompraItem,
+            onRemoveItem: _confirmRemoveCompraItem,
+          ),
+        ),
+      );
+    }
+
     final s = context.spacing;
-    final width = MediaQuery.sizeOf(context).width;
-    final isMobile = width <= 920;
     final productState = ref.watch(requisicaoProductListProvider);
     final productController = ref.read(requisicaoProductListProvider.notifier);
 
     // Sync search controller without modifying during build
-    ref.listen<ProductListState>(requisicaoProductListProvider, (previous, next) {
+    ref.listen<ProductListState>(requisicaoProductListProvider, (
+      previous,
+      next,
+    ) {
       if (_searchController.text != next.query) {
         _searchController.value = TextEditingValue(
           text: next.query,
@@ -423,98 +424,381 @@ class _RequisicaoHubPageState extends ConsumerState<RequisicaoHubPage> {
       if (!mounted) {
         return;
       }
-      if (previous?.errorMessage != next.errorMessage && next.errorMessage != null) {
-        PharmaSnackbar.showError(context, next.errorMessage!);
+      if (previous?.errorMessage != next.errorMessage &&
+          next.errorMessage != null) {
+        PharmaFeedback.error(context, next.errorMessage!);
       }
       if (previous?.successMessage != next.successMessage &&
           next.successMessage != null) {
-        PharmaSnackbar.showSuccess(context, next.successMessage!);
+        PharmaFeedback.success(context, next.successMessage!);
       }
     });
 
     return ModulePageFrame(
+      scrollable: false,
       actions: _buildTopActions(isCreating: isCreating),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (isMobile) ...[
-            SizedBox(
-              height: 520,
-              child: _LeftPane(
-                activeTab: compraState.activeTab,
-                productState: productState,
-                pendingRequisicoes: compraState.pendingRequisicoes,
-                historyRequisicoes: compraState.historyRequisicoes,
-                isLoadingLists: compraState.isLoadingLists,
-                activeRequisicaoId: compraState.activeRequisicao?.id,
-                searchController: _searchController,
-                canAddItems: compraState.canEditActiveRequisicao &&
-                    !compraState.isAddingItem &&
-                    !compraState.isApprovingRequisicao,
-                onSearchChanged: productController.onSearchChanged,
-                onRefreshProducts: productController.refreshCurrentPage,
-                onGoToPage: productController.goToPage,
-                onTabChanged: ref.read(requisicaoCompraProvider.notifier).setActiveTab,
-                onSelectProduct: _handleProduct,
-                onSelectPendingPurchase:
-                    ref.read(requisicaoCompraProvider.notifier).selectPendingRequisition,
-                onSelectFinalizedPurchase:
-                    ref.read(requisicaoCompraProvider.notifier).selectHistoryRequisition,
-              ),
-            ),
-            SizedBox(height: s.lg),
-            _RightPane(
-              state: compraState,
-              onConfirm: ref.read(requisicaoCompraProvider.notifier).approveActiveRequisition,
-              onEditItem: _handleEditCompraItem,
-              onRemoveItem: _confirmRemoveCompraItem,
-            ),
-          ] else
-            SizedBox(
-              height: 760,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    flex: 6,
-                    child: _LeftPane(
-                      activeTab: compraState.activeTab,
-                      productState: productState,
-                      pendingRequisicoes: compraState.pendingRequisicoes,
-                      historyRequisicoes: compraState.historyRequisicoes,
-                      isLoadingLists: compraState.isLoadingLists,
-                      activeRequisicaoId: compraState.activeRequisicao?.id,
-                      searchController: _searchController,
-                      canAddItems: compraState.canEditActiveRequisicao &&
-                          !compraState.isAddingItem &&
-                          !compraState.isApprovingRequisicao,
-                      onSearchChanged: productController.onSearchChanged,
-                      onRefreshProducts: productController.refreshCurrentPage,
-                      onGoToPage: productController.goToPage,
-                      onTabChanged: ref.read(requisicaoCompraProvider.notifier).setActiveTab,
-                      onSelectProduct: _handleProduct,
-                      onSelectPendingPurchase:
-                          ref.read(requisicaoCompraProvider.notifier).selectPendingRequisition,
-                      onSelectFinalizedPurchase:
-                          ref.read(requisicaoCompraProvider.notifier).selectHistoryRequisition,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          final isMobile = width < Breakpoints.tablet;
+          final isTablet = width >= Breakpoints.tablet && width < 1180;
+          final isWideScreen = width >= AppDimensions.contentMaxWidth;
+          final gap = isMobile ? s.md : (isWideScreen ? s.xl : s.lg);
+
+          final leftPane = _LeftPane(
+            activeTab: compraState.activeTab,
+            productState: productState,
+            pendingRequisicoes: compraState.pendingRequisicoes,
+            historyRequisicoes: compraState.historyRequisicoes,
+            isLoadingLists: compraState.isLoadingLists,
+            activeRequisicaoId: compraState.activeRequisicao?.id,
+            searchController: _searchController,
+            canAddItems:
+                compraState.canEditActiveRequisicao &&
+                !compraState.isAddingItem &&
+                !compraState.isApprovingRequisicao,
+            onSearchChanged: productController.onSearchChanged,
+            onRefreshProducts: productController.refreshCurrentPage,
+            onGoToPage: productController.goToPage,
+            onTabChanged: ref
+                .read(requisicaoCompraProvider.notifier)
+                .setActiveTab,
+            onSelectProduct: _handleProduct,
+            onSelectPendingPurchase: ref
+                .read(requisicaoCompraProvider.notifier)
+                .selectPendingRequisition,
+            onSelectFinalizedPurchase: ref
+                .read(requisicaoCompraProvider.notifier)
+                .selectHistoryRequisition,
+            showInlinePagination: !isMobile,
+          );
+          final rightPane = _RightPane(
+            state: compraState,
+            onConfirm: ref
+                .read(requisicaoCompraProvider.notifier)
+                .approveActiveRequisition,
+            onEditHeader: _handleEditCompraHeader,
+            onEditItem: _handleEditCompraItem,
+            onRemoveItem: _confirmRemoveCompraItem,
+          );
+
+          if (isMobile) {
+            final activePurchase = compraState.activeRequisicao;
+            final showPagination =
+                compraState.activeTab == RequisicaoTab.produtos &&
+                productState.isInitialized;
+            final showSummary = activePurchase != null;
+            final paginationHeight = showPagination
+                ? (t.minTouchTarget + s.xl)
+                : 0.0;
+            final summaryHeight = showSummary ? 84.0 : 0.0;
+            final footerGap = showPagination && showSummary ? s.sm : 0.0;
+            final bottomOverlayHeight =
+                paginationHeight + summaryHeight + footerGap;
+            final contentBottomPadding =
+                bottomOverlayHeight + t.minTouchTarget + s.xl;
+
+            return Stack(
+              children: [
+                Positioned.fill(
+                  child: Padding(
+                    padding: EdgeInsets.only(bottom: contentBottomPadding),
+                    child: leftPane,
+                  ),
+                ),
+                if (showSummary || showPagination)
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: SafeArea(
+                      top: false,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (showSummary)
+                            Padding(
+                              padding: EdgeInsets.fromLTRB(s.xs, 0, s.xs, 0),
+                              child: _MobilePurchaseSummaryBar(
+                                requisicao: activePurchase!,
+                                onOpen: showMobilePurchasePane,
+                              ),
+                            ),
+                          if (showSummary && showPagination)
+                            SizedBox(height: s.sm),
+                          if (showPagination)
+                            Padding(
+                              padding: EdgeInsets.fromLTRB(s.xs, 0, s.xs, s.xs),
+                              child: RequisicaoProductsPaginationBar(
+                                page: productState.page,
+                                pageSize: productState.pageSize,
+                                itemCount: productState.items.length,
+                                hasMore: productState.hasMore,
+                                onPrevious:
+                                    productState.page > 1 &&
+                                        !productState.isLoading
+                                    ? () => productController.goToPage(
+                                        productState.page - 1,
+                                      )
+                                    : null,
+                                onNext:
+                                    productState.hasMore &&
+                                        !productState.isLoading
+                                    ? () => productController.goToPage(
+                                        productState.page + 1,
+                                      )
+                                    : null,
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
-                  SizedBox(width: s.lg),
-                  Expanded(
-                    flex: 5,
-                    child: _RightPane(
-                      state: compraState,
-                      onConfirm:
-                          ref.read(requisicaoCompraProvider.notifier).approveActiveRequisition,
-                      onEditItem: _handleEditCompraItem,
-                      onRemoveItem: _confirmRemoveCompraItem,
+                Positioned(
+                  right: s.xs,
+                  bottom: bottomOverlayHeight + s.md,
+                  child: SafeArea(
+                    top: false,
+                    minimum: EdgeInsets.only(bottom: s.xs),
+                    child: FloatingActionButton(
+                      heroTag: 'create-purchase-fab',
+                      onPressed: isCreating ? null : _criarRequisicao,
+                      child: isCreating
+                          ? const PharmaButtonLoader()
+                          : const Icon(Icons.add_rounded),
                     ),
                   ),
-                ],
-              ),
-            ),
-        ],
+                ),
+              ],
+            );
+          }
+
+          if (isTablet) {
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(flex: 11, child: leftPane),
+                SizedBox(width: gap),
+                Expanded(flex: 9, child: rightPane),
+              ],
+            );
+          }
+
+          final rightPaneWidth = isWideScreen ? 560.0 : 520.0;
+
+          return Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: leftPane),
+              SizedBox(width: gap),
+              SizedBox(width: rightPaneWidth, child: rightPane),
+            ],
+          );
+        },
       ),
+    );
+  }
+}
+
+class _MobilePurchaseSummaryBar extends StatelessWidget {
+  const _MobilePurchaseSummaryBar({
+    required this.requisicao,
+    required this.onOpen,
+  });
+
+  final RequisicaoDetalhe requisicao;
+  final VoidCallback onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+    final s = context.spacing;
+    final total = requisicao.total ?? 0;
+
+    return Material(
+      color: t.card,
+      borderRadius: BorderRadius.circular(t.radiusXl),
+      elevation: 2,
+      child: InkWell(
+        onTap: onOpen,
+        borderRadius: BorderRadius.circular(t.radiusXl),
+        child: Padding(
+          padding: EdgeInsets.all(s.md),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${requisicao.totalItens} item${requisicao.totalItens == 1 ? '' : 's'}',
+                      style: TextStyle(
+                        color: t.textPrimary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    SizedBox(height: s.xxs),
+                    Text(
+                      'Total: ${_formatMoney(total)}',
+                      style: TextStyle(color: t.textMuted),
+                    ),
+                  ],
+                ),
+              ),
+              FilledButton(
+                onPressed: onOpen,
+                child: const Text('Ver requisição'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RequisicaoTopActionsBar extends StatelessWidget {
+  const _RequisicaoTopActionsBar({
+    required this.selectedTipo,
+    required this.isCreating,
+    required this.onSelectTipo,
+    required this.onCreate,
+  });
+
+  final String selectedTipo;
+  final bool isCreating;
+  final ValueChanged<String> onSelectTipo;
+  final VoidCallback onCreate;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.spacing;
+
+    return Wrap(
+      spacing: s.sm,
+      runSpacing: s.sm,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      children: [
+        _RequisicaoTipoSelector(
+          selectedTipo: selectedTipo,
+          onSelectTipo: onSelectTipo,
+        ),
+        FilledButton.icon(
+          onPressed: isCreating ? null : onCreate,
+          icon: isCreating
+              ? const PharmaButtonLoader()
+              : const Icon(Icons.add_rounded),
+          label: const Text('Criar Requisição'),
+        ),
+      ],
+    );
+  }
+}
+
+class _RequisicaoTipoSelector extends StatelessWidget {
+  const _RequisicaoTipoSelector({
+    required this.selectedTipo,
+    required this.onSelectTipo,
+  });
+
+  final String selectedTipo;
+  final ValueChanged<String> onSelectTipo;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+    final theme = Theme.of(context);
+
+    return SegmentedButton<String>(
+      showSelectedIcon: false,
+      style: ButtonStyle(
+        visualDensity: VisualDensity.compact,
+        tapTargetSize: MaterialTapTargetSize.padded,
+        side: WidgetStateProperty.resolveWith((states) {
+          final isSelected = states.contains(WidgetState.selected);
+          return BorderSide(color: isSelected ? t.brandBlue : t.border);
+        }),
+        backgroundColor: WidgetStateProperty.resolveWith((states) {
+          return states.contains(WidgetState.selected)
+              ? t.brandBlue.withValues(alpha: 0.12)
+              : t.card;
+        }),
+        foregroundColor: WidgetStateProperty.resolveWith((states) {
+          return states.contains(WidgetState.selected)
+              ? t.textPrimary
+              : t.textMuted;
+        }),
+        textStyle: WidgetStateProperty.all(
+          theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
+        ),
+        shape: WidgetStateProperty.all(
+          RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(t.radiusMd),
+          ),
+        ),
+      ),
+      segments: const [
+        ButtonSegment<String>(value: 'compra', label: Text('Compra')),
+        ButtonSegment<String>(value: 'entrada', label: Text('Entrada')),
+        ButtonSegment<String>(value: 'saida', label: Text('Saída')),
+      ],
+      selected: {selectedTipo},
+      onSelectionChanged: (selection) {
+        final value = selection.isEmpty ? null : selection.first;
+        if (value != null) {
+          onSelectTipo(value);
+        }
+      },
+      multiSelectionEnabled: false,
+      emptySelectionAllowed: false,
+    );
+  }
+}
+
+class _RequisicaoTipoAction extends StatelessWidget {
+  const _RequisicaoTipoAction({
+    required this.label,
+    required this.icon,
+    required this.isSelected,
+    required this.onPressed,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+    final compact = MediaQuery.sizeOf(context).width < Breakpoints.tablet;
+
+    final style = ButtonStyle(
+      minimumSize: WidgetStateProperty.all(
+        Size(double.infinity, t.minTouchTarget),
+      ),
+      padding: WidgetStateProperty.all(EdgeInsets.zero),
+      tapTargetSize: MaterialTapTargetSize.padded,
+      shape: WidgetStateProperty.all(
+        RoundedRectangleBorder(borderRadius: BorderRadius.circular(t.radiusMd)),
+      ),
+    );
+
+    if (isSelected) {
+      return FilledButton.icon(
+        onPressed: onPressed,
+        style: style,
+        icon: compact ? const SizedBox.shrink() : Icon(icon, size: t.iconSm),
+        label: Text(label),
+      );
+    }
+
+    return TextButton.icon(
+      onPressed: onPressed,
+      style: style,
+      icon: compact ? const SizedBox.shrink() : Icon(icon, size: t.iconSm),
+      label: Text(label),
     );
   }
 }
@@ -536,6 +820,7 @@ class _LeftPane extends StatefulWidget {
     required this.onSelectProduct,
     required this.onSelectPendingPurchase,
     required this.onSelectFinalizedPurchase,
+    this.showInlinePagination = true,
   });
 
   final RequisicaoTab activeTab;
@@ -553,12 +838,14 @@ class _LeftPane extends StatefulWidget {
   final ValueChanged<Product> onSelectProduct;
   final ValueChanged<String> onSelectPendingPurchase;
   final ValueChanged<String> onSelectFinalizedPurchase;
+  final bool showInlinePagination;
 
   @override
   State<_LeftPane> createState() => _LeftPaneState();
 }
 
-class _LeftPaneState extends State<_LeftPane> with SingleTickerProviderStateMixin {
+class _LeftPaneState extends State<_LeftPane>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -616,15 +903,23 @@ class _LeftPaneState extends State<_LeftPane> with SingleTickerProviderStateMixi
           borderRadius: BorderRadius.circular(t.radiusMd),
           child: TabBar(
             controller: _tabController,
+            isScrollable: true,
             onTap: (index) => widget.onTabChanged(_tabForIndex(index)),
             labelColor: t.textPrimary,
             unselectedLabelColor: t.textMuted,
             indicatorColor: t.brandBlue,
             dividerColor: Colors.transparent,
+            labelPadding: EdgeInsets.symmetric(horizontal: s.sm),
             tabs: [
-              const Tab(text: 'Produtos'),
-              Tab(text: 'Pendentes (${widget.pendingRequisicoes.length})'),
-              Tab(text: 'Finalizadas (${widget.historyRequisicoes.length})'),
+              Tab(height: t.minTouchTarget, text: 'Produtos'),
+              Tab(
+                height: t.minTouchTarget,
+                text: 'Pendentes (${widget.pendingRequisicoes.length})',
+              ),
+              Tab(
+                height: t.minTouchTarget,
+                text: 'Finalizadas (${widget.historyRequisicoes.length})',
+              ),
             ],
           ),
         ),
@@ -632,40 +927,41 @@ class _LeftPaneState extends State<_LeftPane> with SingleTickerProviderStateMixi
         Expanded(
           child: switch (widget.activeTab) {
             RequisicaoTab.produtos => RequisicaoProductsTab(
-                productState: widget.productState,
-                searchController: widget.searchController,
-                canAddItems: widget.canAddItems,
-                onSearchChanged: widget.onSearchChanged,
-                onRefreshProducts: widget.onRefreshProducts,
-                onGoToPage: widget.onGoToPage,
-                onSelectProduct: widget.onSelectProduct,
-              ),
+              productState: widget.productState,
+              searchController: widget.searchController,
+              canAddItems: widget.canAddItems,
+              onSearchChanged: widget.onSearchChanged,
+              onRefreshProducts: widget.onRefreshProducts,
+              onGoToPage: widget.onGoToPage,
+              onSelectProduct: widget.onSelectProduct,
+              showPagination: widget.showInlinePagination,
+            ),
             RequisicaoTab.pendentes => RequisicaoResumoListTab(
-                title: 'Requisições Pendentes',
-                subtitle:
-                    'Selecione uma requisição pendente para carregar os itens e voltar automaticamente para a tab Produtos.',
-                isLoading: widget.isLoadingLists,
-                requisicoes: widget.pendingRequisicoes,
-                activeRequisicaoId: widget.activeRequisicaoId,
-                emptyTitle: 'Nenhuma requisição pendente',
-                emptySubtitle:
-                    'Inicie uma nova requisição para criar o registo no backend.',
-                emptyIcon: Icons.assignment_outlined,
-                onSelect: widget.onSelectPendingPurchase,
-              ),
+              title: 'Requisições Pendentes',
+              subtitle:
+                  'Selecione uma requisição pendente para carregar os itens e voltar automaticamente para a tab Produtos.',
+              isLoading: widget.isLoadingLists,
+              requisicoes: widget.pendingRequisicoes,
+              activeRequisicaoId: widget.activeRequisicaoId,
+              emptyTitle: 'Nenhuma requisição pendente',
+              emptySubtitle:
+                  'Inicie uma nova requisição para criar o registo no backend.',
+              emptyIcon: Icons.assignment_outlined,
+              onSelect: widget.onSelectPendingPurchase,
+            ),
             RequisicaoTab.historico => RequisicaoResumoListTab(
-                title: 'Requisições Finalizadas',
-                subtitle:
-                    'Apenas visualização. Abra um card para consultar a requisição no painel da direita.',
-                isLoading: widget.isLoadingLists,
-                requisicoes: widget.historyRequisicoes,
-                activeRequisicaoId: widget.activeRequisicaoId,
-                emptyTitle: 'Nenhuma requisição finalizada',
-                emptySubtitle:
-                    'As requisições confirmadas aparecerão aqui automaticamente.',
-                emptyIcon: Icons.assignment_outlined,
-                onSelect: widget.onSelectFinalizedPurchase,
-              ),
+              title: 'Requisições Finalizadas',
+              subtitle:
+                  'Apenas visualização. Abra um card para consultar a requisição no painel da direita.',
+              isLoading: widget.isLoadingLists,
+              requisicoes: widget.historyRequisicoes,
+              activeRequisicaoId: widget.activeRequisicaoId,
+              emptyTitle: 'Nenhuma requisição finalizada',
+              emptySubtitle:
+                  'As requisições confirmadas aparecerão aqui automaticamente.',
+              emptyIcon: Icons.assignment_outlined,
+              onSelect: widget.onSelectFinalizedPurchase,
+            ),
           },
         ),
       ],
@@ -677,12 +973,14 @@ class _RightPane extends StatelessWidget {
   const _RightPane({
     required this.state,
     required this.onConfirm,
+    required this.onEditHeader,
     required this.onEditItem,
     required this.onRemoveItem,
   });
 
   final RequisicaoState state;
   final Future<void> Function() onConfirm;
+  final Future<void> Function() onEditHeader;
   final Future<void> Function(RequisicaoItem item) onEditItem;
   final Future<void> Function(RequisicaoItem item) onRemoveItem;
 
@@ -702,7 +1000,7 @@ class _RightPane extends StatelessWidget {
             color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 10,
             offset: const Offset(0, 4),
-          )
+          ),
         ],
       ),
       child: Column(
@@ -724,12 +1022,9 @@ class _RightPane extends StatelessWidget {
               ),
               if (state.isLoadingActiveRequisicao ||
                   state.isAddingItem ||
+                  state.isUpdatingRequisicao ||
                   state.isApprovingRequisicao)
-                const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
+                const PharmaButtonLoader(),
             ],
           ),
           SizedBox(height: s.lg),
@@ -742,7 +1037,13 @@ class _RightPane extends StatelessWidget {
               ),
             )
           else ...[
-            _ActivePurchaseHeader(purchase: activeRequisicao),
+            _ActivePurchaseHeader(
+              purchase: activeRequisicao,
+              canEdit:
+                  activeRequisicao.status.isEditable &&
+                  !state.isUpdatingRequisicao,
+              onEdit: onEditHeader,
+            ),
             SizedBox(height: s.md),
             Expanded(
               child: activeRequisicao.items.isEmpty
@@ -767,6 +1068,47 @@ class _RightPane extends StatelessWidget {
             onConfirm: onConfirm,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _MobilePurchasePaneScreen extends ConsumerWidget {
+  const _MobilePurchasePaneScreen({
+    required this.onConfirm,
+    required this.onEditHeader,
+    required this.onEditItem,
+    required this.onRemoveItem,
+  });
+
+  final Future<void> Function() onConfirm;
+  final Future<void> Function() onEditHeader;
+  final Future<void> Function(RequisicaoItem item) onEditItem;
+  final Future<void> Function(RequisicaoItem item) onRemoveItem;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.pharmaTokens;
+    final s = context.spacing;
+    final compraState = ref.watch(requisicaoCompraProvider);
+
+    return Scaffold(
+      backgroundColor: t.bgPrimary,
+      appBar: AppBar(
+        leading: BackButton(onPressed: () => Navigator.of(context).pop()),
+        title: const Text('Requisição Atual'),
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.all(s.md),
+          child: _RightPane(
+            state: compraState,
+            onConfirm: onConfirm,
+            onEditHeader: onEditHeader,
+            onEditItem: onEditItem,
+            onRemoveItem: onRemoveItem,
+          ),
+        ),
       ),
     );
   }
@@ -863,8 +1205,12 @@ class _PurchaseItemsDesktopTable extends StatelessWidget {
               rows: items.map((item) {
                 return DataRow(
                   cells: [
-                    DataCell(SizedBox(width: 260, child: Text(item.produtoNome))),
-                    DataCell(SizedBox(width: 150, child: Text(item.numeroLote ?? '-'))),
+                    DataCell(
+                      SizedBox(width: 260, child: Text(item.produtoNome)),
+                    ),
+                    DataCell(
+                      SizedBox(width: 150, child: Text(item.numeroLote ?? '-')),
+                    ),
                     DataCell(
                       SizedBox(
                         width: 130,
@@ -1084,10 +1430,7 @@ class _PurchaseItemCard extends StatelessWidget {
         children: [
           Text(
             item.produtoNome,
-            style: TextStyle(
-              color: t.textPrimary,
-              fontWeight: FontWeight.w800,
-            ),
+            style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w800),
           ),
           SizedBox(height: s.sm),
           Wrap(
@@ -1133,9 +1476,7 @@ class _PurchaseItemCard extends StatelessWidget {
                 onPressed: isEditable ? () => onRemove(item) : null,
                 icon: const Icon(Icons.delete_outline_rounded),
                 label: const Text('Remover'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: t.posDanger,
-                ),
+                style: OutlinedButton.styleFrom(foregroundColor: t.posDanger),
               ),
             ],
           ),
@@ -1146,10 +1487,7 @@ class _PurchaseItemCard extends StatelessWidget {
 }
 
 class _PurchaseItemInfo extends StatelessWidget {
-  const _PurchaseItemInfo({
-    required this.label,
-    required this.value,
-  });
+  const _PurchaseItemInfo({required this.label, required this.value});
 
   final String label;
   final String value;
@@ -1160,17 +1498,11 @@ class _PurchaseItemInfo extends StatelessWidget {
 
     return RichText(
       text: TextSpan(
-        style: TextStyle(
-          color: t.textMuted,
-          fontSize: 12,
-        ),
+        style: TextStyle(color: t.textMuted, fontSize: 12),
         children: [
           TextSpan(
             text: '$label: ',
-            style: TextStyle(
-              color: t.textPrimary,
-              fontWeight: FontWeight.w700,
-            ),
+            style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w700),
           ),
           TextSpan(text: value),
         ],
@@ -1203,17 +1535,17 @@ class _PurchaseItemActionButtons extends StatelessWidget {
       children: [
         if (showDetailsButton)
           IconButton(
-            icon: const Icon(Icons.info_outline_rounded, size: 20),
+            icon: Icon(Icons.info_outline_rounded, size: t.iconSm),
             onPressed: () => _showPurchaseItemDetails(context, item),
             tooltip: 'Ver detalhes',
           ),
         IconButton(
-          icon: const Icon(Icons.edit_outlined, size: 20),
+          icon: Icon(Icons.edit_outlined, size: t.iconSm),
           onPressed: isEditable ? () => onEdit(item) : null,
           tooltip: 'Editar item',
         ),
         IconButton(
-          icon: const Icon(Icons.delete_outline_rounded, size: 20),
+          icon: Icon(Icons.delete_outline_rounded, size: t.iconSm),
           onPressed: isEditable ? () => onRemove(item) : null,
           color: t.posDanger,
           tooltip: 'Remover item',
@@ -1223,7 +1555,10 @@ class _PurchaseItemActionButtons extends StatelessWidget {
   }
 }
 
-Future<void> _showPurchaseItemDetails(BuildContext context, RequisicaoItem item) {
+Future<void> _showPurchaseItemDetails(
+  BuildContext context,
+  RequisicaoItem item,
+) {
   return showDialog<void>(
     context: context,
     builder: (dialogContext) {
@@ -1280,10 +1615,7 @@ Future<void> _showPurchaseItemDetails(BuildContext context, RequisicaoItem item)
 }
 
 class _DialogDetailRow extends StatelessWidget {
-  const _DialogDetailRow({
-    required this.label,
-    required this.value,
-  });
+  const _DialogDetailRow({required this.label, required this.value});
 
   final String label;
   final String value;
@@ -1299,19 +1631,13 @@ class _DialogDetailRow extends StatelessWidget {
           width: 120,
           child: Text(
             label,
-            style: TextStyle(
-              color: t.textMuted,
-              fontWeight: FontWeight.w600,
-            ),
+            style: TextStyle(color: t.textMuted, fontWeight: FontWeight.w600),
           ),
         ),
         Expanded(
           child: Text(
             value,
-            style: TextStyle(
-              color: t.textPrimary,
-              fontWeight: FontWeight.w700,
-            ),
+            style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w700),
           ),
         ),
       ],
@@ -1320,9 +1646,15 @@ class _DialogDetailRow extends StatelessWidget {
 }
 
 class _ActivePurchaseHeader extends StatelessWidget {
-  const _ActivePurchaseHeader({required this.purchase});
+  const _ActivePurchaseHeader({
+    required this.purchase,
+    this.canEdit = false,
+    this.onEdit,
+  });
 
   final RequisicaoDetalhe purchase;
+  final bool canEdit;
+  final Future<void> Function()? onEdit;
 
   @override
   Widget build(BuildContext context) {
@@ -1339,25 +1671,50 @@ class _ActivePurchaseHeader extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            purchase.numeroDocumento.isNotEmpty
-                ? 'Documento ${purchase.numeroDocumento}'
-                : 'Requisição #${purchase.id}',
-            style: TextStyle(
-              color: t.textPrimary,
-              fontWeight: FontWeight.w800,
-            ),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  purchase.numeroDocumento.isNotEmpty
+                      ? 'Documento ${purchase.numeroDocumento}'
+                      : 'Requisição #${purchase.id}',
+                  style: TextStyle(
+                    color: t.textPrimary,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              if (canEdit && onEdit != null)
+                IconButton(
+                  tooltip: 'Editar cabeçalho',
+                  onPressed: onEdit,
+                  icon: Icon(Icons.edit_outlined, size: t.iconSm),
+                ),
+            ],
           ),
           SizedBox(height: s.sm),
           Wrap(
             spacing: s.sm,
             runSpacing: s.sm,
             children: [
-              _InfoTag(label: purchase.status.label, color: purchase.status.isEditable ? t.posWarning : t.brandGreen),
+              _InfoTag(
+                label: purchase.status.label,
+                color: purchase.status.isEditable ? t.posWarning : t.brandGreen,
+              ),
               if (purchase.numeroDocumento.isNotEmpty)
-                _InfoTag(label: 'Nº doc. ${purchase.numeroDocumento}', color: t.brandBlue),
-              _InfoTag(label: 'Fornecedor ${purchase.fornecedorNome ?? 'N/A'}', color: t.brandBlue),
-              _InfoTag(label: 'Data ${_formatDate(purchase.createdAt)}', color: t.textMuted),
+                _InfoTag(
+                  label: 'Nº doc. ${purchase.numeroDocumento}',
+                  color: t.brandBlue,
+                ),
+              _InfoTag(
+                label: 'Fornecedor ${purchase.fornecedorNome ?? 'N/A'}',
+                color: t.brandBlue,
+              ),
+              _InfoTag(
+                label: 'Data ${_formatDate(purchase.createdAt)}',
+                color: t.textMuted,
+              ),
             ],
           ),
         ],
@@ -1383,71 +1740,60 @@ class _ConfirmFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
     final s = context.spacing;
+    final theme = Theme.of(context);
     final helperText = switch (activeRequisicao?.status) {
       null => 'Inicie uma requisição para habilitar ações.',
-      RequisicaoStatus.pendente => activeRequisicao!.items.isEmpty
-          ? 'Adicione itens para confirmar.'
-          : 'Total: ${_formatMoney((activeRequisicao!.total ?? 0))}',
+      RequisicaoStatus.pendente =>
+        activeRequisicao!.items.isEmpty
+            ? 'Adicione itens para confirmar.'
+            : 'Total: ${_formatMoney((activeRequisicao!.total ?? 0))}',
       RequisicaoStatus.aprovada => 'Requisição aprovada.',
       RequisicaoStatus.rejeitada => 'Requisição rejeitada.',
       RequisicaoStatus.concluida => 'Requisição finalizada.',
       RequisicaoStatus.cancelada => 'Requisição cancelada.',
     };
 
-    return Container(
-      width: double.infinity,
-      padding: EdgeInsets.all(s.md),
-      decoration: BoxDecoration(
-        color: t.bgSecondary,
-        borderRadius: BorderRadius.circular(t.radiusXl),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            helperText,
-            style: TextStyle(
-              color: activeRequisicao?.status == RequisicaoStatus.pendente &&
-                      activeRequisicao!.items.isNotEmpty
-                  ? t.textPrimary
-                  : t.textMuted,
-              fontWeight: activeRequisicao?.status == RequisicaoStatus.pendente &&
-                      activeRequisicao!.items.isNotEmpty
-                  ? FontWeight.w700
-                  : FontWeight.normal,
-            ),
+    final isPendingWithItems =
+        activeRequisicao?.status == RequisicaoStatus.pendente &&
+        (activeRequisicao?.items.isNotEmpty ?? false);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          helperText,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: isPendingWithItems ? t.textSecondary : t.textMuted,
+            fontWeight: isPendingWithItems ? FontWeight.w600 : FontWeight.w400,
           ),
-          SizedBox(height: s.md),
-          Row(
+        ),
+        SizedBox(height: s.sm),
+        Align(
+          alignment: Alignment.centerRight,
+          child: Wrap(
+            spacing: s.md,
+            runSpacing: s.sm,
+            alignment: WrapAlignment.end,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: activeRequisicao != null ? () {} : null,
-                  icon: const Icon(Icons.print_outlined),
-                  label: const Text('Imprimir'),
-                ),
+              OutlinedButton.icon(
+                onPressed: activeRequisicao != null ? () {} : null,
+                icon: const Icon(Icons.picture_as_pdf_outlined),
+                label: const Text('Exportar PDF'),
               ),
-              SizedBox(width: s.md),
-              Expanded(
-                flex: 2,
-                child: FilledButton.icon(
-                  onPressed: canConfirm ? onConfirm : null,
-                  icon: isLoading
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.check_circle_outline_rounded),
-                  label: Text(
-                    isLoading ? 'A confirmar...' : 'Confirmar Requisição',
-                  ),
+              FilledButton.icon(
+                onPressed: canConfirm ? onConfirm : null,
+                icon: isLoading
+                    ? const PharmaButtonLoader()
+                    : const Icon(Icons.check_circle_outline_rounded),
+                label: Text(
+                  isLoading ? 'A confirmar...' : 'Confirmar Requisição',
                 ),
               ),
             ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -1470,10 +1816,7 @@ class _InfoTag extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(
-          color: t.textPrimary,
-          fontWeight: FontWeight.w600,
-        ),
+        style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -1524,10 +1867,8 @@ class _EmptyPane extends StatelessWidget {
 }
 
 class _RequisicaoItemDialog extends StatefulWidget {
-  const _RequisicaoItemDialog({
-    this.product,
-    this.item,
-  }) : assert(product != null || item != null);
+  const _RequisicaoItemDialog({this.product, this.item})
+    : assert(product != null || item != null);
 
   final Product? product;
   final RequisicaoItem? item;
@@ -1630,74 +1971,83 @@ class _RequisicaoItemDialogState extends State<_RequisicaoItemDialog> {
   @override
   Widget build(BuildContext context) {
     final s = context.spacing;
-    return AlertDialog(
-      title: Text(
-        widget.isEditing
-            ? 'Editar ${widget.productName}'
-            : 'Adicionar ${widget.productName}',
-      ),
-      content: SizedBox(
-        width: 540,
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _DialogField(
-                  controller: _loteController,
-                  label: 'Lote',
-                  hint: 'Ex.: LOTE-2026-001',
-                  validator: _requiredValidator,
-                ),
-                SizedBox(height: s.md),
-                _DialogField(
-                  controller: _dataValidadeController,
-                  label: 'Data de validade',
-                  hint: 'DD/MM/AAAA',
-                  validator: _dateValidator,
-                  keyboardType: TextInputType.datetime,
-                  inputFormatters: [
-                    _DateTextInputFormatter(),
-                  ],
-                  onEditingComplete: () {
-                    _dataValidadeController.text = _normalizeDateInputValue(
-                      _dataValidadeController.text,
-                    );
-                  },
-                  suffixIcon: IconButton(
-                    onPressed: _pickExpiryDate,
-                    icon: const Icon(Icons.calendar_today_outlined),
-                    tooltip: 'Selecionar data',
-                  ),
-                ),
-                SizedBox(height: s.md),
-                _DialogField(
-                  controller: _precoCompraController,
-                  label: 'Preço de compra',
-                  hint: 'Ex.: 44.10',
-                  validator: _positiveNumberValidator,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                ),
-                SizedBox(height: s.md),
-                _DialogField(
-                  controller: _precoVendaController,
-                  label: 'Preço de venda',
-                  hint: 'Opcional',
-                  validator: _optionalPositiveNumberValidator,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                ),
-                SizedBox(height: s.md),
-                _DialogField(
-                  controller: _quantidadeController,
-                  label: 'Quantidade',
-                  hint: 'Ex.: 10',
-                  validator: _positiveNumberValidator,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                ),
+    return PharmaResponsiveDialog(
+      title: Text(widget.isEditing ? 'Editar Item' : 'Adicionar Item'),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _ItemDialogProductHeader(
+              productName: widget.productName,
+              description: widget.isEditing
+                  ? 'Atualize os dados do item selecionado mantendo o padrão visual e documental da requisição.'
+                  : 'Preencha os dados do lote e os preços para adicionar este produto à requisição.',
+              metadata: [
+                if (_loteController.text.trim().isNotEmpty)
+                  'Lote ${_loteController.text.trim()}',
+                if (_dataValidadeController.text.trim().isNotEmpty)
+                  'Validade ${_dataValidadeController.text.trim()}',
               ],
             ),
-          ),
+            SizedBox(height: s.lg),
+            _DialogField(
+              controller: _loteController,
+              label: 'Lote',
+              hint: 'Ex.: LOTE-2026-001',
+              validator: _requiredValidator,
+            ),
+            SizedBox(height: s.md),
+            _DialogField(
+              controller: _dataValidadeController,
+              label: 'Data de validade',
+              hint: 'DD/MM/AAAA',
+              validator: _dateValidator,
+              keyboardType: TextInputType.datetime,
+              inputFormatters: [_DateTextInputFormatter()],
+              onEditingComplete: () {
+                _dataValidadeController.text = _normalizeDateInputValue(
+                  _dataValidadeController.text,
+                );
+              },
+              suffixIcon: IconButton(
+                onPressed: _pickExpiryDate,
+                icon: const Icon(Icons.calendar_today_outlined),
+                tooltip: 'Selecionar data',
+              ),
+            ),
+            SizedBox(height: s.md),
+            _DialogField(
+              controller: _precoCompraController,
+              label: 'Preço de compra',
+              hint: 'Ex.: 44.10',
+              validator: _positiveNumberValidator,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+            ),
+            SizedBox(height: s.md),
+            _DialogField(
+              controller: _precoVendaController,
+              label: 'Preço de venda',
+              hint: 'Opcional',
+              validator: _optionalPositiveNumberValidator,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+            ),
+            SizedBox(height: s.md),
+            _DialogField(
+              controller: _quantidadeController,
+              label: 'Quantidade',
+              hint: 'Ex.: 10',
+              validator: _positiveNumberValidator,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+            ),
+          ],
         ),
       ),
       actions: [
@@ -1710,7 +2060,9 @@ class _RequisicaoItemDialogState extends State<_RequisicaoItemDialog> {
           icon: Icon(
             widget.isEditing ? Icons.save_outlined : Icons.add_task_rounded,
           ),
-          label: Text(widget.isEditing ? 'Guardar alterações' : 'Adicionar item'),
+          label: Text(
+            widget.isEditing ? 'Guardar alterações' : 'Adicionar item',
+          ),
         ),
       ],
     );
@@ -1760,6 +2112,91 @@ class _RequisicaoItemDialogState extends State<_RequisicaoItemDialog> {
 
   double _parseNumber(String value) {
     return double.parse(value.trim().replaceAll(',', '.'));
+  }
+}
+
+class _ItemDialogProductHeader extends StatelessWidget {
+  const _ItemDialogProductHeader({
+    required this.productName,
+    required this.description,
+    this.metadata = const [],
+  });
+
+  final String productName;
+  final String description;
+  final List<String> metadata;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+    final s = context.spacing;
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: EdgeInsets.all(s.md),
+      decoration: BoxDecoration(
+        color: t.bgPrimary.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(t.radiusMd),
+        border: Border.all(color: t.border.withValues(alpha: 0.9)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Produto',
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: t.brandBlue,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.3,
+            ),
+          ),
+          SizedBox(height: s.xs),
+          Text(
+            productName,
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: t.textPrimary,
+              fontWeight: FontWeight.w800,
+              height: 1.2,
+            ),
+          ),
+          SizedBox(height: s.xs),
+          Text(
+            description,
+            style: theme.textTheme.bodyMedium?.copyWith(color: t.textSecondary),
+          ),
+          if (metadata.isNotEmpty) ...[
+            SizedBox(height: s.sm),
+            Wrap(
+              spacing: s.sm,
+              runSpacing: s.sm,
+              children: [
+                for (final item in metadata)
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: s.sm,
+                      vertical: s.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: t.card.withValues(alpha: 0.55),
+                      borderRadius: BorderRadius.circular(t.radiusMd),
+                      border: Border.all(
+                        color: t.border.withValues(alpha: 0.7),
+                      ),
+                    ),
+                    child: Text(
+                      item,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: t.textPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
 

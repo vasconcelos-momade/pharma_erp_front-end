@@ -16,6 +16,11 @@ abstract class RequisicaoRepository {
 
   Future<RequisicaoDetalhe> obterRequisicao(String requisicaoId);
 
+  Future<RequisicaoDetalhe> atualizarRequisicao({
+    required String requisicaoId,
+    required AtualizarRequisicaoRequest request,
+  });
+
   Future<RequisicaoDetalhe> adicionarItem({
     required String requisicaoId,
     required RequisicaoItemRequest request,

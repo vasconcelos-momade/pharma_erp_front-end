@@ -20,6 +20,10 @@ abstract class RequisicaoRemoteDataSource {
     RequisicaoTipo? tipo,
   });
   Future<RequisicaoDetalheModel> obterRequisicao(String requisicaoId);
+  Future<RequisicaoDetalheModel> atualizarRequisicao({
+    required String requisicaoId,
+    required AtualizarRequisicaoRequestModel request,
+  });
   Future<RequisicaoDetalheModel> adicionarItem({
     required String requisicaoId,
     required RequisicaoItemRequestModel request,
@@ -152,6 +156,22 @@ class RequisicaoRemoteDataSourceImpl implements RequisicaoRemoteDataSource {
           fallback: 'Resposta invalida ao carregar requisicao.',
         ),
       );
+    } on DioException catch (e) {
+      throw ApiFailure.fromDio(e);
+    }
+  }
+
+  @override
+  Future<RequisicaoDetalheModel> atualizarRequisicao({
+    required String requisicaoId,
+    required AtualizarRequisicaoRequestModel request,
+  }) async {
+    try {
+      await _dio.patch<Map<String, dynamic>>(
+        ApiConstants.tenantRequisicaoDetalhe(requisicaoId),
+        data: request.toJson(),
+      );
+      return obterRequisicao(requisicaoId);
     } on DioException catch (e) {
       throw ApiFailure.fromDio(e);
     }

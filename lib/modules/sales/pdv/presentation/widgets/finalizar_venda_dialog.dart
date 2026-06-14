@@ -8,7 +8,8 @@ import '../../../../../core/theme/design_metrics.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
-import '../../../../../shared/widgets/feedback/pharma_snackbar.dart';
+import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
+import '../../../../../shared/widgets/buttons/pharma_button_loader.dart';
 import '../../domain/entities/pdv_checkout.dart';
 import '../providers/pdv_checkout_provider.dart';
 
@@ -135,14 +136,19 @@ class _FinalizarVendaDialogState
       if (!mounted) {
         return;
       }
-      PharmaSnackbar.showError(context, e.message);
+      await PharmaFeedback.criticalError(
+        context: context,
+        title: 'Falha ao finalizar venda',
+        message: e.message,
+      );
     } catch (_) {
       if (!mounted) {
         return;
       }
-      PharmaSnackbar.showError(
-        context,
-        'Falha ao finalizar a venda. Tente novamente.',
+      await PharmaFeedback.criticalError(
+        context: context,
+        title: 'Falha ao finalizar venda',
+        message: 'Não foi possível concluir a venda. Tente novamente.',
       );
     }
   }
@@ -275,19 +281,10 @@ class _FinalizarVendaDialogState
     PdvCheckoutState checkoutState,
     FinalizarVendaPresentation presentation,
   ) {
-    final t = context.pharmaTokens;
-    final s = context.spacing;
-
     final confirmButton = FilledButton.icon(
       onPressed: checkoutState.isSubmitting ? null : _submit,
       icon: checkoutState.isSubmitting
-          ? SizedBox(
-              width: t.iconSm,
-              height: t.iconSm,
-              child: CircularProgressIndicator(
-                strokeWidth: s.xxs,
-              ),
-            )
+          ? const PharmaButtonLoader()
           : const Icon(Icons.check_circle_outline_rounded),
       label: const Text('Confirmar Pagamento'),
     );

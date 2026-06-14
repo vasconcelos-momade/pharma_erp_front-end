@@ -16,6 +16,7 @@ class RequisicaoProductsTab extends StatelessWidget {
     required this.onRefreshProducts,
     required this.onGoToPage,
     required this.onSelectProduct,
+    this.showPagination = true,
   });
 
   final ProductListState productState;
@@ -25,6 +26,7 @@ class RequisicaoProductsTab extends StatelessWidget {
   final Future<void> Function() onRefreshProducts;
   final Future<void> Function(int page) onGoToPage;
   final ValueChanged<Product> onSelectProduct;
+  final bool showPagination;
 
   @override
   Widget build(BuildContext context) {
@@ -72,28 +74,28 @@ class RequisicaoProductsTab extends StatelessWidget {
           child: !productState.isInitialized && productState.isLoading
               ? const Center(child: CircularProgressIndicator())
               : products.isEmpty
-                  ? const _RequisicaoProductsEmptyPane(
-                      icon: Icons.inventory_2_outlined,
-                      title: 'Nenhum produto ativo encontrado',
-                      subtitle:
-                          'Ajuste a pesquisa ou actualize o catálogo para tentar novamente.',
-                    )
-                  : ListView.separated(
-                      itemCount: products.length,
-                      separatorBuilder: (_, _) => SizedBox(height: s.sm),
-                      itemBuilder: (context, index) {
-                        final product = products[index];
-                        return _RequisicaoProductCard(
-                          product: product,
-                          enabled: canAddItems,
-                          onTap: () => onSelectProduct(product),
-                        );
-                      },
-                    ),
+              ? const _RequisicaoProductsEmptyPane(
+                  icon: Icons.inventory_2_outlined,
+                  title: 'Nenhum produto ativo encontrado',
+                  subtitle:
+                      'Ajuste a pesquisa ou actualize o catálogo para tentar novamente.',
+                )
+              : ListView.separated(
+                  itemCount: products.length,
+                  separatorBuilder: (_, _) => SizedBox(height: s.sm),
+                  itemBuilder: (context, index) {
+                    final product = products[index];
+                    return _RequisicaoProductCard(
+                      product: product,
+                      enabled: canAddItems,
+                      onTap: () => onSelectProduct(product),
+                    );
+                  },
+                ),
         ),
-        if (productState.isInitialized) ...[
+        if (showPagination && productState.isInitialized) ...[
           SizedBox(height: s.sm),
-          _RequisicaoProductsPaginationBar(
+          RequisicaoProductsPaginationBar(
             page: productState.page,
             pageSize: productState.pageSize,
             itemCount: productState.items.length,
@@ -130,14 +132,11 @@ class _RequisicaoProductCard extends StatelessWidget {
     final productDetails = [
       product.substanciaActiva,
       product.dosagem,
-      [product.forma, product.apresentacao]
-          .whereType<String>()
-          .where((value) => value.isNotEmpty)
-          .join(' / '),
-    ]
-        .whereType<String>()
-        .where((value) => value.isNotEmpty)
-        .join(' • ');
+      [
+        product.forma,
+        product.apresentacao,
+      ].whereType<String>().where((value) => value.isNotEmpty).join(' / '),
+    ].whereType<String>().where((value) => value.isNotEmpty).join(' • ');
 
     return InkWell(
       onTap: enabled ? onTap : null,
@@ -151,47 +150,87 @@ class _RequisicaoProductCard extends StatelessWidget {
             color: enabled ? t.border : t.border.withValues(alpha: 0.5),
           ),
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product.nome,
-                    style: TextStyle(
-                      color: t.textPrimary,
-                      fontWeight: FontWeight.w700,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final compact = constraints.maxWidth < 480;
+            final info = Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  product.nome,
+                  style: TextStyle(
+                    color: t.textPrimary,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                if (productDetails.isNotEmpty)
+                  Padding(
+                    padding: EdgeInsets.only(top: s.xs),
+                    child: Text(
+                      productDetails,
+                      style: TextStyle(color: t.textMuted, fontSize: 12),
                     ),
                   ),
-                  if (productDetails.isNotEmpty)
-                    Padding(
-                      padding: EdgeInsets.only(top: s.xs),
-                      child: Text(
-                        productDetails,
-                        style: TextStyle(color: t.textMuted, fontSize: 12),
+              ],
+            );
+
+            final actions = compact
+                ? Wrap(
+                    spacing: s.sm,
+                    runSpacing: s.sm,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      _RequisicaoProductInfoTag(
+                        label: statusLabel,
+                        color: product.ativo ? t.brandGreen : t.textMuted,
                       ),
-                    ),
+                      FilledButton.icon(
+                        onPressed: enabled ? onTap : null,
+                        icon: const Icon(Icons.add_shopping_cart_rounded),
+                        label: const Text('Adicionar'),
+                      ),
+                    ],
+                  )
+                : Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _RequisicaoProductInfoTag(
+                        label: statusLabel,
+                        color: product.ativo ? t.brandGreen : t.textMuted,
+                      ),
+                      SizedBox(width: s.sm),
+                      IconButton(
+                        onPressed: enabled ? onTap : null,
+                        icon: const Icon(Icons.add_shopping_cart_rounded),
+                        style: IconButton.styleFrom(
+                          backgroundColor: t.brandBlue.withValues(alpha: 0.1),
+                          foregroundColor: t.brandBlue,
+                        ),
+                        tooltip: 'Adicionar à requisição',
+                      ),
+                    ],
+                  );
+
+            if (compact) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  info,
+                  SizedBox(height: s.md),
+                  actions,
                 ],
-              ),
-            ),
-            SizedBox(width: s.md),
-            _RequisicaoProductInfoTag(
-              label: statusLabel,
-              color: product.ativo ? t.brandGreen : t.textMuted,
-            ),
-            SizedBox(width: s.sm),
-            IconButton(
-              onPressed: enabled ? onTap : null,
-              icon: const Icon(Icons.add_shopping_cart_rounded),
-              style: IconButton.styleFrom(
-                backgroundColor: t.brandBlue.withValues(alpha: 0.1),
-                foregroundColor: t.brandBlue,
-              ),
-              tooltip: 'Adicionar à requisição',
-            ),
-          ],
+              );
+            }
+
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(child: info),
+                SizedBox(width: s.md),
+                actions,
+              ],
+            );
+          },
         ),
       ),
     );
@@ -199,10 +238,7 @@ class _RequisicaoProductCard extends StatelessWidget {
 }
 
 class _RequisicaoProductInfoTag extends StatelessWidget {
-  const _RequisicaoProductInfoTag({
-    required this.label,
-    required this.color,
-  });
+  const _RequisicaoProductInfoTag({required this.label, required this.color});
 
   final String label;
   final Color color;
@@ -219,10 +255,7 @@ class _RequisicaoProductInfoTag extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(
-          color: t.textPrimary,
-          fontWeight: FontWeight.w600,
-        ),
+        style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -256,10 +289,7 @@ class _RequisicaoProductsInlineBanner extends StatelessWidget {
           Icon(icon, color: color),
           SizedBox(width: s.sm),
           Expanded(
-            child: Text(
-              message,
-              style: TextStyle(color: t.textPrimary),
-            ),
+            child: Text(message, style: TextStyle(color: t.textPrimary)),
           ),
         ],
       ),
@@ -311,8 +341,8 @@ class _RequisicaoProductsEmptyPane extends StatelessWidget {
   }
 }
 
-class _RequisicaoProductsPaginationBar extends StatelessWidget {
-  const _RequisicaoProductsPaginationBar({
+class RequisicaoProductsPaginationBar extends StatelessWidget {
+  const RequisicaoProductsPaginationBar({
     required this.page,
     required this.pageSize,
     required this.itemCount,
@@ -332,90 +362,96 @@ class _RequisicaoProductsPaginationBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
     final s = context.spacing;
-    final isMobile = MediaQuery.sizeOf(context).width <= 700;
     final start = itemCount == 0 ? 0 : ((page - 1) * pageSize) + 1;
     final end = itemCount == 0 ? 0 : start + itemCount - 1;
-    final resultsLabel =
-        itemCount == 0 ? 'Sem resultados nesta página' : 'Mostrando $start-$end';
+    final resultsLabel = itemCount == 0
+        ? 'Sem resultados nesta página'
+        : 'Mostrando $start-$end';
 
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: s.md, vertical: s.sm),
-      decoration: BoxDecoration(
-        color: t.card,
-        borderRadius: BorderRadius.circular(t.radiusMd),
-        border: Border.all(color: t.border.withValues(alpha: 0.5)),
-      ),
-      child: isMobile
-          ? Row(
-              children: [
-                OutlinedButton(
-                  onPressed: onPrevious,
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: Size(t.minTouchTarget, t.minTouchTarget),
-                    padding: EdgeInsets.symmetric(horizontal: s.sm),
-                  ),
-                  child: Icon(Icons.chevron_left_rounded, size: t.iconSm),
-                ),
-                SizedBox(width: s.sm),
-                Expanded(
-                  child: Text(
-                    '$resultsLabel • Página $page',
-                    style: TextStyle(
-                      color: t.textPrimary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                SizedBox(width: s.sm),
-                FilledButton(
-                  onPressed: onNext,
-                  style: FilledButton.styleFrom(
-                    minimumSize: Size(t.minTouchTarget, t.minTouchTarget),
-                    padding: EdgeInsets.symmetric(horizontal: s.sm),
-                  ),
-                  child: Icon(Icons.chevron_right_rounded, size: t.iconSm),
-                ),
-              ],
-            )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  resultsLabel,
-                  style: TextStyle(
-                    color: t.textMuted,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                SizedBox(height: s.sm),
-                Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final compact = constraints.maxWidth < 520;
+
+        return Container(
+          padding: EdgeInsets.symmetric(horizontal: s.md, vertical: s.sm),
+          decoration: BoxDecoration(
+            color: t.card,
+            borderRadius: BorderRadius.circular(t.radiusMd),
+            border: Border.all(color: t.border.withValues(alpha: 0.5)),
+          ),
+          child: compact
+              ? Row(
                   children: [
-                    OutlinedButton.icon(
+                    OutlinedButton(
                       onPressed: onPrevious,
-                      icon: const Icon(Icons.chevron_left_rounded),
-                      label: const Text('Anterior'),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: Size(t.minTouchTarget, t.minTouchTarget),
+                        padding: EdgeInsets.symmetric(horizontal: s.sm),
+                      ),
+                      child: Icon(Icons.chevron_left_rounded, size: t.iconSm),
                     ),
-                    const Spacer(),
-                    Text(
-                      'Página $page',
-                      style: TextStyle(
-                        color: t.textPrimary,
-                        fontWeight: FontWeight.w700,
+                    SizedBox(width: s.sm),
+                    Expanded(
+                      child: Text(
+                        '$resultsLabel • Página $page',
+                        style: TextStyle(
+                          color: t.textPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const Spacer(),
-                    FilledButton.icon(
+                    SizedBox(width: s.sm),
+                    FilledButton(
                       onPressed: onNext,
-                      icon: const Icon(Icons.chevron_right_rounded),
-                      label: const Text('Seguinte'),
+                      style: FilledButton.styleFrom(
+                        minimumSize: Size(t.minTouchTarget, t.minTouchTarget),
+                        padding: EdgeInsets.symmetric(horizontal: s.sm),
+                      ),
+                      child: Icon(Icons.chevron_right_rounded, size: t.iconSm),
+                    ),
+                  ],
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      resultsLabel,
+                      style: TextStyle(
+                        color: t.textMuted,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    SizedBox(height: s.sm),
+                    Row(
+                      children: [
+                        OutlinedButton.icon(
+                          onPressed: onPrevious,
+                          icon: const Icon(Icons.chevron_left_rounded),
+                          label: const Text('Anterior'),
+                        ),
+                        const Spacer(),
+                        Text(
+                          'Página $page',
+                          style: TextStyle(
+                            color: t.textPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        const Spacer(),
+                        FilledButton.icon(
+                          onPressed: onNext,
+                          icon: const Icon(Icons.chevron_right_rounded),
+                          label: const Text('Seguinte'),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
+        );
+      },
     );
   }
 }

@@ -9,6 +9,16 @@ abstract final class DesignMetrics {
   static const double iconSm = 18;
   static const double avatarMd = 40;
 
+  /// Ícone dentro de botões compactos (IconButton, FilledButton.icon, etc.).
+  static const double buttonIconSize = iconSm;
+
+  /// Spinner inline em botões (FilledButton, OutlinedButton, etc.).
+  static const double buttonLoaderSize = iconSm;
+  static const double buttonLoaderStrokeWidth = 2;
+
+  /// Ícone em SnackBars e banners de feedback leve.
+  static const double feedbackIconSize = iconMd;
+
   static const double topBarDesktop = 72;
   static const double topBarCompact = 56;
   static const double posHeader = 64;
@@ -29,4 +39,10 @@ abstract final class DesignMetrics {
   static const double dialogWidthFractionTablet = 0.88;
   static const double dialogWidthFractionDesktop = 0.5;
   static const double dialogWidthCapContentFraction = 0.45;
+
+  /// Frações verticais de dialogs para manter layouts responsivos sem alturas fixas.
+  static const double dialogMaxHeightFractionMobile = 0.92;
+  static const double dialogMaxHeightFractionDesktop = 0.88;
+  static const double dialogBodyMaxHeightFraction = 0.65;
+  static const double dialogSelectableListHeightFraction = 0.32;
 }

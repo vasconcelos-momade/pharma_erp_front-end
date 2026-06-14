@@ -44,6 +44,45 @@ class CriarRequisicaoRequestModel {
   }
 }
 
+class AtualizarRequisicaoRequestModel {
+  const AtualizarRequisicaoRequestModel({
+    this.numeroDocumento,
+    this.fornecedorId,
+    this.origem,
+    this.destino,
+    this.observacao,
+  });
+
+  final String? numeroDocumento;
+  final String? fornecedorId;
+  final String? origem;
+  final String? destino;
+  final String? observacao;
+
+  factory AtualizarRequisicaoRequestModel.fromEntity(
+    AtualizarRequisicaoRequest entity,
+  ) {
+    return AtualizarRequisicaoRequestModel(
+      numeroDocumento: entity.numeroDocumento,
+      fornecedorId: entity.fornecedorId,
+      origem: entity.origem,
+      destino: entity.destino,
+      observacao: entity.observacao,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return <String, dynamic>{
+      if (numeroDocumento != null && numeroDocumento!.trim().isNotEmpty)
+        'numeroDocumento': numeroDocumento,
+      if (fornecedorId != null) 'fornecedorId': fornecedorId,
+      if (origem != null) 'origem': origem,
+      if (destino != null) 'destino': destino,
+      if (observacao != null) 'observacao': observacao,
+    };
+  }
+}
+
 class RequisicaoItemRequestModel {
   const RequisicaoItemRequestModel({
     required this.produtoId,

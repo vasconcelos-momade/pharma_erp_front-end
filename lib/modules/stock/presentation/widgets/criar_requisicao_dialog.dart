@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/theme/design_metrics.dart';
+import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/spacing.dart';
+import '../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
 import '../../domain/entities/fornecedor.dart';
 import '../providers/fornecedor_provider.dart';
 
@@ -155,6 +158,8 @@ class _CriarRequisicaoDialogState extends ConsumerState<CriarRequisicaoDialog>
         .toList();
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         TextFormField(
           controller: _numeroDocumentoController,
@@ -186,7 +191,11 @@ class _CriarRequisicaoDialogState extends ConsumerState<CriarRequisicaoDialog>
           onChanged: (value) => setState(() => _fornecedorSearch = value),
         ),
         SizedBox(height: s.md),
-        Expanded(
+        ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(context).height *
+                DesignMetrics.dialogSelectableListHeightFraction,
+          ),
           child: filtered.isEmpty
               ? const Center(child: Text('Nenhum fornecedor encontrado'))
               : ListView.separated(
@@ -215,7 +224,10 @@ class _CriarRequisicaoDialogState extends ConsumerState<CriarRequisicaoDialog>
   }
 
   Widget _buildEntradaTab(List<FornecedorResumo> fornecedores) {
+    final s = context.spacing;
     return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         TextFormField(
           controller: _origemController,
@@ -234,7 +246,7 @@ class _CriarRequisicaoDialogState extends ConsumerState<CriarRequisicaoDialog>
             return null;
           },
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: s.md),
         DropdownButtonFormField<FornecedorResumo>(
           decoration: const InputDecoration(
             labelText: 'Fornecedor *',
@@ -257,7 +269,7 @@ class _CriarRequisicaoDialogState extends ConsumerState<CriarRequisicaoDialog>
             return value == null ? 'Seleccione um fornecedor' : null;
           },
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: s.md),
         TextFormField(
           controller: _observacaoController,
           decoration: const InputDecoration(
@@ -272,7 +284,10 @@ class _CriarRequisicaoDialogState extends ConsumerState<CriarRequisicaoDialog>
   }
 
   Widget _buildSaidaTab(List<FornecedorResumo> fornecedores) {
+    final s = context.spacing;
     return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         TextFormField(
           controller: _destinoController,
@@ -291,7 +306,7 @@ class _CriarRequisicaoDialogState extends ConsumerState<CriarRequisicaoDialog>
             return null;
           },
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: s.md),
         DropdownButtonFormField<FornecedorResumo>(
           decoration: const InputDecoration(
             labelText: 'Fornecedor *',
@@ -314,7 +329,7 @@ class _CriarRequisicaoDialogState extends ConsumerState<CriarRequisicaoDialog>
             return value == null ? 'Seleccione um fornecedor' : null;
           },
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: s.md),
         TextFormField(
           controller: _observacaoController,
           decoration: const InputDecoration(
@@ -330,38 +345,55 @@ class _CriarRequisicaoDialogState extends ConsumerState<CriarRequisicaoDialog>
 
   @override
   Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+    final s = context.spacing;
     final suppliersAsync = ref.watch(supplierListProvider);
 
-    return AlertDialog(
+    return PharmaResponsiveDialog(
       title: const Text('Criar Requisição'),
-      content: SizedBox(
-        width: 420,
-        height: 520,
+      scrollable: false,
+      content: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height *
+              DesignMetrics.dialogBodyMaxHeightFraction,
+        ),
         child: Form(
           key: _formKey,
           child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              TabBar(
-                controller: _tabController,
-                onTap: (_) => setState(() {}),
-                tabs: const [
-                  Tab(text: 'Compra'),
-                  Tab(text: 'Entrada'),
-                  Tab(text: 'Saída'),
-                ],
+              Material(
+                color: t.card,
+                borderRadius: BorderRadius.circular(t.radiusMd),
+                child: TabBar(
+                  controller: _tabController,
+                  onTap: (_) => setState(() {}),
+                  labelColor: t.textPrimary,
+                  unselectedLabelColor: t.textMuted,
+                  indicatorColor: t.brandBlue,
+                  dividerColor: Colors.transparent,
+                  labelPadding: EdgeInsets.symmetric(horizontal: s.sm),
+                  tabs: [
+                    Tab(height: t.minTouchTarget, text: 'Compra'),
+                    Tab(height: t.minTouchTarget, text: 'Entrada'),
+                    Tab(height: t.minTouchTarget, text: 'Saída'),
+                  ],
+                ),
               ),
-              const SizedBox(height: 12),
+              SizedBox(height: s.md),
               Expanded(
                 child: suppliersAsync.when(
                   loading: () => const Center(child: CircularProgressIndicator()),
                   error: (err, _) => Center(child: Text('Erro: $err')),
-                  data: (fornecedores) => TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildCompraTab(fornecedores),
-                      _buildEntradaTab(fornecedores),
-                      _buildSaidaTab(fornecedores),
-                    ],
+                  data: (fornecedores) => SingleChildScrollView(
+                    child: switch (_activeTipo) {
+                      CriarRequisicaoModalTipo.compra =>
+                        _buildCompraTab(fornecedores),
+                      CriarRequisicaoModalTipo.entrada =>
+                        _buildEntradaTab(fornecedores),
+                      CriarRequisicaoModalTipo.saida =>
+                        _buildSaidaTab(fornecedores),
+                    },
                   ),
                 ),
               ),

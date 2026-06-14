@@ -8,6 +8,7 @@ import '../../core/theme/dimensions.dart';
 import '../../core/theme/spacing.dart';
 import '../../modules/sales/pdv/presentation/providers/caixa_sessao_provider.dart';
 import '../../modules/sales/pdv/presentation/widgets/abrir_caixa_dialog.dart';
+import '../widgets/buttons/pharma_button_loader.dart';
 import '../widgets/sync/sync_status_strip.dart';
 
 /// Chrome PDV ultra-rápido: atalhos, scanner, sync e saída segura.
@@ -116,11 +117,7 @@ class PosLayout extends ConsumerWidget {
                     if (!narrow && caixaState.isLoading)
                       const Padding(
                         padding: EdgeInsets.only(right: AppSpacing.sm),
-                        child: SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
+                        child: PharmaButtonLoader(),
                       ),
                     Tooltip(
                       message: caixaLabel,
@@ -144,13 +141,7 @@ class PosLayout extends ConsumerWidget {
                                         caixaState,
                                       ),
                               icon: caixaState.isSubmitting
-                                  ? const SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
-                                    )
+                                  ? const PharmaButtonLoader()
                                   : Icon(caixaIcon, color: caixaColor),
                               label: Text(
                                 caixaLabel,
@@ -185,7 +176,7 @@ class PosLayout extends ConsumerWidget {
                         icon: Icon(
                           Icons.arrow_back_rounded,
                           color: t.textSecondary,
-                          size: 20,
+                          size: t.iconSm,
                         ),
                         label: Text(
                           'Sair do PDV',

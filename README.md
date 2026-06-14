@@ -7,6 +7,7 @@ ERP para farmácia em **Flutter** — arranque modular (auth, farmácia, vendas/
 - **Português:** [docs/estrutura_do_projecto.md](docs/estrutura_do_projecto.md) — guia completo, diagrama de dependências e **índice em árvore** de `lib/`.
 - **English:** [docs/project_structure.md](docs/project_structure.md) — same guide in English (including the tree).
 - **UI React → Flutter:** [docs/ui_react_para_flutter.md](docs/ui_react_para_flutter.md) — design system, responsividade, mapeamento do protótipo `pharmaerp-moçambique (2)/`.
+- **Feedback do utilizador:** [docs/pharma_feedback.md](docs/pharma_feedback.md) — `PharmaFeedback` (SnackBar, QuickAlert, Dialog Material); API única para notificações e confirmações.
 
 ## Arranque rápido
 

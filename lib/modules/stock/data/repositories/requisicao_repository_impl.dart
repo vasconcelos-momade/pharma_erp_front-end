@@ -54,6 +54,18 @@ class RequisicaoRepositoryImpl implements RequisicaoRepository {
   }
 
   @override
+  Future<RequisicaoDetalhe> atualizarRequisicao({
+    required String requisicaoId,
+    required AtualizarRequisicaoRequest request,
+  }) async {
+    final response = await _remoteDataSource.atualizarRequisicao(
+      requisicaoId: requisicaoId,
+      request: AtualizarRequisicaoRequestModel.fromEntity(request),
+    );
+    return response.toEntity();
+  }
+
+  @override
   Future<RequisicaoDetalhe> adicionarItem({
     required String requisicaoId,
     required RequisicaoItemRequest request,

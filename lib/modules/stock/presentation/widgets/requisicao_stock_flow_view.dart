@@ -4,12 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/spacing.dart';
-import '../../../../shared/widgets/feedback/pharma_snackbar.dart';
+import '../../../../shared/widgets/feedback/pharma_feedback.dart';
+import '../../../../shared/widgets/buttons/pharma_button_loader.dart';
+import '../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
 import '../../../pharmacy/products/domain/entities/product.dart';
 import '../../../pharmacy/products/presentation/providers/product_provider.dart';
 import '../../domain/entities/requisicao.dart';
 import '../../data/repositories/requisicao_repository_impl.dart';
 import '../providers/requisicao_provider.dart';
+import 'editar_requisicao_dialog.dart';
 import 'requisicao_products_tab.dart';
 import 'requisicao_resumo_card.dart';
 
@@ -39,7 +42,9 @@ DateTime? stockFlowParseDateInput(String? value) {
     return DateTime.tryParse(match.group(0)!);
   }
 
-  final displayMatch = RegExp(r'^(\d{2})/(\d{2})/(\d{4})$').firstMatch(normalized);
+  final displayMatch = RegExp(
+    r'^(\d{2})/(\d{2})/(\d{4})$',
+  ).firstMatch(normalized);
   if (displayMatch != null) {
     final day = int.tryParse(displayMatch.group(1)!);
     final month = int.tryParse(displayMatch.group(2)!);
@@ -89,8 +94,9 @@ class _StockFlowDateTextInputFormatter extends TextInputFormatter {
     final formatted = buffer.toString();
     var digitsBeforeCursor = 0;
     final cursor = newValue.selection.baseOffset.clamp(0, newValue.text.length);
-    digitsBeforeCursor =
-        RegExp(r'\d').allMatches(newValue.text.substring(0, cursor)).length;
+    digitsBeforeCursor = RegExp(
+      r'\d',
+    ).allMatches(newValue.text.substring(0, cursor)).length;
     digitsBeforeCursor = digitsBeforeCursor.clamp(0, limitedDigits.length);
 
     var selectionOffset = 0;
@@ -120,6 +126,18 @@ String stockFlowFormatRouteLabel(String? origem, String? destino) {
   return formatRequisicaoRouteLabel(origem, destino);
 }
 
+String stockFlowItemLoteNumero(RequisicaoItem item) {
+  return item.lote?.numeroLote ?? item.numeroLote ?? '-';
+}
+
+String stockFlowItemLoteValidade(RequisicaoItem item) {
+  final date = item.lote?.dataValidade ?? item.dataValidade;
+  if (date == null) {
+    return '-';
+  }
+  return stockFlowFormatDate(date);
+}
+
 class RequisicaoStockFlowView extends ConsumerStatefulWidget {
   const RequisicaoStockFlowView({
     super.key,
@@ -135,7 +153,8 @@ class RequisicaoStockFlowView extends ConsumerStatefulWidget {
       _RequisicaoStockFlowViewState();
 }
 
-class _RequisicaoStockFlowViewState extends ConsumerState<RequisicaoStockFlowView> {
+class _RequisicaoStockFlowViewState
+    extends ConsumerState<RequisicaoStockFlowView> {
   @override
   void initState() {
     super.initState();
@@ -155,7 +174,7 @@ class _RequisicaoStockFlowViewState extends ConsumerState<RequisicaoStockFlowVie
   Future<void> _handleProduct(Product product) async {
     final requisicaoState = ref.read(requisicaoProvider);
     if (!requisicaoState.canEditActiveRequisicao) {
-      PharmaSnackbar.showError(
+      PharmaFeedback.error(
         context,
         'Inicie ou seleccione uma requisição pendente antes de adicionar itens.',
       );
@@ -174,9 +193,82 @@ class _RequisicaoStockFlowViewState extends ConsumerState<RequisicaoStockFlowVie
       return;
     }
 
-    await ref.read(requisicaoProvider.notifier).addItemToActiveRequisition(
-          draft: draft,
+    await ref
+        .read(requisicaoProvider.notifier)
+        .addItemToActiveRequisition(draft: draft);
+  }
+
+  Future<void> _handleEditItem(RequisicaoItem item) async {
+    final requisicaoState = ref.read(requisicaoProvider);
+    if (!requisicaoState.canEditActiveRequisicao) {
+      PharmaFeedback.error(
+        context,
+        'Seleccione uma requisição pendente antes de editar itens.',
+      );
+      return;
+    }
+
+    final quantidade = await showDialog<double>(
+      context: context,
+      builder: (_) => _EditStockFlowItemDialog(item: item),
+    );
+
+    if (!mounted || quantidade == null) {
+      return;
+    }
+
+    await ref
+        .read(requisicaoProvider.notifier)
+        .updateItemInActiveRequisition(
+          item: item,
+          quantidadeSolicitada: quantidade,
         );
+  }
+
+  Future<void> _handleEditHeader() async {
+    final requisicao = ref.read(requisicaoProvider).activeRequisicao;
+    if (requisicao == null || !requisicao.status.isEditable) {
+      PharmaFeedback.error(
+        context,
+        'Seleccione uma requisição pendente antes de editar o cabeçalho.',
+      );
+      return;
+    }
+
+    final result = await showDialog<EditarRequisicaoDialogResult>(
+      context: context,
+      builder: (_) => EditarRequisicaoDialog(requisicao: requisicao),
+    );
+
+    if (!mounted || result == null) {
+      return;
+    }
+
+    await ref
+        .read(requisicaoProvider.notifier)
+        .updateActiveRequisitionHeader(request: result.toRequest());
+  }
+
+  Future<void> _confirmRemoveItem(RequisicaoItem item) async {
+    final confirmed = await PharmaFeedback.confirm(
+      context: context,
+      title: 'Confirmar remoção',
+      message:
+          'Deseja remover o item "${item.produtoNome}" da requisição?\n\n'
+          'Lote: ${stockFlowItemLoteNumero(item)}\n'
+          'Quantidade: ${stockFlowFormatQuantity(item.quantidade)}',
+      confirmText: 'Remover',
+      cancelText: 'Cancelar',
+      destructive: true,
+    );
+
+    if (!mounted || confirmed != true) {
+      return;
+    }
+
+    await ref
+        .read(requisicaoProvider.notifier)
+        .removeItemFromActiveRequisition(item.id);
   }
 
   Future<void> _approveRequisition() async {
@@ -185,24 +277,13 @@ class _RequisicaoStockFlowViewState extends ConsumerState<RequisicaoStockFlowVie
       return;
     }
 
-    final confirmed = await showDialog<bool>(
+    final confirmed = await PharmaFeedback.confirm(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Aprovar requisição'),
-        content: const Text(
+      title: 'Aprovar requisição',
+      message:
           'A aprovação valida a requisição e regista os movimentos documentais. Deseja continuar?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Voltar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Aprovar'),
-          ),
-        ],
-      ),
+      confirmText: 'Aprovar',
+      cancelText: 'Voltar',
     );
 
     if (!mounted || confirmed != true) {
@@ -218,24 +299,13 @@ class _RequisicaoStockFlowViewState extends ConsumerState<RequisicaoStockFlowVie
       return;
     }
 
-    final t = context.pharmaTokens;
-    final confirmed = await showDialog<bool>(
+    final confirmed = await PharmaFeedback.confirm(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Rejeitar requisição'),
-        content: const Text('Deseja rejeitar a requisição activa?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Voltar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            style: TextButton.styleFrom(foregroundColor: t.posDanger),
-            child: const Text('Rejeitar'),
-          ),
-        ],
-      ),
+      title: 'Rejeitar requisição',
+      message: 'Deseja rejeitar a requisição activa?',
+      confirmText: 'Rejeitar',
+      cancelText: 'Voltar',
+      destructive: true,
     );
 
     if (!mounted || confirmed != true) {
@@ -251,24 +321,13 @@ class _RequisicaoStockFlowViewState extends ConsumerState<RequisicaoStockFlowVie
       return;
     }
 
-    final t = context.pharmaTokens;
-    final confirmed = await showDialog<bool>(
+    final confirmed = await PharmaFeedback.confirm(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Cancelar requisição'),
-        content: const Text('Deseja cancelar a requisição activa?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Voltar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            style: TextButton.styleFrom(foregroundColor: t.posDanger),
-            child: const Text('Cancelar requisição'),
-          ),
-        ],
-      ),
+      title: 'Cancelar requisição',
+      message: 'Deseja cancelar a requisição activa?',
+      confirmText: 'Cancelar requisição',
+      cancelText: 'Voltar',
+      destructive: true,
     );
 
     if (!mounted || confirmed != true) {
@@ -278,15 +337,32 @@ class _RequisicaoStockFlowViewState extends ConsumerState<RequisicaoStockFlowVie
     await ref.read(requisicaoProvider.notifier).cancelActiveRequisition();
   }
 
+  Future<void> _showMobileStockFlowPane() {
+    return Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (_) => _MobileStockFlowPaneScreen(
+          onApprove: _approveRequisition,
+          onReject: _rejectRequisition,
+          onCancel: _cancelRequisition,
+          onEditHeader: _handleEditHeader,
+          onEditItem: _handleEditItem,
+          onRemoveItem: _confirmRemoveItem,
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
     final s = context.spacing;
     final width = MediaQuery.sizeOf(context).width;
     final isMobile = width <= 920;
     final productState = ref.watch(requisicaoProductListProvider);
     final requisicaoState = ref.watch(requisicaoProvider);
     final productController = ref.read(requisicaoProductListProvider.notifier);
-    final canAddProducts = requisicaoState.canEditActiveRequisicao &&
+    final canAddProducts =
+        requisicaoState.canEditActiveRequisicao &&
         !requisicaoState.isAddingItem &&
         !requisicaoState.isApprovingRequisicao &&
         !requisicaoState.isRejectingRequisicao &&
@@ -294,7 +370,10 @@ class _RequisicaoStockFlowViewState extends ConsumerState<RequisicaoStockFlowVie
     final requisicaoController = ref.read(requisicaoProvider.notifier);
 
     // Use a listener to sync search controller without modifying during build
-    ref.listen<ProductListState>(requisicaoProductListProvider, (previous, next) {
+    ref.listen<ProductListState>(requisicaoProductListProvider, (
+      previous,
+      next,
+    ) {
       if (widget.searchController.text != next.query) {
         widget.searchController.value = TextEditingValue(
           text: next.query,
@@ -307,90 +386,222 @@ class _RequisicaoStockFlowViewState extends ConsumerState<RequisicaoStockFlowVie
       if (!mounted) {
         return;
       }
-      if (previous?.errorMessage != next.errorMessage && next.errorMessage != null) {
-        PharmaSnackbar.showError(context, next.errorMessage!);
+      if (previous?.errorMessage != next.errorMessage &&
+          next.errorMessage != null) {
+        PharmaFeedback.error(context, next.errorMessage!);
       }
       if (previous?.successMessage != next.successMessage &&
           next.successMessage != null) {
-        PharmaSnackbar.showSuccess(context, next.successMessage!);
+        PharmaFeedback.success(context, next.successMessage!);
       }
     });
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-          if (isMobile) ...[
-            SizedBox(
-              height: 560,
-              child: _LeftPane(
-                activeTab: requisicaoState.activeTab,
-                productState: productState,
-                requisicaoState: requisicaoState,
-                canAddProducts: canAddProducts,
-                searchController: widget.searchController,
-                onSearchChanged: productController.onSearchChanged,
-                onRefreshProducts: productController.refreshCurrentPage,
-                onGoToPage: productController.goToPage,
-                onTabChanged: requisicaoController.setActiveTab,
-                onSelectProduct: _handleProduct,
-                onSelectPendingRequisition:
-                    requisicaoController.selectPendingRequisition,
-                onSelectHistoryRequisition:
-                    requisicaoController.selectHistoryRequisition,
+    final leftPane = _LeftPane(
+      activeTab: requisicaoState.activeTab,
+      productState: productState,
+      requisicaoState: requisicaoState,
+      canAddProducts: canAddProducts,
+      searchController: widget.searchController,
+      onSearchChanged: productController.onSearchChanged,
+      onRefreshProducts: productController.refreshCurrentPage,
+      onGoToPage: productController.goToPage,
+      onTabChanged: requisicaoController.setActiveTab,
+      onSelectProduct: _handleProduct,
+      onSelectPendingRequisition: requisicaoController.selectPendingRequisition,
+      onSelectHistoryRequisition: requisicaoController.selectHistoryRequisition,
+      showInlinePagination: !isMobile,
+    );
+
+    final rightPane = _RightPane(
+      state: requisicaoState,
+      onApprove: _approveRequisition,
+      onReject: _rejectRequisition,
+      onCancel: _cancelRequisition,
+      onEditHeader: _handleEditHeader,
+      onEditItem: _handleEditItem,
+      onRemoveItem: _confirmRemoveItem,
+    );
+
+    if (isMobile) {
+      final activeRequisicao = requisicaoState.activeRequisicao;
+      final showPagination =
+          requisicaoState.activeTab == RequisicaoTab.produtos &&
+          productState.isInitialized;
+      final showSummary = activeRequisicao != null;
+      final paginationHeight = showPagination ? (t.minTouchTarget + s.lg) : 0.0;
+      final summaryHeight = showSummary ? 88.0 : 0.0;
+      final footerGap = showPagination && showSummary ? s.sm : 0.0;
+      final bottomOverlayHeight = paginationHeight + summaryHeight + footerGap;
+      final contentBottomPadding =
+          bottomOverlayHeight + (showSummary ? t.minTouchTarget : 0) + s.xl;
+
+      return Stack(
+        children: [
+          Positioned.fill(
+            child: Padding(
+              padding: EdgeInsets.only(bottom: contentBottomPadding),
+              child: leftPane,
+            ),
+          ),
+          if (showSummary || showPagination)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: SafeArea(
+                top: false,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (showSummary)
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(s.xs, 0, s.xs, 0),
+                        child: _MobileStockFlowSummaryBar(
+                          requisicao: activeRequisicao!,
+                        ),
+                      ),
+                    if (showSummary && showPagination) SizedBox(height: s.sm),
+                    if (showPagination)
+                      Padding(
+                        padding: EdgeInsets.fromLTRB(s.xs, 0, s.xs, s.xs),
+                        child: RequisicaoProductsPaginationBar(
+                          page: productState.page,
+                          pageSize: productState.pageSize,
+                          itemCount: productState.items.length,
+                          hasMore: productState.hasMore,
+                          onPrevious:
+                              productState.page > 1 && !productState.isLoading
+                              ? () => productController.goToPage(
+                                  productState.page - 1,
+                                )
+                              : null,
+                          onNext:
+                              productState.hasMore && !productState.isLoading
+                              ? () => productController.goToPage(
+                                  productState.page + 1,
+                                )
+                              : null,
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ),
-            SizedBox(height: s.lg),
-            _RightPane(
-              state: requisicaoState,
-              onApprove: _approveRequisition,
-              onReject: _rejectRequisition,
-              onCancel: _cancelRequisition,
-              onRemoveItem: (itemId) => ref
-                  .read(requisicaoProvider.notifier)
-                  .removeItemFromActiveRequisition(itemId),
-            ),
-          ] else
-            SizedBox(
-              height: 760,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    flex: 6,
-                    child: _LeftPane(
-                      activeTab: requisicaoState.activeTab,
-                      productState: productState,
-                      requisicaoState: requisicaoState,
-                      canAddProducts: canAddProducts,
-                      searchController: widget.searchController,
-                      onSearchChanged: productController.onSearchChanged,
-                      onRefreshProducts: productController.refreshCurrentPage,
-                      onGoToPage: productController.goToPage,
-                      onTabChanged: requisicaoController.setActiveTab,
-                      onSelectProduct: _handleProduct,
-                      onSelectPendingRequisition:
-                          requisicaoController.selectPendingRequisition,
-                      onSelectHistoryRequisition:
-                          requisicaoController.selectHistoryRequisition,
-                    ),
-                  ),
-                  SizedBox(width: s.lg),
-                  Expanded(
-                    flex: 5,
-                    child: _RightPane(
-                      state: requisicaoState,
-                      onApprove: _approveRequisition,
-                      onReject: _rejectRequisition,
-                      onCancel: _cancelRequisition,
-                      onRemoveItem: (itemId) => ref
-                          .read(requisicaoProvider.notifier)
-                          .removeItemFromActiveRequisition(itemId),
-                    ),
-                  ),
-                ],
+          if (showSummary)
+            Positioned(
+              right: s.xs,
+              bottom: bottomOverlayHeight + s.md,
+              child: SafeArea(
+                top: false,
+                minimum: EdgeInsets.only(bottom: s.xs),
+                child: FloatingActionButton.extended(
+                  heroTag: 'open-stock-flow-fab-${widget.tipo.name}',
+                  onPressed: _showMobileStockFlowPane,
+                  icon: const Icon(Icons.receipt_long_rounded),
+                  label: const Text('Ver requisição'),
+                ),
               ),
             ),
-      ],
+        ],
+      );
+    }
+
+    return SizedBox(
+      height: 760,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(flex: 6, child: leftPane),
+          SizedBox(width: s.lg),
+          Expanded(flex: 5, child: rightPane),
+        ],
+      ),
+    );
+  }
+}
+
+class _MobileStockFlowSummaryBar extends StatelessWidget {
+  const _MobileStockFlowSummaryBar({required this.requisicao});
+
+  final RequisicaoDetalhe requisicao;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+    final s = context.spacing;
+
+    return Material(
+      color: t.card,
+      borderRadius: BorderRadius.circular(t.radiusXl),
+      elevation: 2,
+      child: Padding(
+        padding: EdgeInsets.all(s.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              '${requisicao.totalItens} item${requisicao.totalItens == 1 ? '' : 's'}',
+              style: TextStyle(
+                color: t.textPrimary,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            SizedBox(height: s.xxs),
+            Text(
+              'Quantidade: ${stockFlowFormatQuantity(requisicao.quantidadeTotal)}',
+              style: TextStyle(color: t.textMuted),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MobileStockFlowPaneScreen extends ConsumerWidget {
+  const _MobileStockFlowPaneScreen({
+    required this.onApprove,
+    required this.onReject,
+    required this.onCancel,
+    required this.onEditHeader,
+    required this.onEditItem,
+    required this.onRemoveItem,
+  });
+
+  final Future<void> Function() onApprove;
+  final Future<void> Function() onReject;
+  final Future<void> Function() onCancel;
+  final Future<void> Function() onEditHeader;
+  final ValueChanged<RequisicaoItem> onEditItem;
+  final ValueChanged<RequisicaoItem> onRemoveItem;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final t = context.pharmaTokens;
+    final s = context.spacing;
+    final requisicaoState = ref.watch(requisicaoProvider);
+
+    return Scaffold(
+      backgroundColor: t.bgPrimary,
+      appBar: AppBar(
+        leading: BackButton(onPressed: () => Navigator.of(context).pop()),
+        title: const Text('Requisição Atual'),
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.all(s.md),
+          child: _RightPane(
+            state: requisicaoState,
+            onApprove: onApprove,
+            onReject: onReject,
+            onCancel: onCancel,
+            onEditHeader: onEditHeader,
+            onEditItem: onEditItem,
+            onRemoveItem: onRemoveItem,
+          ),
+        ),
+      ),
     );
   }
 }
@@ -409,6 +620,7 @@ class _LeftPane extends StatefulWidget {
     required this.onSelectProduct,
     required this.onSelectPendingRequisition,
     required this.onSelectHistoryRequisition,
+    this.showInlinePagination = true,
   });
 
   final RequisicaoTab activeTab;
@@ -423,6 +635,7 @@ class _LeftPane extends StatefulWidget {
   final ValueChanged<Product> onSelectProduct;
   final ValueChanged<String> onSelectPendingRequisition;
   final ValueChanged<String> onSelectHistoryRequisition;
+  final bool showInlinePagination;
 
   @override
   State<_LeftPane> createState() => _LeftPaneState();
@@ -493,18 +706,22 @@ class _LeftPaneState extends State<_LeftPane>
           borderRadius: BorderRadius.circular(t.radiusMd),
           child: TabBar(
             controller: _tabController,
+            isScrollable: true,
             onTap: (index) => widget.onTabChanged(_tabForIndex(index)),
             labelColor: t.textPrimary,
             unselectedLabelColor: t.textMuted,
             indicatorColor: t.brandBlue,
             dividerColor: Colors.transparent,
+            labelPadding: EdgeInsets.symmetric(horizontal: s.sm),
             tabs: [
-              const Tab(text: 'Produtos'),
+              Tab(height: t.minTouchTarget, text: 'Produtos'),
               Tab(
+                height: t.minTouchTarget,
                 text:
                     'Pendentes (${widget.requisicaoState.pendingRequisicoes.length})',
               ),
               Tab(
+                height: t.minTouchTarget,
                 text:
                     'Finalizadas (${widget.requisicaoState.historyRequisicoes.length})',
               ),
@@ -515,40 +732,41 @@ class _LeftPaneState extends State<_LeftPane>
         Expanded(
           child: switch (widget.activeTab) {
             RequisicaoTab.produtos => RequisicaoProductsTab(
-                productState: widget.productState,
-                searchController: widget.searchController,
-                canAddItems: widget.canAddProducts,
-                onSearchChanged: widget.onSearchChanged,
-                onRefreshProducts: widget.onRefreshProducts,
-                onGoToPage: widget.onGoToPage,
-                onSelectProduct: widget.onSelectProduct,
-              ),
+              productState: widget.productState,
+              searchController: widget.searchController,
+              canAddItems: widget.canAddProducts,
+              onSearchChanged: widget.onSearchChanged,
+              onRefreshProducts: widget.onRefreshProducts,
+              onGoToPage: widget.onGoToPage,
+              onSelectProduct: widget.onSelectProduct,
+              showPagination: widget.showInlinePagination,
+            ),
             RequisicaoTab.pendentes => RequisicaoResumoListTab(
-                title: 'Requisições Pendentes',
-                subtitle:
-                    'Selecione uma requisição pendente para carregar os itens e voltar automaticamente para a tab Produtos.',
-                isLoading: widget.requisicaoState.isLoadingLists,
-                requisicoes: widget.requisicaoState.pendingRequisicoes,
-                activeRequisicaoId: widget.requisicaoState.activeRequisicao?.id,
-                emptyTitle: 'Nenhuma requisição pendente',
-                emptySubtitle:
-                    'Inicie uma nova requisição para criar o registo no backend.',
-                emptyIcon: Icons.assignment_outlined,
-                onSelect: widget.onSelectPendingRequisition,
-              ),
+              title: 'Requisições Pendentes',
+              subtitle:
+                  'Selecione uma requisição pendente para carregar os itens e voltar automaticamente para a tab Produtos.',
+              isLoading: widget.requisicaoState.isLoadingLists,
+              requisicoes: widget.requisicaoState.pendingRequisicoes,
+              activeRequisicaoId: widget.requisicaoState.activeRequisicao?.id,
+              emptyTitle: 'Nenhuma requisição pendente',
+              emptySubtitle:
+                  'Inicie uma nova requisição para criar o registo no backend.',
+              emptyIcon: Icons.assignment_outlined,
+              onSelect: widget.onSelectPendingRequisition,
+            ),
             RequisicaoTab.historico => RequisicaoResumoListTab(
-                title: 'Requisições Finalizadas',
-                subtitle:
-                    'Apenas visualização. Abra um card para consultar a requisição no painel da direita.',
-                isLoading: widget.requisicaoState.isLoadingLists,
-                requisicoes: widget.requisicaoState.historyRequisicoes,
-                activeRequisicaoId: widget.requisicaoState.activeRequisicao?.id,
-                emptyTitle: 'Nenhuma requisição finalizada',
-                emptySubtitle:
-                    'As requisições confirmadas aparecerão aqui automaticamente.',
-                emptyIcon: Icons.assignment_outlined,
-                onSelect: widget.onSelectHistoryRequisition,
-              ),
+              title: 'Requisições Finalizadas',
+              subtitle:
+                  'Apenas visualização. Abra um card para consultar a requisição no painel da direita.',
+              isLoading: widget.requisicaoState.isLoadingLists,
+              requisicoes: widget.requisicaoState.historyRequisicoes,
+              activeRequisicaoId: widget.requisicaoState.activeRequisicao?.id,
+              emptyTitle: 'Nenhuma requisição finalizada',
+              emptySubtitle:
+                  'As requisições confirmadas aparecerão aqui automaticamente.',
+              emptyIcon: Icons.assignment_outlined,
+              onSelect: widget.onSelectHistoryRequisition,
+            ),
           },
         ),
       ],
@@ -562,6 +780,8 @@ class _RightPane extends StatelessWidget {
     required this.onApprove,
     required this.onReject,
     required this.onCancel,
+    required this.onEditHeader,
+    required this.onEditItem,
     required this.onRemoveItem,
   });
 
@@ -569,169 +789,244 @@ class _RightPane extends StatelessWidget {
   final Future<void> Function() onApprove;
   final Future<void> Function() onReject;
   final Future<void> Function() onCancel;
-  final ValueChanged<String> onRemoveItem;
+  final Future<void> Function() onEditHeader;
+  final ValueChanged<RequisicaoItem> onEditItem;
+  final ValueChanged<RequisicaoItem> onRemoveItem;
 
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
     final s = context.spacing;
     final requisicao = state.activeRequisicao;
-
-    if (state.isLoadingActiveRequisicao && requisicao == null) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (requisicao == null) {
-      return const _EmptyPane(
-        icon: Icons.assignment_outlined,
-        title: 'Nenhuma requisição seleccionada',
-        subtitle: 'Seleccione uma requisição pendente ou do histórico.',
-      );
-    }
+    final isItemsEditable =
+        state.canEditActiveRequisicao && !state.isAddingItem;
 
     return Container(
+      padding: EdgeInsets.all(s.lg),
       decoration: BoxDecoration(
         color: t.card,
         borderRadius: BorderRadius.circular(t.radiusXl),
-        border: Border.all(color: t.border.withValues(alpha: 0.35)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
-      padding: EdgeInsets.all(s.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      requisicao.numeroDocumento,
-                      style: TextStyle(
-                        color: t.textPrimary,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 18,
-                      ),
-                    ),
-                    SizedBox(height: s.xs),
-                    Text(
-                      stockFlowFormatRouteLabel(requisicao.origem, requisicao.destino),
-                      style: TextStyle(color: t.textMuted),
-                    ),
-                  ],
+                child: Text(
+                  requisicao == null
+                      ? 'Nova Requisição'
+                      : 'Requisição #${requisicao.id}',
+                  style: TextStyle(
+                    color: t.textPrimary,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 20,
+                  ),
                 ),
               ),
-              _StatusChip(status: requisicao.status),
+              if (state.isLoadingActiveRequisicao ||
+                  state.isAddingItem ||
+                  state.isUpdatingRequisicao ||
+                  state.isApprovingRequisicao ||
+                  state.isRejectingRequisicao ||
+                  state.isCancellingRequisicao)
+                const PharmaButtonLoader(),
             ],
           ),
-          SizedBox(height: s.md),
-          Wrap(
-            spacing: s.md,
-            runSpacing: s.md,
-            children: [
-              _InfoCard(
-                label: 'Tipo',
-                value: requisicao.tipo.label,
-              ),
-              _InfoCard(
-                label: 'Itens',
-                value: requisicao.totalItens.toString(),
-              ),
-              _InfoCard(
-                label: 'Quantidade',
-                value: stockFlowFormatQuantity(requisicao.quantidadeTotal),
-              ),
-              _InfoCard(
-                label: 'Criada em',
-                value: stockFlowFormatDate(requisicao.createdAt),
-              ),
-            ],
-          ),
-          if ((requisicao.observacao ?? '').trim().isNotEmpty) ...[
-            SizedBox(height: s.md),
-            Text(
-              'Observação',
-              style: TextStyle(
-                color: t.textPrimary,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            SizedBox(height: s.xs),
-            Text(
-              requisicao.observacao!,
-              style: TextStyle(color: t.textMuted),
-            ),
-          ],
-          if (requisicao.user != null) ...[
-            SizedBox(height: s.md),
-            Text(
-              'Criada por ${requisicao.user!.nome}',
-              style: TextStyle(color: t.textMuted),
-            ),
-          ],
           SizedBox(height: s.lg),
-          Text(
-            'Itens da requisição',
-            style: TextStyle(
-              color: t.textPrimary,
-              fontWeight: FontWeight.w800,
-              fontSize: 16,
+          if (requisicao == null)
+            const Expanded(
+              child: _EmptyPane(
+                icon: Icons.assignment_outlined,
+                title: 'Nenhuma requisição seleccionada',
+                subtitle: 'Seleccione uma requisição pendente ou do histórico.',
+              ),
+            )
+          else ...[
+            _ActiveStockFlowHeader(
+              requisicao: requisicao,
+              canEdit:
+                  state.canEditActiveRequisicao && !state.isUpdatingRequisicao,
+              onEdit: onEditHeader,
             ),
+            if ((requisicao.observacao ?? '').trim().isNotEmpty) ...[
+              SizedBox(height: s.sm),
+              Text(
+                requisicao.observacao!,
+                style: TextStyle(color: t.textMuted),
+              ),
+            ],
+            if (requisicao.user != null) ...[
+              SizedBox(height: s.xs),
+              Text(
+                'Criada por ${requisicao.user!.nome}',
+                style: TextStyle(color: t.textMuted),
+              ),
+            ],
+            SizedBox(height: s.md),
+            Expanded(
+              child: requisicao.itens.isEmpty
+                  ? const _EmptyPane(
+                      icon: Icons.playlist_add_outlined,
+                      title: 'Carrinho vazio',
+                      subtitle: 'Selecione produtos na lista ao lado.',
+                    )
+                  : _StockFlowItemsTable(
+                      items: requisicao.itens,
+                      isEditable: isItemsEditable,
+                      onEdit: onEditItem,
+                      onRemove: onRemoveItem,
+                    ),
+            ),
+          ],
+          SizedBox(height: s.md),
+          _StockFlowActionFooter(
+            state: state,
+            onApprove: onApprove,
+            onReject: onReject,
+            onCancel: onCancel,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActiveStockFlowHeader extends StatelessWidget {
+  const _ActiveStockFlowHeader({
+    required this.requisicao,
+    this.canEdit = false,
+    this.onEdit,
+  });
+
+  final RequisicaoDetalhe requisicao;
+  final bool canEdit;
+  final Future<void> Function()? onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+    final s = context.spacing;
+    final routeLabel = stockFlowFormatRouteLabel(
+      requisicao.origem,
+      requisicao.destino,
+    );
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(s.md),
+      decoration: BoxDecoration(
+        color: t.bgPrimary.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(t.radiusMd),
+        border: Border.all(color: t.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  requisicao.numeroDocumento.isNotEmpty
+                      ? 'Documento ${requisicao.numeroDocumento}'
+                      : 'Requisição #${requisicao.id}',
+                  style: TextStyle(
+                    color: t.textPrimary,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+              if (canEdit && onEdit != null)
+                IconButton(
+                  tooltip: 'Editar cabeçalho',
+                  onPressed: onEdit,
+                  icon: Icon(Icons.edit_outlined, size: t.iconSm),
+                ),
+            ],
           ),
           SizedBox(height: s.sm),
-          Expanded(
-            child: requisicao.itens.isEmpty
-                ? const _EmptyPane(
-                    icon: Icons.playlist_add_outlined,
-                    title: 'Sem itens',
-                    subtitle:
-                        'Seleccione produtos no painel esquerdo para adicionar itens.',
-                  )
-                : ListView.separated(
-                    itemCount: requisicao.itens.length,
-                    separatorBuilder: (_, _) => Divider(
-                      color: t.border.withValues(alpha: 0.25),
-                    ),
-                    itemBuilder: (context, index) {
-                      final item = requisicao.itens[index];
-                      return ListTile(
-                        contentPadding: EdgeInsets.zero,
-                        leading: CircleAvatar(
-                          backgroundColor:
-                              t.brandBlue.withValues(alpha: 0.12),
-                          child: Icon(
-                            Icons.medication_outlined,
-                            color: t.brandBlue,
-                          ),
-                        ),
-                        title: Text(
-                          item.produtoNome,
-                          style: TextStyle(
-                            color: t.textPrimary,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                        subtitle: Text(
-                          'Quantidade: ${stockFlowFormatQuantity(item.quantidadeSolicitada)}'
-                          '${item.lote != null ? ' • Lote: ${item.lote!.numeroLote}' : ''}'
-                          '${item.lote?.dataValidade != null ? ' • Validade: ${stockFlowFormatDate(item.lote!.dataValidade!)}' : ''}',
-                          style: TextStyle(color: t.textMuted),
-                        ),
-                        trailing: state.canEditActiveRequisicao
-                            ? IconButton(
-                                tooltip: 'Remover item',
-                                onPressed: state.isAddingItem
-                                    ? null
-                                    : () => onRemoveItem(item.id),
-                                icon: Icon(
-                                  Icons.delete_outline_rounded,
-                                  color: t.posDanger,
-                                ),
-                              )
-                            : null,
-                      );
-                    },
-                  ),
+          Wrap(
+            spacing: s.sm,
+            runSpacing: s.sm,
+            children: [
+              _InfoTag(
+                label: requisicao.status.label,
+                color: requisicao.status.isEditable
+                    ? t.posWarning
+                    : t.brandGreen,
+              ),
+              _InfoTag(label: requisicao.tipo.label, color: t.brandBlue),
+              if (routeLabel.isNotEmpty)
+                _InfoTag(label: routeLabel, color: t.brandBlue),
+              _InfoTag(
+                label: 'Data ${stockFlowFormatDate(requisicao.createdAt)}',
+                color: t.textMuted,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StockFlowActionFooter extends StatelessWidget {
+  const _StockFlowActionFooter({
+    required this.state,
+    required this.onApprove,
+    required this.onReject,
+    required this.onCancel,
+  });
+
+  final RequisicaoState state;
+  final Future<void> Function() onApprove;
+  final Future<void> Function() onReject;
+  final Future<void> Function() onCancel;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+    final s = context.spacing;
+    final requisicao = state.activeRequisicao;
+    final helperText = switch (requisicao?.status) {
+      null => 'Inicie ou seleccione uma requisição para habilitar acções.',
+      RequisicaoStatus.pendente =>
+        requisicao!.itens.isEmpty
+            ? 'Adicione itens para aprovar.'
+            : 'Quantidade total: ${stockFlowFormatQuantity(requisicao.quantidadeTotal)}',
+      RequisicaoStatus.aprovada => 'Requisição aprovada.',
+      RequisicaoStatus.rejeitada => 'Requisição rejeitada.',
+      RequisicaoStatus.concluida => 'Requisição finalizada.',
+      RequisicaoStatus.cancelada => 'Requisição cancelada.',
+    };
+    final highlightHelper =
+        requisicao?.status == RequisicaoStatus.pendente &&
+        requisicao!.itens.isNotEmpty;
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(s.md),
+      decoration: BoxDecoration(
+        color: t.bgSecondary,
+        borderRadius: BorderRadius.circular(t.radiusXl),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            helperText,
+            style: TextStyle(
+              color: highlightHelper ? t.textPrimary : t.textMuted,
+              fontWeight: highlightHelper ? FontWeight.w700 : FontWeight.normal,
+            ),
           ),
           if (state.canEditActiveRequisicao) ...[
             SizedBox(height: s.md),
@@ -739,18 +1034,15 @@ class _RightPane extends StatelessWidget {
               children: [
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: state.canCancelActiveRequisicao &&
+                    onPressed:
+                        state.canCancelActiveRequisicao &&
                             !state.isCancellingRequisicao &&
                             !state.isApprovingRequisicao &&
                             !state.isRejectingRequisicao
                         ? onCancel
                         : null,
                     icon: state.isCancellingRequisicao
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
+                        ? const PharmaButtonLoader()
                         : const Icon(Icons.close_rounded),
                     label: const Text('Cancelar'),
                   ),
@@ -758,39 +1050,38 @@ class _RightPane extends StatelessWidget {
                 SizedBox(width: s.sm),
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: state.canRejectActiveRequisicao &&
+                    onPressed:
+                        state.canRejectActiveRequisicao &&
                             !state.isRejectingRequisicao &&
                             !state.isApprovingRequisicao &&
                             !state.isCancellingRequisicao
                         ? onReject
                         : null,
                     icon: state.isRejectingRequisicao
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
+                        ? const PharmaButtonLoader()
                         : const Icon(Icons.block_outlined),
                     label: const Text('Rejeitar'),
                   ),
                 ),
                 SizedBox(width: s.sm),
                 Expanded(
+                  flex: 2,
                   child: FilledButton.icon(
-                    onPressed: state.canApproveActiveRequisicao &&
+                    onPressed:
+                        state.canApproveActiveRequisicao &&
                             !state.isApprovingRequisicao &&
                             !state.isRejectingRequisicao &&
                             !state.isCancellingRequisicao
                         ? onApprove
                         : null,
                     icon: state.isApprovingRequisicao
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
+                        ? const PharmaButtonLoader()
                         : const Icon(Icons.check_circle_outline_rounded),
-                    label: const Text('Aprovar'),
+                    label: Text(
+                      state.isApprovingRequisicao
+                          ? 'A aprovar...'
+                          : 'Aprovar Requisição',
+                    ),
                   ),
                 ),
               ],
@@ -802,45 +1093,315 @@ class _RightPane extends StatelessWidget {
   }
 }
 
-class _InfoCard extends StatelessWidget {
-  const _InfoCard({
-    required this.label,
-    required this.value,
+class _StockFlowItemsTable extends StatelessWidget {
+  const _StockFlowItemsTable({
+    required this.items,
+    required this.isEditable,
+    required this.onEdit,
+    required this.onRemove,
   });
 
-  final String label;
-  final String value;
+  final List<RequisicaoItem> items;
+  final bool isEditable;
+  final ValueChanged<RequisicaoItem> onEdit;
+  final ValueChanged<RequisicaoItem> onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+
+        if (width < 768) {
+          return _StockFlowItemsCardList(
+            items: items,
+            isEditable: isEditable,
+            onEdit: onEdit,
+            onRemove: onRemove,
+          );
+        }
+
+        if (width < 1200) {
+          return _StockFlowItemsTabletTable(
+            items: items,
+            isEditable: isEditable,
+            onEdit: onEdit,
+            onRemove: onRemove,
+          );
+        }
+
+        return _StockFlowItemsDesktopTable(
+          items: items,
+          isEditable: isEditable,
+          onEdit: onEdit,
+          onRemove: onRemove,
+        );
+      },
+    );
+  }
+}
+
+class _StockFlowItemsDesktopTable extends StatelessWidget {
+  const _StockFlowItemsDesktopTable({
+    required this.items,
+    required this.isEditable,
+    required this.onEdit,
+    required this.onRemove,
+  });
+
+  final List<RequisicaoItem> items;
+  final bool isEditable;
+  final ValueChanged<RequisicaoItem> onEdit;
+  final ValueChanged<RequisicaoItem> onRemove;
 
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
     final s = context.spacing;
+
+    return Scrollbar(
+      thumbVisibility: true,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: SizedBox(
+          width: 920,
+          child: SingleChildScrollView(
+            child: DataTable(
+              headingRowColor: WidgetStateProperty.all(
+                t.bgPrimary.withValues(alpha: 0.1),
+              ),
+              columnSpacing: s.lg,
+              columns: const [
+                DataColumn(label: Text('Produto')),
+                DataColumn(label: Text('Lote')),
+                DataColumn(label: Text('Validade')),
+                DataColumn(label: Text('Qtd')),
+                DataColumn(label: Text('Ações')),
+              ],
+              rows: items.map((item) {
+                return DataRow(
+                  cells: [
+                    DataCell(
+                      SizedBox(width: 260, child: Text(item.produtoNome)),
+                    ),
+                    DataCell(
+                      SizedBox(
+                        width: 150,
+                        child: Text(stockFlowItemLoteNumero(item)),
+                      ),
+                    ),
+                    DataCell(
+                      SizedBox(
+                        width: 130,
+                        child: Text(stockFlowItemLoteValidade(item)),
+                      ),
+                    ),
+                    DataCell(
+                      SizedBox(
+                        width: 90,
+                        child: Text(stockFlowFormatQuantity(item.quantidade)),
+                      ),
+                    ),
+                    DataCell(
+                      SizedBox(
+                        width: 140,
+                        child: _StockFlowItemActionButtons(
+                          item: item,
+                          isEditable: isEditable,
+                          onEdit: onEdit,
+                          onRemove: onRemove,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StockFlowItemsTabletTable extends StatelessWidget {
+  const _StockFlowItemsTabletTable({
+    required this.items,
+    required this.isEditable,
+    required this.onEdit,
+    required this.onRemove,
+  });
+
+  final List<RequisicaoItem> items;
+  final bool isEditable;
+  final ValueChanged<RequisicaoItem> onEdit;
+  final ValueChanged<RequisicaoItem> onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+    final s = context.spacing;
+
+    return Scrollbar(
+      thumbVisibility: true,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: SizedBox(
+          width: 720,
+          child: SingleChildScrollView(
+            child: DataTable(
+              headingRowColor: WidgetStateProperty.all(
+                t.bgPrimary.withValues(alpha: 0.1),
+              ),
+              columnSpacing: s.md,
+              columns: const [
+                DataColumn(label: Text('Produto')),
+                DataColumn(label: Text('Lote')),
+                DataColumn(label: Text('Qtd')),
+                DataColumn(label: Text('Ações')),
+              ],
+              rows: items.map((item) {
+                return DataRow(
+                  cells: [
+                    DataCell(
+                      SizedBox(width: 220, child: Text(item.produtoNome)),
+                    ),
+                    DataCell(
+                      SizedBox(
+                        width: 140,
+                        child: Text(stockFlowItemLoteNumero(item)),
+                      ),
+                    ),
+                    DataCell(
+                      SizedBox(
+                        width: 90,
+                        child: Text(stockFlowFormatQuantity(item.quantidade)),
+                      ),
+                    ),
+                    DataCell(
+                      SizedBox(
+                        width: 140,
+                        child: _StockFlowItemActionButtons(
+                          item: item,
+                          isEditable: isEditable,
+                          onEdit: onEdit,
+                          onRemove: onRemove,
+                          showDetailsButton: true,
+                        ),
+                      ),
+                    ),
+                  ],
+                );
+              }).toList(),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StockFlowItemsCardList extends StatelessWidget {
+  const _StockFlowItemsCardList({
+    required this.items,
+    required this.isEditable,
+    required this.onEdit,
+    required this.onRemove,
+  });
+
+  final List<RequisicaoItem> items;
+  final bool isEditable;
+  final ValueChanged<RequisicaoItem> onEdit;
+  final ValueChanged<RequisicaoItem> onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.spacing;
+
+    return ListView.separated(
+      itemCount: items.length,
+      separatorBuilder: (_, _) => SizedBox(height: s.sm),
+      itemBuilder: (context, index) {
+        final item = items[index];
+        return _StockFlowItemCard(
+          item: item,
+          isEditable: isEditable,
+          onEdit: onEdit,
+          onRemove: onRemove,
+        );
+      },
+    );
+  }
+}
+
+class _StockFlowItemCard extends StatelessWidget {
+  const _StockFlowItemCard({
+    required this.item,
+    required this.isEditable,
+    required this.onEdit,
+    required this.onRemove,
+  });
+
+  final RequisicaoItem item;
+  final bool isEditable;
+  final ValueChanged<RequisicaoItem> onEdit;
+  final ValueChanged<RequisicaoItem> onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+    final s = context.spacing;
+
     return Container(
-      width: 150,
       padding: EdgeInsets.all(s.md),
       decoration: BoxDecoration(
-        color: t.bgPrimary.withValues(alpha: 0.45),
+        color: t.bgPrimary.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(t.radiusMd),
-        border: Border.all(color: t.border.withValues(alpha: 0.25)),
+        border: Border.all(color: t.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            label,
-            style: TextStyle(
-              color: t.textMuted,
-              fontWeight: FontWeight.w700,
-              fontSize: 12,
-            ),
+            item.produtoNome,
+            style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w800),
           ),
-          SizedBox(height: s.xs),
-          Text(
-            value,
-            style: TextStyle(
-              color: t.textPrimary,
-              fontWeight: FontWeight.w900,
-            ),
+          SizedBox(height: s.sm),
+          Wrap(
+            spacing: s.md,
+            runSpacing: s.sm,
+            children: [
+              _StockFlowItemInfo(
+                label: 'Lote',
+                value: stockFlowItemLoteNumero(item),
+              ),
+              _StockFlowItemInfo(
+                label: 'Validade',
+                value: stockFlowItemLoteValidade(item),
+              ),
+              _StockFlowItemInfo(
+                label: 'Quantidade',
+                value: stockFlowFormatQuantity(item.quantidade),
+              ),
+            ],
+          ),
+          SizedBox(height: s.md),
+          Wrap(
+            spacing: s.sm,
+            runSpacing: s.sm,
+            children: [
+              OutlinedButton.icon(
+                onPressed: isEditable ? () => onEdit(item) : null,
+                icon: const Icon(Icons.edit_outlined),
+                label: const Text('Editar'),
+              ),
+              OutlinedButton.icon(
+                onPressed: isEditable ? () => onRemove(item) : null,
+                icon: const Icon(Icons.delete_outline_rounded),
+                label: const Text('Remover'),
+                style: OutlinedButton.styleFrom(foregroundColor: t.posDanger),
+              ),
+            ],
           ),
         ],
       ),
@@ -848,34 +1409,170 @@ class _InfoCard extends StatelessWidget {
   }
 }
 
-class _StatusChip extends StatelessWidget {
-  const _StatusChip({
-    required this.status,
-  });
+class _StockFlowItemInfo extends StatelessWidget {
+  const _StockFlowItemInfo({required this.label, required this.value});
 
-  final RequisicaoStatus status;
+  final String label;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
-    final color = switch (status) {
-      RequisicaoStatus.aprovada || RequisicaoStatus.concluida => t.brandGreen,
-      RequisicaoStatus.rejeitada => t.posWarning,
-      RequisicaoStatus.cancelada => t.posDanger,
-      RequisicaoStatus.pendente => t.brandBlue,
-    };
+
+    return RichText(
+      text: TextSpan(
+        style: TextStyle(color: t.textMuted, fontSize: 12),
+        children: [
+          TextSpan(
+            text: '$label: ',
+            style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w700),
+          ),
+          TextSpan(text: value),
+        ],
+      ),
+    );
+  }
+}
+
+class _StockFlowItemActionButtons extends StatelessWidget {
+  const _StockFlowItemActionButtons({
+    required this.item,
+    required this.isEditable,
+    required this.onEdit,
+    required this.onRemove,
+    this.showDetailsButton = false,
+  });
+
+  final RequisicaoItem item;
+  final bool isEditable;
+  final ValueChanged<RequisicaoItem> onEdit;
+  final ValueChanged<RequisicaoItem> onRemove;
+  final bool showDetailsButton;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (showDetailsButton)
+          IconButton(
+            icon: Icon(Icons.info_outline_rounded, size: t.iconSm),
+            onPressed: () => _showStockFlowItemDetails(context, item),
+            tooltip: 'Ver detalhes',
+          ),
+        IconButton(
+          icon: Icon(Icons.edit_outlined, size: t.iconSm),
+          onPressed: isEditable ? () => onEdit(item) : null,
+          tooltip: 'Editar item',
+        ),
+        IconButton(
+          icon: Icon(Icons.delete_outline_rounded, size: t.iconSm),
+          onPressed: isEditable ? () => onRemove(item) : null,
+          color: t.posDanger,
+          tooltip: 'Remover item',
+        ),
+      ],
+    );
+  }
+}
+
+Future<void> _showStockFlowItemDetails(
+  BuildContext context,
+  RequisicaoItem item,
+) {
+  return showDialog<void>(
+    context: context,
+    builder: (dialogContext) {
+      final s = dialogContext.spacing;
+
+      return AlertDialog(
+        title: Text(item.produtoNome),
+        content: SizedBox(
+          width: 420,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _DialogDetailRow(
+                label: 'Lote',
+                value: stockFlowItemLoteNumero(item),
+              ),
+              SizedBox(height: s.sm),
+              _DialogDetailRow(
+                label: 'Validade',
+                value: stockFlowItemLoteValidade(item),
+              ),
+              SizedBox(height: s.sm),
+              _DialogDetailRow(
+                label: 'Quantidade',
+                value: stockFlowFormatQuantity(item.quantidade),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Fechar'),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+class _DialogDetailRow extends StatelessWidget {
+  const _DialogDetailRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 120,
+          child: Text(
+            label,
+            style: TextStyle(color: t.textMuted, fontWeight: FontWeight.w600),
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w700),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _InfoTag extends StatelessWidget {
+  const _InfoTag({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+    final s = context.spacing;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: EdgeInsets.symmetric(horizontal: s.sm, vertical: s.xs),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(999),
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(t.radiusMd),
       ),
       child: Text(
-        status.label,
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.w800,
-        ),
+        label,
+        style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w600),
       ),
     );
   }
@@ -895,40 +1592,137 @@ class _EmptyPane extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
+    final s = context.spacing;
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icon, size: 44, color: t.textMuted),
-          const SizedBox(height: 12),
-          Text(
-            title,
-            style: TextStyle(
-              color: t.textPrimary,
-              fontWeight: FontWeight.w800,
-              fontSize: 16,
+      child: Padding(
+        padding: EdgeInsets.all(s.lg),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 48, color: t.textMuted),
+            SizedBox(height: s.md),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: t.textPrimary,
+                fontWeight: FontWeight.w800,
+                fontSize: 16,
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: 320,
-            child: Text(
+            SizedBox(height: s.sm),
+            Text(
               subtitle,
               textAlign: TextAlign.center,
               style: TextStyle(color: t.textMuted),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
 
+class _EditStockFlowItemDialog extends StatefulWidget {
+  const _EditStockFlowItemDialog({required this.item});
+
+  final RequisicaoItem item;
+
+  @override
+  State<_EditStockFlowItemDialog> createState() =>
+      _EditStockFlowItemDialogState();
+}
+
+class _EditStockFlowItemDialogState extends State<_EditStockFlowItemDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _quantidadeController;
+
+  @override
+  void initState() {
+    super.initState();
+    _quantidadeController = TextEditingController(
+      text: stockFlowFormatQuantity(widget.item.quantidade),
+    );
+  }
+
+  @override
+  void dispose() {
+    _quantidadeController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (_formKey.currentState?.validate() != true) {
+      return;
+    }
+
+    final quantidade = double.parse(
+      _quantidadeController.text.trim().replaceAll(',', '.'),
+    );
+    Navigator.of(context).pop(quantidade);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.spacing;
+    final t = context.pharmaTokens;
+
+    return PharmaResponsiveDialog(
+      title: const Text('Editar Item'),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _ItemDialogProductHeader(
+              productName: widget.item.produtoNome,
+              description:
+                  'Revise a quantidade deste item mantendo os dados do lote associados a esta requisição.',
+              metadata: [
+                'Lote ${stockFlowItemLoteNumero(widget.item)}',
+                'Validade ${stockFlowItemLoteValidade(widget.item)}',
+              ],
+            ),
+            SizedBox(height: s.lg),
+            TextFormField(
+              controller: _quantidadeController,
+              decoration: const InputDecoration(
+                labelText: 'Quantidade *',
+                border: OutlineInputBorder(),
+              ),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              validator: (value) {
+                final normalized = value?.trim().replaceAll(',', '.') ?? '';
+                final parsed = double.tryParse(normalized);
+                if (parsed == null || parsed <= 0) {
+                  return 'Informe uma quantidade válida';
+                }
+                return null;
+              },
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton.icon(
+          onPressed: _submit,
+          icon: const Icon(Icons.save_outlined),
+          label: const Text('Guardar'),
+        ),
+      ],
+    );
+  }
+}
+
 class _RequisicaoLoteDialog extends ConsumerStatefulWidget {
-  const _RequisicaoLoteDialog({
-    required this.product,
-    required this.tipo,
-  });
+  const _RequisicaoLoteDialog({required this.product, required this.tipo});
 
   final Product product;
   final RequisicaoTipo tipo;
@@ -1033,8 +1827,9 @@ class _RequisicaoLoteDialogState extends ConsumerState<_RequisicaoLoteDialog> {
     }
 
     final numeroLote = _loteController.text.trim();
-    final dataValidade =
-        stockFlowParseDateInput(_dataValidadeController.text.trim());
+    final dataValidade = stockFlowParseDateInput(
+      _dataValidadeController.text.trim(),
+    );
     if (dataValidade == null) {
       return;
     }
@@ -1053,8 +1848,10 @@ class _RequisicaoLoteDialogState extends ConsumerState<_RequisicaoLoteDialog> {
       String? loteId = matchedLote?.id;
 
       if (loteId == null && widget.tipo == RequisicaoTipo.entrada) {
-        final fornecedorId =
-            ref.read(requisicaoProvider).activeRequisicao?.fornecedorId;
+        final fornecedorId = ref
+            .read(requisicaoProvider)
+            .activeRequisicao
+            ?.fornecedorId;
         if (fornecedorId == null || fornecedorId.trim().isEmpty) {
           setState(() {
             _error =
@@ -1063,7 +1860,9 @@ class _RequisicaoLoteDialogState extends ConsumerState<_RequisicaoLoteDialog> {
           return;
         }
 
-        final created = await ref.read(requisicaoProvider.notifier).criarLote(
+        final created = await ref
+            .read(requisicaoProvider.notifier)
+            .criarLote(
               produtoId: widget.product.id,
               fornecedorId: fornecedorId,
               numeroLote: numeroLote,
@@ -1121,100 +1920,102 @@ class _RequisicaoLoteDialogState extends ConsumerState<_RequisicaoLoteDialog> {
     final s = context.spacing;
     final isBusy = _loadingLotes || _submitting;
 
-    return AlertDialog(
-      title: Text('Adicionar ${widget.product.nome}'),
-      content: SizedBox(
-        width: 480,
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (_loadingLotes)
-                  const Padding(
-                    padding: EdgeInsets.only(bottom: 12),
-                    child: LinearProgressIndicator(),
-                  ),
-                if (_error != null) ...[
-                  Text(
-                    _error!,
-                    style: TextStyle(color: t.posDanger),
-                  ),
-                  SizedBox(height: s.sm),
-                ],
-                TextFormField(
-                  controller: _loteController,
-                  decoration: const InputDecoration(
-                    labelText: 'Lote',
-                    hintText: 'Ex.: LOTE-2026-001',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) =>
-                      value == null || value.trim().isEmpty
-                          ? 'Informe o número do lote'
-                          : null,
-                ),
-                SizedBox(height: s.md),
-                TextFormField(
-                  controller: _dataValidadeController,
-                  keyboardType: TextInputType.datetime,
-                  inputFormatters: [
-                    _StockFlowDateTextInputFormatter(),
-                  ],
-                  decoration: InputDecoration(
-                    labelText: 'Prazo de validade',
-                    hintText: 'DD/MM/AAAA',
-                    border: const OutlineInputBorder(),
-                    suffixIcon: IconButton(
-                      onPressed: isBusy ? null : _pickExpiryDate,
-                      icon: const Icon(Icons.calendar_today_outlined),
-                      tooltip: 'Selecionar data',
-                    ),
-                  ),
-                  onEditingComplete: () {
-                    _dataValidadeController.text = stockFlowNormalizeDateInput(
-                      _dataValidadeController.text,
-                    );
-                  },
-                  validator: (value) {
-                    final normalized = value?.trim() ?? '';
-                    if (normalized.isEmpty) {
-                      return 'Informe o prazo de validade';
-                    }
-                    if (stockFlowParseDateInput(normalized) == null) {
-                      return 'Use o formato DD/MM/AAAA';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: s.md),
-                TextFormField(
-                  controller: _quantidadeController,
-                  keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true,
-                  ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-                  ],
-                  decoration: const InputDecoration(
-                    labelText: 'Quantidade',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    final parsed = double.tryParse(
-                      (value ?? '').replaceAll(',', '.'),
-                    );
-                    if (parsed == null || parsed <= 0) {
-                      return 'Informe uma quantidade válida';
-                    }
-                    return null;
-                  },
-                ),
+    return PharmaResponsiveDialog(
+      title: const Text('Adicionar Item'),
+      content: Form(
+        key: _formKey,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _ItemDialogProductHeader(
+              productName: widget.product.nome,
+              description: widget.tipo == RequisicaoTipo.entrada
+                  ? 'Informe os dados do lote para entrada do produto e registo documental da movimentação.'
+                  : 'Selecione o lote e a quantidade do produto para movimentar com segurança.',
+              metadata: [
+                if ((widget.product.lote ?? '').trim().isNotEmpty)
+                  'Lote sugerido ${widget.product.lote!.trim()}',
+                if (widget.product.dataValidade != null)
+                  'Validade ${stockFlowFormatDate(widget.product.dataValidade!)}',
               ],
             ),
-          ),
+            SizedBox(height: s.lg),
+            if (_loadingLotes)
+              Padding(
+                padding: EdgeInsets.only(bottom: s.md),
+                child: const LinearProgressIndicator(),
+              ),
+            if (_error != null) ...[
+              Text(_error!, style: TextStyle(color: t.posDanger)),
+              SizedBox(height: s.sm),
+            ],
+            TextFormField(
+              controller: _loteController,
+              decoration: const InputDecoration(
+                labelText: 'Lote',
+                hintText: 'Ex.: LOTE-2026-001',
+                border: OutlineInputBorder(),
+              ),
+              validator: (value) => value == null || value.trim().isEmpty
+                  ? 'Informe o número do lote'
+                  : null,
+            ),
+            SizedBox(height: s.md),
+            TextFormField(
+              controller: _dataValidadeController,
+              keyboardType: TextInputType.datetime,
+              inputFormatters: [_StockFlowDateTextInputFormatter()],
+              decoration: InputDecoration(
+                labelText: 'Prazo de validade',
+                hintText: 'DD/MM/AAAA',
+                border: const OutlineInputBorder(),
+                suffixIcon: IconButton(
+                  onPressed: isBusy ? null : _pickExpiryDate,
+                  icon: const Icon(Icons.calendar_today_outlined),
+                  tooltip: 'Selecionar data',
+                ),
+              ),
+              onEditingComplete: () {
+                _dataValidadeController.text = stockFlowNormalizeDateInput(
+                  _dataValidadeController.text,
+                );
+              },
+              validator: (value) {
+                final normalized = value?.trim() ?? '';
+                if (normalized.isEmpty) {
+                  return 'Informe o prazo de validade';
+                }
+                if (stockFlowParseDateInput(normalized) == null) {
+                  return 'Use o formato DD/MM/AAAA';
+                }
+                return null;
+              },
+            ),
+            SizedBox(height: s.md),
+            TextFormField(
+              controller: _quantidadeController,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+              ],
+              decoration: const InputDecoration(
+                labelText: 'Quantidade',
+                border: OutlineInputBorder(),
+              ),
+              validator: (value) {
+                final parsed = double.tryParse(
+                  (value ?? '').replaceAll(',', '.'),
+                );
+                if (parsed == null || parsed <= 0) {
+                  return 'Informe uma quantidade válida';
+                }
+                return null;
+              },
+            ),
+          ],
         ),
       ),
       actions: [
@@ -1225,14 +2026,95 @@ class _RequisicaoLoteDialogState extends ConsumerState<_RequisicaoLoteDialog> {
         FilledButton(
           onPressed: isBusy ? null : _submit,
           child: _submitting
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
+              ? const PharmaButtonLoader()
               : const Text('Adicionar'),
         ),
       ],
+    );
+  }
+}
+
+class _ItemDialogProductHeader extends StatelessWidget {
+  const _ItemDialogProductHeader({
+    required this.productName,
+    required this.description,
+    this.metadata = const [],
+  });
+
+  final String productName;
+  final String description;
+  final List<String> metadata;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+    final s = context.spacing;
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: EdgeInsets.all(s.md),
+      decoration: BoxDecoration(
+        color: t.bgPrimary.withValues(alpha: 0.18),
+        borderRadius: BorderRadius.circular(t.radiusMd),
+        border: Border.all(color: t.border.withValues(alpha: 0.9)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Produto',
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: t.brandBlue,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.3,
+            ),
+          ),
+          SizedBox(height: s.xs),
+          Text(
+            productName,
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: t.textPrimary,
+              fontWeight: FontWeight.w800,
+              height: 1.2,
+            ),
+          ),
+          SizedBox(height: s.xs),
+          Text(
+            description,
+            style: theme.textTheme.bodyMedium?.copyWith(color: t.textSecondary),
+          ),
+          if (metadata.isNotEmpty) ...[
+            SizedBox(height: s.sm),
+            Wrap(
+              spacing: s.sm,
+              runSpacing: s.sm,
+              children: [
+                for (final item in metadata)
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: s.sm,
+                      vertical: s.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: t.card.withValues(alpha: 0.55),
+                      borderRadius: BorderRadius.circular(t.radiusMd),
+                      border: Border.all(
+                        color: t.border.withValues(alpha: 0.7),
+                      ),
+                    ),
+                    child: Text(
+                      item,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: t.textPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

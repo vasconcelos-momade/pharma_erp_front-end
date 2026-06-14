@@ -143,6 +143,18 @@ Native or plugin integrations: thermal printing (including discovery and connect
 
 Layouts (app, auth, dashboard, POS, tablet), widgets by category (buttons, forms, tables, …), responsiveness (`breakpoints`, `responsive_builder`), shared navigation, animations.
 
+### User feedback (`PharmaFeedback`)
+
+Centralised notifications and dialogs under `lib/shared/widgets/feedback/`. Modules must use **`PharmaFeedback` only** — never import QuickAlert directly.
+
+| Method | Channel | Use case |
+|--------|---------|----------|
+| `success`, `error`, `info`, `warning` | SnackBar | Quick, non-blocking feedback |
+| `confirm`, `criticalError`, `alertWarning`, `loading` | QuickAlert (internal) | Confirmations and critical errors |
+| `showForm`, `confirmComplex` | Material Dialog | Forms and rich confirmations |
+
+Full guide: [docs/pharma_feedback.md](pharma_feedback.md).
+
 ---
 
 ## Auxiliary folders under `lib/`
@@ -445,6 +457,12 @@ lib
         ├── cards
         ├── dialogs
         ├── dropdowns
+        ├── feedback
+        │   ├── pharma_feedback.dart
+        │   └── internal
+        │       ├── material_dialog_channel.dart
+        │       ├── quick_alert_channel.dart
+        │       └── snackbar_channel.dart
         ├── forms
         ├── inputs
         ├── loaders
@@ -462,8 +480,9 @@ lib
 1. **New business feature:** add or extend a package under `lib/modules/<domain>/`, following data / domain / presentation.
 2. **New HTTP behaviour:** `core/network` + `core/contracts`; interceptors when cross-cutting.
 3. **New reusable screen:** `lib/shared/widgets` or `layouts`.
-4. **Hardware or OS feature:** `lib/platform/<capability>/`.
-5. **Global app state:** prefer `lib/app/providers/` and register them from `app.dart`.
+4. **User feedback:** `PharmaFeedback` in `lib/shared/widgets/feedback/` — see [pharma_feedback.md](pharma_feedback.md).
+5. **Hardware or OS feature:** `lib/platform/<capability>/`.
+6. **Global app state:** prefer `lib/app/providers/` and register them from `app.dart`.
 
 ---
 
@@ -471,6 +490,7 @@ lib
 
 - [README](../README.md) — how to run the project and quick links.
 - [Estrutura do projecto (português)](estrutura_do_projecto.md) — full Portuguese guide (same tree).
+- [Feedback do utilizador — PharmaFeedback](pharma_feedback.md) — SnackBar, QuickAlert, Dialog Material.
 
 ---
 

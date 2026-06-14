@@ -57,7 +57,10 @@ class PharmaResponsiveDialog extends StatelessWidget {
       contentMaxWidth: t.contentMaxWidth,
     );
 
-    final maxDialogHeight = screenSize.height * (isMobile ? 0.92 : 0.88);
+    final maxDialogHeight = screenSize.height *
+        (isMobile
+            ? DesignMetrics.dialogMaxHeightFractionMobile
+            : DesignMetrics.dialogMaxHeightFractionDesktop);
 
     final titlePadding = EdgeInsets.fromLTRB(
       isMobile ? s.lg : s.xl,
@@ -81,7 +84,9 @@ class PharmaResponsiveDialog extends StatelessWidget {
     final Widget bodySection;
     if (scrollable) {
       bodySection = ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: maxDialogHeight * 0.65),
+        constraints: BoxConstraints(
+          maxHeight: maxDialogHeight * DesignMetrics.dialogBodyMaxHeightFraction,
+        ),
         child: SingleChildScrollView(
           padding: contentPadding,
           child: content,

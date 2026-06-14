@@ -47,6 +47,7 @@ class RequisicaoState {
     this.isLoadingLists = false,
     this.isLoadingActiveRequisicao = false,
     this.isCreatingRequisicao = false,
+    this.isUpdatingRequisicao = false,
     this.isAddingItem = false,
     this.isCreatingLote = false,
     this.isApprovingRequisicao = false,
@@ -64,6 +65,7 @@ class RequisicaoState {
   final bool isLoadingLists;
   final bool isLoadingActiveRequisicao;
   final bool isCreatingRequisicao;
+  final bool isUpdatingRequisicao;
   final bool isAddingItem;
   final bool isCreatingLote;
   final bool isApprovingRequisicao;
@@ -91,6 +93,7 @@ class RequisicaoState {
     bool? isLoadingLists,
     bool? isLoadingActiveRequisicao,
     bool? isCreatingRequisicao,
+    bool? isUpdatingRequisicao,
     bool? isAddingItem,
     bool? isCreatingLote,
     bool? isApprovingRequisicao,
@@ -112,6 +115,7 @@ class RequisicaoState {
       isLoadingActiveRequisicao:
           isLoadingActiveRequisicao ?? this.isLoadingActiveRequisicao,
       isCreatingRequisicao: isCreatingRequisicao ?? this.isCreatingRequisicao,
+      isUpdatingRequisicao: isUpdatingRequisicao ?? this.isUpdatingRequisicao,
       isAddingItem: isAddingItem ?? this.isAddingItem,
       isCreatingLote: isCreatingLote ?? this.isCreatingLote,
       isApprovingRequisicao:
@@ -421,6 +425,106 @@ class RequisicaoController extends Notifier<RequisicaoState> {
     } catch (e) {
       state = state.copyWith(
         isAddingItem: false,
+        errorMessage: e.toString(),
+        clearSuccess: true,
+      );
+    }
+  }
+
+  Future<void> updateItemInActiveRequisition({
+    required RequisicaoItem item,
+    required double quantidadeSolicitada,
+  }) async {
+    final activeRequisicao = state.activeRequisicao;
+    if (activeRequisicao == null || !activeRequisicao.status.isEditable) {
+      state = state.copyWith(
+        errorMessage: 'Selecione uma requisicao pendente.',
+        clearSuccess: true,
+      );
+      return;
+    }
+
+    state = state.copyWith(
+      isAddingItem: true,
+      clearError: true,
+      clearSuccess: true,
+    );
+
+    try {
+      final updated = await ref.read(requisicaoRepositoryProvider).atualizarItem(
+            requisicaoId: activeRequisicao.id,
+            itemId: item.id,
+            request: RequisicaoItemRequest(
+              produtoId: item.produtoId,
+              quantidadeSolicitada: quantidadeSolicitada,
+              loteId: item.lote?.id,
+            ),
+          );
+
+      await _refreshListsSilently();
+
+      state = state.copyWith(
+        isAddingItem: false,
+        activeRequisicao: updated,
+        successMessage: '${item.produtoNome} actualizado na requisicao.',
+        clearError: true,
+      );
+    } on ApiFailure catch (e) {
+      state = state.copyWith(
+        isAddingItem: false,
+        errorMessage: e.message,
+        clearSuccess: true,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isAddingItem: false,
+        errorMessage: e.toString(),
+        clearSuccess: true,
+      );
+    }
+  }
+
+  Future<void> updateActiveRequisitionHeader({
+    required AtualizarRequisicaoRequest request,
+  }) async {
+    final activeRequisicao = state.activeRequisicao;
+    if (activeRequisicao == null || !activeRequisicao.status.isEditable) {
+      state = state.copyWith(
+        errorMessage: 'Selecione uma requisicao pendente.',
+        clearSuccess: true,
+      );
+      return;
+    }
+
+    state = state.copyWith(
+      isUpdatingRequisicao: true,
+      clearError: true,
+      clearSuccess: true,
+    );
+
+    try {
+      final updated = await ref.read(requisicaoRepositoryProvider).atualizarRequisicao(
+            requisicaoId: activeRequisicao.id,
+            request: request,
+          );
+
+      await _refreshListsSilently();
+
+      state = state.copyWith(
+        isUpdatingRequisicao: false,
+        activeRequisicao: updated,
+        successMessage: 'Requisicao actualizada com sucesso.',
+        clearError: true,
+      );
+    } on ApiFailure catch (e) {
+      state = state.copyWith(
+        isUpdatingRequisicao: false,
+        errorMessage: e.message,
+        clearSuccess: true,
+      );
+    } catch (e) {
+      state = state.copyWith(
+        isUpdatingRequisicao: false,
         errorMessage: e.toString(),
         clearSuccess: true,
       );

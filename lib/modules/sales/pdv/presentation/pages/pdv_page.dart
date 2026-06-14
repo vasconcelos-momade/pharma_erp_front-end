@@ -6,7 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
-import '../../../../../shared/widgets/feedback/pharma_snackbar.dart';
+import '../../../../../shared/widgets/buttons/pharma_button_loader.dart';
+import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../pharmacy/products/domain/entities/product.dart';
 import '../../../../pharmacy/products/presentation/providers/product_provider.dart';
 import '../../../invoices/presentation/providers/invoice_action_provider.dart';
@@ -148,7 +149,7 @@ class _PdvPageState extends ConsumerState<PdvPage>
         return false;
       }
       if (added) {
-        PharmaSnackbar.showSuccess(
+        PharmaFeedback.success(
           context,
           '${p.nome} adicionado ao carrinho.',
         );
@@ -156,12 +157,12 @@ class _PdvPageState extends ConsumerState<PdvPage>
       return added;
     } on ApiFailure catch (e) {
       if (mounted) {
-        PharmaSnackbar.showError(context, e.message);
+        PharmaFeedback.error(context, e.message);
       }
       return false;
     } catch (_) {
       if (mounted) {
-        PharmaSnackbar.showError(
+        PharmaFeedback.error(
           context,
           'Falha ao adicionar produto. Tente novamente.',
         );
@@ -185,7 +186,7 @@ class _PdvPageState extends ConsumerState<PdvPage>
         return false;
       }
       if (added) {
-        PharmaSnackbar.showSuccess(
+        PharmaFeedback.success(
           context,
           '${service.nome} adicionado ao carrinho.',
         );
@@ -193,12 +194,12 @@ class _PdvPageState extends ConsumerState<PdvPage>
       return added;
     } on ApiFailure catch (e) {
       if (mounted) {
-        PharmaSnackbar.showError(context, e.message);
+        PharmaFeedback.error(context, e.message);
       }
       return false;
     } catch (_) {
       if (mounted) {
-        PharmaSnackbar.showError(
+        PharmaFeedback.error(
           context,
           'Falha ao adicionar serviço. Tente novamente.',
         );
@@ -220,11 +221,11 @@ class _PdvPageState extends ConsumerState<PdvPage>
       await action();
     } on ApiFailure catch (e) {
       if (mounted) {
-        PharmaSnackbar.showError(context, e.message);
+        PharmaFeedback.error(context, e.message);
       }
     } catch (_) {
       if (mounted) {
-        PharmaSnackbar.showError(
+        PharmaFeedback.error(
           context,
           'Falha ao atualizar o carrinho. Tente novamente.',
         );
@@ -309,7 +310,7 @@ class _PdvPageState extends ConsumerState<PdvPage>
       return;
     }
 
-    PharmaSnackbar.showSuccess(
+    PharmaFeedback.success(
       context,
       'Pagamento confirmado. Fatura ${result.numero} — total ${_formatMoney(result.total)} (valores do servidor).',
     );
@@ -318,86 +319,83 @@ class _PdvPageState extends ConsumerState<PdvPage>
   }
 
   Future<void> _showCheckoutActions(PdvCheckoutResult result) async {
-    await showDialog<void>(
+    await PharmaFeedback.showForm<void>(
       context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Fatura emitida'),
-          content: Text(
-            'A fatura ${result.numero} foi emitida com sucesso. Deseja abrir o PDF ou preparar o recibo de reimpressão?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Fechar'),
-            ),
-            OutlinedButton.icon(
-              onPressed: () async {
-                Navigator.of(dialogContext).pop();
-                try {
-                  await ref
-                      .read(invoiceActionProvider.notifier)
-                      .printReceipt(invoiceId: result.id);
-                  if (!mounted) {
-                    return;
-                  }
-                  PharmaSnackbar.showSuccess(
-                    context,
-                    'Recibo de reimpressão disponibilizado com sucesso.',
-                  );
-                } on ApiFailure catch (e) {
-                  if (!mounted) {
-                    return;
-                  }
-                  PharmaSnackbar.showError(context, e.message);
-                } catch (_) {
-                  if (!mounted) {
-                    return;
-                  }
-                  PharmaSnackbar.showError(
-                    context,
-                    'Não foi possível preparar o recibo para impressão.',
-                  );
-                }
-              },
-              icon: const Icon(Icons.print_outlined),
-              label: const Text('Reimprimir'),
-            ),
-            FilledButton.icon(
-              onPressed: () async {
-                Navigator.of(dialogContext).pop();
-                try {
-                  await ref
-                      .read(invoiceActionProvider.notifier)
-                      .exportPdf(invoiceId: result.id);
-                  if (!mounted) {
-                    return;
-                  }
-                  PharmaSnackbar.showSuccess(
-                    context,
-                    'PDF da fatura disponibilizado com sucesso.',
-                  );
-                } on ApiFailure catch (e) {
-                  if (!mounted) {
-                    return;
-                  }
-                  PharmaSnackbar.showError(context, e.message);
-                } catch (_) {
-                  if (!mounted) {
-                    return;
-                  }
-                  PharmaSnackbar.showError(
-                    context,
-                    'Não foi possível exportar o PDF da fatura.',
-                  );
-                }
-              },
-              icon: const Icon(Icons.picture_as_pdf_outlined),
-              label: const Text('Exportar PDF'),
-            ),
-          ],
-        );
-      },
+      title: const Text('Fatura emitida'),
+      content: Text(
+        'A fatura ${result.numero} foi emitida com sucesso. Deseja abrir o PDF ou preparar o recibo de reimpressão?',
+      ),
+      scrollable: false,
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text('Fechar'),
+        ),
+        OutlinedButton.icon(
+          onPressed: () async {
+            Navigator.of(context).pop();
+            try {
+              await ref
+                  .read(invoiceActionProvider.notifier)
+                  .printReceipt(invoiceId: result.id);
+              if (!mounted) {
+                return;
+              }
+              PharmaFeedback.success(
+                context,
+                'Recibo de reimpressão disponibilizado com sucesso.',
+              );
+            } on ApiFailure catch (e) {
+              if (!mounted) {
+                return;
+              }
+              PharmaFeedback.error(context, e.message);
+            } catch (_) {
+              if (!mounted) {
+                return;
+              }
+              PharmaFeedback.error(
+                context,
+                'Não foi possível preparar o recibo para impressão.',
+              );
+            }
+          },
+          icon: const Icon(Icons.print_outlined),
+          label: const Text('Reimprimir'),
+        ),
+        FilledButton.icon(
+          onPressed: () async {
+            Navigator.of(context).pop();
+            try {
+              await ref
+                  .read(invoiceActionProvider.notifier)
+                  .exportPdf(invoiceId: result.id);
+              if (!mounted) {
+                return;
+              }
+              PharmaFeedback.success(
+                context,
+                'PDF da fatura disponibilizado com sucesso.',
+              );
+            } on ApiFailure catch (e) {
+              if (!mounted) {
+                return;
+              }
+              PharmaFeedback.error(context, e.message);
+            } catch (_) {
+              if (!mounted) {
+                return;
+              }
+              PharmaFeedback.error(
+                context,
+                'Não foi possível exportar o PDF da fatura.',
+              );
+            }
+          },
+          icon: const Icon(Icons.picture_as_pdf_outlined),
+          label: const Text('Exportar PDF'),
+        ),
+      ],
     );
   }
 
@@ -885,14 +883,7 @@ class _ProductCatalogList extends StatelessWidget {
                         child: FilledButton(
                           onPressed: canInteract ? () => onAdd(product) : null,
                           child: isAddingThis
-                              ? SizedBox(
-                                  width: tokens.iconSm,
-                                  height: tokens.iconSm,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: s.xxs,
-                                    color: tokens.bgPrimary,
-                                  ),
-                                )
+                              ? PharmaButtonLoader(color: tokens.bgPrimary)
                               : Text(isMobile ? '+' : 'Add'),
                         ),
                       ),
@@ -1325,16 +1316,10 @@ class _CartPane extends StatelessWidget {
                                         dimension: t.minTouchTarget,
                                         child: IconButton(
                                           icon: lineBusy
-                                              ? SizedBox(
-                                                  width: t.iconSm,
-                                                  height: t.iconSm,
-                                                  child: CircularProgressIndicator(
-                                                    strokeWidth: s.xxs,
-                                                    color: t.brandBlue,
-                                                  ),
-                                                )
-                                              : const Icon(
+                                              ? PharmaButtonLoader(color: t.brandBlue)
+                                              : Icon(
                                                   Icons.add_circle_outline_rounded,
+                                                  size: t.iconSm,
                                                 ),
                                           color: t.brandBlue,
                                           iconSize: t.iconMd,

@@ -4,7 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/spacing.dart';
-import '../../../../shared/widgets/feedback/pharma_snackbar.dart';
+import '../../../../shared/widgets/feedback/pharma_feedback.dart';
+import '../../../../shared/widgets/buttons/pharma_button_loader.dart';
 import '../../../../shared/widgets/layout/module_page_frame.dart';
 import '../../domain/entities/inventario.dart';
 import '../providers/inventario_provider.dart';
@@ -68,7 +69,7 @@ class _InventoryHubPageState extends ConsumerState<InventoryHubPage> {
   Future<void> _handleCatalogItem(InventarioItem item) async {
     final state = ref.read(inventarioProvider);
     if (!state.canRecordCount) {
-      PharmaSnackbar.showError(
+      PharmaFeedback.error(
         context,
         'Inicie ou seleccione um inventario em contagem antes de adicionar itens.',
       );
@@ -97,24 +98,13 @@ class _InventoryHubPageState extends ConsumerState<InventoryHubPage> {
       return;
     }
 
-    final confirmed = await showDialog<bool>(
+    final confirmed = await PharmaFeedback.confirm(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Reconciliar inventario'),
-        content: const Text(
+      title: 'Reconciliar inventario',
+      message:
           'A reconciliacao vai ajustar o stock conforme as contagens registadas. Deseja continuar?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Reconciliar'),
-          ),
-        ],
-      ),
+      confirmText: 'Reconciliar',
+      cancelText: 'Cancelar',
     );
 
     if (!mounted || confirmed != true) {
@@ -130,24 +120,13 @@ class _InventoryHubPageState extends ConsumerState<InventoryHubPage> {
       return;
     }
 
-    final t = context.pharmaTokens;
-    final confirmed = await showDialog<bool>(
+    final confirmed = await PharmaFeedback.confirm(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Cancelar inventario'),
-        content: const Text('Deseja cancelar o inventario activo?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Voltar'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            style: TextButton.styleFrom(foregroundColor: t.posDanger),
-            child: const Text('Cancelar inventario'),
-          ),
-        ],
-      ),
+      title: 'Cancelar inventario',
+      message: 'Deseja cancelar o inventario activo?',
+      confirmText: 'Cancelar inventario',
+      cancelText: 'Voltar',
+      destructive: true,
     );
 
     if (!mounted || confirmed != true) {
@@ -179,11 +158,11 @@ class _InventoryHubPageState extends ConsumerState<InventoryHubPage> {
         return;
       }
       if (previous?.errorMessage != next.errorMessage && next.errorMessage != null) {
-        PharmaSnackbar.showError(context, next.errorMessage!);
+        PharmaFeedback.error(context, next.errorMessage!);
       }
       if (previous?.successMessage != next.successMessage &&
           next.successMessage != null) {
-        PharmaSnackbar.showSuccess(context, next.successMessage!);
+        PharmaFeedback.success(context, next.successMessage!);
       }
     });
 
@@ -197,11 +176,7 @@ class _InventoryHubPageState extends ConsumerState<InventoryHubPage> {
         FilledButton.icon(
           onPressed: inventoryState.isCreating ? null : _startInventory,
           icon: inventoryState.isCreating
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
+              ? const PharmaButtonLoader()
               : const Icon(Icons.add_rounded),
           label: const Text('Iniciar Inventario'),
         ),
@@ -729,11 +704,7 @@ class _RightPane extends StatelessWidget {
                   state.isRecordingCount ||
                   state.isReconciling ||
                   state.isCancelling)
-                const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
+                const PharmaButtonLoader(),
             ],
           ),
           SizedBox(height: s.lg),
@@ -1246,11 +1217,7 @@ class _InventoryFooter extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: state.isCancelling ? null : onCancel,
                     icon: state.isCancelling
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
+                        ? const PharmaButtonLoader()
                         : const Icon(Icons.close_rounded),
                     label: const Text('Cancelar'),
                   ),
@@ -1262,11 +1229,7 @@ class _InventoryFooter extends StatelessWidget {
                   child: FilledButton.icon(
                     onPressed: state.isReconciling ? null : onReconcile,
                     icon: state.isReconciling
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
+                        ? const PharmaButtonLoader()
                         : const Icon(Icons.check_circle_outline_rounded),
                     label: Text(
                       state.isReconciling

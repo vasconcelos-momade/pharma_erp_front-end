@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/theme/spacing.dart';
 
 /// Moldura comum para páginas de módulo (título opcional + conteúdo scrollável).
 class ModulePageFrame extends StatelessWidget {
@@ -9,11 +10,13 @@ class ModulePageFrame extends StatelessWidget {
     this.title,
     required this.child,
     this.actions = const <Widget>[],
+    this.scrollable = true,
   });
 
   final String? title;
   final Widget child;
   final List<Widget> actions;
+  final bool scrollable;
 
   bool get _showsHeader =>
       (title != null && title!.trim().isNotEmpty) || actions.isNotEmpty;
@@ -21,6 +24,8 @@ class ModulePageFrame extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
+    final s = context.spacing;
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -32,12 +37,10 @@ class ModulePageFrame extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title!,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
+                    style: theme.textTheme.titleLarge?.copyWith(
                       color: t.textPrimary,
+                      fontWeight: FontWeight.w900,
                       fontStyle: FontStyle.italic,
-                      letterSpacing: 0.5,
                     ),
                   ),
                 )
@@ -45,20 +48,14 @@ class ModulePageFrame extends StatelessWidget {
                 const Spacer(),
               if (actions.isNotEmpty) ...[
                 if (title != null && title!.trim().isNotEmpty)
-                  const SizedBox(width: 12),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: actions,
-                ),
+                  SizedBox(width: s.md),
+                Wrap(spacing: s.sm, runSpacing: s.sm, children: actions),
               ],
             ],
           ),
-        if (_showsHeader) const SizedBox(height: 16),
+        if (_showsHeader) SizedBox(height: s.lg),
         Expanded(
-          child: SingleChildScrollView(
-            child: child,
-          ),
+          child: scrollable ? SingleChildScrollView(child: child) : child,
         ),
       ],
     );

@@ -5,7 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
-import '../../../../../shared/widgets/feedback/pharma_snackbar.dart';
+import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
+import '../../../../../shared/widgets/buttons/pharma_button_loader.dart';
 import '../../domain/entities/caixa_disponivel.dart';
 import '../../domain/entities/caixa_sessao.dart';
 import '../providers/caixa_sessao_provider.dart';
@@ -81,20 +82,18 @@ class _AbrirCaixaDialogState extends ConsumerState<AbrirCaixaDialog> {
 
     final caixa = _selectedCaixa;
     if (caixa == null) {
-      PharmaSnackbar.show(
+      PharmaFeedback.warning(
         context,
-        message: 'Selecione um terminal antes de continuar.',
-        icon: Icons.warning_amber_rounded,
+        'Selecione um terminal antes de continuar.',
       );
       return;
     }
 
     final valorAbertura = parseCaixaMoneyInputOrZero(_valorController.text);
     if (valorAbertura < 0) {
-      PharmaSnackbar.show(
+      PharmaFeedback.warning(
         context,
-        message: 'O valor de abertura nao pode ser negativo.',
-        icon: Icons.warning_amber_rounded,
+        'O valor de abertura nao pode ser negativo.',
       );
       return;
     }
@@ -106,19 +105,15 @@ class _AbrirCaixaDialogState extends ConsumerState<AbrirCaixaDialog> {
           );
       if (!mounted) return;
       Navigator.of(context).pop();
-      PharmaSnackbar.show(
-        context,
-        message: 'Caixa aberto com sucesso.',
-        icon: Icons.lock_open_rounded,
-      );
+      PharmaFeedback.success(context, 'Caixa aberto com sucesso.');
     } catch (_) {
       if (!mounted) return;
       final message = ref.read(caixaSessaoProvider).errorMessage ??
           'Nao foi possivel abrir o caixa.';
-      PharmaSnackbar.show(
-        context,
+      await PharmaFeedback.criticalError(
+        context: context,
+        title: 'Falha ao abrir caixa',
         message: message,
-        icon: Icons.error_outline_rounded,
       );
     }
   }
@@ -236,11 +231,7 @@ class _AbrirCaixaDialogState extends ConsumerState<AbrirCaixaDialog> {
         FilledButton.icon(
           onPressed: caixaState.isSubmitting || caixas.isEmpty ? null : _submit,
           icon: caixaState.isSubmitting
-              ? SizedBox(
-                  width: t.iconSm,
-                  height: t.iconSm,
-                  child: CircularProgressIndicator(strokeWidth: s.xxs),
-                )
+              ? const PharmaButtonLoader()
               : const Icon(Icons.lock_open_rounded),
           label: const Text('Abrir Caixa'),
         ),
@@ -285,10 +276,9 @@ class _FecharCaixaDialogState extends ConsumerState<FecharCaixaDialog> {
 
     final valorContado = parseCaixaMoneyInput(_valorContadoController.text);
     if (valorContado == null || valorContado < 0) {
-      PharmaSnackbar.show(
+      PharmaFeedback.warning(
         context,
-        message: 'Informe um valor contado valido.',
-        icon: Icons.warning_amber_rounded,
+        'Informe um valor contado valido.',
       );
       return;
     }
@@ -303,19 +293,15 @@ class _FecharCaixaDialogState extends ConsumerState<FecharCaixaDialog> {
           );
       if (!mounted) return;
       Navigator.of(context).pop();
-      PharmaSnackbar.show(
-        context,
-        message: 'Caixa fechado com sucesso.',
-        icon: Icons.lock_outline_rounded,
-      );
+      PharmaFeedback.success(context, 'Caixa fechado com sucesso.');
     } catch (_) {
       if (!mounted) return;
       final message = ref.read(caixaSessaoProvider).errorMessage ??
           'Nao foi possivel fechar o caixa.';
-      PharmaSnackbar.show(
-        context,
+      await PharmaFeedback.criticalError(
+        context: context,
+        title: 'Falha ao fechar caixa',
         message: message,
-        icon: Icons.error_outline_rounded,
       );
     }
   }
@@ -404,11 +390,7 @@ class _FecharCaixaDialogState extends ConsumerState<FecharCaixaDialog> {
         FilledButton.icon(
           onPressed: caixaState.isSubmitting ? null : _submit,
           icon: caixaState.isSubmitting
-              ? SizedBox(
-                  width: t.iconSm,
-                  height: t.iconSm,
-                  child: CircularProgressIndicator(strokeWidth: s.xxs),
-                )
+              ? const PharmaButtonLoader()
               : const Icon(Icons.lock_outline_rounded),
           label: const Text('Fechar Caixa'),
         ),

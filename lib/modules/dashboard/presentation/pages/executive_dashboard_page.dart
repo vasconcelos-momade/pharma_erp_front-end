@@ -196,7 +196,7 @@ class ExecutiveDashboardPage extends StatelessWidget {
               if (!isMobile)
                 FilledButton.icon(
                   onPressed: () {},
-                  icon: const Icon(Icons.arrow_outward, size: 18),
+                  icon: Icon(Icons.arrow_outward, size: t.iconSm),
                   label: const Text('Exportar'),
                 )
               else

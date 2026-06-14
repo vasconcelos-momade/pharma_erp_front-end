@@ -127,6 +127,22 @@ class CriarRequisicaoRequest {
   final String? observacao;
 }
 
+class AtualizarRequisicaoRequest {
+  const AtualizarRequisicaoRequest({
+    this.numeroDocumento,
+    this.fornecedorId,
+    this.origem,
+    this.destino,
+    this.observacao,
+  });
+
+  final String? numeroDocumento;
+  final String? fornecedorId;
+  final String? origem;
+  final String? destino;
+  final String? observacao;
+}
+
 class RequisicaoItemRequest {
   const RequisicaoItemRequest({
     required this.produtoId,

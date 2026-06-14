@@ -3,12 +3,15 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:pharma_erp/app/app.dart';
 import 'package:pharma_erp/app/providers/auth_session_notifier.dart';
+import 'package:pharma_erp/app/providers/connection_notifier.dart';
 import 'package:pharma_erp/app/router/go_app_router.dart';
 import 'package:pharma_erp/app/router/routes.dart';
 import 'package:pharma_erp/modules/auth/domain/entities/auth_session.dart';
 import 'package:pharma_erp/modules/auth/domain/entities/auth_user.dart';
 import 'package:pharma_erp/modules/auth/domain/entities/branch_access.dart';
 import 'package:pharma_erp/modules/auth/domain/entities/tenant_access.dart';
+
+import 'helpers/test_providers.dart';
 
 AuthSessionState _authenticatedState() {
   const tenant = TenantAccess(
@@ -37,22 +40,19 @@ AuthSessionState _authenticatedState() {
 
 void main() {
   testWidgets('Login mostra formulário', (WidgetTester tester) async {
-    await tester.pumpWidget(
-      const ProviderScope(
-        child: PharmaErpApp(),
-      ),
-    );
+    await tester.pumpWidget(testLoginApp());
     await tester.pumpAndSettle();
 
     expect(find.textContaining('Pharma ERP'), findsWidgets);
     expect(find.text('Entrar'), findsOneWidget);
-    expect(find.text('Email'), findsOneWidget);
+    expect(find.text('E-mail'), findsOneWidget);
   });
 
   testWidgets('Navegação para inventário com sessão mock', (WidgetTester tester) async {
     final container = ProviderContainer(
       overrides: [
         authSessionProvider.overrideWith(_MockAuthSessionNotifier.new),
+        connectionNotifierProvider.overrideWith(IdleConnectionNotifier.new),
       ],
     );
     addTearDown(container.dispose);

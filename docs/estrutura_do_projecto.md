@@ -141,6 +141,18 @@ Integrações nativas ou por plugin: impressão térmica (incluindo descoberta e
 
 Layouts (app, auth, dashboard, POS, tablet), widgets por categoria (botões, formulários, tabelas, etc.), responsividade (`breakpoints`, `responsive_builder`), navegação partilhada e animações.
 
+### Feedback do utilizador (`PharmaFeedback`)
+
+Notificações e diálogos centralizados em `lib/shared/widgets/feedback/`. Os módulos devem usar **apenas `PharmaFeedback`** — nunca importar QuickAlert directamente.
+
+| Método | Canal | Quando usar |
+|--------|-------|-------------|
+| `success`, `error`, `info`, `warning` | SnackBar | Feedback rápido, não bloqueante |
+| `confirm`, `criticalError`, `alertWarning`, `loading` | QuickAlert (interno) | Confirmações e erros críticos |
+| `showForm`, `confirmComplex` | Dialog Material | Formulários e confirmações com conteúdo rico |
+
+Guia completo: [docs/pharma_feedback.md](pharma_feedback.md).
+
 ---
 
 ## Pastas auxiliares em `lib/`
@@ -445,6 +457,12 @@ lib
         ├── cards
         ├── dialogs
         ├── dropdowns
+        ├── feedback
+        │   ├── pharma_feedback.dart
+        │   └── internal
+        │       ├── material_dialog_channel.dart
+        │       ├── quick_alert_channel.dart
+        │       └── snackbar_channel.dart
         ├── forms
         ├── inputs
         ├── loaders
@@ -461,8 +479,9 @@ lib
 1. **Nova funcionalidade de negócio:** criar ou usar um pacote sob `lib/modules/<domínio>/`, respeitando data / domain / presentation.
 2. **Novo endpoint ou regra HTTP:** `core/network` + contratos em `core/contracts`; interceptors se for transversal.
 3. **Novo ecrã reutilizável:** `lib/shared/widgets` ou `layouts`.
-4. **Hardware ou SO:** `lib/platform/<capacidade>/`.
-5. **Estado global da app:** preferir `lib/app/providers/` e ligar no widget raiz em `app.dart`.
+4. **Feedback ao utilizador:** `PharmaFeedback` em `lib/shared/widgets/feedback/` — ver [pharma_feedback.md](pharma_feedback.md).
+5. **Hardware ou SO:** `lib/platform/<capacidade>/`.
+6. **Estado global da app:** preferir `lib/app/providers/` e ligar no widget raiz em `app.dart`.
 
 ---
 
@@ -470,6 +489,7 @@ lib
 
 - [README principal](../README.md) — como correr o projecto e links rápidos.
 - [Project structure (English)](project_structure.md) — mesmo guia em inglês, com a mesma árvore de `lib/`.
+- [Feedback do utilizador — PharmaFeedback](pharma_feedback.md) — SnackBar, QuickAlert, Dialog Material.
 
 ---
 

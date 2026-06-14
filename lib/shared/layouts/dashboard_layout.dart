@@ -67,7 +67,8 @@ class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
             _Sidebar(
               location: location,
               expanded: _sidebarExpanded,
-              onToggle: () => setState(() => _sidebarExpanded = !_sidebarExpanded),
+              onToggle: () =>
+                  setState(() => _sidebarExpanded = !_sidebarExpanded),
               onLogout: () => _logout(context),
             ),
           Expanded(
@@ -81,10 +82,7 @@ class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
                   onOpenDrawer: () => _shellKey.currentState?.openDrawer(),
                 ),
                 Expanded(
-                  child: Container(
-                    color: t.bgPrimary,
-                    child: body,
-                  ),
+                  child: Container(color: t.bgPrimary, child: body),
                 ),
               ],
             ),
@@ -126,19 +124,31 @@ class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
                 destinations: [
                   NavigationDestination(
                     tooltip: 'Painel',
-                    icon: Icon(Icons.dashboard_outlined, color: t.textSecondary),
+                    icon: Icon(
+                      Icons.dashboard_outlined,
+                      color: t.textSecondary,
+                    ),
                     selectedIcon: Icon(Icons.dashboard, color: t.brandGreen),
                     label: '',
                   ),
                   NavigationDestination(
                     tooltip: 'PDV',
-                    icon: Icon(Icons.point_of_sale_outlined, color: t.textSecondary),
-                    selectedIcon: Icon(Icons.point_of_sale, color: t.brandGreen),
+                    icon: Icon(
+                      Icons.point_of_sale_outlined,
+                      color: t.textSecondary,
+                    ),
+                    selectedIcon: Icon(
+                      Icons.point_of_sale,
+                      color: t.brandGreen,
+                    ),
                     label: '',
                   ),
                   NavigationDestination(
                     tooltip: 'Stock',
-                    icon: Icon(Icons.inventory_2_outlined, color: t.textSecondary),
+                    icon: Icon(
+                      Icons.inventory_2_outlined,
+                      color: t.textSecondary,
+                    ),
                     selectedIcon: Icon(Icons.inventory_2, color: t.brandGreen),
                     label: '',
                   ),
@@ -151,7 +161,10 @@ class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
                   NavigationDestination(
                     tooltip: 'Menu',
                     icon: Icon(Icons.menu_rounded, color: t.textSecondary),
-                    selectedIcon: Icon(Icons.menu_open_rounded, color: t.brandGreen),
+                    selectedIcon: Icon(
+                      Icons.menu_open_rounded,
+                      color: t.brandGreen,
+                    ),
                     label: '',
                   ),
                 ],
@@ -162,10 +175,13 @@ class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
   }
 
   int _bottomNavIndex(String path) {
-    if (path == AppRoutePaths.dashboard || path.startsWith('/dashboard')) return 0;
+    if (path == AppRoutePaths.dashboard || path.startsWith('/dashboard'))
+      return 0;
     if (path == AppRoutePaths.pos) return 1;
-    if (path == AppRoutePaths.inventory || path.startsWith('/pharmacy')) return 2;
-    if (path == AppRoutePaths.financial || path.startsWith('/finance')) return 3;
+    if (path == AppRoutePaths.inventory || path.startsWith('/pharmacy'))
+      return 2;
+    if (path == AppRoutePaths.financial || path.startsWith('/finance'))
+      return 3;
     return 4;
   }
 
@@ -193,38 +209,49 @@ class _EnterpriseTopBar extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.pharmaTokens;
+    final s = context.spacing;
+    final theme = Theme.of(context);
     final mode = ref.watch(appThemeModeProvider);
     final section = AppRouteTitles.sectionFor(location);
     final title = AppRouteTitles.titleFor(location);
     final compactSync = isMobile || MediaQuery.sizeOf(context).width < 520;
+    final pagePadding = PharmaScreenLayout.pagePadding(context);
+    final horizontalPadding = EdgeInsets.only(
+      left: pagePadding.left,
+      right: pagePadding.right,
+    );
+    final actionSpacing = compactSync ? s.sm : s.md;
 
     return Material(
-      color: t.bgPrimary.withValues(alpha: 0.94),
+      color: t.bgPrimary,
+      elevation: 0,
+      shadowColor: Colors.transparent,
+      surfaceTintColor: Colors.transparent,
       child: Container(
-        height: isDesktop ? AppDimensions.topBarDesktop : AppDimensions.topBarCompact,
-        padding: EdgeInsets.symmetric(horizontal: isDesktop ? AppSpacing.xxxl : (isMobile ? AppSpacing.sm : AppSpacing.md)),
-        decoration: BoxDecoration(
-          border: Border(bottom: BorderSide(color: t.border.withValues(alpha: 0.55))),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isMobile ? 0.12 : 0.25),
-              blurRadius: isMobile ? 8 : 18,
-              offset: Offset(0, isMobile ? 2 : 6),
-            ),
-          ],
-        ),
+        height: isDesktop
+            ? AppDimensions.topBarDesktop
+            : AppDimensions.topBarCompact,
+        padding: horizontalPadding,
         child: Row(
           children: [
-            if (!isDesktop)
+            if (!isDesktop) ...[
               IconButton(
-                constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                constraints: BoxConstraints(
+                  minWidth: t.minTouchTarget,
+                  minHeight: t.minTouchTarget,
+                ),
                 padding: EdgeInsets.zero,
                 tooltip: 'Menu',
-                icon: Icon(Icons.menu_rounded, color: t.textSecondary, size: isMobile ? 22 : 24),
+                icon: Icon(
+                  Icons.menu_rounded,
+                  color: t.textSecondary,
+                  size: t.iconMd,
+                ),
                 onPressed: onOpenDrawer,
               ),
+              SizedBox(width: s.md),
+            ],
             Expanded(
-              flex: isDesktop ? 2 : 1,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -238,22 +265,20 @@ class _EnterpriseTopBar extends ConsumerWidget {
                           section.toUpperCase(),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                color: t.brandBlue,
-                                letterSpacing: 1.2,
-                                fontSize: 9,
-                                fontWeight: FontWeight.w800,
-                              ),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: t.brandBlue,
+                            letterSpacing: 1.2,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                         Text(
                           title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                color: t.textPrimary,
-                                fontWeight: FontWeight.w800,
-                                fontSize: 14,
-                              ),
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            color: t.textPrimary,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ],
                     )
@@ -262,36 +287,44 @@ class _EnterpriseTopBar extends ConsumerWidget {
                       children: [
                         Text(
                           'Pharma ERP',
-                          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                color: t.textMuted,
-                                letterSpacing: 2,
-                              ),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: t.textMuted,
+                            letterSpacing: 2,
+                          ),
                         ),
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-                          child: Icon(Icons.chevron_right_rounded, size: 16, color: t.border),
+                          padding: EdgeInsets.symmetric(horizontal: s.sm),
+                          child: Icon(
+                            Icons.chevron_right_rounded,
+                            size: t.iconSm,
+                            color: t.border,
+                          ),
                         ),
                         Flexible(
                           child: Text(
                             section.toUpperCase(),
-                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                                  color: t.brandBlue,
-                                  letterSpacing: 1.6,
-                                ),
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: t.brandBlue,
+                              letterSpacing: 1.6,
+                            ),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
-                          child: Icon(Icons.chevron_right_rounded, size: 16, color: t.border),
+                          padding: EdgeInsets.symmetric(horizontal: s.sm),
+                          child: Icon(
+                            Icons.chevron_right_rounded,
+                            size: t.iconSm,
+                            color: t.border,
+                          ),
                         ),
                         Flexible(
                           child: Text(
                             title,
-                            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                  color: t.textPrimary,
-                                  fontWeight: FontWeight.w700,
-                                ),
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              color: t.textPrimary,
+                              fontWeight: FontWeight.w700,
+                            ),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -300,91 +333,104 @@ class _EnterpriseTopBar extends ConsumerWidget {
                 ],
               ),
             ),
-            if (isDesktop)
-              SizedBox(
-                width: 300,
-                child: TextField(
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: t.textPrimary,
-                      ),
-                  decoration: InputDecoration(
-                    hintText: 'Pesquisa global (Ctrl+K)',
-                    prefixIcon: Icon(Icons.search_rounded, size: 20, color: t.textMuted),
-                    isDense: true,
-                    contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.md, horizontal: AppSpacing.md),
-                  ),
-                ),
-              ),
+            SizedBox(width: isMobile ? s.sm : s.lg),
             Flexible(
               fit: FlexFit.loose,
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                reverse: false,
-                padding: EdgeInsets.zero,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (isDesktop) const SizedBox(width: AppSpacing.md),
-                    if (!isDesktop) const SizedBox(width: AppSpacing.xs),
-                    IconButton(
-                      constraints: BoxConstraints(
-                        minWidth: t.minTouchTarget,
-                        minHeight: t.minTouchTarget,
-                      ),
-                      padding: EdgeInsets.zero,
-                      tooltip: 'Notificações',
-                      onPressed: () {},
-                      icon: Badge(
-                        label: const Text('3', style: TextStyle(fontSize: 9)),
-                        child: Icon(Icons.notifications_none_rounded, color: t.textSecondary, size: t.iconMd),
-                      ),
-                    ),
-                    IconButton(
-                      constraints: BoxConstraints(
-                        minWidth: t.minTouchTarget,
-                        minHeight: t.minTouchTarget,
-                      ),
-                      padding: EdgeInsets.zero,
-                      tooltip: mode == ThemeMode.dark ? 'Tema claro' : 'Tema escuro',
-                      onPressed: () {
-                        ref.read(appThemeModeProvider.notifier).toggle();
-                      },
-                      icon: Icon(
-                        mode == ThemeMode.dark ? Icons.light_mode_outlined : Icons.dark_mode_outlined,
-                        color: t.textSecondary,
-                        size: t.iconMd,
-                      ),
-                    ),
-                    PopupMenuButton<String>(
-                      padding: EdgeInsets.zero,
-                      constraints: BoxConstraints(
-                        minWidth: t.minTouchTarget,
-                        minHeight: t.minTouchTarget,
-                      ),
-                      tooltip: 'Conta',
-                      child: CircleAvatar(
-                        radius: isMobile ? 15 : 18,
-                        backgroundColor: t.brandGreen.withValues(alpha: 0.2),
-                        child: Text(
-                          'OP',
-                          style: TextStyle(fontSize: isMobile ? 9 : 11, fontWeight: FontWeight.w900, color: t.brandGreen),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: EdgeInsets.zero,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      SyncStatusStrip(compact: compactSync),
+                      SizedBox(width: actionSpacing),
+                      IconButton(
+                        constraints: BoxConstraints(
+                          minWidth: t.minTouchTarget,
+                          minHeight: t.minTouchTarget,
+                        ),
+                        padding: EdgeInsets.zero,
+                        tooltip: 'Alertas',
+                        onPressed: () {},
+                        icon: Badge(
+                          label: Text(
+                            '3',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          child: Icon(
+                            Icons.notifications_none_rounded,
+                            color: t.textSecondary,
+                            size: t.iconMd,
+                          ),
                         ),
                       ),
-                      onSelected: (v) {
-                        if (v == 'logout') onLogout();
-                        if (v == 'settings') context.go(AppRoutePaths.settings);
-                      },
-                      itemBuilder: (context) => [
-                        const PopupMenuItem(value: 'profile', child: Text('Perfil')),
-                        const PopupMenuItem(value: 'settings', child: Text('Configurações')),
-                        const PopupMenuDivider(),
-                        const PopupMenuItem(value: 'logout', child: Text('Sair')),
-                      ],
-                    ),
-                    const SizedBox(width: AppSpacing.xs),
-                    SyncStatusStrip(compact: compactSync),
-                  ],
+                      SizedBox(width: actionSpacing),
+                      IconButton(
+                        constraints: BoxConstraints(
+                          minWidth: t.minTouchTarget,
+                          minHeight: t.minTouchTarget,
+                        ),
+                        padding: EdgeInsets.zero,
+                        tooltip: mode == ThemeMode.dark
+                            ? 'Tema claro'
+                            : 'Tema escuro',
+                        onPressed: () {
+                          ref.read(appThemeModeProvider.notifier).toggle();
+                        },
+                        icon: Icon(
+                          mode == ThemeMode.dark
+                              ? Icons.light_mode_outlined
+                              : Icons.dark_mode_outlined,
+                          color: t.textSecondary,
+                          size: t.iconMd,
+                        ),
+                      ),
+                      SizedBox(width: actionSpacing),
+                      PopupMenuButton<String>(
+                        padding: EdgeInsets.zero,
+                        constraints: BoxConstraints(
+                          minWidth: t.minTouchTarget,
+                          minHeight: t.minTouchTarget,
+                        ),
+                        tooltip: 'Conta',
+                        child: CircleAvatar(
+                          radius: t.avatarMd / 2,
+                          backgroundColor: t.brandGreen.withValues(alpha: 0.2),
+                          child: Text(
+                            'OP',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: t.brandGreen,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                        onSelected: (v) {
+                          if (v == 'logout') onLogout();
+                          if (v == 'settings')
+                            context.go(AppRoutePaths.settings);
+                        },
+                        itemBuilder: (context) => [
+                          const PopupMenuItem(
+                            value: 'profile',
+                            child: Text('Perfil'),
+                          ),
+                          const PopupMenuItem(
+                            value: 'settings',
+                            child: Text('Configurações'),
+                          ),
+                          const PopupMenuDivider(),
+                          const PopupMenuItem(
+                            value: 'logout',
+                            child: Text('Sair'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -411,7 +457,9 @@ class _Sidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
-    final w = expanded ? AppDimensions.sidebarExpanded : AppDimensions.sidebarCollapsed;
+    final w = expanded
+        ? AppDimensions.sidebarExpanded
+        : AppDimensions.sidebarCollapsed;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 280),
       curve: Curves.easeOutCubic,
@@ -426,7 +474,9 @@ class _Sidebar extends StatelessWidget {
               children: [
                 if (expanded)
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.lg,
+                    ),
                     child: Row(
                       children: [
                         Container(
@@ -439,10 +489,17 @@ class _Sidebar extends StatelessWidget {
                             ),
                             borderRadius: BorderRadius.circular(t.radiusMd),
                             boxShadow: [
-                              BoxShadow(color: t.brandBlue.withValues(alpha: 0.35), blurRadius: 14),
+                              BoxShadow(
+                                color: t.brandBlue.withValues(alpha: 0.35),
+                                blurRadius: 14,
+                              ),
                             ],
                           ),
-                          child: Icon(Icons.local_pharmacy_rounded, color: t.bgPrimary, size: 22),
+                          child: Icon(
+                            Icons.local_pharmacy_rounded,
+                            color: t.bgPrimary,
+                            size: 22,
+                          ),
                         ),
                         const SizedBox(width: AppSpacing.md),
                         Expanded(
@@ -453,7 +510,8 @@ class _Sidebar extends StatelessWidget {
                             children: [
                               Text(
                                 'Pharma ERP',
-                                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                style: Theme.of(context).textTheme.titleSmall
+                                    ?.copyWith(
                                       color: t.textPrimary,
                                       fontWeight: FontWeight.w800,
                                     ),
@@ -462,7 +520,8 @@ class _Sidebar extends StatelessWidget {
                               ),
                               Text(
                                 'Offline-first • Multi-tenant',
-                                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                                style: Theme.of(context).textTheme.labelSmall
+                                    ?.copyWith(
                                       color: t.textMuted,
                                       letterSpacing: 0.6,
                                     ),
@@ -481,10 +540,16 @@ class _Sidebar extends StatelessWidget {
                     height: t.minTouchTarget,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: [t.brandBlue, t.brandGreen]),
+                      gradient: LinearGradient(
+                        colors: [t.brandBlue, t.brandGreen],
+                      ),
                       borderRadius: BorderRadius.circular(t.radiusMd),
                     ),
-                    child: Icon(Icons.local_pharmacy_rounded, color: t.bgPrimary, size: t.iconMd),
+                    child: Icon(
+                      Icons.local_pharmacy_rounded,
+                      color: t.bgPrimary,
+                      size: t.iconMd,
+                    ),
                   ),
                 Positioned(
                   right: -6,
@@ -495,7 +560,9 @@ class _Sidebar extends StatelessWidget {
                     ),
                     onPressed: onToggle,
                     icon: Icon(
-                      expanded ? Icons.chevron_left_rounded : Icons.chevron_right_rounded,
+                      expanded
+                          ? Icons.chevron_left_rounded
+                          : Icons.chevron_right_rounded,
                       size: 18,
                       color: t.textMuted,
                     ),
@@ -505,7 +572,9 @@ class _Sidebar extends StatelessWidget {
             ),
           ),
           Divider(height: 1, color: t.border.withValues(alpha: 0.45)),
-          Expanded(child: _NavList(location: location, expanded: expanded)),
+          Expanded(
+            child: _NavList(location: location, expanded: expanded),
+          ),
           Divider(height: 1, color: t.border.withValues(alpha: 0.45)),
           Padding(
             padding: EdgeInsets.symmetric(
@@ -515,13 +584,21 @@ class _Sidebar extends StatelessWidget {
             child: expanded
                 ? OutlinedButton.icon(
                     onPressed: onLogout,
-                    icon: Icon(Icons.logout_rounded, size: 18, color: t.posDanger),
+                    icon: Icon(
+                      Icons.logout_rounded,
+                      size: 18,
+                      color: t.posDanger,
+                    ),
                     label: Text(
                       'Encerrar sessão',
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(color: t.posDanger),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.labelSmall?.copyWith(color: t.posDanger),
                     ),
                     style: OutlinedButton.styleFrom(
-                      side: BorderSide(color: t.posDanger.withValues(alpha: 0.35)),
+                      side: BorderSide(
+                        color: t.posDanger.withValues(alpha: 0.35),
+                      ),
                       backgroundColor: t.posDanger.withValues(alpha: 0.06),
                     ),
                   )
@@ -530,10 +607,16 @@ class _Sidebar extends StatelessWidget {
                     child: OutlinedButton(
                       onPressed: onLogout,
                       style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: t.posDanger.withValues(alpha: 0.35)),
+                        side: BorderSide(
+                          color: t.posDanger.withValues(alpha: 0.35),
+                        ),
                         backgroundColor: t.posDanger.withValues(alpha: 0.06),
                       ),
-                      child: Icon(Icons.logout_rounded, size: 18, color: t.posDanger),
+                      child: Icon(
+                        Icons.logout_rounded,
+                        size: 18,
+                        color: t.posDanger,
+                      ),
                     ),
                   ),
           ),
@@ -559,16 +642,21 @@ class _NavList extends StatelessWidget {
         lastSection = item.section;
         children.add(
           Padding(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xl, AppSpacing.lg, AppSpacing.sm),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.xl,
+              AppSpacing.lg,
+              AppSpacing.sm,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   item.section!.toUpperCase(),
                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: t.textMuted,
-                        letterSpacing: 2.4,
-                      ),
+                    color: t.textMuted,
+                    letterSpacing: 2.4,
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Container(
@@ -587,15 +675,23 @@ class _NavList extends StatelessWidget {
       final active = location == item.path;
       children.add(
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: 2,
+          ),
           child: Material(
-            color: active ? t.brandGreen.withValues(alpha: 0.1) : Colors.transparent,
+            color: active
+                ? t.brandGreen.withValues(alpha: 0.1)
+                : Colors.transparent,
             borderRadius: BorderRadius.circular(t.radiusMd),
             child: InkWell(
               borderRadius: BorderRadius.circular(t.radiusMd),
               onTap: () => context.go(item.path),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.md,
+                ),
                 child: Row(
                   children: [
                     if (active)
@@ -608,13 +704,18 @@ class _NavList extends StatelessWidget {
                           borderRadius: BorderRadius.circular(4),
                         ),
                       ),
-                    Icon(item.icon, size: 22, color: active ? t.brandGreen : t.textSecondary),
+                    Icon(
+                      item.icon,
+                      size: 22,
+                      color: active ? t.brandGreen : t.textSecondary,
+                    ),
                     if (expanded) ...[
                       const SizedBox(width: AppSpacing.md),
                       Expanded(
                         child: Text(
                           item.label,
-                          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          style: Theme.of(context).textTheme.labelMedium
+                              ?.copyWith(
                                 color: active ? t.brandGreen : t.textSecondary,
                                 letterSpacing: 0.4,
                               ),
@@ -663,19 +764,30 @@ class _DrawerNav extends StatelessWidget {
                     width: t.minTouchTarget,
                     height: t.minTouchTarget,
                     decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: [t.brandBlue, t.brandGreen]),
+                      gradient: LinearGradient(
+                        colors: [t.brandBlue, t.brandGreen],
+                      ),
                       borderRadius: BorderRadius.circular(t.radiusMd),
                     ),
-                    child: Icon(Icons.local_pharmacy_rounded, color: t.bgPrimary, size: t.iconMd),
+                    child: Icon(
+                      Icons.local_pharmacy_rounded,
+                      color: t.bgPrimary,
+                      size: t.iconMd,
+                    ),
                   ),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Text(
                       'Pharma ERP',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
                   ),
-                  IconButton(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close)),
+                  IconButton(
+                    onPressed: () => Navigator.pop(context),
+                    icon: const Icon(Icons.close),
+                  ),
                 ],
               ),
             ),
@@ -684,14 +796,23 @@ class _DrawerNav extends StatelessWidget {
                 children: [
                   for (final item in kAppNavItems)
                     Material(
-                      color: location == item.path ? t.brandGreen.withValues(alpha: 0.1) : Colors.transparent,
+                      color: location == item.path
+                          ? t.brandGreen.withValues(alpha: 0.1)
+                          : Colors.transparent,
                       child: ListTile(
-                        leading: Icon(item.icon, color: location == item.path ? t.brandGreen : t.textSecondary),
+                        leading: Icon(
+                          item.icon,
+                          color: location == item.path
+                              ? t.brandGreen
+                              : t.textSecondary,
+                        ),
                         title: Text(
                           item.label,
                           style: TextStyle(
                             fontWeight: FontWeight.w600,
-                            color: location == item.path ? t.brandGreen : t.textPrimary,
+                            color: location == item.path
+                                ? t.brandGreen
+                                : t.textPrimary,
                           ),
                         ),
                         selected: location == item.path,
@@ -705,7 +826,13 @@ class _DrawerNav extends StatelessWidget {
               color: Colors.transparent,
               child: ListTile(
                 leading: Icon(Icons.logout_rounded, color: t.posDanger),
-                title: Text('Sair', style: TextStyle(color: t.posDanger, fontWeight: FontWeight.w700)),
+                title: Text(
+                  'Sair',
+                  style: TextStyle(
+                    color: t.posDanger,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
                 onTap: onLogout,
               ),
             ),
