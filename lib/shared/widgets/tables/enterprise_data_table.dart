@@ -55,6 +55,7 @@ class EnterpriseDataTable extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, c) {
         final useCards = adaptive && PharmaScreenLayout.isMobile(context);
+        final boundedHeight = c.hasBoundedHeight && c.maxHeight.isFinite;
 
         if (useCards) {
           final boundedHeight = c.hasBoundedHeight && c.maxHeight.isFinite;
@@ -136,18 +137,40 @@ class EnterpriseDataTable extends StatelessWidget {
             clipBehavior: Clip.antiAlias,
             child: Scrollbar(
               thumbVisibility: c.maxWidth < Breakpoints.tablet,
+              notificationPredicate: (notification) =>
+                  notification.metrics.axis == Axis.horizontal,
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: ConstrainedBox(
                   constraints: BoxConstraints(minWidth: c.maxWidth),
-                  child: DataTable(
-                    headingRowColor: WidgetStatePropertyAll(t.bgSecondary.withValues(alpha: 0.92)),
-                    dataRowMinHeight: PharmaScreenLayout.isTablet(context) ? 44 : 40,
-                    dataRowMaxHeight: 72,
-                    horizontalMargin: PharmaScreenLayout.isDesktop(context) ? AppSpacing.lg : AppSpacing.md,
-                    columnSpacing: PharmaScreenLayout.isDesktop(context) ? AppSpacing.xxl : AppSpacing.lg,
-                    columns: columns,
-                    rows: List.generate(rowCount, (i) => rowBuilder(context, i)),
+                  child: Scrollbar(
+                    thumbVisibility: boundedHeight,
+                    notificationPredicate: (notification) =>
+                        notification.metrics.axis == Axis.vertical,
+                    child: SingleChildScrollView(
+                      physics: boundedHeight
+                          ? const ClampingScrollPhysics()
+                          : const NeverScrollableScrollPhysics(),
+                      child: DataTable(
+                        headingRowColor: WidgetStatePropertyAll(
+                          t.bgSecondary.withValues(alpha: 0.92),
+                        ),
+                        dataRowMinHeight:
+                            PharmaScreenLayout.isTablet(context) ? 44 : 40,
+                        dataRowMaxHeight: 72,
+                        horizontalMargin: PharmaScreenLayout.isDesktop(context)
+                            ? AppSpacing.lg
+                            : AppSpacing.md,
+                        columnSpacing: PharmaScreenLayout.isDesktop(context)
+                            ? AppSpacing.xxl
+                            : AppSpacing.lg,
+                        columns: columns,
+                        rows: List.generate(
+                          rowCount,
+                          (i) => rowBuilder(context, i),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),

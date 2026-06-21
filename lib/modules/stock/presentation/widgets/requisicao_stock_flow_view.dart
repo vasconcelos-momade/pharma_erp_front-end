@@ -160,6 +160,7 @@ class _RequisicaoStockFlowViewState
     super.initState();
     Future.microtask(() {
       ref.read(requisicaoProvider.notifier).initializeScope(widget.tipo);
+      ref.read(requisicaoProductListProvider.notifier).ensureLoaded(force: true);
     });
   }
 
@@ -168,6 +169,7 @@ class _RequisicaoStockFlowViewState
     super.didUpdateWidget(oldWidget);
     if (oldWidget.tipo != widget.tipo) {
       ref.read(requisicaoProvider.notifier).initializeScope(widget.tipo);
+      ref.read(requisicaoProductListProvider.notifier).ensureLoaded(force: true);
     }
   }
 
@@ -338,8 +340,9 @@ class _RequisicaoStockFlowViewState
   }
 
   Future<void> _showMobileStockFlowPane() {
-    return Navigator.of(context).push<void>(
+    return Navigator.of(context, rootNavigator: true).push<void>(
       MaterialPageRoute(
+        fullscreenDialog: true,
         builder: (_) => _MobileStockFlowPaneScreen(
           onApprove: _approveRequisition,
           onReject: _rejectRequisition,
@@ -429,11 +432,10 @@ class _RequisicaoStockFlowViewState
           productState.isInitialized;
       final showSummary = activeRequisicao != null;
       final paginationHeight = showPagination ? (t.minTouchTarget + s.lg) : 0.0;
-      final summaryHeight = showSummary ? 88.0 : 0.0;
+      final summaryHeight = showSummary ? 84.0 : 0.0;
       final footerGap = showPagination && showSummary ? s.sm : 0.0;
       final bottomOverlayHeight = paginationHeight + summaryHeight + footerGap;
-      final contentBottomPadding =
-          bottomOverlayHeight + (showSummary ? t.minTouchTarget : 0) + s.xl;
+      final contentBottomPadding = bottomOverlayHeight + s.md;
 
       return Stack(
         children: [
@@ -457,7 +459,8 @@ class _RequisicaoStockFlowViewState
                       Padding(
                         padding: EdgeInsets.fromLTRB(s.xs, 0, s.xs, 0),
                         child: _MobileStockFlowSummaryBar(
-                          requisicao: activeRequisicao!,
+                          requisicao: activeRequisicao,
+                          onOpen: _showMobileStockFlowPane,
                         ),
                       ),
                     if (showSummary && showPagination) SizedBox(height: s.sm),
@@ -487,21 +490,6 @@ class _RequisicaoStockFlowViewState
                 ),
               ),
             ),
-          if (showSummary)
-            Positioned(
-              right: s.xs,
-              bottom: bottomOverlayHeight + s.md,
-              child: SafeArea(
-                top: false,
-                minimum: EdgeInsets.only(bottom: s.xs),
-                child: FloatingActionButton.extended(
-                  heroTag: 'open-stock-flow-fab-${widget.tipo.name}',
-                  onPressed: _showMobileStockFlowPane,
-                  icon: const Icon(Icons.receipt_long_rounded),
-                  label: const Text('Ver requisição'),
-                ),
-              ),
-            ),
         ],
       );
     }
@@ -521,9 +509,13 @@ class _RequisicaoStockFlowViewState
 }
 
 class _MobileStockFlowSummaryBar extends StatelessWidget {
-  const _MobileStockFlowSummaryBar({required this.requisicao});
+  const _MobileStockFlowSummaryBar({
+    required this.requisicao,
+    required this.onOpen,
+  });
 
   final RequisicaoDetalhe requisicao;
+  final VoidCallback onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -534,25 +526,39 @@ class _MobileStockFlowSummaryBar extends StatelessWidget {
       color: t.card,
       borderRadius: BorderRadius.circular(t.radiusXl),
       elevation: 2,
-      child: Padding(
-        padding: EdgeInsets.all(s.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              '${requisicao.totalItens} item${requisicao.totalItens == 1 ? '' : 's'}',
-              style: TextStyle(
-                color: t.textPrimary,
-                fontWeight: FontWeight.w800,
+      child: InkWell(
+        onTap: onOpen,
+        borderRadius: BorderRadius.circular(t.radiusXl),
+        child: Padding(
+          padding: EdgeInsets.all(s.md),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      '${requisicao.totalItens} item${requisicao.totalItens == 1 ? '' : 's'}',
+                      style: TextStyle(
+                        color: t.textPrimary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    SizedBox(height: s.xxs),
+                    Text(
+                      'Quantidade: ${stockFlowFormatQuantity(requisicao.quantidadeTotal)}',
+                      style: TextStyle(color: t.textMuted),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            SizedBox(height: s.xxs),
-            Text(
-              'Quantidade: ${stockFlowFormatQuantity(requisicao.quantidadeTotal)}',
-              style: TextStyle(color: t.textMuted),
-            ),
-          ],
+              FilledButton(
+                onPressed: onOpen,
+                child: const Text('Ver detalhes'),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -579,7 +585,6 @@ class _MobileStockFlowPaneScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.pharmaTokens;
-    final s = context.spacing;
     final requisicaoState = ref.watch(requisicaoProvider);
 
     return Scaffold(
@@ -589,10 +594,10 @@ class _MobileStockFlowPaneScreen extends ConsumerWidget {
         title: const Text('Requisição Atual'),
       ),
       body: SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(s.md),
+        child: SizedBox.expand(
           child: _RightPane(
             state: requisicaoState,
+            fullscreen: true,
             onApprove: onApprove,
             onReject: onReject,
             onCancel: onCancel,
@@ -783,6 +788,7 @@ class _RightPane extends StatelessWidget {
     required this.onEditHeader,
     required this.onEditItem,
     required this.onRemoveItem,
+    this.fullscreen = false,
   });
 
   final RequisicaoState state;
@@ -792,6 +798,7 @@ class _RightPane extends StatelessWidget {
   final Future<void> Function() onEditHeader;
   final ValueChanged<RequisicaoItem> onEditItem;
   final ValueChanged<RequisicaoItem> onRemoveItem;
+  final bool fullscreen;
 
   @override
   Widget build(BuildContext context) {
@@ -800,46 +807,133 @@ class _RightPane extends StatelessWidget {
     final requisicao = state.activeRequisicao;
     final isItemsEditable =
         state.canEditActiveRequisicao && !state.isAddingItem;
+    final isBusy =
+        state.isLoadingActiveRequisicao ||
+        state.isAddingItem ||
+        state.isUpdatingRequisicao ||
+        state.isApprovingRequisicao ||
+        state.isRejectingRequisicao ||
+        state.isCancellingRequisicao;
+
+    final title = Row(
+      children: [
+        Expanded(
+          child: Text(
+            requisicao == null
+                ? 'Nova Requisição'
+                : 'Requisição #${requisicao.id}',
+            style: TextStyle(
+              color: t.textPrimary,
+              fontWeight: FontWeight.w900,
+              fontSize: 20,
+            ),
+          ),
+        ),
+        if (isBusy) const PharmaButtonLoader(),
+      ],
+    );
+
+    final footer = _StockFlowActionFooter(
+      state: state,
+      onApprove: onApprove,
+      onReject: onReject,
+      onCancel: onCancel,
+    );
+
+    final decoration = BoxDecoration(
+      color: t.card,
+      borderRadius: fullscreen ? null : BorderRadius.circular(t.radiusXl),
+      boxShadow: fullscreen
+          ? null
+          : [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+    );
+
+    if (fullscreen) {
+      return DecoratedBox(
+        decoration: decoration,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(s.lg, s.lg, s.lg, s.md),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    title,
+                    SizedBox(height: s.lg),
+                    if (requisicao == null)
+                      const _EmptyPane(
+                        icon: Icons.assignment_outlined,
+                        title: 'Nenhuma requisição seleccionada',
+                        subtitle:
+                            'Seleccione uma requisição pendente ou do histórico.',
+                      )
+                    else ...[
+                      _ActiveStockFlowHeader(
+                        requisicao: requisicao,
+                        canEdit:
+                            state.canEditActiveRequisicao &&
+                            !state.isUpdatingRequisicao,
+                        onEdit: onEditHeader,
+                      ),
+                      if ((requisicao.observacao ?? '').trim().isNotEmpty) ...[
+                        SizedBox(height: s.sm),
+                        Text(
+                          requisicao.observacao!,
+                          style: TextStyle(color: t.textMuted),
+                        ),
+                      ],
+                      if (requisicao.user != null) ...[
+                        SizedBox(height: s.xs),
+                        Text(
+                          'Criada por ${requisicao.user!.nome}',
+                          style: TextStyle(color: t.textMuted),
+                        ),
+                      ],
+                      SizedBox(height: s.md),
+                      if (requisicao.itens.isEmpty)
+                        const _EmptyPane(
+                          icon: Icons.playlist_add_outlined,
+                          title: 'Carrinho vazio',
+                          subtitle:
+                              'Selecione produtos na lista principal. Adicione itens para aprovar.',
+                        )
+                      else
+                        _StockFlowItemsTable(
+                          items: requisicao.itens,
+                          isEditable: isItemsEditable,
+                          onEdit: onEditItem,
+                          onRemove: onRemoveItem,
+                          nested: true,
+                        ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(s.lg, 0, s.lg, s.lg),
+              child: footer,
+            ),
+          ],
+        ),
+      );
+    }
 
     return Container(
       padding: EdgeInsets.all(s.lg),
-      decoration: BoxDecoration(
-        color: t.card,
-        borderRadius: BorderRadius.circular(t.radiusXl),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      decoration: decoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  requisicao == null
-                      ? 'Nova Requisição'
-                      : 'Requisição #${requisicao.id}',
-                  style: TextStyle(
-                    color: t.textPrimary,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 20,
-                  ),
-                ),
-              ),
-              if (state.isLoadingActiveRequisicao ||
-                  state.isAddingItem ||
-                  state.isUpdatingRequisicao ||
-                  state.isApprovingRequisicao ||
-                  state.isRejectingRequisicao ||
-                  state.isCancellingRequisicao)
-                const PharmaButtonLoader(),
-            ],
-          ),
+          title,
           SizedBox(height: s.lg),
           if (requisicao == null)
             const Expanded(
@@ -887,12 +981,7 @@ class _RightPane extends StatelessWidget {
             ),
           ],
           SizedBox(height: s.md),
-          _StockFlowActionFooter(
-            state: state,
-            onApprove: onApprove,
-            onReject: onReject,
-            onCancel: onCancel,
-          ),
+          footer,
         ],
       ),
     );
@@ -1099,12 +1188,14 @@ class _StockFlowItemsTable extends StatelessWidget {
     required this.isEditable,
     required this.onEdit,
     required this.onRemove,
+    this.nested = false,
   });
 
   final List<RequisicaoItem> items;
   final bool isEditable;
   final ValueChanged<RequisicaoItem> onEdit;
   final ValueChanged<RequisicaoItem> onRemove;
+  final bool nested;
 
   @override
   Widget build(BuildContext context) {
@@ -1118,6 +1209,7 @@ class _StockFlowItemsTable extends StatelessWidget {
             isEditable: isEditable,
             onEdit: onEdit,
             onRemove: onRemove,
+            nested: nested,
           );
         }
 
@@ -1307,18 +1399,25 @@ class _StockFlowItemsCardList extends StatelessWidget {
     required this.isEditable,
     required this.onEdit,
     required this.onRemove,
+    this.nested = false,
   });
 
   final List<RequisicaoItem> items;
   final bool isEditable;
   final ValueChanged<RequisicaoItem> onEdit;
   final ValueChanged<RequisicaoItem> onRemove;
+  final bool nested;
 
   @override
   Widget build(BuildContext context) {
     final s = context.spacing;
 
     return ListView.separated(
+      shrinkWrap: nested,
+      primary: !nested,
+      physics: nested
+          ? const NeverScrollableScrollPhysics()
+          : const AlwaysScrollableScrollPhysics(),
       itemCount: items.length,
       separatorBuilder: (_, _) => SizedBox(height: s.sm),
       itemBuilder: (context, index) {

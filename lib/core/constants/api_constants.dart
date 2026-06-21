@@ -8,6 +8,8 @@ abstract final class ApiConstants {
   static const tenantPosProdutosCatalogVersion =
       '/tenant/pos/produtos/catalog-version';
   static const tenantPosProdutosSearch = '/tenant/pos/produtos/search';
+  static const tenantRequisicoesProdutosSearch =
+      '/tenant/requisicoes/produtos/search';
   static const tenantPosServicosSearch = '/tenant/pos/servicos/search';
   static const tenantPosValidarDispensacao = '/tenant/pos/validar-dispensacao';
   static const tenantPosDraftSale = '/tenant/pos/sales/draft';
@@ -46,6 +48,7 @@ abstract final class ApiConstants {
       '/tenant/compras/$compraId/confirmar';
 
   static const tenantInventarios = '/tenant/inventarios';
+  static const tenantStockMovements = '/tenant/stock/movements';
   static String tenantInventarioDetalhe(String inventarioId) =>
       '/tenant/inventarios/$inventarioId';
   static String tenantInventarioItens(String inventarioId) =>

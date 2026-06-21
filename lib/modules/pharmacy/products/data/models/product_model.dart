@@ -51,17 +51,17 @@ class ProductModel {
       dosagem: json['dosagem'] as String?,
       forma: json['forma'] as String?,
       apresentacao: json['apresentacao'] as String?,
-      ativo: json['ativo'] as bool? ?? true,
+      ativo: _toBool(json['ativo'], defaultValue: true),
       barcode: json['barcode'] as String?,
       tipoDispensacao: json['tipoDispensacao'] as String? ?? 'VENDA_LIVRE',
-      requiresPrescription: json['requiresPrescription'] as bool? ?? false,
-      requiresDoubleCheck: json['requiresDoubleCheck'] as bool? ?? false,
-      requiresPsychotropicBook: json['requiresPsychotropicBook'] as bool? ?? false,
+      requiresPrescription: _toBool(json['requiresPrescription']),
+      requiresDoubleCheck: _toBool(json['requiresDoubleCheck']),
+      requiresPsychotropicBook: _toBool(json['requiresPsychotropicBook']),
       precoVenda: _toDouble(json['precoVenda']),
       estoqueAtual: _toDouble(json['estoqueAtual']),
       estoqueMinimo: _toDouble(json['estoqueMinimo']),
-      lote: _firstLote(json['lotes']),
-      dataValidade: _firstDataValidade(json['lotes']),
+      lote: _readLote(json),
+      dataValidade: _readDataValidade(json),
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'] as String)
           : null,
@@ -88,6 +88,42 @@ class ProductModel {
       return value.toDouble();
     }
     return double.tryParse(value.toString()) ?? 0;
+  }
+
+  static bool _toBool(dynamic value, {bool defaultValue = false}) {
+    if (value == null) {
+      return defaultValue;
+    }
+    if (value is bool) {
+      return value;
+    }
+    if (value is num) {
+      return value != 0;
+    }
+    final normalized = value.toString().trim().toLowerCase();
+    if (normalized == 'true' || normalized == '1') {
+      return true;
+    }
+    if (normalized == 'false' || normalized == '0') {
+      return false;
+    }
+    return defaultValue;
+  }
+
+  static String? _readLote(Map<String, dynamic> json) {
+    final direct = json['lote'];
+    if (direct is String && direct.trim().isNotEmpty) {
+      return direct.trim();
+    }
+    return _firstLote(json['lotes']);
+  }
+
+  static DateTime? _readDataValidade(Map<String, dynamic> json) {
+    final direct = json['dataValidade'];
+    if (direct is String && direct.trim().isNotEmpty) {
+      return DateTime.tryParse(direct);
+    }
+    return _firstDataValidade(json['lotes']);
   }
 
   static String? _firstLote(dynamic value) {

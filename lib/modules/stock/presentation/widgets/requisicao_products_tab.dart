@@ -41,7 +41,8 @@ class RequisicaoProductsTab extends StatelessWidget {
           controller: searchController,
           onChanged: onSearchChanged,
           decoration: InputDecoration(
-            hintText: 'Pesquisar produtos (ID, nome, princípio ativo)...',
+            hintText:
+                'Pesquisar por nome, princípio ativo, lote ou código de barras...',
             prefixIcon: const Icon(Icons.search_rounded),
             suffixIcon: IconButton(
               onPressed: productState.isLoading ? null : onRefreshProducts,
@@ -129,6 +130,12 @@ class _RequisicaoProductCard extends StatelessWidget {
     final t = context.pharmaTokens;
     final s = context.spacing;
     final statusLabel = product.ativo ? 'Activo' : 'Inactivo';
+    final loteLabel = product.lote?.trim();
+    final validadeLabel = product.dataValidade != null
+        ? '${product.dataValidade!.day.toString().padLeft(2, '0')}/'
+              '${product.dataValidade!.month.toString().padLeft(2, '0')}/'
+              '${product.dataValidade!.year}'
+        : null;
     final productDetails = [
       product.substanciaActiva,
       product.dosagem,
@@ -136,6 +143,8 @@ class _RequisicaoProductCard extends StatelessWidget {
         product.forma,
         product.apresentacao,
       ].whereType<String>().where((value) => value.isNotEmpty).join(' / '),
+      if (loteLabel != null && loteLabel.isNotEmpty)
+        validadeLabel != null ? 'Lote $loteLabel • val. $validadeLabel' : 'Lote $loteLabel',
     ].whereType<String>().where((value) => value.isNotEmpty).join(' • ');
 
     return InkWell(

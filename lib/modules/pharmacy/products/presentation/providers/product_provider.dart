@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../../app/providers/auth_session_notifier.dart';
 import '../../../../../core/catalog/pdv_catalog_cache_policy.dart';
 import '../../../../../core/contracts/pagination_response.dart';
 import '../../../../../core/errors/api_failure.dart';
@@ -209,8 +210,39 @@ class RequisicaoProductListController extends Notifier<ProductListState> {
     ref.onDispose(() {
       _debounce?.cancel();
     });
-    Future.microtask(fetchCurrentPage);
+
+    final authReady = ref.watch(
+      authSessionProvider.select(
+        (session) => !session.isBootstrapping && session.hasTenantContext,
+      ),
+    );
+
+    ref.listen<AuthSessionState>(authSessionProvider, (previous, next) {
+      final wasReady =
+          previous != null && !previous.isBootstrapping && previous.hasTenantContext;
+      final isReady = !next.isBootstrapping && next.hasTenantContext;
+      if (isReady && !wasReady) {
+        unawaited(ensureLoaded(force: true));
+      }
+    });
+
+    if (authReady) {
+      Future.microtask(ensureLoaded);
+    }
+
     return const ProductListState();
+  }
+
+  Future<void> ensureLoaded({bool force = false}) async {
+    if (!ref.read(authSessionProvider).hasTenantContext) {
+      return;
+    }
+    if (!force &&
+        state.isInitialized &&
+        (state.items.isNotEmpty || state.errorMessage != null)) {
+      return;
+    }
+    await fetchCurrentPage(force: force);
   }
 
   void onSearchChanged(String value) {
@@ -246,15 +278,13 @@ class RequisicaoProductListController extends Notifier<ProductListState> {
 
   Future<void> fetchCurrentPage({bool force = false}) async {
     final requestId = ++_requestId;
-    final isBarcode = _looksLikeBarcode(state.query);
 
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
       final repository = ref.read(productRepositoryProvider);
-      final response = await repository.searchProducts(
-        query: isBarcode ? null : state.query,
-        barcode: isBarcode ? state.query : null,
+      final response = await repository.searchRequisitionProducts(
+        query: state.query.isEmpty ? null : state.query,
         page: state.page,
         pageSize: state.pageSize,
       );
@@ -264,7 +294,7 @@ class RequisicaoProductListController extends Notifier<ProductListState> {
       }
 
       state = state.copyWith(
-        items: response.items.where((product) => product.ativo).toList(),
+        items: response.items,
         page: response.page,
         pageSize: response.pageSize,
         hasMore: response.hasMore,
@@ -291,14 +321,6 @@ class RequisicaoProductListController extends Notifier<ProductListState> {
         errorMessage: e.toString(),
       );
     }
-  }
-
-  bool _looksLikeBarcode(String value) {
-    final trimmed = value.trim();
-    if (trimmed.length < 8) {
-      return false;
-    }
-    return RegExp(r'^\d+$').hasMatch(trimmed);
   }
 }
 

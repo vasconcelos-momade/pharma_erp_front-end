@@ -41,6 +41,25 @@ class ProductRepositoryImpl implements ProductRepository {
     );
   }
 
+  @override
+  Future<PaginationResponse<Product>> searchRequisitionProducts({
+    String? query,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final response = await _remoteDataSource.searchRequisitionProducts(
+      query: query,
+      page: page,
+      pageSize: pageSize,
+    );
+    return PaginationResponse<Product>(
+      items: response.items.map(_toEntity).toList(),
+      page: response.page,
+      pageSize: response.pageSize,
+      hasMore: response.hasMore,
+    );
+  }
+
   Product _toEntity(ProductModel model) {
     return Product(
       id: model.id,

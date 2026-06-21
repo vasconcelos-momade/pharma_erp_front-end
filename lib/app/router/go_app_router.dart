@@ -18,6 +18,7 @@ import '../../modules/pharmacy/sanitary/presentation/pages/regulatory_page.dart'
 import '../../modules/sales/invoices/presentation/pages/invoices_page.dart';
 import '../../modules/sales/pdv/presentation/pages/pdv_page.dart';
 import '../../modules/stock/presentation/pages/inventory_hub_page.dart';
+import '../../modules/stock/presentation/pages/movimentacoes_hub_page.dart';
 import '../../modules/stock/presentation/pages/requisicao_hub_page.dart';
 import '../../shared/layouts/app_main_shell.dart';
 import '../../shared/layouts/pos_shell_layout.dart';
@@ -195,7 +196,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: AppRoutePaths.stockMovements,
             name: 'stock-movements',
-            builder: (context, state) => const StockMovementsPage(),
+            builder: (context, state) => const MovimentacoesHubPage(),
           ),
           GoRoute(
             path: AppRoutePaths.stockRequisitions,

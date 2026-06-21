@@ -8,4 +8,9 @@ cd "$ROOT"
 
 PORT="${WEB_PORT:-5000}"
 
+if [[ ! -f "$ROOT/.dart_tool/package_config.json" ]]; then
+  echo "Dependencias Flutter ainda nao foram resolvidas. A correr: flutter pub get"
+  flutter pub get
+fi
+
 exec flutter run -d chrome --no-pub --web-port="$PORT" "$@"

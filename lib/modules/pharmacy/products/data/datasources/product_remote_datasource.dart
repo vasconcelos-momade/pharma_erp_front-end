@@ -19,6 +19,12 @@ abstract class ProductRemoteDataSource {
     int page = 1,
     int pageSize = 20,
   });
+
+  Future<PaginationResponse<ProductModel>> searchRequisitionProducts({
+    String? query,
+    int page = 1,
+    int pageSize = 20,
+  });
 }
 
 class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
@@ -111,6 +117,42 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
       }
 
       _applyCatalogMeta(data);
+      final payload = ApiEnvelope.unwrapMap(data);
+      final items = (payload['items'] as List<dynamic>? ?? <dynamic>[])
+          .map((json) => ProductModel.fromJson(json as Map<String, dynamic>))
+          .toList();
+
+      return PaginationResponse<ProductModel>(
+        items: items,
+        page: payload['page'] as int? ?? page,
+        pageSize: payload['pageSize'] as int? ?? pageSize,
+        hasMore: payload['hasMore'] as bool? ?? false,
+      );
+    } on DioException catch (e) {
+      throw ApiFailure.fromDio(e);
+    }
+  }
+
+  @override
+  Future<PaginationResponse<ProductModel>> searchRequisitionProducts({
+    String? query,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        ApiConstants.tenantRequisicoesProdutosSearch,
+        queryParameters: <String, dynamic>{
+          if (query != null && query.trim().isNotEmpty) 'q': query.trim(),
+          'page': page,
+          'pageSize': pageSize,
+        },
+      );
+      final data = response.data;
+      if (data == null) {
+        return const PaginationResponse<ProductModel>(items: []);
+      }
+
       final payload = ApiEnvelope.unwrapMap(data);
       final items = (payload['items'] as List<dynamic>? ?? <dynamic>[])
           .map((json) => ProductModel.fromJson(json as Map<String, dynamic>))
