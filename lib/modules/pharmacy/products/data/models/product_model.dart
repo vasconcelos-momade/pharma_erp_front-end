@@ -56,7 +56,7 @@ class ProductModel {
       apresentacao: json['apresentacao'] as String?,
       ativo: _toBool(json['ativo'] ?? json['activo'], defaultValue: true),
       barcode: json['barcode'] as String?,
-      categoria: CategoriaProdutoX.fromApi(json['categoria'] as String?),
+      categoria: _parseCategoria(json),
       tipoDispensacao: json['tipoDispensacao'] as String? ?? 'VENDA_LIVRE',
       requiresPrescription: _toBool(json['requiresPrescription']),
       requiresDoubleCheck: _toBool(json['requiresDoubleCheck']),
@@ -71,6 +71,24 @@ class ProductModel {
           : null,
       taxRule: _parseTaxRule(json['taxRule'], parent: json),
     );
+  }
+
+  static CategoriaProduto _parseCategoria(Map<String, dynamic> json) {
+    final categoria = json['categoria'];
+    if (categoria is String) {
+      return CategoriaProdutoX.fromApi(categoria);
+    }
+    if (categoria is Map<String, dynamic>) {
+      final nome = categoria['nome'] as String?;
+      if (nome != null && nome.trim().isNotEmpty) {
+        return _categoriaFromNome(nome);
+      }
+    }
+    final categoriaNome = json['categoriaNome'] as String?;
+    if (categoriaNome != null && categoriaNome.trim().isNotEmpty) {
+      return _categoriaFromNome(categoriaNome);
+    }
+    return CategoriaProduto.medicamento;
   }
 
   static ProductTaxRule? _parseTaxRule(
@@ -170,6 +188,32 @@ class ProductModel {
       }
     }
     return null;
+  }
+
+  static CategoriaProduto _categoriaFromNome(String nome) {
+    final normalized = nome.trim().toLowerCase();
+    switch (normalized) {
+      case 'consumiveis':
+      case 'consumíveis':
+      case 'consumivel':
+      case 'consumível':
+        return CategoriaProduto.consumivel;
+      case 'equipamentos':
+      case 'equipamento':
+        return CategoriaProduto.equipamento;
+      case 'higiene':
+        return CategoriaProduto.higiene;
+      case 'suplementos':
+      case 'suplemento':
+        return CategoriaProduto.suplemento;
+      case 'outros':
+      case 'outro':
+        return CategoriaProduto.outro;
+      case 'medicamentos':
+      case 'medicamento':
+      default:
+        return CategoriaProduto.medicamento;
+    }
   }
 
   Map<String, dynamic> toJson() {
