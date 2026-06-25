@@ -42,12 +42,14 @@ class EnterpriseDataTable extends StatelessWidget {
     required this.rowCount,
     required this.rowBuilder,
     this.adaptive = true,
+    this.showCheckboxColumn = true,
   });
 
   final List<DataColumn> columns;
   final int rowCount;
   final EnterpriseRowBuilder rowBuilder;
   final bool adaptive;
+  final bool showCheckboxColumn;
 
   @override
   Widget build(BuildContext context) {
@@ -152,6 +154,7 @@ class EnterpriseDataTable extends StatelessWidget {
                           ? const ClampingScrollPhysics()
                           : const NeverScrollableScrollPhysics(),
                       child: DataTable(
+                        showCheckboxColumn: showCheckboxColumn,
                         headingRowColor: WidgetStatePropertyAll(
                           t.bgSecondary.withValues(alpha: 0.92),
                         ),

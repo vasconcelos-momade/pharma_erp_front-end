@@ -337,6 +337,7 @@ class _RequisicaoHubPageState extends ConsumerState<RequisicaoHubPage> {
                 !compraState.isAddingItem &&
                 !compraState.isApprovingRequisicao,
             onSearchChanged: productController.onSearchChanged,
+            onCategoriaChanged: productController.setCategoriaFilter,
             onRefreshProducts: productController.refreshCurrentPage,
             onGoToPage: productController.goToPage,
             onTabChanged:

@@ -1,7 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/contracts/pagination_response.dart';
+import '../../domain/entities/categoria_produto.dart';
 import '../../domain/entities/product.dart';
+import '../../domain/entities/product_tax_rule.dart';
 import '../../domain/repositories/product_repository.dart';
 import '../datasources/product_remote_datasource.dart';
 import '../models/product_model.dart';
@@ -15,21 +17,66 @@ class ProductRepositoryImpl implements ProductRepository {
   Future<String?> fetchCatalogVersion() => _remoteDataSource.fetchCatalogVersion();
 
   @override
-  Future<List<Product>> listCatalogProducts() async {
-    final items = await _remoteDataSource.listCatalogProducts();
-    return items.map(_toEntity).toList(growable: false);
+  Future<Product> getProduct(String id) async {
+    final model = await _remoteDataSource.getProduct(id);
+    return _toEntity(model);
+  }
+
+  @override
+  Future<Product> createProduct(Map<String, dynamic> payload) async {
+    final model = await _remoteDataSource.createProduct(payload);
+    return _toEntity(model);
+  }
+
+  @override
+  Future<Product> updateProduct(String id, Map<String, dynamic> payload) async {
+    final model = await _remoteDataSource.updateProduct(id, payload);
+    return _toEntity(model);
+  }
+
+  @override
+  Future<void> deleteProduct(String id) => _remoteDataSource.deleteProduct(id);
+
+  @override
+  Future<List<ProductTaxRule>> listTaxRules() => _remoteDataSource.listTaxRules();
+
+  @override
+  Future<PaginationResponse<Product>> searchMasterProducts({
+    String? query,
+    String? barcode,
+    CategoriaProduto? categoria,
+    bool includeInactive = false,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final response = await _remoteDataSource.searchMasterProducts(
+      query: query,
+      barcode: barcode,
+      categoria: categoria?.apiValue,
+      includeInactive: includeInactive,
+      page: page,
+      pageSize: pageSize,
+    );
+    return PaginationResponse<Product>(
+      items: response.items.map(_toEntity).toList(),
+      page: response.page,
+      pageSize: response.pageSize,
+      hasMore: response.hasMore,
+    );
   }
 
   @override
   Future<PaginationResponse<Product>> searchProducts({
     String? query,
     String? barcode,
+    CategoriaProduto? categoria,
     int page = 1,
     int pageSize = 20,
   }) async {
     final response = await _remoteDataSource.searchProducts(
       query: query,
       barcode: barcode,
+      categoria: categoria?.apiValue,
       page: page,
       pageSize: pageSize,
     );
@@ -44,11 +91,13 @@ class ProductRepositoryImpl implements ProductRepository {
   @override
   Future<PaginationResponse<Product>> searchRequisitionProducts({
     String? query,
+    CategoriaProduto? categoria,
     int page = 1,
     int pageSize = 20,
   }) async {
     final response = await _remoteDataSource.searchRequisitionProducts(
       query: query,
+      categoria: categoria?.apiValue,
       page: page,
       pageSize: pageSize,
     );
@@ -70,6 +119,7 @@ class ProductRepositoryImpl implements ProductRepository {
       apresentacao: model.apresentacao,
       ativo: model.ativo,
       barcode: model.barcode,
+      categoria: model.categoria,
       tipoDispensacao: model.tipoDispensacao,
       requiresPrescription: model.requiresPrescription,
       requiresDoubleCheck: model.requiresDoubleCheck,

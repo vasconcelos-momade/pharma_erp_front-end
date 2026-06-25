@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/spacing.dart';
+import '../../../pharmacy/products/domain/entities/categoria_produto.dart';
 import '../../../pharmacy/products/domain/entities/product.dart';
 import '../../../pharmacy/products/presentation/providers/product_provider.dart';
 import '../../domain/entities/requisicao.dart';
@@ -21,6 +22,7 @@ class RequisicaoCompraLeftPane extends StatefulWidget {
     required this.searchController,
     required this.canAddItems,
     required this.onSearchChanged,
+    required this.onCategoriaChanged,
     required this.onRefreshProducts,
     required this.onGoToPage,
     required this.onTabChanged,
@@ -39,6 +41,7 @@ class RequisicaoCompraLeftPane extends StatefulWidget {
   final TextEditingController searchController;
   final bool canAddItems;
   final ValueChanged<String> onSearchChanged;
+  final ValueChanged<CategoriaProduto?> onCategoriaChanged;
   final Future<void> Function() onRefreshProducts;
   final Future<void> Function(int page) onGoToPage;
   final ValueChanged<RequisicaoTab> onTabChanged;
@@ -139,6 +142,7 @@ class _RequisicaoCompraLeftPaneState extends State<RequisicaoCompraLeftPane>
               searchController: widget.searchController,
               canAddItems: widget.canAddItems,
               onSearchChanged: widget.onSearchChanged,
+              onCategoriaChanged: widget.onCategoriaChanged,
               onRefreshProducts: widget.onRefreshProducts,
               onGoToPage: widget.onGoToPage,
               onSelectProduct: widget.onSelectProduct,

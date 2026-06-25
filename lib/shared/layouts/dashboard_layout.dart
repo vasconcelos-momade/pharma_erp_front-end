@@ -114,7 +114,7 @@ class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
                       context.go(AppRoutePaths.pos);
                       break;
                     case 2:
-                      context.go(AppRoutePaths.inventory);
+                      context.go(AppRoutePaths.products);
                       break;
                     case 3:
                       context.go(AppRoutePaths.financial);
@@ -175,13 +175,18 @@ class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
   }
 
   int _bottomNavIndex(String path) {
-    if (path == AppRoutePaths.dashboard || path.startsWith('/dashboard'))
+    if (path == AppRoutePaths.dashboard || path.startsWith('/dashboard')) {
       return 0;
-    if (path == AppRoutePaths.pos) return 1;
-    if (path == AppRoutePaths.inventory || path.startsWith('/pharmacy'))
+    }
+    if (path == AppRoutePaths.pos) {
+      return 1;
+    }
+    if (path == AppRoutePaths.products || path.startsWith('/pharmacy')) {
       return 2;
-    if (path == AppRoutePaths.financial || path.startsWith('/finance'))
+    }
+    if (path == AppRoutePaths.financial || path.startsWith('/finance')) {
       return 3;
+    }
     return 4;
   }
 
@@ -409,9 +414,12 @@ class _EnterpriseTopBar extends ConsumerWidget {
                           ),
                         ),
                         onSelected: (v) {
-                          if (v == 'logout') onLogout();
-                          if (v == 'settings')
+                          if (v == 'logout') {
+                            onLogout();
+                          }
+                          if (v == 'settings') {
                             context.go(AppRoutePaths.settings);
+                          }
                         },
                         itemBuilder: (context) => [
                           const PopupMenuItem(

@@ -7,6 +7,7 @@ import '../../../../core/theme/spacing.dart';
 import '../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../shared/widgets/buttons/pharma_button_loader.dart';
 import '../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
+import '../../../pharmacy/products/domain/entities/categoria_produto.dart';
 import '../../../pharmacy/products/domain/entities/product.dart';
 import '../../../pharmacy/products/presentation/providers/product_provider.dart';
 import '../../domain/entities/requisicao.dart';
@@ -406,6 +407,7 @@ class _RequisicaoStockFlowViewState
       canAddProducts: canAddProducts,
       searchController: widget.searchController,
       onSearchChanged: productController.onSearchChanged,
+      onCategoriaChanged: productController.setCategoriaFilter,
       onRefreshProducts: productController.refreshCurrentPage,
       onGoToPage: productController.goToPage,
       onTabChanged: requisicaoController.setActiveTab,
@@ -619,6 +621,7 @@ class _LeftPane extends StatefulWidget {
     required this.canAddProducts,
     required this.searchController,
     required this.onSearchChanged,
+    required this.onCategoriaChanged,
     required this.onRefreshProducts,
     required this.onGoToPage,
     required this.onTabChanged,
@@ -634,6 +637,7 @@ class _LeftPane extends StatefulWidget {
   final bool canAddProducts;
   final TextEditingController searchController;
   final ValueChanged<String> onSearchChanged;
+  final ValueChanged<CategoriaProduto?> onCategoriaChanged;
   final Future<void> Function() onRefreshProducts;
   final Future<void> Function(int page) onGoToPage;
   final ValueChanged<RequisicaoTab> onTabChanged;
@@ -741,6 +745,7 @@ class _LeftPaneState extends State<_LeftPane>
               searchController: widget.searchController,
               canAddItems: widget.canAddProducts,
               onSearchChanged: widget.onSearchChanged,
+              onCategoriaChanged: widget.onCategoriaChanged,
               onRefreshProducts: widget.onRefreshProducts,
               onGoToPage: widget.onGoToPage,
               onSelectProduct: widget.onSelectProduct,
@@ -1764,7 +1769,6 @@ class _EditStockFlowItemDialogState extends State<_EditStockFlowItemDialog> {
   @override
   Widget build(BuildContext context) {
     final s = context.spacing;
-    final t = context.pharmaTokens;
 
     return PharmaResponsiveDialog(
       title: const Text('Editar Item'),

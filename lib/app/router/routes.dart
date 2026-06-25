@@ -13,7 +13,7 @@ abstract final class AppRoutePaths {
 
   static const String pos = '/pos';
 
-  static const String inventory = '/inventory';
+  static const String products = '/products';
   static const String pharmacyCategories = '/pharmacy/categories';
   static const String pharmacyLots = '/pharmacy/lots';
   static const String pharmacyExpiry = '/pharmacy/expiry';
@@ -74,7 +74,7 @@ abstract final class AppRouteTitles {
       AppRoutePaths.dashboardFinance => 'Painel financeiro',
       AppRoutePaths.dashboardStock => 'Painel de stock',
       AppRoutePaths.pos => 'PDV',
-      AppRoutePaths.inventory => 'Produtos',
+      AppRoutePaths.products => 'Produtos',
       AppRoutePaths.pharmacyCategories => 'Categorias',
       AppRoutePaths.pharmacyLots => 'Lotes',
       AppRoutePaths.pharmacyExpiry => 'Validades',
@@ -113,7 +113,7 @@ abstract final class AppRouteTitles {
 
   static String sectionFor(String path) {
     if (path.startsWith('/dashboard')) return 'Painéis';
-    if (path.startsWith('/pharmacy') || path == AppRoutePaths.inventory || path == AppRoutePaths.regulatory || path == AppRoutePaths.psychotropics || path == AppRoutePaths.recipes) {
+    if (path.startsWith('/pharmacy') || path == AppRoutePaths.products || path == AppRoutePaths.regulatory || path == AppRoutePaths.psychotropics || path == AppRoutePaths.recipes) {
       return 'Farmácia & regulatório';
     }
     if (path.startsWith('/sales')) return 'Vendas';

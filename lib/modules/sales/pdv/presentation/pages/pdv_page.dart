@@ -8,8 +8,10 @@ import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/widgets/buttons/pharma_button_loader.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
+import '../../../../pharmacy/products/domain/entities/categoria_produto.dart';
 import '../../../../pharmacy/products/domain/entities/product.dart';
 import '../../../../pharmacy/products/presentation/providers/product_provider.dart';
+import '../../../../pharmacy/products/presentation/widgets/produto_categoria_chip.dart';
 import '../../../invoices/presentation/providers/invoice_action_provider.dart';
 import '../../../../../core/errors/api_failure.dart';
 import '../../domain/entities/pdv_cart_line.dart';
@@ -89,6 +91,10 @@ class _PdvPageState extends ConsumerState<PdvPage>
       return;
     }
     ref.read(pdvServiceListProvider.notifier).onSearchChanged(value);
+  }
+
+  void _onCategoryChanged(CategoriaProduto? categoria) {
+    ref.read(productListProvider.notifier).setCategoriaFilter(categoria);
   }
 
   Future<void> _openAbrirCaixaDialog() {
@@ -560,6 +566,39 @@ class _PdvPageState extends ConsumerState<PdvPage>
             ),
           ),
         SizedBox(height: isMobile ? s.sm : s.md),
+        if (_isProductsTab) ...[
+          Align(
+            alignment: Alignment.centerLeft,
+            child: SizedBox(
+              width: isMobile ? double.infinity : 260,
+              child: DropdownButtonFormField<CategoriaProduto?>(
+                initialValue: productState.categoria,
+                decoration: InputDecoration(
+                  labelText: 'Categoria',
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(t.radiusMd),
+                  ),
+                  filled: true,
+                  fillColor: t.bgPrimary.withValues(alpha: 0.5),
+                ),
+                items: [
+                  const DropdownMenuItem<CategoriaProduto?>(
+                    value: null,
+                    child: Text('Todas'),
+                  ),
+                  ...CategoriaProduto.values.map(
+                    (categoria) => DropdownMenuItem<CategoriaProduto?>(
+                      value: categoria,
+                      child: Text(categoria.label),
+                    ),
+                  ),
+                ],
+                onChanged: productState.isLoading ? null : _onCategoryChanged,
+              ),
+            ),
+          ),
+          SizedBox(height: isMobile ? s.sm : s.md),
+        ],
         TextField(
           controller: _search,
           focusNode: _searchFocusNode,
@@ -827,6 +866,8 @@ class _ProductCatalogList extends StatelessWidget {
                                   ?.copyWith(color: tokens.textSecondary),
                             ),
                           ],
+                          SizedBox(height: s.xs),
+                          ProdutoCategoriaChip(categoria: product.categoria),
                           SizedBox(height: s.xs),
                           Text(
                             'PV ${_formatMoney(product.precoVenda)} • Date Exp. ${_formatDate(product.dataValidade)} • Lote ${product.lote ?? '-'} • Stock ${product.estoqueAtual.toInt()}',

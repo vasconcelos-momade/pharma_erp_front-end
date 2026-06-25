@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../shared/responsive/pharma_screen_layout.dart';
-import '../providers/movimentacao_provider.dart';
 
 class MovimentacoesLoadingSkeleton extends StatelessWidget {
   const MovimentacoesLoadingSkeleton({super.key, this.embedded = false});

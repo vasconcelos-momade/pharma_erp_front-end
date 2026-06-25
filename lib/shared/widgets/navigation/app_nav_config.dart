@@ -23,7 +23,7 @@ const List<AppNavItem> kAppNavItems = <AppNavItem>[
   AppNavItem(label: 'Financeiro', path: AppRoutePaths.dashboardFinance, icon: Icons.account_balance_outlined),
   AppNavItem(label: 'Stock', path: AppRoutePaths.dashboardStock, icon: Icons.warehouse_outlined),
   AppNavItem(section: 'Terminal', label: 'PDV / Caixa', path: AppRoutePaths.pos, icon: Icons.point_of_sale_outlined),
-  AppNavItem(section: 'Farmácia & catálogo', label: 'Produtos', path: AppRoutePaths.inventory, icon: Icons.inventory_2_outlined),
+  AppNavItem(section: 'Farmácia & catálogo', label: 'Produtos', path: AppRoutePaths.products, icon: Icons.inventory_2_outlined),
   AppNavItem(label: 'Categorias', path: AppRoutePaths.pharmacyCategories, icon: Icons.category_outlined),
   AppNavItem(label: 'Lotes', path: AppRoutePaths.pharmacyLots, icon: Icons.layers_outlined),
   AppNavItem(label: 'Validades', path: AppRoutePaths.pharmacyExpiry, icon: Icons.event_note_outlined),

@@ -5,6 +5,7 @@ abstract final class ApiConstants {
   static const centralTenants = '/central/tenants';
 
   static const tenantProdutos = '/tenant/produtos';
+  static String tenantProduto(String productId) => '/tenant/produtos/$productId';
   static const tenantPosProdutosCatalogVersion =
       '/tenant/pos/produtos/catalog-version';
   static const tenantPosProdutosSearch = '/tenant/pos/produtos/search';

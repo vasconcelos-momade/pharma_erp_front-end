@@ -12,7 +12,7 @@ import '../../modules/dashboard/presentation/pages/stock_dashboard_page.dart';
 import '../../modules/finance/presentation/pages/financial_page.dart';
 import '../../modules/finance/reports/presentation/pages/reports_page.dart';
 import '../../modules/pharmacy/prescriptions/presentation/pages/recipes_book_page.dart';
-import '../../modules/pharmacy/products/presentation/pages/inventory_page.dart';
+import '../../modules/pharmacy/products/presentation/pages/products_page.dart';
 import '../../modules/pharmacy/psychotropics/presentation/pages/psychotropics_book_page.dart';
 import '../../modules/pharmacy/sanitary/presentation/pages/regulatory_page.dart';
 import '../../modules/sales/invoices/presentation/pages/invoices_page.dart';
@@ -106,9 +106,9 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const StockDashboardPage(),
           ),
           GoRoute(
-            path: AppRoutePaths.inventory,
-            name: 'inventory',
-            builder: (context, state) => const InventoryPage(),
+            path: AppRoutePaths.products,
+            name: 'products',
+            builder: (context, state) => const ProductsPage(),
           ),
           GoRoute(
             path: AppRoutePaths.pharmacyCategories,

@@ -25,7 +25,11 @@ abstract final class ApiHostResolver {
 
   static String _platformDefaultHost() {
     if (kIsWeb) {
-      return 'http://127.0.0.1:$defaultPort';
+      // No browser, 127.0.0.1 aponta para a máquina do utilizador.
+      // Usamos o host actual (onde o web app está a correr) e a porta da API.
+      final scheme = Uri.base.scheme.isEmpty ? 'http' : Uri.base.scheme;
+      final host = Uri.base.host.isEmpty ? '127.0.0.1' : Uri.base.host;
+      return '$scheme://$host:$defaultPort';
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -39,7 +43,7 @@ abstract final class ApiHostResolver {
   /// Dica curta para o ecrã de login quando a ligação falha.
   static String connectionHintForPlatform() {
     if (kIsWeb) {
-      return 'Web: API em 127.0.0.1:3300 e CORS activo no backend.';
+      return 'Web: a API deve estar acessível no mesmo host (porta 3300). Se estiver a abrir o web app a partir de outra máquina, use o IP do servidor ou passe --dart-define=API_BASE_URL=...';
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:

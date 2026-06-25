@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/spacing.dart';
+import '../../../pharmacy/products/domain/entities/categoria_produto.dart';
 import '../../../pharmacy/products/domain/entities/product.dart';
 import '../../../pharmacy/products/presentation/providers/product_provider.dart';
+import '../../../pharmacy/products/presentation/widgets/produto_categoria_chip.dart';
 
 /// Lista de produtos partilhada por Compra, Entrada e Saída.
 class RequisicaoProductsTab extends StatelessWidget {
@@ -13,6 +15,7 @@ class RequisicaoProductsTab extends StatelessWidget {
     required this.searchController,
     required this.canAddItems,
     required this.onSearchChanged,
+    required this.onCategoriaChanged,
     required this.onRefreshProducts,
     required this.onGoToPage,
     required this.onSelectProduct,
@@ -23,6 +26,7 @@ class RequisicaoProductsTab extends StatelessWidget {
   final TextEditingController searchController;
   final bool canAddItems;
   final ValueChanged<String> onSearchChanged;
+  final ValueChanged<CategoriaProduto?> onCategoriaChanged;
   final Future<void> Function() onRefreshProducts;
   final Future<void> Function(int page) onGoToPage;
   final ValueChanged<Product> onSelectProduct;
@@ -55,6 +59,35 @@ class RequisicaoProductsTab extends StatelessWidget {
             ),
             filled: true,
             fillColor: t.bgPrimary.withValues(alpha: 0.5),
+          ),
+        ),
+        SizedBox(height: s.sm),
+        SizedBox(
+          width: 260,
+          child: DropdownButtonFormField<CategoriaProduto?>(
+            initialValue: productState.categoria,
+            decoration: InputDecoration(
+              labelText: 'Categoria',
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(t.radiusMd),
+                borderSide: BorderSide(color: t.border),
+              ),
+              filled: true,
+              fillColor: t.bgPrimary.withValues(alpha: 0.5),
+            ),
+            items: [
+              const DropdownMenuItem<CategoriaProduto?>(
+                value: null,
+                child: Text('Todas'),
+              ),
+              ...CategoriaProduto.values.map(
+                (categoria) => DropdownMenuItem<CategoriaProduto?>(
+                  value: categoria,
+                  child: Text(categoria.label),
+                ),
+              ),
+            ],
+            onChanged: onCategoriaChanged,
           ),
         ),
         if (productState.isLoading)
@@ -171,6 +204,10 @@ class _RequisicaoProductCard extends StatelessWidget {
                     color: t.textPrimary,
                     fontWeight: FontWeight.w700,
                   ),
+                ),
+                Padding(
+                  padding: EdgeInsets.only(top: s.xs),
+                  child: ProdutoCategoriaChip(categoria: product.categoria),
                 ),
                 if (productDetails.isNotEmpty)
                   Padding(
@@ -352,6 +389,7 @@ class _RequisicaoProductsEmptyPane extends StatelessWidget {
 
 class RequisicaoProductsPaginationBar extends StatelessWidget {
   const RequisicaoProductsPaginationBar({
+    super.key,
     required this.page,
     required this.pageSize,
     required this.itemCount,

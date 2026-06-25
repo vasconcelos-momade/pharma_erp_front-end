@@ -1,3 +1,4 @@
+import 'categoria_produto.dart';
 import 'product_tax_rule.dart';
 
 class Product {
@@ -9,6 +10,7 @@ class Product {
   final String? apresentacao;
   final bool ativo;
   final String? barcode;
+  final CategoriaProduto categoria;
   final String tipoDispensacao;
   final bool requiresPrescription;
   final bool requiresDoubleCheck;
@@ -30,6 +32,7 @@ class Product {
     this.apresentacao,
     required this.ativo,
     this.barcode,
+    this.categoria = CategoriaProduto.medicamento,
     required this.tipoDispensacao,
     required this.requiresPrescription,
     required this.requiresDoubleCheck,

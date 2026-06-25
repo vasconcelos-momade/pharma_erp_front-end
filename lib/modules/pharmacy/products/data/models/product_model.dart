@@ -1,3 +1,4 @@
+import '../../domain/entities/categoria_produto.dart';
 import '../../domain/entities/product_tax_rule.dart';
 
 class ProductModel {
@@ -9,6 +10,7 @@ class ProductModel {
   final String? apresentacao;
   final bool ativo;
   final String? barcode;
+  final CategoriaProduto categoria;
   final String tipoDispensacao;
   final bool requiresPrescription;
   final bool requiresDoubleCheck;
@@ -30,6 +32,7 @@ class ProductModel {
     this.apresentacao,
     required this.ativo,
     this.barcode,
+    this.categoria = CategoriaProduto.medicamento,
     required this.tipoDispensacao,
     required this.requiresPrescription,
     required this.requiresDoubleCheck,
@@ -51,8 +54,9 @@ class ProductModel {
       dosagem: json['dosagem'] as String?,
       forma: json['forma'] as String?,
       apresentacao: json['apresentacao'] as String?,
-      ativo: _toBool(json['ativo'], defaultValue: true),
+      ativo: _toBool(json['ativo'] ?? json['activo'], defaultValue: true),
       barcode: json['barcode'] as String?,
+      categoria: CategoriaProdutoX.fromApi(json['categoria'] as String?),
       tipoDispensacao: json['tipoDispensacao'] as String? ?? 'VENDA_LIVRE',
       requiresPrescription: _toBool(json['requiresPrescription']),
       requiresDoubleCheck: _toBool(json['requiresDoubleCheck']),
@@ -65,18 +69,37 @@ class ProductModel {
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'] as String)
           : null,
-      taxRule: _parseTaxRule(json['taxRule']),
+      taxRule: _parseTaxRule(json['taxRule'], parent: json),
     );
   }
 
-  static ProductTaxRule? _parseTaxRule(dynamic value) {
+  static ProductTaxRule? _parseTaxRule(
+    dynamic value, {
+    Map<String, dynamic>? parent,
+  }) {
+    final taxRuleId = parent?['taxRuleId']?.toString();
     if (value is! Map<String, dynamic>) {
-      return null;
+      if (taxRuleId == null || taxRuleId.isEmpty) {
+        return null;
+      }
+      return ProductTaxRule(
+        id: taxRuleId,
+        tipo: parent?['taxRuleTipo'] as String? ?? 'IVA_NORMAL',
+        taxa: _toDouble(parent?['taxaIva'] ?? parent?['taxRuleTaxa']),
+        codigo: parent?['taxRuleCodigo'] as String?,
+        nome: parent?['taxRuleNome'] as String?,
+        descricao: parent?['taxRuleDescricao'] as String?,
+        ativo: _toBool(parent?['taxRuleAtivo'], defaultValue: true),
+      );
     }
     return ProductTaxRule(
+      id: value['id']?.toString() ?? taxRuleId,
       tipo: value['tipo'] as String? ?? 'IVA_NORMAL',
       taxa: _toDouble(value['taxa']),
       codigo: value['codigo'] as String?,
+      nome: value['nome'] as String?,
+      descricao: value['descricao'] as String?,
+      ativo: _toBool(value['ativo'], defaultValue: true),
     );
   }
 
@@ -158,7 +181,9 @@ class ProductModel {
       'forma': forma,
       'apresentacao': apresentacao,
       'ativo': ativo,
+      'activo': ativo,
       'barcode': barcode,
+      'categoria': categoria.apiValue,
       'tipoDispensacao': tipoDispensacao,
       'requiresPrescription': requiresPrescription,
       'requiresDoubleCheck': requiresDoubleCheck,
@@ -166,6 +191,7 @@ class ProductModel {
       'precoVenda': precoVenda,
       'estoqueAtual': estoqueAtual,
       'estoqueMinimo': estoqueMinimo,
+      'taxRuleId': taxRule?.id,
       'lote': lote,
       'dataValidade': dataValidade?.toIso8601String(),
       'createdAt': createdAt?.toIso8601String(),

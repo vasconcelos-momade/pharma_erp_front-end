@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/design_metrics.dart';
-import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
 import '../../domain/entities/fornecedor.dart';
@@ -251,7 +250,7 @@ class _EditarRequisicaoDialogState extends ConsumerState<EditarRequisicaoDialog>
             labelText: 'Fornecedor *',
             border: OutlineInputBorder(),
           ),
-          value: selectedDropdown,
+          initialValue: selectedDropdown,
           items: fornecedores
               .map(
                 (f) => DropdownMenuItem(
@@ -324,7 +323,7 @@ class _EditarRequisicaoDialogState extends ConsumerState<EditarRequisicaoDialog>
             labelText: 'Fornecedor *',
             border: OutlineInputBorder(),
           ),
-          value: selectedDropdown,
+          initialValue: selectedDropdown,
           items: fornecedores
               .map(
                 (f) => DropdownMenuItem(
@@ -374,7 +373,6 @@ class _EditarRequisicaoDialogState extends ConsumerState<EditarRequisicaoDialog>
 
   @override
   Widget build(BuildContext context) {
-    final s = context.spacing;
     final suppliersAsync = ref.watch(supplierListProvider);
 
     return PharmaResponsiveDialog(

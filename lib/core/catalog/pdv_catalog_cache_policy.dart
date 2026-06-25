@@ -46,11 +46,13 @@ abstract final class PdvCatalogCachePolicy {
 
   static String productPageKey({
     required String query,
+    required String? categoria,
     required int page,
     required int pageSize,
   }) {
     final version = activeCatalogVersion ?? 'none';
-    return '$version|${query.toLowerCase()}|$page|$pageSize';
+    final normalizedCategoria = categoria?.trim().toUpperCase() ?? 'all';
+    return '$version|$normalizedCategoria|${query.toLowerCase()}|$page|$pageSize';
   }
 }
 

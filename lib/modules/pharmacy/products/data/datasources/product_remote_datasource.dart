@@ -7,21 +7,38 @@ import '../../../../../core/contracts/api_envelope.dart';
 import '../../../../../core/contracts/pagination_response.dart';
 import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/network/dio/dio_provider.dart';
+import '../../domain/entities/product_tax_rule.dart';
 import '../models/product_model.dart';
 
 abstract class ProductRemoteDataSource {
   Future<String?> fetchCatalogVersion();
-  Future<List<ProductModel>> listCatalogProducts();
+
+  Future<ProductModel> getProduct(String id);
+  Future<ProductModel> createProduct(Map<String, dynamic> payload);
+  Future<ProductModel> updateProduct(String id, Map<String, dynamic> payload);
+  Future<void> deleteProduct(String id);
+  Future<List<ProductTaxRule>> listTaxRules();
+
+  Future<PaginationResponse<ProductModel>> searchMasterProducts({
+    String? query,
+    String? barcode,
+    String? categoria,
+    bool includeInactive = false,
+    int page = 1,
+    int pageSize = 20,
+  });
 
   Future<PaginationResponse<ProductModel>> searchProducts({
     String? query,
     String? barcode,
+    String? categoria,
     int page = 1,
     int pageSize = 20,
   });
 
   Future<PaginationResponse<ProductModel>> searchRequisitionProducts({
     String? query,
+    String? categoria,
     int page = 1,
     int pageSize = 20,
   });
@@ -72,23 +89,152 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
     }
   }
 
+  double _toDouble(dynamic value) {
+    if (value == null) {
+      return 0;
+    }
+    if (value is num) {
+      return value.toDouble();
+    }
+    return double.tryParse(value.toString()) ?? 0;
+  }
+
+  bool _toBool(dynamic value, {bool defaultValue = false}) {
+    if (value == null) {
+      return defaultValue;
+    }
+    if (value is bool) {
+      return value;
+    }
+    if (value is num) {
+      return value != 0;
+    }
+    final normalized = value.toString().trim().toLowerCase();
+    if (normalized == 'true' || normalized == '1') {
+      return true;
+    }
+    if (normalized == 'false' || normalized == '0') {
+      return false;
+    }
+    return defaultValue;
+  }
+
   @override
-  Future<List<ProductModel>> listCatalogProducts() async {
+  Future<ProductModel> getProduct(String id) async {
     try {
-      final response = await _dio.get<dynamic>(ApiConstants.tenantProdutos);
+      final response = await _dio.get<Map<String, dynamic>>(
+        ApiConstants.tenantProduto(id),
+      );
       final data = response.data;
       if (data == null) {
-        return const <ProductModel>[];
+        throw const ApiFailure('Produto não encontrado');
+      }
+      return ProductModel.fromJson(data);
+    } on DioException catch (e) {
+      throw ApiFailure.fromDio(e);
+    }
+  }
+
+  @override
+  Future<ProductModel> createProduct(Map<String, dynamic> payload) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        ApiConstants.tenantProdutos,
+        data: payload,
+      );
+      final data = response.data;
+      if (data == null) {
+        throw const ApiFailure('Resposta inválida ao criar produto');
+      }
+      return ProductModel.fromJson(data);
+    } on DioException catch (e) {
+      throw ApiFailure.fromDio(e);
+    }
+  }
+
+  @override
+  Future<ProductModel> updateProduct(String id, Map<String, dynamic> payload) async {
+    try {
+      final response = await _dio.put<Map<String, dynamic>>(
+        ApiConstants.tenantProduto(id),
+        data: payload,
+      );
+      final data = response.data;
+      if (data == null) {
+        throw const ApiFailure('Resposta inválida ao actualizar produto');
+      }
+      return ProductModel.fromJson(data);
+    } on DioException catch (e) {
+      throw ApiFailure.fromDio(e);
+    }
+  }
+
+  @override
+  Future<void> deleteProduct(String id) async {
+    try {
+      await _dio.delete<void>(ApiConstants.tenantProduto(id));
+    } on DioException catch (e) {
+      throw ApiFailure.fromDio(e);
+    }
+  }
+
+  @override
+  Future<List<ProductTaxRule>> listTaxRules() async {
+    try {
+      final response = await _dio.get<dynamic>(ApiConstants.tenantPosTaxRules);
+      return ApiEnvelope.unwrapList(response.data)
+          .map((json) => ProductTaxRule(
+                id: json['id']?.toString(),
+                tipo: json['tipo'] as String? ?? 'IVA_NORMAL',
+                taxa: _toDouble(json['taxa']),
+                codigo: json['codigo'] as String?,
+                nome: json['nome'] as String?,
+                descricao: json['descricao'] as String?,
+                ativo: _toBool(json['ativo'], defaultValue: true),
+              ))
+          .toList(growable: false);
+    } on DioException catch (e) {
+      throw ApiFailure.fromDio(e);
+    }
+  }
+
+  @override
+  Future<PaginationResponse<ProductModel>> searchMasterProducts({
+    String? query,
+    String? barcode,
+    String? categoria,
+    bool includeInactive = false,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        ApiConstants.tenantProdutos,
+        queryParameters: <String, dynamic>{
+          if (query != null && query.trim().isNotEmpty) 'q': query.trim(),
+          if (barcode != null && barcode.trim().isNotEmpty) 'barcode': barcode.trim(),
+          if (categoria != null && categoria.isNotEmpty) 'categoria': categoria,
+          if (includeInactive) 'includeInactive': true,
+          'page': page,
+          'pageSize': pageSize,
+        },
+      );
+      final data = response.data;
+      if (data == null) {
+        return const PaginationResponse<ProductModel>(items: []);
       }
 
-      final items = data is List
-          ? data
-          : ApiEnvelope.unwrapList(data);
+      final payload = ApiEnvelope.unwrapMap(data);
+      final items = (payload['items'] as List<dynamic>? ?? <dynamic>[])
+          .map((json) => ProductModel.fromJson(json as Map<String, dynamic>))
+          .toList();
 
-      return items
-          .whereType<Map<String, dynamic>>()
-          .map(ProductModel.fromJson)
-          .toList(growable: false);
+      return PaginationResponse<ProductModel>(
+        items: items,
+        page: payload['page'] as int? ?? page,
+        pageSize: payload['pageSize'] as int? ?? pageSize,
+        hasMore: payload['hasMore'] as bool? ?? false,
+      );
     } on DioException catch (e) {
       throw ApiFailure.fromDio(e);
     }
@@ -98,6 +244,7 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
   Future<PaginationResponse<ProductModel>> searchProducts({
     String? query,
     String? barcode,
+    String? categoria,
     int page = 1,
     int pageSize = 20,
   }) async {
@@ -107,6 +254,7 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
         queryParameters: <String, dynamic>{
           if (query != null && query.trim().isNotEmpty) 'q': query.trim(),
           if (barcode != null && barcode.trim().isNotEmpty) 'barcode': barcode.trim(),
+          if (categoria != null && categoria.isNotEmpty) 'categoria': categoria,
           'page': page,
           'pageSize': pageSize,
         },
@@ -136,6 +284,7 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
   @override
   Future<PaginationResponse<ProductModel>> searchRequisitionProducts({
     String? query,
+    String? categoria,
     int page = 1,
     int pageSize = 20,
   }) async {
@@ -144,6 +293,7 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
         ApiConstants.tenantRequisicoesProdutosSearch,
         queryParameters: <String, dynamic>{
           if (query != null && query.trim().isNotEmpty) 'q': query.trim(),
+          if (categoria != null && categoria.isNotEmpty) 'categoria': categoria,
           'page': page,
           'pageSize': pageSize,
         },

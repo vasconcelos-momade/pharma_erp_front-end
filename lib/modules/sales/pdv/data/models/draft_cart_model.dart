@@ -81,6 +81,7 @@ class DraftCartItemModel {
       return null;
     }
     return ProductTaxRule(
+      id: value['id']?.toString(),
       tipo: value['tipo'] as String? ?? 'IVA_NORMAL',
       taxa: _toDouble(value['taxa']),
       codigo: value['codigo'] as String?,
