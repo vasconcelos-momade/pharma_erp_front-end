@@ -10,16 +10,22 @@ class ProductModel {
   final String? apresentacao;
   final bool ativo;
   final String? barcode;
+  final String? categoriaId;
+  final String? categoriaNome;
   final CategoriaProduto categoria;
   final String tipoDispensacao;
   final bool requiresPrescription;
   final bool requiresDoubleCheck;
   final bool requiresPsychotropicBook;
+  final bool antimicrobiano;
+  final bool requiresManualReview;
   final double precoVenda;
   final double estoqueAtual;
   final double estoqueMinimo;
+  final int numLotes;
   final String? lote;
   final DateTime? dataValidade;
+  final DateTime? proximaValidade;
   final DateTime? createdAt;
   final ProductTaxRule? taxRule;
 
@@ -32,16 +38,22 @@ class ProductModel {
     this.apresentacao,
     required this.ativo,
     this.barcode,
+    this.categoriaId,
+    this.categoriaNome,
     this.categoria = CategoriaProduto.medicamento,
     required this.tipoDispensacao,
     required this.requiresPrescription,
     required this.requiresDoubleCheck,
     required this.requiresPsychotropicBook,
+    this.antimicrobiano = false,
+    this.requiresManualReview = false,
     required this.precoVenda,
     required this.estoqueAtual,
     required this.estoqueMinimo,
+    this.numLotes = 0,
     this.lote,
     this.dataValidade,
+    this.proximaValidade,
     this.createdAt,
     this.taxRule,
   });
@@ -57,15 +69,23 @@ class ProductModel {
       ativo: _toBool(json['ativo'] ?? json['activo'], defaultValue: true),
       barcode: json['barcode'] as String?,
       categoria: _parseCategoria(json),
+      categoriaId: json['categoriaId']?.toString() ??
+          (json['categoria'] is Map ? (json['categoria'] as Map)['id']?.toString() : null),
+      categoriaNome: json['categoriaNome'] as String? ??
+          (json['categoria'] is Map ? (json['categoria'] as Map)['nome'] as String? : null),
       tipoDispensacao: json['tipoDispensacao'] as String? ?? 'VENDA_LIVRE',
       requiresPrescription: _toBool(json['requiresPrescription']),
       requiresDoubleCheck: _toBool(json['requiresDoubleCheck']),
       requiresPsychotropicBook: _toBool(json['requiresPsychotropicBook']),
+      antimicrobiano: _toBool(json['antimicrobiano']),
+      requiresManualReview: _toBool(json['requiresManualReview']),
       precoVenda: _toDouble(json['precoVenda']),
       estoqueAtual: _toDouble(json['estoqueAtual']),
       estoqueMinimo: _toDouble(json['estoqueMinimo']),
+      numLotes: _toInt(json['numLotes']),
       lote: _readLote(json),
       dataValidade: _readDataValidade(json),
+      proximaValidade: _readProximaValidade(json),
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'] as String)
           : null,
@@ -119,6 +139,20 @@ class ProductModel {
       descricao: value['descricao'] as String?,
       ativo: _toBool(value['ativo'], defaultValue: true),
     );
+  }
+
+  static int _toInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+
+  static DateTime? _readProximaValidade(Map<String, dynamic> json) {
+    final direct = json['proximaValidade'];
+    if (direct is String && direct.trim().isNotEmpty) {
+      return DateTime.tryParse(direct);
+    }
+    return _readDataValidade(json);
   }
 
   static double _toDouble(dynamic value) {

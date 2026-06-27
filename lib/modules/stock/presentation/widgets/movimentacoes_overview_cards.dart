@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/spacing.dart';
-import '../../../../shared/responsive/pharma_screen_layout.dart';
-import '../../../../shared/widgets/cards/enterprise_stat_card.dart';
+import '../../../../shared/widgets/cards/enterprise_kpi_grid.dart';
 import '../../domain/entities/movimentacao.dart';
 
 class MovimentacoesOverviewCards extends StatelessWidget {
@@ -17,8 +15,6 @@ class MovimentacoesOverviewCards extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.spacing;
-    final screen = context.pharmaScreen;
     final cards = [
       EnterpriseStatCard(
         title: 'Total',
@@ -54,45 +50,9 @@ class MovimentacoesOverviewCards extends StatelessWidget {
       ),
     ];
 
-    if (screen == PharmaScreenSize.desktop) {
-      return Row(
-        children: [
-          for (var i = 0; i < cards.length; i++) ...[
-            Expanded(
-              child: SizedBox(
-                height: 88,
-                child: cards[i],
-              ),
-            ),
-            if (i < cards.length - 1) SizedBox(width: s.sm),
-          ],
-        ],
-      );
-    }
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final cross = switch (screen) {
-          PharmaScreenSize.mobile => 2,
-          PharmaScreenSize.tablet => 2,
-          PharmaScreenSize.desktop => 4,
-        };
-        final aspect = switch (screen) {
-          PharmaScreenSize.mobile => 1.7,
-          PharmaScreenSize.tablet => 1.95,
-          PharmaScreenSize.desktop => 1.45,
-        };
-
-        return GridView.count(
-          crossAxisCount: cross,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisSpacing: screen == PharmaScreenSize.mobile ? 10 : s.sm,
-          mainAxisSpacing: screen == PharmaScreenSize.mobile ? 10 : s.sm,
-          childAspectRatio: aspect,
-          children: cards,
-        );
-      },
+    return EnterpriseKpiGrid(
+      cards: cards,
+      useDesktopRowWhenSingleLine: true,
     );
   }
 

@@ -10,16 +10,22 @@ class Product {
   final String? apresentacao;
   final bool ativo;
   final String? barcode;
+  final String? categoriaId;
+  final String? categoriaNome;
   final CategoriaProduto categoria;
   final String tipoDispensacao;
   final bool requiresPrescription;
   final bool requiresDoubleCheck;
   final bool requiresPsychotropicBook;
+  final bool antimicrobiano;
+  final bool requiresManualReview;
   final double precoVenda;
   final double estoqueAtual;
   final double estoqueMinimo;
+  final int numLotes;
   final String? lote;
   final DateTime? dataValidade;
+  final DateTime? proximaValidade;
   final DateTime? createdAt;
   final ProductTaxRule? taxRule;
 
@@ -32,16 +38,22 @@ class Product {
     this.apresentacao,
     required this.ativo,
     this.barcode,
+    this.categoriaId,
+    this.categoriaNome,
     this.categoria = CategoriaProduto.medicamento,
     required this.tipoDispensacao,
     required this.requiresPrescription,
     required this.requiresDoubleCheck,
     required this.requiresPsychotropicBook,
+    this.antimicrobiano = false,
+    this.requiresManualReview = false,
     required this.precoVenda,
     required this.estoqueAtual,
     required this.estoqueMinimo,
+    this.numLotes = 0,
     this.lote,
     this.dataValidade,
+    this.proximaValidade,
     this.createdAt,
     this.taxRule,
   });

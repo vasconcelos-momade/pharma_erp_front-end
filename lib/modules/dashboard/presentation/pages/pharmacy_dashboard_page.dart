@@ -1,218 +1,478 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../app/router/routes.dart';
+import '../../../../core/extensions/async_value_extensions.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/spacing.dart';
-import '../../../../shared/widgets/cards/enterprise_stat_card.dart';
+import '../../../../shared/widgets/cards/enterprise_kpi_grid.dart';
 import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
+import '../../data/datasources/dashboard_remote_datasource.dart';
+import '../../domain/dashboard_query.dart';
+import '../providers/dashboard_providers.dart';
+import '../widgets/dashboard_period_filters.dart';
+import '../widgets/dashboard_widgets.dart';
 
-/// Painel operacional farmácia: validade, FEFO, psicotrópicos e stock crítico.
-class PharmacyDashboardPage extends StatelessWidget {
+class PharmacyDashboardPage extends ConsumerStatefulWidget {
   const PharmacyDashboardPage({super.key});
 
-  static const double _chartBreak = 520;
+  @override
+  ConsumerState<PharmacyDashboardPage> createState() => _PharmacyDashboardPageState();
+}
+
+class _PharmacyDashboardPageState extends ConsumerState<PharmacyDashboardPage> {
+  var _query = const DashboardQuery();
 
   @override
   Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
+    final async = ref.watch(pharmacyDashboardProvider(_query));
+    final dataSource = ref.watch(dashboardRemoteDataSourceProvider);
+    final kpis = dashMap(async.valueOrNull?['kpis']);
+
+    Future<void> exportDashboard() async {
+      final data = async.valueOrNull;
+      if (data == null) return;
+      final tables = dashMap(data['tables']);
+      await dashboardExportCsv(
+        fileName: 'painel-farmacia.csv',
+        summary: kpis,
+        sections: [
+          DashboardExportSection(
+            title: 'Produtos criticos',
+            headers: const ['Produto', 'Disponivel', 'Minimo'],
+            rows: dashList(tables?['produtosCriticos'])
+                .map(
+                  (row) => [
+                    row['nome']?.toString() ?? '—',
+                    '${row['disponivel'] ?? 0}',
+                    '${row['minimo'] ?? 0}',
+                  ],
+                )
+                .toList(),
+          ),
+          DashboardExportSection(
+            title: 'Ultimas entradas',
+            headers: const ['Produto', 'Lote', 'Qtd', 'Origem'],
+            rows: dashList(tables?['ultimasEntradas'])
+                .map(
+                  (row) => [
+                    row['produtoNome']?.toString() ?? '—',
+                    row['numeroLote']?.toString() ?? '—',
+                    '${row['quantidade'] ?? 0}',
+                    row['origem']?.toString() ?? '—',
+                  ],
+                )
+                .toList(),
+          ),
+          DashboardExportSection(
+            title: 'Ultimas dispensacoes',
+            headers: const ['Produto', 'Lote', 'Qtd', 'Tipo'],
+            rows: dashList(tables?['ultimasDispensacoes'])
+                .map(
+                  (row) => [
+                    row['produtoNome']?.toString() ?? '—',
+                    row['numeroLote']?.toString() ?? '—',
+                    '${row['quantidade'] ?? 0}',
+                    row['tipoDispensacao']?.toString() ?? '—',
+                  ],
+                )
+                .toList(),
+          ),
+          DashboardExportSection(
+            title: 'Ultimos alertas',
+            headers: const ['Produto', 'Tipo', 'Mensagem'],
+            rows: dashList(tables?['ultimosAlertas'])
+                .map(
+                  (row) => [
+                    row['produtoNome']?.toString() ?? '—',
+                    row['tipo']?.toString() ?? '—',
+                    row['mensagem']?.toString() ?? '—',
+                  ],
+                )
+                .toList(),
+          ),
+        ],
+      );
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Exportação do painel farmácia concluída.')),
+      );
+    }
+
     return EnterpriseModuleHub(
       title: 'Painel da farmácia',
-      subtitle: 'Alertas sanitários, FEFO, psicotrópicos e stock crítico em tempo real.',
+      subtitle: 'Produtos, regulação, validades, FEFO e dispensações.',
       tag: 'Painéis',
-      kpis: const [
-        EnterpriseStatCard(title: 'Itens < 30d validade', value: '18', icon: Icons.event_busy, accent: StatCardAccent.warning),
-        EnterpriseStatCard(title: 'Stock crítico', value: '12 SKU', icon: Icons.inventory_2_outlined, accent: StatCardAccent.danger),
-        EnterpriseStatCard(title: 'Psicotrópicos pendentes', value: '0', icon: Icons.verified_user_outlined, accent: StatCardAccent.positive),
-        EnterpriseStatCard(title: 'FEFO activo', value: '100%', icon: Icons.account_tree, accent: StatCardAccent.info),
+      scrollable: true,
+      actions: [
+        OutlinedButton.icon(
+          onPressed: async.valueOrNull == null ? null : exportDashboard,
+          icon: const Icon(Icons.download_outlined),
+          label: const Text('Exportar'),
+        ),
+        OutlinedButton.icon(
+          onPressed: () => ref.invalidate(pharmacyDashboardProvider(_query)),
+          icon: const Icon(Icons.refresh_rounded),
+          label: const Text('Atualizar'),
+        ),
       ],
-      child: LayoutBuilder(
-        builder: (context, bx) {
-          final narrow = bx.maxWidth < _chartBreak;
-          final maxH = bx.maxHeight.isFinite ? bx.maxHeight : 400.0;
-          if (narrow) {
-            const gap = AppSpacing.md;
-            final inner = maxH > gap ? maxH - gap : maxH;
-            final each = (inner / 2).clamp(100.0, 260.0);
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SizedBox(height: each, child: _MiniBars(t: t, title: 'Saídas por classe (7d)')),
-                const SizedBox(height: gap),
-                SizedBox(height: each, child: _ExpiryDonut(t: t)),
+      filters: DashboardPeriodFilters(
+        query: _query,
+        onChanged: (query) => setState(() => _query = query),
+        extraFilters: [
+          ActionChip(
+            label: const Text('Validades'),
+            onPressed: () => context.go(AppRoutePaths.pharmacyExpiry),
+          ),
+          ActionChip(
+            label: const Text('FEFO'),
+            onPressed: () => context.go(AppRoutePaths.pharmacyFefo),
+          ),
+          ActionChip(
+            label: const Text('Lotes'),
+            onPressed: () => context.go(AppRoutePaths.pharmacyLots),
+          ),
+          ActionChip(
+            label: const Text('Produtos'),
+            onPressed: () => context.go(AppRoutePaths.products),
+          ),
+        ],
+      ),
+      kpis: kpis == null
+          ? null
+          : [
+              dashboardKpiCard(
+                title: 'Produtos',
+                value: dashKpi(kpis, 'produtosCadastrados'),
+                icon: Icons.medication_outlined,
+              ),
+              dashboardKpiCard(
+                title: 'Produtos activos',
+                value: dashKpi(kpis, 'produtosAtivos'),
+                icon: Icons.check_circle_outline,
+                accent: StatCardAccent.positive,
+              ),
+              dashboardKpiCard(
+                title: 'Categorias',
+                value: dashKpi(kpis, 'categorias'),
+                icon: Icons.category_outlined,
+              ),
+              dashboardKpiCard(
+                title: 'Sem stock',
+                value: dashKpi(kpis, 'produtosSemStock'),
+                icon: Icons.inventory_2_outlined,
+                accent: StatCardAccent.warning,
+              ),
+              dashboardKpiCard(
+                title: 'Abaixo mínimo',
+                value: dashKpi(kpis, 'produtosAbaixoMinimo'),
+                icon: Icons.vertical_align_bottom_outlined,
+                accent: StatCardAccent.warning,
+              ),
+              dashboardKpiCard(
+                title: 'Antimicrobianos',
+                value: dashKpi(kpis, 'antimicrobianos'),
+                icon: Icons.biotech_outlined,
+              ),
+              dashboardKpiCard(
+                title: 'Controlados',
+                value: dashKpi(kpis, 'produtosControlados'),
+                icon: Icons.verified_user_outlined,
+              ),
+              dashboardKpiCard(
+                title: 'Valor stock',
+                value: '${dashKpi(kpis, 'valorTotalStock')} MZN',
+                icon: Icons.payments_outlined,
+              ),
+              dashboardKpiCard(
+                title: 'Psicotrópicos',
+                value: dashKpi(kpis, 'psicotropicos'),
+                icon: Icons.science_outlined,
+                accent: StatCardAccent.info,
+              ),
+              dashboardKpiCard(
+                title: 'Próx. validade',
+                value: dashKpi(kpis, 'produtosProximosValidade'),
+                icon: Icons.event_busy,
+                accent: StatCardAccent.danger,
+              ),
+              dashboardKpiCard(
+                title: 'Alertas',
+                value: dashKpi(kpis, 'alertasAbertos'),
+                icon: Icons.notifications_active_outlined,
+              ),
+              dashboardKpiCard(
+                title: 'Alertas sanit.',
+                value: dashKpi(kpis, 'alertasSanitarios'),
+                icon: Icons.health_and_safety_outlined,
+                accent: StatCardAccent.danger,
+              ),
+              dashboardKpiCard(
+                title: 'Lotes activos',
+                value: dashKpi(kpis, 'lotesAtivos'),
+                icon: Icons.layers_outlined,
+              ),
+              dashboardKpiCard(
+                title: 'Sem fornecedor',
+                value: dashKpi(kpis, 'produtosSemFornecedor'),
+                icon: Icons.local_shipping_outlined,
+                accent: StatCardAccent.warning,
+              ),
+            ],
+      child: dashboardAsyncBody(
+        async: async,
+        onRetry: () => ref.invalidate(pharmacyDashboardProvider(_query)),
+        builder: (data) {
+          final charts = dashMap(data['charts']);
+          final validades = dashMap(charts?['validades']) ?? const {};
+          final fefo = dashMap(charts?['fefo']) ?? const {};
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+                LayoutBuilder(
+                  builder: (context, bx) {
+                    final narrow = bx.maxWidth < 520;
+                    final validadesChart = dashboardChartCard(
+                      context: context,
+                      title: 'Validades por prazo',
+                      child: dashboardIndexedBarChart(
+                        context: context,
+                        labels: const ['Exp.', '30d', '60d'],
+                        values: [
+                          (validades['lotesExpirados'] as num?)?.toDouble() ?? 0,
+                          (validades['expiramEm30Dias'] as num?)?.toDouble() ?? 0,
+                          (validades['expiramEm60Dias'] as num?)?.toDouble() ?? 0,
+                        ],
+                        barColors: [
+                          context.pharmaTokens.posDanger,
+                          context.pharmaTokens.posWarning,
+                          context.pharmaTokens.brandBlue,
+                        ],
+                        barWidth: 28,
+                      ),
+                    );
+                    final t = context.pharmaTokens;
+                    final fefoChart = dashboardChartCard(
+                      context: context,
+                      title: 'Distribuição FEFO',
+                      child: dashboardPieChart(
+                        context: context,
+                        slices: [
+                          DashboardPieSlice(
+                            label: 'FEFO',
+                            value: (fefo['produtosForaFefo'] as num?)?.toDouble() ?? 0,
+                            color: t.posDanger,
+                          ),
+                          DashboardPieSlice(
+                            label: 'Exp.',
+                            value: (fefo['lotesExpirados'] as num?)?.toDouble() ?? 0,
+                            color: t.posWarning,
+                          ),
+                          DashboardPieSlice(
+                            label: 'Bloq.',
+                            value: (fefo['lotesBloqueados'] as num?)?.toDouble() ?? 0,
+                            color: t.brandBlue,
+                          ),
+                          DashboardPieSlice(
+                            label: 'Alert.',
+                            value: (fefo['alertasFefo'] as num?)?.toDouble() ?? 0,
+                            color: t.brandGreen,
+                          ),
+                        ],
+                      ),
+                    );
+                    if (narrow) {
+                      return Column(
+                        children: [
+                          validadesChart,
+                          SizedBox(height: context.spacing.md),
+                          fefoChart,
+                        ],
+                      );
+                    }
+                    return IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Expanded(child: validadesChart),
+                          SizedBox(width: context.spacing.lg),
+                          Expanded(child: fefoChart),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final chartWidth = constraints.maxWidth >= 1100
+                        ? (constraints.maxWidth - AppSpacing.lg) / 2
+                        : constraints.maxWidth;
+                    return Wrap(
+                      spacing: AppSpacing.lg,
+                      runSpacing: AppSpacing.lg,
+                      children: [
+                        SizedBox(
+                          width: chartWidth,
+                          child: dashboardChartCard(
+                            context: context,
+                            title: 'Produtos por categoria',
+                            child: dashboardBarChart(
+                              context: context,
+                              points: dashList(charts?['produtosPorCategoria']),
+                              valueKey: 'totalProdutos',
+                              labelKey: 'categoria',
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: chartWidth,
+                          child: dashboardChartCard(
+                            context: context,
+                            title: 'Produtos por regulação',
+                            child: dashboardBarChart(
+                              context: context,
+                              points: dashList(charts?['produtosPorRegulacao']),
+                              valueKey: 'total',
+                              labelKey: 'regulacao',
+                              color: Theme.of(context).colorScheme.secondary,
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: chartWidth,
+                          child: dashboardChartCard(
+                            context: context,
+                            title: 'Stock por categoria',
+                            child: dashboardBarChart(
+                              context: context,
+                              points: dashList(charts?['stockPorCategoria']),
+                              valueKey: 'stock',
+                              labelKey: 'categoria',
+                              color: Theme.of(context).colorScheme.tertiary,
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: chartWidth,
+                          child: dashboardChartCard(
+                            context: context,
+                            title: 'Entradas x saídas',
+                            child: dashboardBarChart(
+                              context: context,
+                              points: dashList(charts?['entradasSaidas']),
+                              valueKey: 'quantidade',
+                              labelKey: 'tipo',
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: chartWidth,
+                          child: dashboardChartCard(
+                            context: context,
+                            title: 'Produtos mais dispensados',
+                            child: dashboardBarChart(
+                              context: context,
+                              points: dashList(charts?['produtosMaisDispensados']),
+                              valueKey: 'quantidade',
+                              labelKey: 'produtoNome',
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                DashboardPaginatedTable(
+                  title: 'Produtos críticos',
+                  headers: const ['Produto', 'Disponível', 'Mínimo'],
+                  reloadKey: '${_query.reloadKey}-criticos',
+                  loadPage: (page, pageSize) async {
+                    final result = await dataSource.pharmacyDashboardTable(
+                      table: 'produtosCriticos',
+                      query: _query,
+                      page: page,
+                      pageSize: pageSize,
+                    );
+                    return DashboardPagedTableResult.fromMap(result);
+                  },
+                  rowBuilder: (row) => [
+                    row['nome']?.toString() ?? '—',
+                    '${row['disponivel'] ?? 0}',
+                    '${row['minimo'] ?? 0}',
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                DashboardPaginatedTable(
+                  title: 'Últimas entradas',
+                  headers: const ['Produto', 'Lote', 'Qtd', 'Origem'],
+                  reloadKey: '${_query.reloadKey}-entradas',
+                  loadPage: (page, pageSize) async {
+                    final result = await dataSource.pharmacyDashboardTable(
+                      table: 'ultimasEntradas',
+                      query: _query,
+                      page: page,
+                      pageSize: pageSize,
+                    );
+                    return DashboardPagedTableResult.fromMap(result);
+                  },
+                  rowBuilder: (row) => [
+                    row['produtoNome']?.toString() ?? '—',
+                    row['numeroLote']?.toString() ?? '—',
+                    '${row['quantidade'] ?? 0}',
+                    row['origem']?.toString() ?? '—',
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                DashboardPaginatedTable(
+                  title: 'Últimas dispensações',
+                  headers: const ['Produto', 'Lote', 'Qtd', 'Tipo'],
+                  reloadKey: '${_query.reloadKey}-dispensacoes',
+                  loadPage: (page, pageSize) async {
+                    final result = await dataSource.pharmacyDashboardTable(
+                      table: 'ultimasDispensacoes',
+                      query: _query,
+                      page: page,
+                      pageSize: pageSize,
+                    );
+                    return DashboardPagedTableResult.fromMap(result);
+                  },
+                  rowBuilder: (row) => [
+                    row['produtoNome']?.toString() ?? '—',
+                    row['numeroLote']?.toString() ?? '—',
+                    '${row['quantidade'] ?? 0}',
+                    row['tipoDispensacao']?.toString() ?? '—',
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                DashboardPaginatedTable(
+                  title: 'Últimos alertas',
+                  headers: const ['Produto', 'Tipo', 'Mensagem'],
+                  reloadKey: '${_query.reloadKey}-alertas',
+                  loadPage: (page, pageSize) async {
+                    final result = await dataSource.pharmacyDashboardTable(
+                      table: 'ultimosAlertas',
+                      query: _query,
+                      page: page,
+                      pageSize: pageSize,
+                    );
+                    return DashboardPagedTableResult.fromMap(result);
+                  },
+                  rowBuilder: (row) => [
+                    row['produtoNome']?.toString() ?? '—',
+                    row['tipo']?.toString() ?? '—',
+                    row['mensagem']?.toString() ?? '—',
+                  ],
+                ),
               ],
-            );
-          }
-          final rowH = maxH.clamp(160.0, 320.0);
-          return SizedBox(
-            height: rowH,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(child: _MiniBars(t: t, title: 'Saídas por classe (7d)')),
-                const SizedBox(width: AppSpacing.lg),
-                Expanded(child: _ExpiryDonut(t: t)),
-              ],
-            ),
           );
         },
       ),
-    );
-  }
-}
-
-class _MiniBars extends StatelessWidget {
-  const _MiniBars({required this.t, required this.title});
-
-  final PharmaTokens t;
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, c) {
-        return Container(
-          padding: AppSpacing.cardPadding,
-          decoration: BoxDecoration(
-            color: t.card,
-            borderRadius: BorderRadius.circular(t.radiusMd),
-            border: Border.all(color: t.border.withValues(alpha: 0.65)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title.toUpperCase(),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(color: t.textMuted, letterSpacing: 2),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              Expanded(
-                child: BarChart(
-                  BarChartData(
-                    gridData: FlGridData(show: false),
-                    borderData: FlBorderData(show: false),
-                    titlesData: FlTitlesData(
-                      bottomTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 32,
-                          getTitlesWidget: (v, m) => Text(
-                            ['Geral', 'Antibiót.', 'MIP', 'OTC'][v.toInt().clamp(0, 3)],
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 8, color: t.textMuted, fontWeight: FontWeight.w700),
-                          ),
-                        ),
-                      ),
-                      leftTitles: AxisTitles(
-                        sideTitles: SideTitles(
-                          showTitles: true,
-                          reservedSize: 40,
-                          interval: 2,
-                          getTitlesWidget: (v, m) {
-                            if ((v - v.round()).abs() > 0.01) return const SizedBox.shrink();
-                            return Text(
-                              '${v.toInt()}',
-                              style: TextStyle(fontSize: 8, color: t.textMuted, fontWeight: FontWeight.w600),
-                            );
-                          },
-                        ),
-                      ),
-                      topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                      rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                    ),
-                    barGroups: [
-                      _g(0, 5.2, t.brandBlue),
-                      _g(1, 3.1, t.brandGreen),
-                      _g(2, 4.4, t.posWarning),
-                      _g(3, 6.8, t.psychotropic),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  BarChartGroupData _g(int x, double y, Color c) {
-    return BarChartGroupData(
-      x: x,
-      barRods: [
-        BarChartRodData(
-          toY: y,
-          width: 12,
-          borderRadius: BorderRadius.circular(4),
-          color: c,
-        ),
-      ],
-    );
-  }
-}
-
-class _ExpiryDonut extends StatelessWidget {
-  const _ExpiryDonut({required this.t});
-
-  final PharmaTokens t;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, c) {
-        return Container(
-          padding: AppSpacing.cardPadding,
-          decoration: BoxDecoration(
-            color: t.card,
-            borderRadius: BorderRadius.circular(t.radiusMd),
-            border: Border.all(color: t.border.withValues(alpha: 0.65)),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'CURVA DE VALIDADE',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(color: t.textMuted, letterSpacing: 2),
-              ),
-              Expanded(
-                child: PieChart(
-                  PieChartData(
-                    sectionsSpace: 2,
-                    centerSpaceRadius: c.maxWidth > 200 ? 42 : 28,
-                    sections: [
-                      PieChartSectionData(
-                        value: 62,
-                        title: 'OK',
-                        color: t.brandGreen,
-                        radius: c.maxWidth > 200 ? 48 : 36,
-                        titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white),
-                      ),
-                      PieChartSectionData(
-                        value: 22,
-                        title: '30d',
-                        color: t.posWarning,
-                        radius: c.maxWidth > 200 ? 48 : 36,
-                        titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.black87),
-                      ),
-                      PieChartSectionData(
-                        value: 16,
-                        title: 'Crít.',
-                        color: t.posDanger,
-                        radius: c.maxWidth > 200 ? 48 : 36,
-                        titleStyle: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -11,7 +12,19 @@ import 'package:pharma_erp/modules/auth/domain/entities/auth_user.dart';
 import 'package:pharma_erp/modules/auth/domain/entities/branch_access.dart';
 import 'package:pharma_erp/modules/auth/domain/entities/tenant_access.dart';
 
+import 'package:pharma_erp/modules/pharmacy/categories/presentation/providers/category_provider.dart';
+import 'package:pharma_erp/modules/pharmacy/categories/presentation/providers/category_stats_provider.dart';
+import 'package:pharma_erp/modules/pharmacy/products/presentation/providers/product_provider.dart';
+import 'package:pharma_erp/modules/stock/presentation/providers/fornecedor_provider.dart';
+
 import 'helpers/test_providers.dart';
+
+class _IdleMasterProductList extends MasterProductListController {
+  @override
+  MasterProductListState build() {
+    return const MasterProductListState(isInitialized: true);
+  }
+}
 
 AuthSessionState _authenticatedState() {
   const tenant = TenantAccess(
@@ -48,11 +61,18 @@ void main() {
     expect(find.text('E-mail'), findsOneWidget);
   });
 
-  testWidgets('Navegação para inventário com sessão mock', (WidgetTester tester) async {
+  testWidgets('Navegação para produtos com sessão mock', (WidgetTester tester) async {
+    await tester.binding.setSurfaceSize(const Size(1600, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
     final container = ProviderContainer(
       overrides: [
         authSessionProvider.overrideWith(_MockAuthSessionNotifier.new),
         connectionNotifierProvider.overrideWith(IdleConnectionNotifier.new),
+        masterProductListProvider.overrideWith(_IdleMasterProductList.new),
+        activeCategoriesProvider.overrideWith((ref) async => const []),
+        supplierListProvider.overrideWith((ref) async => const []),
+        categoryStatsProvider.overrideWith((ref) async => const {}),
       ],
     );
     addTearDown(container.dispose);
@@ -65,10 +85,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    container.read(goRouterProvider).go(AppRoutePaths.inventory);
+    container.read(goRouterProvider).go(AppRoutePaths.products);
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('PRODUTOS'), findsWidgets);
+    expect(
+      find.textContaining('Catálogo master com stock, lotes, validades'),
+      findsOneWidget,
+    );
+    expect(find.text('Novo produto'), findsOneWidget);
   });
 }
 

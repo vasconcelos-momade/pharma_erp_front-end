@@ -1,198 +1,458 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
-import '../../../../core/theme/design_tokens.dart';
+import '../../../../app/router/routes.dart';
+import '../../../../core/extensions/async_value_extensions.dart';
 import '../../../../core/theme/spacing.dart';
-import '../../../../shared/widgets/cards/enterprise_stat_card.dart';
+import '../../../../shared/widgets/cards/enterprise_kpi_grid.dart';
 import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
+import '../../data/datasources/dashboard_remote_datasource.dart';
+import '../../domain/dashboard_query.dart';
+import '../providers/dashboard_providers.dart';
+import '../widgets/dashboard_period_filters.dart';
+import '../widgets/dashboard_widgets.dart';
 
-/// Painel de stock: entradas, saídas, perdas e inventário.
-class StockDashboardPage extends StatelessWidget {
+class StockDashboardPage extends ConsumerStatefulWidget {
   const StockDashboardPage({super.key});
 
-  static const double _chartBreak = 520;
+  @override
+  ConsumerState<StockDashboardPage> createState() => _StockDashboardPageState();
+}
+
+class _StockDashboardPageState extends ConsumerState<StockDashboardPage> {
+  var _query = const DashboardQuery();
 
   @override
   Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
+    final async = ref.watch(stockDashboardProvider(_query));
+    final dataSource = ref.watch(dashboardRemoteDataSourceProvider);
+    final kpis = dashMap(async.valueOrNull?['kpis']);
+
+    Future<void> exportDashboard() async {
+      final data = async.valueOrNull;
+      if (data == null) return;
+      final tables = dashMap(data['tables']);
+      await dashboardExportCsv(
+        fileName: 'painel-stock.csv',
+        summary: kpis,
+        sections: [
+          DashboardExportSection(
+            title: 'Ultimos movimentos',
+            headers: const ['Tipo', 'Produto', 'Qtd', 'Origem'],
+            rows: dashList(tables?['ultimosMovimentos'])
+                .map(
+                  (row) => [
+                    row['tipo']?.toString() ?? '—',
+                    row['produtoNome']?.toString() ?? '—',
+                    '${row['quantidade'] ?? 0}',
+                    row['origem']?.toString() ?? '—',
+                  ],
+                )
+                .toList(),
+          ),
+          DashboardExportSection(
+            title: 'Produtos criticos',
+            headers: const ['Produto', 'Disponivel', 'Minimo'],
+            rows: dashList(tables?['produtosCriticos'])
+                .map(
+                  (row) => [
+                    row['nome']?.toString() ?? '—',
+                    '${row['disponivel'] ?? 0}',
+                    '${row['minimo'] ?? 0}',
+                  ],
+                )
+                .toList(),
+          ),
+          DashboardExportSection(
+            title: 'Inventarios',
+            headers: const ['Codigo', 'Estado', 'Inicio'],
+            rows: dashList(tables?['inventarios'])
+                .map(
+                  (row) => [
+                    row['codigo']?.toString() ?? '—',
+                    row['status']?.toString() ?? '—',
+                    dashLabel(row['iniciadoEm']),
+                  ],
+                )
+                .toList(),
+          ),
+          DashboardExportSection(
+            title: 'Requisicoes',
+            headers: const ['Documento', 'Tipo', 'Estado'],
+            rows: dashList(tables?['requisicoes'])
+                .map(
+                  (row) => [
+                    row['numeroDocumento']?.toString() ?? '—',
+                    row['tipo']?.toString() ?? '—',
+                    row['status']?.toString() ?? '—',
+                  ],
+                )
+                .toList(),
+          ),
+          DashboardExportSection(
+            title: 'Reservas',
+            headers: const ['Produto', 'Lote', 'Qtd', 'Expira'],
+            rows: dashList(tables?['reservas'])
+                .map(
+                  (row) => [
+                    row['produtoNome']?.toString() ?? '—',
+                    row['numeroLote']?.toString() ?? '—',
+                    '${row['quantidade'] ?? 0}',
+                    dashLabel(row['expiresAt']),
+                  ],
+                )
+                .toList(),
+          ),
+          DashboardExportSection(
+            title: 'Incineracoes',
+            headers: const ['Auto', 'Data'],
+            rows: dashList(tables?['incineracoes'])
+                .map(
+                  (row) => [
+                    row['numeroAuto']?.toString() ?? '—',
+                    dashLabel(row['dataIncineracao']),
+                  ],
+                )
+                .toList(),
+          ),
+        ],
+      );
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Exportação do painel stock concluída.')),
+      );
+    }
+
     return EnterpriseModuleHub(
       title: 'Painel de stock',
-      subtitle: 'Movimentos, perdas, requisições e progresso de inventário.',
+      subtitle: 'Stock, movimentos, inventários, requisições e reservas.',
       tag: 'Painéis',
-      kpis: const [
-        EnterpriseStatCard(title: 'Entradas 7d', value: '1 842', icon: Icons.move_to_inbox, accent: StatCardAccent.info),
-        EnterpriseStatCard(title: 'Saídas 7d', value: '2 104', icon: Icons.north_east, accent: StatCardAccent.positive),
-        EnterpriseStatCard(title: 'Perdas', value: '0,12%', icon: Icons.delete_outline, accent: StatCardAccent.warning),
-        EnterpriseStatCard(title: 'Inventário', value: '64%', icon: Icons.fact_check, accent: StatCardAccent.neutral),
+      scrollable: true,
+      actions: [
+        OutlinedButton.icon(
+          onPressed: async.valueOrNull == null ? null : exportDashboard,
+          icon: const Icon(Icons.download_outlined),
+          label: const Text('Exportar'),
+        ),
+        OutlinedButton.icon(
+          onPressed: () => ref.invalidate(stockDashboardProvider(_query)),
+          icon: const Icon(Icons.refresh_rounded),
+          label: const Text('Atualizar'),
+        ),
       ],
-      child: LayoutBuilder(
-        builder: (context, bx) {
-          final narrow = bx.maxWidth < _chartBreak;
-          final maxH = bx.maxHeight.isFinite ? bx.maxHeight : 400.0;
-          final lineCard = _ChartCard(
-            t: t,
-            child: LineChart(
-              LineChartData(
-                gridData: FlGridData(show: false),
-                borderData: FlBorderData(show: false),
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 40,
-                      interval: 2,
-                      getTitlesWidget: (v, m) {
-                        if ((v - v.round()).abs() > 0.01) return const SizedBox.shrink();
-                        return Text(
-                          '${v.toInt()}',
-                          style: TextStyle(fontSize: 8, color: t.textMuted, fontWeight: FontWeight.w600),
-                        );
-                      },
-                    ),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 32,
-                      getTitlesWidget: (v, m) => Text(
-                        'S${v.toInt()}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 8, color: t.textMuted, fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                  ),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                ),
-                lineBarsData: [
-                  LineChartBarData(
-                    spots: const [
-                      FlSpot(0, 3),
-                      FlSpot(1, 5),
-                      FlSpot(2, 4),
-                      FlSpot(3, 7),
-                      FlSpot(4, 6),
-                      FlSpot(5, 9),
-                    ],
-                    isCurved: true,
-                    color: t.brandBlue,
-                    barWidth: 2.5,
-                    dotData: const FlDotData(show: false),
-                  ),
-                ],
+      filters: DashboardPeriodFilters(
+        query: _query,
+        onChanged: (query) => setState(() => _query = query),
+        extraFilters: [
+          ActionChip(
+            label: const Text('Lotes'),
+            onPressed: () => context.go(AppRoutePaths.pharmacyLots),
+          ),
+          ActionChip(
+            label: const Text('Movimentos'),
+            onPressed: () => context.go(AppRoutePaths.stockMovements),
+          ),
+          ActionChip(
+            label: const Text('Requisições'),
+            onPressed: () => context.go(AppRoutePaths.stockRequisitions),
+          ),
+        ],
+      ),
+      kpis: kpis == null
+          ? null
+          : [
+              dashboardKpiCard(
+                title: 'Stock disponível',
+                value: dashKpi(kpis, 'stockDisponivel'),
+                icon: Icons.inventory_2_outlined,
+                accent: StatCardAccent.positive,
               ),
-            ),
-          );
-          final barCard = _ChartCard(
-            t: t,
-            child: BarChart(
-              BarChartData(
-                alignment: BarChartAlignment.spaceAround,
-                gridData: FlGridData(show: false),
-                borderData: FlBorderData(show: false),
-                titlesData: FlTitlesData(
-                  leftTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 40,
-                      interval: 2,
-                      getTitlesWidget: (v, m) {
-                        if ((v - v.round()).abs() > 0.01) return const SizedBox.shrink();
-                        return Text(
-                          '${v.toInt()}',
-                          style: TextStyle(fontSize: 8, color: t.textMuted, fontWeight: FontWeight.w600),
-                        );
-                      },
-                    ),
-                  ),
-                  bottomTitles: AxisTitles(
-                    sideTitles: SideTitles(
-                      showTitles: true,
-                      reservedSize: 32,
-                      getTitlesWidget: (v, m) => Text(
-                        'D${v.toInt() + 1}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 8, color: t.textMuted, fontWeight: FontWeight.w700),
-                      ),
-                    ),
-                  ),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                ),
-                barGroups: List.generate(
-                  6,
-                  (i) => BarChartGroupData(
-                    x: i,
-                    barRods: [
-                      BarChartRodData(
-                        toY: [4, 6, 3, 7, 5, 8][i].toDouble(),
-                        width: 10,
-                        borderRadius: BorderRadius.circular(3),
-                        color: i.isEven ? t.brandGreen : t.posWarning,
-                      ),
-                    ],
-                  ),
-                ),
+              dashboardKpiCard(
+                title: 'Stock total',
+                value: dashKpi(kpis, 'stockTotal'),
+                icon: Icons.inventory_outlined,
               ),
-            ),
-          );
+              dashboardKpiCard(
+                title: 'Reservado',
+                value: dashKpi(kpis, 'stockReservado'),
+                icon: Icons.lock_clock_outlined,
+              ),
+              dashboardKpiCard(
+                title: 'Valor stock',
+                value: '${dashKpi(kpis, 'valorTotalStock')} MZN',
+                icon: Icons.payments_outlined,
+              ),
+              dashboardKpiCard(
+                title: 'Críticos',
+                value: dashKpi(kpis, 'produtosCriticos'),
+                icon: Icons.warning_amber_outlined,
+                accent: StatCardAccent.danger,
+              ),
+              dashboardKpiCard(
+                title: 'Sem stock',
+                value: dashKpi(kpis, 'produtosSemStock'),
+                icon: Icons.remove_shopping_cart_outlined,
+                accent: StatCardAccent.warning,
+              ),
+              dashboardKpiCard(
+                title: 'Lotes activos',
+                value: dashKpi(kpis, 'lotesAtivos'),
+                icon: Icons.layers_outlined,
+              ),
+              dashboardKpiCard(
+                title: 'Inventários',
+                value: dashKpi(kpis, 'inventariosAbertos'),
+                icon: Icons.fact_check_outlined,
+              ),
+              dashboardKpiCard(
+                title: 'Requisições',
+                value: dashKpi(kpis, 'requisicoesPendentes'),
+                icon: Icons.assignment_outlined,
+              ),
+              dashboardKpiCard(
+                title: 'Incinerações',
+                value: dashKpi(kpis, 'incineracoes'),
+                icon: Icons.delete_sweep_outlined,
+                accent: StatCardAccent.warning,
+              ),
+              dashboardKpiCard(
+                title: 'Ajustes stock',
+                value: dashKpi(kpis, 'ajustesStock'),
+                icon: Icons.tune_outlined,
+              ),
+              dashboardKpiCard(
+                title: 'Alertas operac.',
+                value: dashKpi(kpis, 'alertasOperacionais'),
+                icon: Icons.crisis_alert_outlined,
+                accent: StatCardAccent.danger,
+              ),
+            ],
+      child: dashboardAsyncBody(
+        async: async,
+        onRetry: () => ref.invalidate(stockDashboardProvider(_query)),
+        builder: (data) {
+          final charts = dashMap(data['charts']);
+          final composicao = dashMap(charts?['composicaoLotes']) ?? const {};
 
-          if (narrow) {
-            const gap = AppSpacing.md;
-            final inner = maxH > gap ? maxH - gap : maxH;
-            final each = (inner / 2).clamp(100.0, 280.0);
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                SizedBox(height: each, child: lineCard),
-                const SizedBox(height: gap),
-                SizedBox(height: each, child: barCard),
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final chartWidth = constraints.maxWidth >= 1100
+                        ? (constraints.maxWidth - AppSpacing.lg) / 2
+                        : constraints.maxWidth;
+                    return Wrap(
+                      spacing: AppSpacing.lg,
+                      runSpacing: AppSpacing.lg,
+                      children: [
+                        SizedBox(
+                          width: chartWidth,
+                          child: dashboardChartCard(
+                            context: context,
+                            title: 'Composição de lotes',
+                            child: dashboardIndexedBarChart(
+                              context: context,
+                              labels: const ['Total', 'Disp.', 'Sanit.', 'Reserv.', 'Exp.'],
+                              values: [
+                                (composicao['totalLotes'] as num?)?.toDouble() ?? 0,
+                                (composicao['lotesDisponiveis'] as num?)?.toDouble() ?? 0,
+                                (composicao['lotesSanitarios'] as num?)?.toDouble() ?? 0,
+                                (composicao['lotesReservados'] as num?)?.toDouble() ?? 0,
+                                (composicao['lotesExpirados'] as num?)?.toDouble() ?? 0,
+                              ],
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: chartWidth,
+                          child: dashboardChartCard(
+                            context: context,
+                            title: 'Entradas x saídas',
+                            child: dashboardBarChart(
+                              context: context,
+                              points: dashList(charts?['entradasSaidas']),
+                              valueKey: 'quantidade',
+                              labelKey: 'tipo',
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: chartWidth,
+                          child: dashboardChartCard(
+                            context: context,
+                            title: 'Movimentação mensal',
+                            child: dashboardDualLineChart(
+                              context: context,
+                              points: dashList(charts?['movimentacaoMensal']).map((row) {
+                                return {
+                                  'receitas': row['entradas'],
+                                  'despesas': row['saidas'],
+                                  'mes': row['mes'],
+                                };
+                              }).toList(),
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: chartWidth,
+                          child: dashboardChartCard(
+                            context: context,
+                            title: 'Produtos mais movimentados',
+                            child: dashboardBarChart(
+                              context: context,
+                              points: dashList(charts?['produtosMaisMovimentados']),
+                              valueKey: 'quantidade',
+                              labelKey: 'produtoNome',
+                              color: Theme.of(context).colorScheme.secondary,
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: chartWidth,
+                          child: dashboardChartCard(
+                            context: context,
+                            title: 'Valor stock por categoria',
+                            child: dashboardBarChart(
+                              context: context,
+                              points: dashList(charts?['valorStockPorCategoria']),
+                              valueKey: 'valor',
+                              labelKey: 'categoria',
+                              color: Theme.of(context).colorScheme.tertiary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                DashboardPaginatedTable(
+                  title: 'Últimos movimentos',
+                  headers: const ['Tipo', 'Produto', 'Qtd', 'Origem'],
+                  reloadKey: '${_query.reloadKey}-mov',
+                  loadPage: (page, pageSize) async {
+                    final result = await dataSource.stockDashboardTable(
+                      table: 'ultimosMovimentos',
+                      query: _query,
+                      page: page,
+                      pageSize: pageSize,
+                    );
+                    return DashboardPagedTableResult.fromMap(result);
+                  },
+                  rowBuilder: (row) => [
+                    row['tipo']?.toString() ?? '—',
+                    row['produtoNome']?.toString() ?? '—',
+                    '${row['quantidade'] ?? 0}',
+                    row['origem']?.toString() ?? '—',
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                DashboardPaginatedTable(
+                  title: 'Produtos críticos',
+                  headers: const ['Produto', 'Disponível', 'Mínimo'],
+                  reloadKey: '${_query.reloadKey}-criticos',
+                  loadPage: (page, pageSize) async {
+                    final result = await dataSource.stockDashboardTable(
+                      table: 'produtosCriticos',
+                      query: _query,
+                      page: page,
+                      pageSize: pageSize,
+                    );
+                    return DashboardPagedTableResult.fromMap(result);
+                  },
+                  rowBuilder: (row) => [
+                    row['nome']?.toString() ?? '—',
+                    '${row['disponivel'] ?? 0}',
+                    '${row['minimo'] ?? 0}',
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                DashboardPaginatedTable(
+                  title: 'Inventários',
+                  headers: const ['Código', 'Estado', 'Início'],
+                  reloadKey: '${_query.reloadKey}-inv',
+                  loadPage: (page, pageSize) async {
+                    final result = await dataSource.stockDashboardTable(
+                      table: 'inventarios',
+                      query: _query,
+                      page: page,
+                      pageSize: pageSize,
+                    );
+                    return DashboardPagedTableResult.fromMap(result);
+                  },
+                  rowBuilder: (row) => [
+                    row['codigo']?.toString() ?? '—',
+                    row['status']?.toString() ?? '—',
+                    dashLabel(row['iniciadoEm']),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                DashboardPaginatedTable(
+                  title: 'Requisições recentes',
+                  headers: const ['Documento', 'Tipo', 'Estado'],
+                  reloadKey: '${_query.reloadKey}-req',
+                  loadPage: (page, pageSize) async {
+                    final result = await dataSource.stockDashboardTable(
+                      table: 'requisicoes',
+                      query: _query,
+                      page: page,
+                      pageSize: pageSize,
+                    );
+                    return DashboardPagedTableResult.fromMap(result);
+                  },
+                  rowBuilder: (row) => [
+                    row['numeroDocumento']?.toString() ?? '—',
+                    row['tipo']?.toString() ?? '—',
+                    row['status']?.toString() ?? '—',
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                DashboardPaginatedTable(
+                  title: 'Reservas',
+                  headers: const ['Produto', 'Lote', 'Qtd', 'Expira'],
+                  reloadKey: '${_query.reloadKey}-res',
+                  loadPage: (page, pageSize) async {
+                    final result = await dataSource.stockDashboardTable(
+                      table: 'reservas',
+                      query: _query,
+                      page: page,
+                      pageSize: pageSize,
+                    );
+                    return DashboardPagedTableResult.fromMap(result);
+                  },
+                  rowBuilder: (row) => [
+                    row['produtoNome']?.toString() ?? '—',
+                    row['numeroLote']?.toString() ?? '—',
+                    '${row['quantidade'] ?? 0}',
+                    dashLabel(row['expiresAt']),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                DashboardPaginatedTable(
+                  title: 'Incinerações',
+                  headers: const ['Auto', 'Data'],
+                  reloadKey: '${_query.reloadKey}-inc',
+                  loadPage: (page, pageSize) async {
+                    final result = await dataSource.stockDashboardTable(
+                      table: 'incineracoes',
+                      query: _query,
+                      page: page,
+                      pageSize: pageSize,
+                    );
+                    return DashboardPagedTableResult.fromMap(result);
+                  },
+                  rowBuilder: (row) => [
+                    row['numeroAuto']?.toString() ?? '—',
+                    dashLabel(row['dataIncineracao']),
+                  ],
+                ),
               ],
-            );
-          }
-          final rowH = maxH.clamp(180.0, 340.0);
-          return SizedBox(
-            height: rowH,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(child: lineCard),
-                const SizedBox(width: AppSpacing.lg),
-                Expanded(child: barCard),
-              ],
-            ),
           );
         },
       ),
-    );
-  }
-}
-
-class _ChartCard extends StatelessWidget {
-  const _ChartCard({required this.t, required this.child});
-
-  final PharmaTokens t;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, c) {
-        return Container(
-          width: c.maxWidth,
-          height: c.maxHeight,
-          padding: AppSpacing.cardPadding,
-          decoration: BoxDecoration(
-            color: t.card,
-            borderRadius: BorderRadius.circular(t.radiusMd),
-            border: Border.all(color: t.border.withValues(alpha: 0.65)),
-          ),
-          clipBehavior: Clip.hardEdge,
-          child: child,
-        );
-      },
     );
   }
 }

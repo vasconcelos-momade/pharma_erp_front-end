@@ -4,15 +4,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
+import '../../../../../shared/responsive/pharma_screen_layout.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
+import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
-import '../../domain/entities/categoria_produto.dart';
+import '../../../categories/presentation/providers/category_provider.dart';
+import '../../../../stock/presentation/providers/fornecedor_provider.dart';
 import '../../domain/entities/product.dart';
 import '../providers/product_provider.dart';
 import '../widgets/produto_categoria_chip.dart';
+import '../widgets/produto_detail_panel.dart';
 import '../widgets/produto_form_dialog.dart';
+import '../widgets/produto_regulacao_badges.dart';
+import '../../../../stock/presentation/widgets/movimentacoes_pagination.dart';
 
-/// Catálogo de produtos paginado e pesquisável com regras no backend.
+/// Catálogo master de produtos com filtros API, ordenação e painel de detalhe.
 class ProductsPage extends ConsumerStatefulWidget {
   const ProductsPage({super.key});
 
@@ -22,6 +28,22 @@ class ProductsPage extends ConsumerStatefulWidget {
 
 class _ProductsPageState extends ConsumerState<ProductsPage> {
   late final TextEditingController _searchController;
+
+  static const _tipoDispensacaoOptions = <MapEntry<String?, String>>[
+    MapEntry(null, 'Todas as regulações'),
+    MapEntry('VENDA_LIVRE', 'Venda livre'),
+    MapEntry('RECEITA_SIMPLES', 'Receita simples'),
+    MapEntry('RECEITA_CONTROLADA', 'Receita controlada'),
+    MapEntry('RECEITA_OBRIGATORIA', 'Receita obrigatória'),
+    MapEntry('PSICOTROPICO', 'Psicotrópico'),
+    MapEntry('NARCOTICO', 'Narcótico'),
+  ];
+
+  static const _sortOptions = <MapEntry<String, String>>[
+    MapEntry('nome', 'Nome'),
+    MapEntry('estoqueAtual', 'Stock'),
+    MapEntry('createdAt', 'Data de criação'),
+  ];
 
   @override
   void initState() {
@@ -43,271 +65,464 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
     final s = context.spacing;
     final state = ref.watch(masterProductListProvider);
     final controller = ref.read(masterProductListProvider.notifier);
+    final categoriesAsync = ref.watch(activeCategoriesProvider);
+    final suppliersAsync = ref.watch(supplierListProvider);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            const Spacer(),
-            FilledButton.icon(
-              onPressed: state.isLoading
-                  ? null
-                  : () => _openCreateDialog(context, ref),
-              icon: const Icon(Icons.add),
-              label: const Text('Novo produto'),
-            ),
-          ],
+    if (_searchController.text != state.query) {
+      _searchController.value = TextEditingValue(
+        text: state.query,
+        selection: TextSelection.collapsed(offset: state.query.length),
+      );
+    }
+
+    return EnterpriseModuleHub(
+      title: 'Produtos',
+      subtitle:
+          'Catálogo master com stock, lotes, validades e regras de dispensação.',
+      tag: 'Farmácia',
+      actions: [
+        OutlinedButton.icon(
+          onPressed: state.isLoading
+              ? null
+              : () => controller.refreshCurrentPage(),
+          icon: const Icon(Icons.refresh_rounded),
+          label: const Text('Atualizar'),
         ),
-        SizedBox(height: s.md),
-        Wrap(
-          spacing: s.sm,
-          runSpacing: s.sm,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            SizedBox(
-              width: 320,
-              child: TextField(
-                controller: _searchController,
-                onChanged: controller.onSearchChanged,
-                decoration: InputDecoration(
-                  hintText: 'Pesquisar por nome, substância, lote ou código...',
-                  prefixIcon: const Icon(Icons.search),
-                  border: const OutlineInputBorder(),
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: s.md,
-                    vertical: s.sm,
-                  ),
-                ),
+        FilledButton.icon(
+          onPressed: state.isLoading
+              ? null
+              : () => _openCreateDialog(context, ref),
+          icon: const Icon(Icons.add),
+          label: const Text('Novo produto'),
+        ),
+      ],
+      filters: Wrap(
+        spacing: s.sm,
+        runSpacing: s.sm,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          SizedBox(
+            width: 280,
+            child: TextField(
+              controller: _searchController,
+              onChanged: controller.onSearchChanged,
+              decoration: const InputDecoration(
+                hintText: 'Nome, substância ou código de barras...',
+                prefixIcon: Icon(Icons.search),
+                border: OutlineInputBorder(),
               ),
             ),
-            SizedBox(
-              width: 240,
-              child: DropdownButtonFormField<CategoriaProduto?>(
-                initialValue: state.categoria,
-                decoration: InputDecoration(
+          ),
+          SizedBox(
+            width: 200,
+            child: categoriesAsync.when(
+              data: (categories) => DropdownButtonFormField<String?>(
+                key: ValueKey('categoria-${state.categoriaId}'),
+                isExpanded: true,
+                initialValue: state.categoriaId,
+                decoration: const InputDecoration(
                   labelText: 'Categoria',
-                  border: const OutlineInputBorder(),
-                  contentPadding: EdgeInsets.symmetric(
-                    horizontal: s.md,
-                    vertical: s.sm,
-                  ),
+                  border: OutlineInputBorder(),
+                  isDense: true,
                 ),
                 items: [
-                  const DropdownMenuItem<CategoriaProduto?>(
+                  const DropdownMenuItem<String?>(
                     value: null,
                     child: Text('Todas'),
                   ),
-                  ...CategoriaProduto.values.map(
-                    (categoria) => DropdownMenuItem(
-                      value: categoria,
-                      child: Text(categoria.label),
+                  ...categories.map(
+                    (c) => DropdownMenuItem(
+                      value: c.id,
+                      child: Text(c.nome),
                     ),
                   ),
                 ],
-                onChanged: controller.setCategoriaFilter,
+                onChanged: controller.setCategoriaIdFilter,
+              ),
+              loading: () => const InputDecorator(
+                decoration: InputDecoration(
+                  labelText: 'Categoria',
+                  border: OutlineInputBorder(),
+                ),
+                child: SizedBox(
+                  height: 20,
+                  child: LinearProgressIndicator(),
+                ),
+              ),
+              error: (_, _) => const InputDecorator(
+                decoration: InputDecoration(
+                  labelText: 'Categoria',
+                  border: OutlineInputBorder(),
+                ),
+                child: Text('Erro ao carregar'),
               ),
             ),
-          ],
-        ),
-        if (state.isLoading) ...[
-          SizedBox(height: s.sm),
-          const LinearProgressIndicator(),
-        ],
-        SizedBox(height: s.md),
-        if (state.errorMessage != null)
-          Padding(
-            padding: EdgeInsets.only(bottom: s.sm),
-            child: Text(
-              state.errorMessage!,
-              style: TextStyle(color: t.posDanger),
+          ),
+          SizedBox(
+            width: 200,
+            child: suppliersAsync.when(
+              data: (suppliers) => DropdownButtonFormField<String?>(
+                key: ValueKey('fornecedor-${state.fornecedorId}'),
+                isExpanded: true,
+                initialValue: state.fornecedorId,
+                decoration: const InputDecoration(
+                  labelText: 'Fornecedor',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+                items: [
+                  const DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text('Todos'),
+                  ),
+                  ...suppliers.map(
+                    (f) => DropdownMenuItem(
+                      value: f.id,
+                      child: Text(f.nome),
+                    ),
+                  ),
+                ],
+                onChanged: controller.setFornecedorIdFilter,
+              ),
+              loading: () => const InputDecorator(
+                decoration: InputDecoration(
+                  labelText: 'Fornecedor',
+                  border: OutlineInputBorder(),
+                ),
+                child: SizedBox(
+                  height: 20,
+                  child: LinearProgressIndicator(),
+                ),
+              ),
+              error: (_, _) => const SizedBox.shrink(),
             ),
           ),
-        Expanded(
-          child: !state.isInitialized && state.isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Expanded(
-                      flex: 3,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Expanded(
-                            child: state.items.isEmpty
-                                ? const _InventoryProductsEmptyState()
-                                : EnterpriseDataTable(
-                                    showCheckboxColumn: false,
-                                    columns: [
-                                      DataColumn(
-                                        label: Text(
-                                          'PRODUTO',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w800,
-                                            color: t.textMuted,
-                                          ),
-                                        ),
-                                      ),
-                                      DataColumn(
-                                        label: Text(
-                                          'CATEGORIA',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w800,
-                                            color: t.textMuted,
-                                          ),
-                                        ),
-                                      ),
-                                      DataColumn(
-                                        label: Text(
-                                          'ESTADO',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w800,
-                                            color: t.textMuted,
-                                          ),
-                                        ),
-                                      ),
-                                      DataColumn(
-                                        label: Text(
-                                          'AÇÕES',
-                                          style: TextStyle(
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w800,
-                                            color: t.textMuted,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                    rowCount: state.items.length,
-                                    rowBuilder: (context, index) {
-                                      final product = state.items[index];
-                                      final isDeleting =
-                                          state.deletingProductIds.contains(
-                                            product.id,
-                                          );
-                                      return DataRow(
-                                        cells: [
-                                          DataCell(
-                                            Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              children: [
-                                                Text(
-                                                  product.nome,
-                                                  style: TextStyle(
-                                                    color: product.ativo
-                                                        ? t.textPrimary
-                                                        : t.textMuted,
-                                                    fontWeight: FontWeight.w700,
-                                                  ),
-                                                ),
-                                                if ((product.substanciaActiva ?? '')
-                                                    .isNotEmpty)
-                                                  Text(
-                                                    product.substanciaActiva!,
-                                                    style: TextStyle(
-                                                      color: t.textMuted,
-                                                      fontSize: 12,
-                                                    ),
-                                                  ),
-                                              ],
-                                            ),
-                                          ),
-                                          DataCell(
-                                            ProdutoCategoriaChip(
-                                              categoria: product.categoria,
-                                            ),
-                                          ),
-                                          DataCell(
-                                            _ProductStatusChip(
-                                              isActive: product.ativo,
-                                            ),
-                                          ),
-                                          DataCell(
-                                            Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                IconButton(
-                                                  tooltip: 'Editar',
-                                                  onPressed: isDeleting
-                                                      ? null
-                                                      : () => _openEditDialog(
-                                                          context,
-                                                          ref,
-                                                          product,
-                                                        ),
-                                                  icon: const Icon(
-                                                    Icons.edit_outlined,
-                                                  ),
-                                                ),
-                                                IconButton(
-                                                  tooltip: 'Excluir',
-                                                  onPressed: isDeleting
-                                                      ? null
-                                                      : () => _confirmDeleteProduct(
-                                                          context,
-                                                          ref,
-                                                          product,
-                                                        ),
-                                                  icon: isDeleting
-                                                      ? SizedBox(
-                                                          width: 18,
-                                                          height: 18,
-                                                          child:
-                                                              CircularProgressIndicator(
-                                                            strokeWidth: 2,
-                                                            color: t.posDanger,
-                                                          ),
-                                                        )
-                                                      : const Icon(
-                                                          Icons.delete_outline_rounded,
-                                                        ),
-                                                  color: t.posDanger,
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ],
-                                      );
-                                    },
-                                  ),
-                          ),
-                          if (state.isInitialized) ...[
-                            SizedBox(height: s.sm),
-                            _InventoryProductsPaginationBar(
-                              page: state.page,
-                              pageSize: state.pageSize,
-                              itemCount: state.items.length,
-                              hasMore: state.hasMore,
-                              onPrevious:
-                                  state.page > 1 && !state.isLoading
-                                  ? () => controller.goToPage(state.page - 1)
-                                  : null,
-                              onNext: state.hasMore && !state.isLoading
-                                  ? () => controller.goToPage(state.page + 1)
-                                  : null,
-                            ),
-                          ],
-                        ],
-                      ),
+          SizedBox(
+            width: 200,
+            child: DropdownButtonFormField<String?>(
+              key: ValueKey('tipo-${state.tipoDispensacao}'),
+              isExpanded: true,
+              initialValue: state.tipoDispensacao,
+              decoration: const InputDecoration(
+                labelText: 'Regulação',
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
+              items: _tipoDispensacaoOptions
+                  .map(
+                    (e) => DropdownMenuItem<String?>(
+                      value: e.key,
+                      child: Text(e.value),
                     ),
-                  ],
+                  )
+                  .toList(growable: false),
+              onChanged: controller.setTipoDispensacaoFilter,
+            ),
+          ),
+          SizedBox(
+            width: 160,
+            child: DropdownButtonFormField<bool?>(
+              key: ValueKey('ativo-${state.ativoFilter}'),
+              isExpanded: true,
+              initialValue: state.ativoFilter,
+              decoration: const InputDecoration(
+                labelText: 'Estado',
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
+              items: const [
+                DropdownMenuItem<bool?>(value: null, child: Text('Todos')),
+                DropdownMenuItem<bool?>(value: true, child: Text('Activos')),
+                DropdownMenuItem<bool?>(value: false, child: Text('Inactivos')),
+              ],
+              onChanged: controller.setAtivoFilter,
+            ),
+          ),
+          SizedBox(
+            width: 180,
+            child: DropdownButtonFormField<String>(
+              key: ValueKey('sort-${state.sortBy}'),
+              isExpanded: true,
+              initialValue: _sortOptions.any((o) => o.key == state.sortBy)
+                  ? state.sortBy
+                  : 'nome',
+              decoration: const InputDecoration(
+                labelText: 'Ordenar por',
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
+              items: _sortOptions
+                  .map(
+                    (e) => DropdownMenuItem(
+                      value: e.key,
+                      child: Text(e.value),
+                    ),
+                  )
+                  .toList(growable: false),
+              onChanged: (value) {
+                if (value != null) {
+                  controller.setSort(value, state.sortOrder);
+                }
+              },
+            ),
+          ),
+          IconButton(
+            tooltip: state.sortOrder == 'asc'
+                ? 'Ordem ascendente'
+                : 'Ordem descendente',
+            onPressed: () => controller.setSort(
+              state.sortBy,
+              state.sortOrder == 'asc' ? 'desc' : 'asc',
+            ),
+            icon: Icon(
+              state.sortOrder == 'asc'
+                  ? Icons.arrow_upward_rounded
+                  : Icons.arrow_downward_rounded,
+            ),
+          ),
+          FilterChip(
+            label: const Text('Incluir inactivos'),
+            selected: state.includeInactive,
+            onSelected: controller.setIncludeInactive,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (state.isLoading) const LinearProgressIndicator(),
+          if (state.errorMessage != null)
+            Padding(
+              padding: EdgeInsets.only(bottom: s.sm),
+              child: Text(
+                state.errorMessage!,
+                style: TextStyle(color: t.posDanger),
+              ),
+            ),
+          Expanded(
+            child: !state.isInitialized && state.isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : state.items.isEmpty
+                    ? const _ProductsEmptyState()
+                    : EnterpriseDataTable(
+                        showCheckboxColumn: false,
+                        columns: const [
+                          DataColumn(label: Text('PRODUTO')),
+                          DataColumn(label: Text('CATEGORIA')),
+                          DataColumn(label: Text('STOCK')),
+                          DataColumn(label: Text('LOTES')),
+                          DataColumn(label: Text('PRÓX. VALIDADE')),
+                          DataColumn(label: Text('REGULAÇÃO')),
+                          DataColumn(label: Text('ESTADO')),
+                          DataColumn(label: Text('AÇÕES')),
+                        ],
+                        rowCount: state.items.length,
+                        rowBuilder: (context, index) {
+                          final product = state.items[index];
+                          final isDeleting =
+                              state.deletingProductIds.contains(product.id);
+                          return DataRow(
+                            onSelectChanged: (_) =>
+                                _openDetails(context, product),
+                            cells: [
+                              DataCell(
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      product.nome,
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        color: product.ativo
+                                            ? t.textPrimary
+                                            : t.textMuted,
+                                      ),
+                                    ),
+                                    if ((product.substanciaActiva ?? '')
+                                        .isNotEmpty)
+                                      Text(
+                                        product.substanciaActiva!,
+                                        style: TextStyle(
+                                          color: t.textMuted,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ),
+                              DataCell(
+                                ProdutoCategoriaChip(
+                                  categoria: product.categoria,
+                                  label: product.categoriaNome,
+                                ),
+                              ),
+                              DataCell(
+                                Text(
+                                  _formatStock(product.estoqueAtual),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: product.estoqueAtual <=
+                                            product.estoqueMinimo
+                                        ? t.posDanger
+                                        : t.textPrimary,
+                                  ),
+                                ),
+                              ),
+                              DataCell(Text('${product.numLotes}')),
+                              DataCell(
+                                Text(_formatDate(product.proximaValidade)),
+                              ),
+                              DataCell(
+                                ProdutoRegulacaoBadges(product: product),
+                              ),
+                              DataCell(
+                                _ProductStatusChip(isActive: product.ativo),
+                              ),
+                              DataCell(
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      tooltip: 'Detalhes',
+                                      onPressed: () =>
+                                          _openDetails(context, product),
+                                      icon: const Icon(Icons.visibility_outlined),
+                                    ),
+                                    IconButton(
+                                      tooltip: 'Editar',
+                                      onPressed: isDeleting
+                                          ? null
+                                          : () => _openEditDialog(
+                                                context,
+                                                ref,
+                                                product,
+                                              ),
+                                      icon: const Icon(Icons.edit_outlined),
+                                    ),
+                                    IconButton(
+                                      tooltip: 'Excluir',
+                                      onPressed: isDeleting
+                                          ? null
+                                          : () => _confirmDeleteProduct(
+                                                context,
+                                                ref,
+                                                product,
+                                              ),
+                                      icon: isDeleting
+                                          ? SizedBox(
+                                              width: 18,
+                                              height: 18,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                color: t.posDanger,
+                                              ),
+                                            )
+                                          : const Icon(
+                                              Icons.delete_outline_rounded,
+                                            ),
+                                      color: t.posDanger,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+          ),
+          if (state.isInitialized) ...[
+            SizedBox(height: s.sm),
+            MovimentacoesPagination(
+              page: state.page,
+              pageSize: state.pageSize,
+              hasMore: state.hasMore,
+              isBusy: state.isLoading,
+              onPrev: state.page > 1
+                  ? () => controller.goToPage(state.page - 1)
+                  : null,
+              onNext: state.hasMore
+                  ? () => controller.goToPage(state.page + 1)
+                  : null,
+              onPageSizeChanged: controller.setPageSize,
+            ),
+            if (state.totalCount != null)
+              Padding(
+                padding: EdgeInsets.only(top: s.xs),
+                child: Text(
+                  'Total: ${state.totalCount} produto(s)',
+                  style: TextStyle(color: t.textMuted, fontSize: 12),
                 ),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  String _formatStock(double value) {
+    if (value == value.roundToDouble()) {
+      return value.toInt().toString();
+    }
+    return value.toStringAsFixed(2);
+  }
+
+  String _formatDate(DateTime? date) {
+    if (date == null) return '—';
+    final y = date.year.toString().padLeft(4, '0');
+    final m = date.month.toString().padLeft(2, '0');
+    final d = date.day.toString().padLeft(2, '0');
+    return '$d/$m/$y';
+  }
+
+  Future<void> _openDetails(BuildContext context, Product product) async {
+    final isMobile = PharmaScreenLayout.isMobile(context);
+
+    if (isMobile) {
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute(
+          builder: (screenContext) => Scaffold(
+            appBar: AppBar(title: Text(product.nome)),
+            body: ProdutoDetailPanel(
+              product: product,
+              onClose: () => Navigator.of(screenContext).pop(),
+            ),
+          ),
         ),
-      ],
+      );
+      return;
+    }
+
+    await showDialog<void>(
+      context: context,
+      barrierDismissible: true,
+      builder: (dialogContext) {
+        final t = context.pharmaTokens;
+        final s = context.spacing;
+        return Dialog(
+          alignment: Alignment.centerRight,
+          insetPadding: EdgeInsets.symmetric(horizontal: 16, vertical: s.md),
+          backgroundColor: Colors.transparent,
+          child: Container(
+            width: 560,
+            decoration: BoxDecoration(
+              color: t.bgPrimary,
+              borderRadius: BorderRadius.circular(t.radiusXl),
+              border: Border.all(color: t.border.withValues(alpha: 0.55)),
+            ),
+            child: ProdutoDetailPanel(
+              product: product,
+              onClose: () => Navigator.of(dialogContext).pop(),
+            ),
+          ),
+        );
+      },
     );
   }
 
   Future<void> _openCreateDialog(BuildContext context, WidgetRef ref) async {
     final result = await showProdutoFormDialog(context);
-    if (result == null || !context.mounted) {
-      return;
-    }
+    if (result == null || !context.mounted) return;
 
     try {
       await ref
@@ -317,13 +532,9 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
         PharmaFeedback.success(context, 'Produto criado com sucesso');
       }
     } on ApiFailure catch (e) {
-      if (context.mounted) {
-        PharmaFeedback.error(context, e.message);
-      }
+      if (context.mounted) PharmaFeedback.error(context, e.message);
     } catch (e) {
-      if (context.mounted) {
-        PharmaFeedback.error(context, e.toString());
-      }
+      if (context.mounted) PharmaFeedback.error(context, e.toString());
     }
   }
 
@@ -333,9 +544,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
     Product product,
   ) async {
     final result = await showProdutoFormDialog(context, product: product);
-    if (result == null || !context.mounted) {
-      return;
-    }
+    if (result == null || !context.mounted) return;
 
     try {
       await ref
@@ -345,13 +554,9 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
         PharmaFeedback.success(context, 'Produto actualizado com sucesso');
       }
     } on ApiFailure catch (e) {
-      if (context.mounted) {
-        PharmaFeedback.error(context, e.message);
-      }
+      if (context.mounted) PharmaFeedback.error(context, e.message);
     } catch (e) {
-      if (context.mounted) {
-        PharmaFeedback.error(context, e.toString());
-      }
+      if (context.mounted) PharmaFeedback.error(context, e.toString());
     }
   }
 
@@ -364,14 +569,12 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
       context: context,
       title: 'Confirmar exclusão',
       message:
-          'Deseja excluir o produto "${product.nome}"?\n\n'
-          'A operação seguirá o padrão actual do sistema e removerá o item da gestão activa.',
+          'Deseja excluir o produto «${product.nome}»?\n\n'
+          'A operação seguirá o padrão actual do sistema.',
       confirmText: 'Excluir',
       cancelText: 'Cancelar',
     );
-    if (!context.mounted || confirmed != true) {
-      return;
-    }
+    if (!context.mounted || confirmed != true) return;
 
     try {
       await ref.read(masterProductListProvider.notifier).deleteProduct(product.id);
@@ -379,19 +582,15 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
         PharmaFeedback.success(context, 'Produto excluído com sucesso');
       }
     } on ApiFailure catch (e) {
-      if (context.mounted) {
-        PharmaFeedback.error(context, e.message);
-      }
+      if (context.mounted) PharmaFeedback.error(context, e.message);
     } catch (e) {
-      if (context.mounted) {
-        PharmaFeedback.error(context, e.toString());
-      }
+      if (context.mounted) PharmaFeedback.error(context, e.toString());
     }
   }
 }
 
-class _InventoryProductsEmptyState extends StatelessWidget {
-  const _InventoryProductsEmptyState();
+class _ProductsEmptyState extends StatelessWidget {
+  const _ProductsEmptyState();
 
   @override
   Widget build(BuildContext context) {
@@ -416,74 +615,13 @@ class _InventoryProductsEmptyState extends StatelessWidget {
               ),
               SizedBox(height: s.xs),
               Text(
-                'Ajuste a pesquisa, altere a categoria ou avance para outra página.',
+                'Ajuste os filtros ou crie um novo produto.',
                 textAlign: TextAlign.center,
                 style: TextStyle(color: t.textMuted),
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _InventoryProductsPaginationBar extends StatelessWidget {
-  const _InventoryProductsPaginationBar({
-    required this.page,
-    required this.pageSize,
-    required this.itemCount,
-    required this.hasMore,
-    required this.onPrevious,
-    required this.onNext,
-  });
-
-  final int page;
-  final int pageSize;
-  final int itemCount;
-  final bool hasMore;
-  final VoidCallback? onPrevious;
-  final VoidCallback? onNext;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
-    final s = context.spacing;
-    final start = itemCount == 0 ? 0 : ((page - 1) * pageSize) + 1;
-    final end = itemCount == 0 ? 0 : start + itemCount - 1;
-    final resultsLabel = itemCount == 0
-        ? 'Sem resultados nesta página'
-        : 'Mostrando $start-$end';
-
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: s.md, vertical: s.sm),
-      decoration: BoxDecoration(
-        color: t.card,
-        borderRadius: BorderRadius.circular(t.radiusMd),
-        border: Border.all(color: t.border.withValues(alpha: 0.5)),
-      ),
-      child: Row(
-        children: [
-          OutlinedButton.icon(
-            onPressed: onPrevious,
-            icon: const Icon(Icons.chevron_left_rounded),
-            label: const Text('Anterior'),
-          ),
-          const Spacer(),
-          Text(
-            '$resultsLabel • Página $page',
-            style: TextStyle(
-              color: t.textPrimary,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const Spacer(),
-          FilledButton.icon(
-            onPressed: onNext,
-            icon: const Icon(Icons.chevron_right_rounded),
-            label: const Text('Seguinte'),
-          ),
-        ],
       ),
     );
   }

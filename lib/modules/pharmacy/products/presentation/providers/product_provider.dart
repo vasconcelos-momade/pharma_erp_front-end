@@ -385,12 +385,18 @@ class MasterProductListState {
   const MasterProductListState({
     this.items = const <Product>[],
     this.query = '',
-    this.categoria,
+    this.categoriaId,
+    this.fornecedorId,
+    this.tipoDispensacao,
+    this.ativoFilter,
     this.includeInactive = false,
+    this.sortBy = 'nome',
+    this.sortOrder = 'asc',
     this.deletingProductIds = const <String>{},
     this.page = 1,
     this.pageSize = 20,
     this.hasMore = false,
+    this.totalCount,
     this.isLoading = false,
     this.isInitialized = false,
     this.errorMessage,
@@ -398,12 +404,18 @@ class MasterProductListState {
 
   final List<Product> items;
   final String query;
-  final CategoriaProduto? categoria;
+  final String? categoriaId;
+  final String? fornecedorId;
+  final String? tipoDispensacao;
+  final bool? ativoFilter;
   final bool includeInactive;
+  final String sortBy;
+  final String sortOrder;
   final Set<String> deletingProductIds;
   final int page;
   final int pageSize;
   final bool hasMore;
+  final int? totalCount;
   final bool isLoading;
   final bool isInitialized;
   final String? errorMessage;
@@ -411,13 +423,22 @@ class MasterProductListState {
   MasterProductListState copyWith({
     List<Product>? items,
     String? query,
-    CategoriaProduto? categoria,
-    bool clearCategoria = false,
+    String? categoriaId,
+    bool clearCategoriaId = false,
+    String? fornecedorId,
+    bool clearFornecedorId = false,
+    String? tipoDispensacao,
+    bool clearTipoDispensacao = false,
+    bool? ativoFilter,
+    bool clearAtivoFilter = false,
     bool? includeInactive,
+    String? sortBy,
+    String? sortOrder,
     Set<String>? deletingProductIds,
     int? page,
     int? pageSize,
     bool? hasMore,
+    int? totalCount,
     bool? isLoading,
     bool? isInitialized,
     String? errorMessage,
@@ -426,12 +447,21 @@ class MasterProductListState {
     return MasterProductListState(
       items: items ?? this.items,
       query: query ?? this.query,
-      categoria: clearCategoria ? null : (categoria ?? this.categoria),
+      categoriaId: clearCategoriaId ? null : (categoriaId ?? this.categoriaId),
+      fornecedorId:
+          clearFornecedorId ? null : (fornecedorId ?? this.fornecedorId),
+      tipoDispensacao: clearTipoDispensacao
+          ? null
+          : (tipoDispensacao ?? this.tipoDispensacao),
+      ativoFilter: clearAtivoFilter ? null : (ativoFilter ?? this.ativoFilter),
       includeInactive: includeInactive ?? this.includeInactive,
+      sortBy: sortBy ?? this.sortBy,
+      sortOrder: sortOrder ?? this.sortOrder,
       deletingProductIds: deletingProductIds ?? this.deletingProductIds,
       page: page ?? this.page,
       pageSize: pageSize ?? this.pageSize,
       hasMore: hasMore ?? this.hasMore,
+      totalCount: totalCount ?? this.totalCount,
       isLoading: isLoading ?? this.isLoading,
       isInitialized: isInitialized ?? this.isInitialized,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
@@ -471,18 +501,69 @@ class MasterProductListController extends Notifier<MasterProductListState> {
     });
   }
 
-  void setCategoriaFilter(CategoriaProduto? categoria) {
-    if (state.categoria == categoria) {
-      return;
-    }
+  void setCategoriaIdFilter(String? categoriaId) {
+    if (state.categoriaId == categoriaId) return;
     _debounce?.cancel();
     state = state.copyWith(
-      categoria: categoria,
-      clearCategoria: categoria == null,
+      categoriaId: categoriaId,
+      clearCategoriaId: categoriaId == null,
       page: 1,
       isLoading: true,
       clearError: true,
     );
+    unawaited(load());
+  }
+
+  void setFornecedorIdFilter(String? fornecedorId) {
+    if (state.fornecedorId == fornecedorId) return;
+    state = state.copyWith(
+      fornecedorId: fornecedorId,
+      clearFornecedorId: fornecedorId == null,
+      page: 1,
+      isLoading: true,
+      clearError: true,
+    );
+    unawaited(load());
+  }
+
+  void setTipoDispensacaoFilter(String? tipo) {
+    if (state.tipoDispensacao == tipo) return;
+    state = state.copyWith(
+      tipoDispensacao: tipo,
+      clearTipoDispensacao: tipo == null,
+      page: 1,
+      isLoading: true,
+      clearError: true,
+    );
+    unawaited(load());
+  }
+
+  void setAtivoFilter(bool? ativo) {
+    if (state.ativoFilter == ativo) return;
+    state = state.copyWith(
+      ativoFilter: ativo,
+      clearAtivoFilter: ativo == null,
+      page: 1,
+      isLoading: true,
+      clearError: true,
+    );
+    unawaited(load());
+  }
+
+  void setSort(String sortBy, String sortOrder) {
+    state = state.copyWith(
+      sortBy: sortBy,
+      sortOrder: sortOrder,
+      page: 1,
+      isLoading: true,
+      clearError: true,
+    );
+    unawaited(load());
+  }
+
+  void setPageSize(int pageSize) {
+    if (state.pageSize == pageSize) return;
+    state = state.copyWith(pageSize: pageSize, page: 1, isLoading: true, clearError: true);
     unawaited(load());
   }
 
@@ -518,10 +599,17 @@ class MasterProductListController extends Notifier<MasterProductListState> {
 
     try {
       final repository = ref.read(productRepositoryProvider);
+      final isBarcode = _looksLikeBarcode(state.query);
       final response = await repository.searchMasterProducts(
-        query: state.query.isEmpty ? null : state.query,
-        categoria: state.categoria,
+        query: isBarcode ? null : (state.query.isEmpty ? null : state.query),
+        barcode: isBarcode ? state.query : null,
+        categoriaId: state.categoriaId,
+        fornecedorId: state.fornecedorId,
+        tipoDispensacao: state.tipoDispensacao,
+        ativo: state.ativoFilter,
         includeInactive: state.includeInactive,
+        sortBy: state.sortBy,
+        sortOrder: state.sortOrder,
         page: state.page,
         pageSize: state.pageSize,
       );
@@ -535,6 +623,7 @@ class MasterProductListController extends Notifier<MasterProductListState> {
         page: response.page,
         pageSize: response.pageSize,
         hasMore: response.hasMore,
+        totalCount: response.totalCount,
         isLoading: false,
         isInitialized: true,
         clearError: true,
@@ -614,6 +703,12 @@ class MasterProductListController extends Notifier<MasterProductListState> {
             .toSet(),
       );
     }
+  }
+
+  bool _looksLikeBarcode(String value) {
+    final trimmed = value.trim();
+    if (trimmed.length < 8) return false;
+    return RegExp(r'^\d+$').hasMatch(trimmed);
   }
 }
 

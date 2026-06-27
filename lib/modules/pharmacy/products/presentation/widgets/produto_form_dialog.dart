@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/theme/design_metrics.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
-import '../../domain/entities/categoria_produto.dart';
+import '../../../categories/presentation/providers/category_provider.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/entities/product_tax_rule.dart';
 import '../providers/product_provider.dart';
@@ -12,7 +12,7 @@ import '../providers/product_provider.dart';
 class ProdutoFormDialogResult {
   const ProdutoFormDialogResult({
     required this.nome,
-    required this.categoria,
+    required this.categoriaId,
     required this.activo,
     this.barcode,
     this.substanciaActiva,
@@ -24,7 +24,7 @@ class ProdutoFormDialogResult {
   });
 
   final String nome;
-  final CategoriaProduto categoria;
+  final String categoriaId;
   final bool activo;
   final String? barcode;
   final String? substanciaActiva;
@@ -37,7 +37,7 @@ class ProdutoFormDialogResult {
   Map<String, dynamic> toPayload() {
     return <String, dynamic>{
       'nome': nome,
-      'categoria': categoria.apiValue,
+      'categoriaId': categoriaId,
       'ativo': activo,
       'activo': activo,
       'taxRuleId': taxRuleId,
@@ -73,7 +73,7 @@ class _ProdutoFormDialogState extends ConsumerState<ProdutoFormDialog> {
   late final TextEditingController _formaController;
   late final TextEditingController _apresentacaoController;
   late final TextEditingController _estoqueMinimoController;
-  late CategoriaProduto _categoria;
+  String? _categoriaId;
   late bool _activo;
   String? _selectedTaxRuleId;
 
@@ -92,7 +92,7 @@ class _ProdutoFormDialogState extends ConsumerState<ProdutoFormDialog> {
     _estoqueMinimoController = TextEditingController(
       text: product != null ? product.estoqueMinimo.toString() : '',
     );
-    _categoria = product?.categoria ?? CategoriaProduto.medicamento;
+    _categoriaId = product?.categoriaId;
     _activo = product?.ativo ?? true;
     _selectedTaxRuleId = product?.taxRule?.id;
   }
@@ -123,10 +123,17 @@ class _ProdutoFormDialogState extends ConsumerState<ProdutoFormDialog> {
     final estoqueMinimo =
         estoqueText.isEmpty ? null : double.tryParse(estoqueText);
 
+    if (_categoriaId == null || _categoriaId!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Seleccione uma categoria')),
+      );
+      return;
+    }
+
     Navigator.of(context).pop(
       ProdutoFormDialogResult(
         nome: _nomeController.text.trim(),
-        categoria: _categoria,
+        categoriaId: _categoriaId!,
         activo: _activo,
         barcode: _barcodeController.text.trim(),
         substanciaActiva: _substanciaController.text.trim(),
@@ -173,6 +180,7 @@ class _ProdutoFormDialogState extends ConsumerState<ProdutoFormDialog> {
   Widget build(BuildContext context) {
     final s = context.spacing;
     final taxRulesAsync = ref.watch(productTaxRulesProvider);
+    final categoriesAsync = ref.watch(activeCategoriesProvider);
     final taxRules = taxRulesAsync.maybeWhen(
       data: (value) => value,
       orElse: () => const <ProductTaxRule>[],
@@ -206,25 +214,55 @@ class _ProdutoFormDialogState extends ConsumerState<ProdutoFormDialog> {
                   },
                 ),
                 SizedBox(height: s.md),
-                DropdownButtonFormField<CategoriaProduto>(
-                  initialValue: _categoria,
-                  decoration: const InputDecoration(
-                    labelText: 'Categoria',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: CategoriaProduto.values
-                      .map(
-                        (categoria) => DropdownMenuItem(
-                          value: categoria,
-                          child: Text(categoria.label),
-                        ),
-                      )
-                      .toList(growable: false),
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() => _categoria = value);
+                categoriesAsync.when(
+                  data: (categories) {
+                    final resolvedId = _categoriaId != null &&
+                            categories.any((c) => c.id == _categoriaId)
+                        ? _categoriaId
+                        : (categories.isNotEmpty ? categories.first.id : null);
+                    if (_categoriaId == null && resolvedId != null) {
+                      _categoriaId = resolvedId;
                     }
+                    return DropdownButtonFormField<String>(
+                      key: ValueKey('form-categoria-$resolvedId'),
+                      initialValue: resolvedId,
+                      decoration: const InputDecoration(
+                        labelText: 'Categoria *',
+                        border: OutlineInputBorder(),
+                      ),
+                      items: categories
+                          .map(
+                            (c) => DropdownMenuItem(
+                              value: c.id,
+                              child: Text(c.nome),
+                            ),
+                          )
+                          .toList(growable: false),
+                      onChanged: categories.isEmpty
+                          ? null
+                          : (value) => setState(() => _categoriaId = value),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Categoria é obrigatória';
+                        }
+                        return null;
+                      },
+                    );
                   },
+                  loading: () => const InputDecorator(
+                    decoration: InputDecoration(
+                      labelText: 'Categoria *',
+                      border: OutlineInputBorder(),
+                    ),
+                    child: LinearProgressIndicator(),
+                  ),
+                  error: (_, _) => const InputDecorator(
+                    decoration: InputDecoration(
+                      labelText: 'Categoria *',
+                      border: OutlineInputBorder(),
+                    ),
+                    child: Text('Não foi possível carregar categorias'),
+                  ),
                 ),
                 SizedBox(height: s.md),
                 SwitchListTile.adaptive(

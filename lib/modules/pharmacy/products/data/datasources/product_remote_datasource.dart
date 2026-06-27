@@ -13,7 +13,19 @@ import '../models/product_model.dart';
 abstract class ProductRemoteDataSource {
   Future<String?> fetchCatalogVersion();
 
+  Future<Map<String, dynamic>> dashboard();
   Future<ProductModel> getProduct(String id);
+  Future<List<Map<String, dynamic>>> listSuppliers(String id);
+  Future<PaginationResponse<Map<String, dynamic>>> listHistory({
+    required String id,
+    int page = 1,
+    int pageSize = 20,
+  });
+  Future<PaginationResponse<Map<String, dynamic>>> listAudit({
+    required String id,
+    int page = 1,
+    int pageSize = 20,
+  });
   Future<ProductModel> createProduct(Map<String, dynamic> payload);
   Future<ProductModel> updateProduct(String id, Map<String, dynamic> payload);
   Future<void> deleteProduct(String id);
@@ -22,8 +34,13 @@ abstract class ProductRemoteDataSource {
   Future<PaginationResponse<ProductModel>> searchMasterProducts({
     String? query,
     String? barcode,
-    String? categoria,
+    String? categoriaId,
+    String? fornecedorId,
+    String? tipoDispensacao,
+    bool? ativo,
     bool includeInactive = false,
+    String? sortBy,
+    String? sortOrder,
     int page = 1,
     int pageSize = 20,
   });
@@ -119,17 +136,121 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
     return defaultValue;
   }
 
-  @override
-  Future<ProductModel> getProduct(String id) async {
+  Future<Map<String, dynamic>> _getMap(String path) async {
+    final response = await _dio.get<Map<String, dynamic>>(path);
+    final data = response.data;
+    if (data == null) {
+      throw const ApiFailure('Resposta inválida');
+    }
+    return ApiEnvelope.unwrapMap(data);
+  }
+
+  Future<PaginationResponse<Map<String, dynamic>>> _getRawPage(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    final payload = await _getMapWithParams(
+      path,
+      queryParameters: queryParameters,
+    );
+    final items = (payload['items'] as List<dynamic>? ?? <dynamic>[])
+        .cast<Map<String, dynamic>>();
+    return PaginationResponse<Map<String, dynamic>>(
+      items: items,
+      page: payload['page'] as int? ?? page,
+      pageSize: payload['pageSize'] as int? ?? pageSize,
+      hasMore: payload['hasMore'] as bool? ?? false,
+      totalCount: payload['totalCount'] as int?,
+    );
+  }
+
+  Future<Map<String, dynamic>> _getMapWithParams(
+    String path, {
+    Map<String, dynamic>? queryParameters,
+  }) async {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
-        ApiConstants.tenantProduto(id),
+        path,
+        queryParameters: queryParameters,
       );
       final data = response.data;
       if (data == null) {
-        throw const ApiFailure('Produto não encontrado');
+        throw const ApiFailure('Resposta inválida');
       }
-      return ProductModel.fromJson(data);
+      return ApiEnvelope.unwrapMap(data);
+    } on DioException catch (e) {
+      throw ApiFailure.fromDio(e);
+    }
+  }
+
+  @override
+  Future<Map<String, dynamic>> dashboard() async {
+    try {
+      return await _getMap(ApiConstants.tenantDashboardProdutos);
+    } on DioException catch (e) {
+      throw ApiFailure.fromDio(e);
+    } on ApiFailure {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<ProductModel> getProduct(String id) async {
+    try {
+      return ProductModel.fromJson(await _getMap(ApiConstants.tenantProduto(id)));
+    } on DioException catch (e) {
+      throw ApiFailure.fromDio(e);
+    } on ApiFailure {
+      rethrow;
+    }
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> listSuppliers(String id) async {
+    try {
+      final response = await _dio.get<dynamic>(
+        ApiConstants.tenantProdutoFornecedores(id),
+      );
+      return ApiEnvelope.unwrapList(response.data)
+          .cast<Map<String, dynamic>>();
+    } on DioException catch (e) {
+      throw ApiFailure.fromDio(e);
+    }
+  }
+
+  @override
+  Future<PaginationResponse<Map<String, dynamic>>> listHistory({
+    required String id,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    try {
+      return await _getRawPage(
+        ApiConstants.tenantProdutoHistorico(id),
+        queryParameters: <String, dynamic>{'page': page, 'pageSize': pageSize},
+        page: page,
+        pageSize: pageSize,
+      );
+    } on DioException catch (e) {
+      throw ApiFailure.fromDio(e);
+    }
+  }
+
+  @override
+  Future<PaginationResponse<Map<String, dynamic>>> listAudit({
+    required String id,
+    int page = 1,
+    int pageSize = 20,
+  }) async {
+    try {
+      return await _getRawPage(
+        ApiConstants.tenantProdutoAuditoria(id),
+        queryParameters: <String, dynamic>{'page': page, 'pageSize': pageSize},
+        page: page,
+        pageSize: pageSize,
+      );
     } on DioException catch (e) {
       throw ApiFailure.fromDio(e);
     }
@@ -202,19 +323,33 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
   Future<PaginationResponse<ProductModel>> searchMasterProducts({
     String? query,
     String? barcode,
-    String? categoria,
+    String? categoriaId,
+    String? fornecedorId,
+    String? tipoDispensacao,
+    bool? ativo,
     bool includeInactive = false,
+    String? sortBy,
+    String? sortOrder,
     int page = 1,
     int pageSize = 20,
   }) async {
     try {
+      final trimmedQuery = query?.trim();
+      final trimmedBarcode = barcode?.trim();
       final response = await _dio.get<Map<String, dynamic>>(
         ApiConstants.tenantProdutos,
         queryParameters: <String, dynamic>{
-          if (query != null && query.trim().isNotEmpty) 'q': query.trim(),
-          if (barcode != null && barcode.trim().isNotEmpty) 'barcode': barcode.trim(),
-          if (categoria != null && categoria.isNotEmpty) 'categoria': categoria,
-          if (includeInactive) 'includeInactive': true,
+          'q': ?(trimmedQuery != null && trimmedQuery.isNotEmpty ? trimmedQuery : null),
+          'barcode': ?(trimmedBarcode != null && trimmedBarcode.isNotEmpty ? trimmedBarcode : null),
+          'categoriaId': ?(categoriaId != null && categoriaId.isNotEmpty ? categoriaId : null),
+          'fornecedorId': ?(fornecedorId != null && fornecedorId.isNotEmpty ? fornecedorId : null),
+          'tipoDispensacao': ?(tipoDispensacao != null && tipoDispensacao.isNotEmpty
+              ? tipoDispensacao
+              : null),
+          'ativo': ?ativo,
+          'includeInactive': ?(includeInactive ? true : null),
+          'sortBy': ?sortBy,
+          'sortOrder': ?sortOrder,
           'page': page,
           'pageSize': pageSize,
         },
@@ -234,6 +369,7 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
         page: payload['page'] as int? ?? page,
         pageSize: payload['pageSize'] as int? ?? pageSize,
         hasMore: payload['hasMore'] as bool? ?? false,
+        totalCount: payload['totalCount'] as int?,
       );
     } on DioException catch (e) {
       throw ApiFailure.fromDio(e);

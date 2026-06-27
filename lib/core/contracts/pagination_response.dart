@@ -41,6 +41,7 @@ class PaginationResponse<T> {
     this.pageSize = 20,
     this.nextCursor,
     this.hasMore = false,
+    this.totalCount,
     this.summary,
   });
 
@@ -49,5 +50,6 @@ class PaginationResponse<T> {
   final int pageSize;
   final String? nextCursor;
   final bool hasMore;
+  final int? totalCount;
   final PaginationSummary? summary;
 }

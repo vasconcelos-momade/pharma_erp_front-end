@@ -15,8 +15,13 @@ abstract class ProductRepository {
   Future<PaginationResponse<Product>> searchMasterProducts({
     String? query,
     String? barcode,
-    CategoriaProduto? categoria,
+    String? categoriaId,
+    String? fornecedorId,
+    String? tipoDispensacao,
+    bool? ativo,
     bool includeInactive = false,
+    String? sortBy,
+    String? sortOrder,
     int page = 1,
     int pageSize = 20,
   });

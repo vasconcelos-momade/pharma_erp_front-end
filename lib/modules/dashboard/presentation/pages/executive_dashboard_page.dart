@@ -1,249 +1,384 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/theme/design_tokens.dart';
+import '../../../../core/extensions/async_value_extensions.dart';
 import '../../../../core/theme/spacing.dart';
-import '../../../../shared/responsive/pharma_screen_layout.dart';
-import '../../../../shared/widgets/cards/enterprise_stat_card.dart';
+import '../../../../shared/widgets/cards/enterprise_kpi_grid.dart';
+import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
+import '../../data/datasources/dashboard_remote_datasource.dart';
+import '../../domain/dashboard_query.dart';
+import '../providers/dashboard_providers.dart';
+import '../widgets/dashboard_period_filters.dart';
+import '../widgets/dashboard_widgets.dart';
 
-class ExecutiveDashboardPage extends StatelessWidget {
+class ExecutiveDashboardPage extends ConsumerStatefulWidget {
   const ExecutiveDashboardPage({super.key});
 
-  static const _kpis = <EnterpriseStatCard>[
-    EnterpriseStatCard(
-      title: 'Vendas hoje',
-      value: '28 400 MT',
-      icon: Icons.show_chart,
-      subtitle: 'PDV',
-      accent: StatCardAccent.positive,
-      badge: 'LIVE',
-    ),
-    EnterpriseStatCard(
-      title: 'Alertas sanitários',
-      value: '3',
-      icon: Icons.warning_amber_outlined,
-      subtitle: 'Atenção',
-      accent: StatCardAccent.warning,
-    ),
-    EnterpriseStatCard(
-      title: 'Stock crítico',
-      value: '12 SKU',
-      icon: Icons.inventory_2_outlined,
-      subtitle: 'Reposição',
-      accent: StatCardAccent.danger,
-    ),
-    EnterpriseStatCard(
-      title: 'Psicotrópicos',
-      value: '0 pend.',
-      icon: Icons.verified_user_outlined,
-      subtitle: 'Livro OK',
-      accent: StatCardAccent.info,
-    ),
-  ];
+  @override
+  ConsumerState<ExecutiveDashboardPage> createState() => _ExecutiveDashboardPageState();
+}
+
+class _ExecutiveDashboardPageState extends ConsumerState<ExecutiveDashboardPage> {
+  var _query = const DashboardQuery();
 
   @override
   Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
-    final size = context.pharmaScreen;
-    final isMobile = size == PharmaScreenSize.mobile;
-    final density = size == PharmaScreenSize.desktop ? StatCardDensity.comfortable : StatCardDensity.compact;
+    final async = ref.watch(executiveDashboardProvider(_query));
+    final dataSource = ref.watch(dashboardRemoteDataSourceProvider);
+    final kpis = dashMap(async.valueOrNull?['kpis']);
 
-    final kpiChildren = _kpis
-        .map(
-          (c) => EnterpriseStatCard(
-            title: c.title,
-            value: c.value,
-            icon: c.icon,
-            subtitle: c.subtitle,
-            accent: c.accent,
-            badge: c.badge,
-            density: density,
-            onTap: c.onTap,
-          ),
-        )
-        .toList();
-
-    final chartCore = LayoutBuilder(
-      builder: (context, c) {
-        final baseH = switch (size) {
-          PharmaScreenSize.mobile => 150.0,
-          PharmaScreenSize.tablet => 190.0,
-          PharmaScreenSize.desktop => 210.0,
-        };
-        final maxChart = c.maxHeight.isFinite ? c.maxHeight - 36 : baseH;
-        final chartH = (maxChart < baseH ? maxChart : baseH).clamp(120.0, 320.0);
-        return SizedBox(
-          height: chartH,
-          width: double.infinity,
-          child: LineChart(
-            LineChartData(
-              gridData: FlGridData(
-                show: true,
-                drawVerticalLine: false,
-                getDrawingHorizontalLine: (v) => FlLine(color: t.border.withValues(alpha: 0.22), strokeWidth: 1),
-              ),
-              borderData: FlBorderData(show: false),
-              titlesData: const FlTitlesData(show: false),
-              lineBarsData: [
-                LineChartBarData(
-                  spots: const [
-                    FlSpot(0, 2),
-                    FlSpot(1, 3.2),
-                    FlSpot(2, 2.8),
-                    FlSpot(3, 4.1),
-                    FlSpot(4, 3.6),
-                    FlSpot(5, 5.2),
-                    FlSpot(6, 4.9),
-                    FlSpot(7, 6.1),
+    Future<void> exportDashboard() async {
+      final data = async.valueOrNull;
+      if (data == null) return;
+      final tables = dashMap(data['tables']);
+      await dashboardExportCsv(
+        fileName: 'painel-executivo.csv',
+        summary: kpis,
+        sections: [
+          DashboardExportSection(
+            title: 'Ultimas vendas',
+            headers: const ['Fatura', 'Cliente', 'Total', 'Estado'],
+            rows: dashList(tables?['ultimasVendas'])
+                .map(
+                  (row) => [
+                    row['numero']?.toString() ?? '—',
+                    row['clienteNome']?.toString() ?? '—',
+                    '${row['total'] ?? 0} MZN',
+                    row['estado']?.toString() ?? '—',
                   ],
-                  isCurved: true,
-                  color: t.brandGreen,
-                  barWidth: size == PharmaScreenSize.mobile ? 2.2 : 3,
-                  dotData: const FlDotData(show: false),
-                  belowBarData: BarAreaData(
-                    show: true,
-                    color: t.brandGreen.withValues(alpha: 0.1),
-                  ),
-                ),
-              ],
-            ),
+                )
+                .toList(),
           ),
-        );
-      },
-    );
-
-    final chartCard = Container(
-      width: double.infinity,
-      padding: EdgeInsets.fromLTRB(
-        AppSpacing.md,
-        AppSpacing.md,
-        AppSpacing.md,
-        isMobile ? AppSpacing.sm : AppSpacing.md,
-      ),
-      decoration: BoxDecoration(
-        color: t.card,
-        borderRadius: BorderRadius.circular(t.radiusMd),
-        border: Border.all(color: t.border.withValues(alpha: 0.55)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            'VOLUME DE VENDAS (HOJE)',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: t.textMuted,
-                  letterSpacing: isMobile ? 1.2 : 2,
-                  fontSize: isMobile ? 9 : null,
-                ),
+          DashboardExportSection(
+            title: 'Alertas criticos',
+            headers: const ['Produto', 'Tipo', 'Mensagem'],
+            rows: dashList(tables?['alertasCriticos'])
+                .map(
+                  (row) => [
+                    row['produtoNome']?.toString() ?? '—',
+                    row['tipo']?.toString() ?? '—',
+                    row['mensagem']?.toString() ?? '—',
+                  ],
+                )
+                .toList(),
           ),
-          SizedBox(height: isMobile ? 8 : 12),
-          chartCore,
+          DashboardExportSection(
+            title: 'Ultimos eventos de negocio',
+            headers: const ['Tipo', 'Entidade', 'Utilizador', 'Data'],
+            rows: dashList(tables?['ultimosEventos'])
+                .map(
+                  (row) => [
+                    row['type']?.toString() ?? '—',
+                    row['entity']?.toString() ?? '—',
+                    row['userNome']?.toString() ?? '—',
+                    dashLabel(row['createdAt']),
+                  ],
+                )
+                .toList(),
+          ),
         ],
-      ),
-    );
+      );
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Exportação do painel executivo concluída.')),
+      );
+    }
 
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+    return EnterpriseModuleHub(
+      title: 'Painel executivo',
+      subtitle: 'Visão consolidada de vendas, finanças, stock e alertas operacionais.',
+      tag: 'Painéis',
+      scrollable: true,
+      actions: [
+        OutlinedButton.icon(
+          onPressed: async.valueOrNull == null ? null : exportDashboard,
+          icon: const Icon(Icons.download_outlined),
+          label: const Text('Exportar'),
+        ),
+        OutlinedButton.icon(
+          onPressed: () => ref.invalidate(executiveDashboardProvider(_query)),
+          icon: const Icon(Icons.refresh_rounded),
+          label: const Text('Atualizar'),
+        ),
+      ],
+      filters: DashboardPeriodFilters(
+        query: _query,
+        onChanged: (query) => setState(() => _query = query),
+      ),
+      kpis: kpis == null
+          ? null
+          : [
+              dashboardKpiCard(
+                title: 'Receita hoje',
+                value: '${dashKpi(kpis, 'receitaHoje')} MZN',
+                icon: Icons.payments_outlined,
+                accent: StatCardAccent.positive,
+              ),
+              dashboardKpiCard(
+                title: 'Receita mês',
+                value: '${dashKpi(kpis, 'receitaMes')} MZN',
+                icon: Icons.calendar_month_outlined,
+                accent: StatCardAccent.info,
+              ),
+              dashboardKpiCard(
+                title: 'Lucro bruto',
+                value: '${dashKpi(kpis, 'lucroBruto')} MZN',
+                icon: Icons.insights_outlined,
+                accent: StatCardAccent.info,
+              ),
+              dashboardKpiCard(
+                title: 'Lucro líquido',
+                value: '${dashKpi(kpis, 'lucroLiquido')} MZN',
+                icon: Icons.trending_up,
+                accent: StatCardAccent.positive,
+              ),
+              dashboardKpiCard(
+                title: 'Total vendas',
+                value: '${dashKpi(kpis, 'totalVendas')} MZN',
+                icon: Icons.point_of_sale_outlined,
+              ),
+              dashboardKpiCard(
+                title: 'Ticket médio',
+                value: '${dashKpi(kpis, 'ticketMedio')} MZN',
+                icon: Icons.receipt_long_outlined,
+              ),
+              dashboardKpiCard(
+                title: 'Faturas mês',
+                value: dashKpi(kpis, 'numeroFaturas'),
+                icon: Icons.description_outlined,
+              ),
+              dashboardKpiCard(
+                title: 'Produtos vendidos',
+                value: dashKpi(kpis, 'produtosVendidos'),
+                icon: Icons.shopping_bag_outlined,
+              ),
+              dashboardKpiCard(
+                title: 'Clientes activos',
+                value: dashKpi(kpis, 'clientesAtivos'),
+                icon: Icons.people_outline,
+              ),
+              dashboardKpiCard(
+                title: 'Contas a receber',
+                value: '${dashKpi(kpis, 'contasReceber')} MZN',
+                icon: Icons.call_received_outlined,
+                accent: StatCardAccent.positive,
+              ),
+              dashboardKpiCard(
+                title: 'Contas a pagar',
+                value: '${dashKpi(kpis, 'contasPagar')} MZN',
+                icon: Icons.call_made_outlined,
+                accent: StatCardAccent.warning,
+              ),
+              dashboardKpiCard(
+                title: 'Stock total',
+                value: dashKpi(kpis, 'stockTotal'),
+                icon: Icons.inventory_outlined,
+              ),
+              dashboardKpiCard(
+                title: 'Stock crítico',
+                value: dashKpi(kpis, 'produtosCriticos'),
+                icon: Icons.inventory_2_outlined,
+                accent: StatCardAccent.danger,
+              ),
+              dashboardKpiCard(
+                title: 'Valor inventário',
+                value: '${dashKpi(kpis, 'valorInventario')} MZN',
+                icon: Icons.warehouse_outlined,
+              ),
+              dashboardKpiCard(
+                title: 'Lotes expirados',
+                value: dashKpi(kpis, 'lotesExpirados'),
+                icon: Icons.event_busy_outlined,
+                accent: StatCardAccent.danger,
+              ),
+              dashboardKpiCard(
+                title: 'Próx. validade',
+                value: dashKpi(kpis, 'produtosProximosValidade'),
+                icon: Icons.warning_amber_outlined,
+                accent: StatCardAccent.warning,
+              ),
+            ],
+      child: dashboardAsyncBody(
+        async: async,
+        onRetry: () => ref.invalidate(executiveDashboardProvider(_query)),
+        loadingKpiCount: 16,
+        builder: (data) {
+          final charts = dashMap(data['charts']);
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final chartWidth = constraints.maxWidth >= 1100
+                        ? (constraints.maxWidth - AppSpacing.lg) / 2
+                        : constraints.maxWidth;
+                    return Wrap(
+                      spacing: AppSpacing.lg,
+                      runSpacing: AppSpacing.lg,
                       children: [
-                        Container(
-                          width: 6,
-                          height: 6,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: t.brandGreen,
+                        SizedBox(
+                          width: chartWidth,
+                          child: dashboardChartCard(
+                            context: context,
+                            title: 'Receita diária',
+                            child: dashboardLineChart(
+                              context: context,
+                              points: dashList(charts?['receitaDiaria']),
+                              valueKey: 'total',
+                              labelKey: 'data',
+                            ),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Flexible(
-                          child: Text(
-                            'EXECUTIVE DASHBOARD',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: -0.3,
-                                  fontSize: isMobile ? 16 : null,
-                                ),
+                        SizedBox(
+                          width: chartWidth,
+                          child: dashboardChartCard(
+                            context: context,
+                            title: 'Receita mensal',
+                            child: dashboardLineChart(
+                              context: context,
+                              points: dashList(charts?['receitaMensal']),
+                              valueKey: 'total',
+                              labelKey: 'mes',
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: chartWidth,
+                          child: dashboardChartCard(
+                            context: context,
+                            title: 'Fluxo financeiro',
+                            child: dashboardDualLineChart(
+                              context: context,
+                              points: dashList(charts?['fluxoFinanceiro']),
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: chartWidth,
+                          child: dashboardChartCard(
+                            context: context,
+                            title: 'Evolução das vendas',
+                            child: dashboardLineChart(
+                              context: context,
+                              points: dashList(charts?['evolucaoVendas']),
+                              valueKey: 'total',
+                              labelKey: 'data',
+                              color: Theme.of(context).colorScheme.tertiary,
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: chartWidth,
+                          child: dashboardChartCard(
+                            context: context,
+                            title: 'Métodos de pagamento',
+                            child: dashboardBarChart(
+                              context: context,
+                              points: dashList(charts?['metodosPagamento']),
+                              valueKey: 'total',
+                              labelKey: 'metodo',
+                              color: Theme.of(context).colorScheme.secondary,
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: chartWidth,
+                          child: dashboardChartCard(
+                            context: context,
+                            title: 'Top produtos vendidos',
+                            child: dashboardBarChart(
+                              context: context,
+                              points: dashList(charts?['topProdutos']),
+                              valueKey: 'total',
+                              labelKey: 'produtoNome',
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: chartWidth,
+                          child: dashboardChartCard(
+                            context: context,
+                            title: 'Top categorias',
+                            child: dashboardBarChart(
+                              context: context,
+                              points: dashList(charts?['topCategorias']),
+                              valueKey: 'total',
+                              labelKey: 'categoria',
+                              color: Theme.of(context).colorScheme.tertiary,
+                            ),
                           ),
                         ),
                       ],
-                    ),
-                    SizedBox(height: isMobile ? 4 : 6),
-                    Text(
-                      'Farmácia Central • T#01',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            color: t.textMuted,
-                            fontSize: isMobile ? 11 : null,
-                          ),
-                    ),
+                    );
+                  },
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                DashboardPaginatedTable(
+                  title: 'Últimas vendas',
+                  headers: const ['Fatura', 'Cliente', 'Total', 'Estado'],
+                  reloadKey: '${_query.reloadKey}-vendas',
+                  loadPage: (page, pageSize) async {
+                    final result = await dataSource.executiveDashboardTable(
+                      table: 'ultimasVendas',
+                      query: _query,
+                      page: page,
+                      pageSize: pageSize,
+                    );
+                    return DashboardPagedTableResult.fromMap(result);
+                  },
+                  rowBuilder: (row) => [
+                    row['numero']?.toString() ?? '—',
+                    row['clienteNome']?.toString() ?? '—',
+                    '${row['total'] ?? 0} MZN',
+                    row['estado']?.toString() ?? '—',
                   ],
                 ),
-              ),
-              if (!isMobile)
-                FilledButton.icon(
-                  onPressed: () {},
-                  icon: Icon(Icons.arrow_outward, size: t.iconSm),
-                  label: const Text('Exportar'),
-                )
-              else
-                IconButton(
-                  tooltip: 'Exportar',
-                  onPressed: () {},
-                  icon: Icon(Icons.share_outlined, color: t.brandGreen),
+                const SizedBox(height: AppSpacing.lg),
+                DashboardPaginatedTable(
+                  title: 'Alertas críticos',
+                  headers: const ['Produto', 'Tipo', 'Mensagem'],
+                  reloadKey: '${_query.reloadKey}-alertas',
+                  loadPage: (page, pageSize) async {
+                    final result = await dataSource.executiveDashboardTable(
+                      table: 'alertasCriticos',
+                      query: _query,
+                      page: page,
+                      pageSize: pageSize,
+                    );
+                    return DashboardPagedTableResult.fromMap(result);
+                  },
+                  rowBuilder: (row) => [
+                    row['produtoNome']?.toString() ?? '—',
+                    row['tipo']?.toString() ?? '—',
+                    row['mensagem']?.toString() ?? '—',
+                  ],
                 ),
-            ],
-          ),
-          SizedBox(height: isMobile ? AppSpacing.md : 20),
-          LayoutBuilder(
-            builder: (context, c) {
-              final cross = PharmaScreenLayout.kpiCrossAxisCount(c.maxWidth);
-              final aspect = PharmaScreenLayout.kpiChildAspectRatio(size);
-              return GridView.count(
-                crossAxisCount: cross,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisSpacing: isMobile ? 8 : 14,
-                mainAxisSpacing: isMobile ? 8 : 14,
-                childAspectRatio: aspect,
-                children: kpiChildren,
-              );
-            },
-          ),
-          SizedBox(height: isMobile ? AppSpacing.md : 20),
-          if (isMobile)
-            Theme(
-              data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-              child: ExpansionTile(
-                tilePadding: EdgeInsets.zero,
-                childrenPadding: const EdgeInsets.only(top: 4),
-                initiallyExpanded: false,
-                title: Text(
-                  'Gráfico de vendas',
-                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: t.textSecondary,
-                      ),
+                const SizedBox(height: AppSpacing.lg),
+                DashboardPaginatedTable(
+                  title: 'Últimos eventos de negócio',
+                  headers: const ['Tipo', 'Entidade', 'Utilizador', 'Data'],
+                  reloadKey: '${_query.reloadKey}-eventos',
+                  loadPage: (page, pageSize) async {
+                    final result = await dataSource.executiveDashboardTable(
+                      table: 'ultimosEventos',
+                      query: _query,
+                      page: page,
+                      pageSize: pageSize,
+                    );
+                    return DashboardPagedTableResult.fromMap(result);
+                  },
+                  rowBuilder: (row) => [
+                    row['type']?.toString() ?? '—',
+                    row['entity']?.toString() ?? '—',
+                    row['userNome']?.toString() ?? '—',
+                    dashLabel(row['createdAt']),
+                  ],
                 ),
-                children: [chartCard],
-              ),
-            )
-          else
-            chartCard,
-        ],
+              ],
+          );
+        },
       ),
     );
   }

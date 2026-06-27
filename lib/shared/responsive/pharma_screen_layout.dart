@@ -42,12 +42,23 @@ abstract final class PharmaScreenLayout {
     return 2;
   }
 
-  /// Largura/altura dos cartões KPI. Valores mais baixos = mais altura (evita overflow em grelha).
+  /// Altura fixa dos cartões KPI (ex.: movimentações — 88px em desktop).
+  static const double kpiDesktopRowHeight = 88;
+
+  static double kpiCardHeight(PharmaScreenSize size) {
+    return switch (size) {
+      PharmaScreenSize.mobile => 80,
+      PharmaScreenSize.tablet => 88,
+      PharmaScreenSize.desktop => kpiDesktopRowHeight,
+    };
+  }
+
+  @Deprecated('Use kpiCardHeight with mainAxisExtent instead')
   static double kpiChildAspectRatio(PharmaScreenSize size) {
     return switch (size) {
-      PharmaScreenSize.mobile => 2.05,
-      PharmaScreenSize.tablet => 1.65,
-      PharmaScreenSize.desktop => 1.38,
+      PharmaScreenSize.mobile => 1.7,
+      PharmaScreenSize.tablet => 1.95,
+      PharmaScreenSize.desktop => 1.45,
     };
   }
 

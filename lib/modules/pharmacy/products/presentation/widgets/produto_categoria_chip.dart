@@ -7,10 +7,12 @@ class ProdutoCategoriaChip extends StatelessWidget {
   const ProdutoCategoriaChip({
     super.key,
     required this.categoria,
+    this.label,
     this.compact = true,
   });
 
   final CategoriaProduto categoria;
+  final String? label;
   final bool compact;
 
   @override
@@ -20,7 +22,7 @@ class ProdutoCategoriaChip extends StatelessWidget {
 
     return Chip(
       visualDensity: compact ? VisualDensity.compact : VisualDensity.standard,
-      label: Text(categoria.label),
+      label: Text(label ?? categoria.label),
       labelStyle: TextStyle(
         color: color,
         fontWeight: FontWeight.w600,

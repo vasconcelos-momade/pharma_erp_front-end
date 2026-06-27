@@ -39,6 +39,21 @@ abstract final class ApiConstants {
   static const tenantPosTaxRules = '/tenant/pos/tax-rules';
   static const tenantFornecedores = '/tenant/fornecedores';
   static const tenantCompras = '/tenant/compras';
+  static const tenantDashboardProdutos = '/tenant/dashboard/produtos';
+  static const tenantDashboardLotes = '/tenant/dashboard/lotes';
+  static const tenantDashboardValidades = '/tenant/dashboard/validades';
+  static const tenantDashboardFefo = '/tenant/dashboard/fefo';
+  static const tenantDashboardExecutivo = '/tenant/dashboard/executivo';
+  static const tenantDashboardExecutivoTables =
+      '/tenant/dashboard/executivo/tables';
+  static const tenantDashboardFinanceiro = '/tenant/dashboard/financeiro';
+  static const tenantDashboardFinanceiroTables =
+      '/tenant/dashboard/financeiro/tables';
+  static const tenantDashboardFarmacia = '/tenant/dashboard/farmacia';
+  static const tenantDashboardFarmaciaTables =
+      '/tenant/dashboard/farmacia/tables';
+  static const tenantDashboardStock = '/tenant/dashboard/stock';
+  static const tenantDashboardStockTables = '/tenant/dashboard/stock/tables';
   static String tenantCompraDetalhe(String compraId) => '/tenant/compras/$compraId';
   static String tenantCompraItens(String compraId) => '/tenant/compras/$compraId/items';
   static String tenantCompraItem(String compraId, String itemId) =>
@@ -77,8 +92,35 @@ abstract final class ApiConstants {
   static String tenantRequisicaoCancelar(String requisicaoId) =>
       '/tenant/requisicoes/$requisicaoId/cancelar';
   static const tenantLotes = '/tenant/lotes';
+  static String tenantLote(String loteId) => '/tenant/lotes/$loteId';
+  static String tenantLoteMovimentos(String loteId) =>
+      '/tenant/lotes/$loteId/movimentos';
+  static String tenantLoteReservas(String loteId) =>
+      '/tenant/lotes/$loteId/reservas';
+  static String tenantLoteDispensacoes(String loteId) =>
+      '/tenant/lotes/$loteId/dispensacoes';
+  static String tenantLoteIncineracoes(String loteId) =>
+      '/tenant/lotes/$loteId/incineracoes';
+  static const tenantValidadesDashboard = '/tenant/validades/dashboard';
+  static const tenantValidades = '/tenant/validades';
+  static const tenantFefoDashboard = '/tenant/fefo/dashboard';
+  static const tenantFefoOverview = '/tenant/fefo/overview';
+  static const tenantFefoAudit = '/tenant/fefo/audit';
+  static const tenantCategorias = '/tenant/categorias';
+  static const tenantCategoriasAtivas = '/tenant/categorias/ativas';
+  static const tenantCategoriasStats = '/tenant/categorias/stats';
+  static String tenantCategoria(String categoryId) =>
+      '/tenant/categorias/$categoryId';
+  static String tenantProdutoHistoricoPrecos(String productId) =>
+      '/tenant/produtos/$productId/historico-precos';
   static String tenantProdutoLotes(String produtoId) =>
       '/tenant/produtos/$produtoId/lotes';
+  static String tenantProdutoFornecedores(String produtoId) =>
+      '/tenant/produtos/$produtoId/fornecedores';
+  static String tenantProdutoHistorico(String produtoId) =>
+      '/tenant/produtos/$produtoId/historico';
+  static String tenantProdutoAuditoria(String produtoId) =>
+      '/tenant/produtos/$produtoId/auditoria';
   static String tenantRequisicaoItem(
     String requisicaoId,
     String itemId,

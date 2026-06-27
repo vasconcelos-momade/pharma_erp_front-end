@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/theme/spacing.dart';
 import '../../responsive/pharma_screen_layout.dart';
-import '../cards/enterprise_stat_card.dart';
+import '../cards/enterprise_kpi_grid.dart';
 
 /// Hub de módulo com grelha KPI adaptativa e cabeçalho denso em mobile/tablet.
 class EnterpriseModuleHub extends StatelessWidget {
@@ -16,6 +16,7 @@ class EnterpriseModuleHub extends StatelessWidget {
     this.kpis,
     required this.child,
     this.filters,
+    this.scrollable = false,
   });
 
   final String title;
@@ -26,6 +27,8 @@ class EnterpriseModuleHub extends StatelessWidget {
   final Widget child;
   /// Filtros opcionais (ex.: chips) — em mobile ficam numa linha com scroll horizontal.
   final Widget? filters;
+  /// Corpo inteiro com scroll (painéis com muitos KPIs e gráficos).
+  final bool scrollable;
 
   @override
   Widget build(BuildContext context) {
@@ -37,7 +40,7 @@ class EnterpriseModuleHub extends StatelessWidget {
       PharmaScreenSize.desktop => Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
     };
 
-    return Column(
+    final body = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
@@ -88,33 +91,28 @@ class EnterpriseModuleHub extends StatelessWidget {
         ),
         if (filters != null) ...[
           SizedBox(height: size == PharmaScreenSize.mobile ? AppSpacing.sm : AppSpacing.md),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: filters!,
-          ),
+          if (size == PharmaScreenSize.mobile)
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: filters!,
+            )
+          else
+            filters!,
         ],
         if (kpis != null && kpis!.isNotEmpty) ...[
-          SizedBox(height: size == PharmaScreenSize.mobile ? AppSpacing.md : AppSpacing.xl),
-          LayoutBuilder(
-            builder: (context, c) {
-              final cross = PharmaScreenLayout.kpiCrossAxisCount(c.maxWidth);
-              final aspect = PharmaScreenLayout.kpiChildAspectRatio(size);
-              return GridView.count(
-                crossAxisCount: cross,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisSpacing: size == PharmaScreenSize.mobile ? 8 : AppSpacing.md,
-                mainAxisSpacing: size == PharmaScreenSize.mobile ? 8 : AppSpacing.md,
-                childAspectRatio: aspect,
-                children: kpis!,
-              );
-            },
-          ),
+          SizedBox(height: size == PharmaScreenSize.mobile ? AppSpacing.md : AppSpacing.lg),
+          EnterpriseKpiGrid(cards: kpis!),
         ],
-        SizedBox(height: size == PharmaScreenSize.mobile ? AppSpacing.md : AppSpacing.xxl),
-        Expanded(child: child),
+        SizedBox(height: size == PharmaScreenSize.mobile ? AppSpacing.md : AppSpacing.lg),
+        if (scrollable) child else Expanded(child: child),
       ],
     );
+
+    if (scrollable) {
+      return SingleChildScrollView(child: body);
+    }
+
+    return body;
   }
 
   static void _showQuickActions(BuildContext context, List<Widget> actions) {
