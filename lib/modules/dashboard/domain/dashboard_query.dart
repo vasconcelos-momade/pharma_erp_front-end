@@ -46,6 +46,9 @@ class DashboardQuery {
   final String sortDir;
 
   bool get hasActiveFilters =>
+      period != DashboardPeriodPreset.last30days ||
+      from != null ||
+      to != null ||
       search.trim().isNotEmpty ||
       categoriaId != null ||
       produtoId != null ||

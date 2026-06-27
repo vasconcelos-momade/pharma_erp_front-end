@@ -43,6 +43,8 @@ class EnterpriseDataTable extends StatelessWidget {
     required this.rowBuilder,
     this.adaptive = true,
     this.showCheckboxColumn = true,
+    this.sortColumnIndex,
+    this.sortAscending = true,
   });
 
   final List<DataColumn> columns;
@@ -50,6 +52,8 @@ class EnterpriseDataTable extends StatelessWidget {
   final EnterpriseRowBuilder rowBuilder;
   final bool adaptive;
   final bool showCheckboxColumn;
+  final int? sortColumnIndex;
+  final bool sortAscending;
 
   @override
   Widget build(BuildContext context) {
@@ -155,6 +159,8 @@ class EnterpriseDataTable extends StatelessWidget {
                           : const NeverScrollableScrollPhysics(),
                       child: DataTable(
                         showCheckboxColumn: showCheckboxColumn,
+                        sortColumnIndex: sortColumnIndex,
+                        sortAscending: sortAscending,
                         headingRowColor: WidgetStatePropertyAll(
                           t.bgSecondary.withValues(alpha: 0.92),
                         ),

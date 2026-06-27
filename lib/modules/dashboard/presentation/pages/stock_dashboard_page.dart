@@ -28,6 +28,26 @@ class _StockDashboardPageState extends ConsumerState<StockDashboardPage> {
     final async = ref.watch(stockDashboardProvider(_query));
     final dataSource = ref.watch(dashboardRemoteDataSourceProvider);
     final kpis = dashMap(async.valueOrNull?['kpis']);
+    final tables = dashMap(async.valueOrNull?['tables']);
+    final charts = dashMap(async.valueOrNull?['charts']);
+    final statusOptions = dashboardUniqueOptions(
+      [
+        ...dashList(tables?['inventarios']).map((row) => row['status']),
+        ...dashList(tables?['requisicoes']).map((row) => row['status']),
+      ],
+    );
+    final movementTypeOptions = dashboardUniqueOptions(
+      [
+        ...dashList(charts?['entradasSaidas']).map((row) => row['tipo']),
+        ...dashList(tables?['ultimosMovimentos']).map((row) => row['tipo']),
+        ...dashList(tables?['requisicoes']).map((row) => row['tipo']),
+      ],
+      labels: const {
+        'ENTRADA': 'Entrada',
+        'SAIDA': 'Saída',
+        'AJUSTE': 'Ajuste',
+      },
+    );
 
     Future<void> exportDashboard() async {
       final data = async.valueOrNull;
@@ -144,6 +164,9 @@ class _StockDashboardPageState extends ConsumerState<StockDashboardPage> {
       filters: DashboardPeriodFilters(
         query: _query,
         onChanged: (query) => setState(() => _query = query),
+        showProductFilter: true,
+        statusOptions: statusOptions,
+        movementTypeOptions: movementTypeOptions,
         extraFilters: [
           ActionChip(
             label: const Text('Lotes'),
@@ -333,10 +356,14 @@ class _StockDashboardPageState extends ConsumerState<StockDashboardPage> {
                   title: 'Últimos movimentos',
                   headers: const ['Tipo', 'Produto', 'Qtd', 'Origem'],
                   reloadKey: '${_query.reloadKey}-mov',
-                  loadPage: (page, pageSize) async {
+                  loadPage: (page, pageSize, sortBy, sortDir) async {
                     final result = await dataSource.stockDashboardTable(
                       table: 'ultimosMovimentos',
-                      query: _query,
+                      query: _query.copyWith(
+                        sortBy: sortBy,
+                        sortDir: sortDir,
+                        clearSortBy: sortBy == null,
+                      ),
                       page: page,
                       pageSize: pageSize,
                     );
@@ -354,10 +381,14 @@ class _StockDashboardPageState extends ConsumerState<StockDashboardPage> {
                   title: 'Produtos críticos',
                   headers: const ['Produto', 'Disponível', 'Mínimo'],
                   reloadKey: '${_query.reloadKey}-criticos',
-                  loadPage: (page, pageSize) async {
+                  loadPage: (page, pageSize, sortBy, sortDir) async {
                     final result = await dataSource.stockDashboardTable(
                       table: 'produtosCriticos',
-                      query: _query,
+                      query: _query.copyWith(
+                        sortBy: sortBy,
+                        sortDir: sortDir,
+                        clearSortBy: sortBy == null,
+                      ),
                       page: page,
                       pageSize: pageSize,
                     );
@@ -374,10 +405,14 @@ class _StockDashboardPageState extends ConsumerState<StockDashboardPage> {
                   title: 'Inventários',
                   headers: const ['Código', 'Estado', 'Início'],
                   reloadKey: '${_query.reloadKey}-inv',
-                  loadPage: (page, pageSize) async {
+                  loadPage: (page, pageSize, sortBy, sortDir) async {
                     final result = await dataSource.stockDashboardTable(
                       table: 'inventarios',
-                      query: _query,
+                      query: _query.copyWith(
+                        sortBy: sortBy,
+                        sortDir: sortDir,
+                        clearSortBy: sortBy == null,
+                      ),
                       page: page,
                       pageSize: pageSize,
                     );
@@ -394,10 +429,14 @@ class _StockDashboardPageState extends ConsumerState<StockDashboardPage> {
                   title: 'Requisições recentes',
                   headers: const ['Documento', 'Tipo', 'Estado'],
                   reloadKey: '${_query.reloadKey}-req',
-                  loadPage: (page, pageSize) async {
+                  loadPage: (page, pageSize, sortBy, sortDir) async {
                     final result = await dataSource.stockDashboardTable(
                       table: 'requisicoes',
-                      query: _query,
+                      query: _query.copyWith(
+                        sortBy: sortBy,
+                        sortDir: sortDir,
+                        clearSortBy: sortBy == null,
+                      ),
                       page: page,
                       pageSize: pageSize,
                     );
@@ -414,10 +453,14 @@ class _StockDashboardPageState extends ConsumerState<StockDashboardPage> {
                   title: 'Reservas',
                   headers: const ['Produto', 'Lote', 'Qtd', 'Expira'],
                   reloadKey: '${_query.reloadKey}-res',
-                  loadPage: (page, pageSize) async {
+                  loadPage: (page, pageSize, sortBy, sortDir) async {
                     final result = await dataSource.stockDashboardTable(
                       table: 'reservas',
-                      query: _query,
+                      query: _query.copyWith(
+                        sortBy: sortBy,
+                        sortDir: sortDir,
+                        clearSortBy: sortBy == null,
+                      ),
                       page: page,
                       pageSize: pageSize,
                     );
@@ -435,10 +478,14 @@ class _StockDashboardPageState extends ConsumerState<StockDashboardPage> {
                   title: 'Incinerações',
                   headers: const ['Auto', 'Data'],
                   reloadKey: '${_query.reloadKey}-inc',
-                  loadPage: (page, pageSize) async {
+                  loadPage: (page, pageSize, sortBy, sortDir) async {
                     final result = await dataSource.stockDashboardTable(
                       table: 'incineracoes',
-                      query: _query,
+                      query: _query.copyWith(
+                        sortBy: sortBy,
+                        sortDir: sortDir,
+                        clearSortBy: sortBy == null,
+                      ),
                       page: page,
                       pageSize: pageSize,
                     );

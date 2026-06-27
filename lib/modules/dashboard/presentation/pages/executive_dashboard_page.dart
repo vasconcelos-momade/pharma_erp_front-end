@@ -26,6 +26,17 @@ class _ExecutiveDashboardPageState extends ConsumerState<ExecutiveDashboardPage>
     final async = ref.watch(executiveDashboardProvider(_query));
     final dataSource = ref.watch(dashboardRemoteDataSourceProvider);
     final kpis = dashMap(async.valueOrNull?['kpis']);
+    final tables = dashMap(async.valueOrNull?['tables']);
+    final charts = dashMap(async.valueOrNull?['charts']);
+    final statusOptions = dashboardUniqueOptions(
+      dashList(tables?['ultimasVendas']).map((row) => row['estado']),
+    );
+    final paymentMethodOptions = dashboardUniqueOptions(
+      [
+        ...dashList(charts?['metodosPagamento']).map((row) => row['metodo']),
+        ...dashList(tables?['ultimasVendas']).map((row) => row['tipoPagamento']),
+      ],
+    );
 
     Future<void> exportDashboard() async {
       final data = async.valueOrNull;
@@ -104,6 +115,8 @@ class _ExecutiveDashboardPageState extends ConsumerState<ExecutiveDashboardPage>
       filters: DashboardPeriodFilters(
         query: _query,
         onChanged: (query) => setState(() => _query = query),
+        statusOptions: statusOptions,
+        paymentMethodOptions: paymentMethodOptions,
       ),
       kpis: kpis == null
           ? null
@@ -318,11 +331,23 @@ class _ExecutiveDashboardPageState extends ConsumerState<ExecutiveDashboardPage>
                 DashboardPaginatedTable(
                   title: 'Últimas vendas',
                   headers: const ['Fatura', 'Cliente', 'Total', 'Estado'],
+                  columns: const [
+                    DashboardTableColumn(label: 'Fatura', sortKey: 'numero'),
+                    DashboardTableColumn(label: 'Cliente'),
+                    DashboardTableColumn(label: 'Total', sortKey: 'total'),
+                    DashboardTableColumn(label: 'Estado'),
+                  ],
                   reloadKey: '${_query.reloadKey}-vendas',
-                  loadPage: (page, pageSize) async {
+                  initialSortBy: 'numero',
+                  initialSortDir: 'desc',
+                  loadPage: (page, pageSize, sortBy, sortDir) async {
                     final result = await dataSource.executiveDashboardTable(
                       table: 'ultimasVendas',
-                      query: _query,
+                      query: _query.copyWith(
+                        sortBy: sortBy,
+                        sortDir: sortDir,
+                        clearSortBy: sortBy == null,
+                      ),
                       page: page,
                       pageSize: pageSize,
                     );
@@ -340,10 +365,14 @@ class _ExecutiveDashboardPageState extends ConsumerState<ExecutiveDashboardPage>
                   title: 'Alertas críticos',
                   headers: const ['Produto', 'Tipo', 'Mensagem'],
                   reloadKey: '${_query.reloadKey}-alertas',
-                  loadPage: (page, pageSize) async {
+                  loadPage: (page, pageSize, sortBy, sortDir) async {
                     final result = await dataSource.executiveDashboardTable(
                       table: 'alertasCriticos',
-                      query: _query,
+                      query: _query.copyWith(
+                        sortBy: sortBy,
+                        sortDir: sortDir,
+                        clearSortBy: sortBy == null,
+                      ),
                       page: page,
                       pageSize: pageSize,
                     );
@@ -360,10 +389,14 @@ class _ExecutiveDashboardPageState extends ConsumerState<ExecutiveDashboardPage>
                   title: 'Últimos eventos de negócio',
                   headers: const ['Tipo', 'Entidade', 'Utilizador', 'Data'],
                   reloadKey: '${_query.reloadKey}-eventos',
-                  loadPage: (page, pageSize) async {
+                  loadPage: (page, pageSize, sortBy, sortDir) async {
                     final result = await dataSource.executiveDashboardTable(
                       table: 'ultimosEventos',
-                      query: _query,
+                      query: _query.copyWith(
+                        sortBy: sortBy,
+                        sortDir: sortDir,
+                        clearSortBy: sortBy == null,
+                      ),
                       page: page,
                       pageSize: pageSize,
                     );

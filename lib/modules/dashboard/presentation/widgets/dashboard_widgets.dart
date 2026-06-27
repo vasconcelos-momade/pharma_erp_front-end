@@ -71,6 +71,80 @@ class DashboardPagedTableResult {
   }
 }
 
+class DashboardFilterOption {
+  const DashboardFilterOption({
+    required this.value,
+    required this.label,
+  });
+
+  final String value;
+  final String label;
+}
+
+class DashboardTableColumn {
+  const DashboardTableColumn({
+    required this.label,
+    this.sortKey,
+  });
+
+  final String label;
+  final String? sortKey;
+}
+
+class DashboardFilterSelect extends StatelessWidget {
+  const DashboardFilterSelect({
+    super.key,
+    required this.label,
+    required this.options,
+    required this.value,
+    required this.onChanged,
+    this.width = 220,
+  });
+
+  final String label;
+  final List<DashboardFilterOption> options;
+  final String? value;
+  final ValueChanged<String?> onChanged;
+  final double width;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+    return SizedBox(
+      width: width,
+      child: DropdownButtonFormField<String>(
+        value: options.any((option) => option.value == value) ? value : null,
+        isExpanded: true,
+        decoration: InputDecoration(
+          labelText: label,
+          filled: true,
+          fillColor: t.card,
+          isDense: true,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(t.radiusXl),
+          ),
+        ),
+        items: [
+          const DropdownMenuItem<String>(
+            value: null,
+            child: Text('Todos'),
+          ),
+          ...options.map(
+            (option) => DropdownMenuItem<String>(
+              value: option.value,
+              child: Text(
+                option.label,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ),
+        ],
+        onChanged: onChanged,
+      ),
+    );
+  }
+}
+
 String dashKpi(Map<String, dynamic>? data, String key, {String suffix = ''}) {
   final value = data?[key];
   if (value == null) return '—';
@@ -108,6 +182,73 @@ String dashLabel(dynamic value, {int max = 8}) {
   }
   if (label.length <= max) return label;
   return label.substring(0, max);
+}
+
+List<DashboardFilterOption> dashboardUniqueOptions(
+  Iterable<dynamic> values, {
+  Map<String, String>? labels,
+}) {
+  final seen = <String>{};
+  final items = <DashboardFilterOption>[];
+  for (final value in values) {
+    final normalized = value?.toString().trim();
+    if (normalized == null || normalized.isEmpty || !seen.add(normalized)) {
+      continue;
+    }
+    items.add(
+      DashboardFilterOption(
+        value: normalized,
+        label: labels?[normalized] ?? normalized,
+      ),
+    );
+  }
+  items.sort((a, b) => a.label.compareTo(b.label));
+  return items;
+}
+
+Widget _dashboardScrollableChart({
+  required double height,
+  required double minWidth,
+  required Widget child,
+}) {
+  return SizedBox(
+    height: height,
+    child: LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth.isFinite
+            ? constraints.maxWidth > minWidth
+                ? constraints.maxWidth
+                : minWidth
+            : minWidth;
+        return SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: SizedBox(
+            width: width,
+            height: height,
+            child: child,
+          ),
+        );
+      },
+    ),
+  );
+}
+
+Widget _dashboardAxisLabel({
+  required AxisSide axisSide,
+  required String label,
+  double angle = 0,
+}) {
+  return SideTitleWidget(
+    axisSide: axisSide,
+    space: 8,
+    angle: angle,
+    child: Text(
+      label,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      style: const TextStyle(fontSize: 10),
+    ),
+  );
 }
 
 Widget dashboardAsyncBody<T>({
@@ -150,9 +291,11 @@ Widget dashboardLineChart({
     spots.add(FlSpot(i.toDouble(), y));
   }
   final chartMax = maxY < 1 ? 1.0 : maxY * 1.15;
+  final minWidth = labelKey == null ? 320.0 : (points.length * 52).clamp(320, 1400).toDouble();
 
-  return SizedBox(
+  return _dashboardScrollableChart(
     height: height,
+    minWidth: minWidth,
     child: ClipRect(
       child: LineChart(
       LineChartData(
@@ -177,9 +320,12 @@ Widget dashboardLineChart({
                       if (i < 0 || i >= points.length) {
                         return const SizedBox.shrink();
                       }
-                      return Text(
-                        dashLabel(points[i][labelKey], max: 6),
-                        style: TextStyle(fontSize: 9, color: t.textMuted),
+                      return DefaultTextStyle(
+                        style: TextStyle(color: t.textMuted),
+                        child: _dashboardAxisLabel(
+                          axisSide: meta.axisSide,
+                          label: dashLabel(points[i][labelKey], max: 10),
+                        ),
                       );
                     },
                   ),
@@ -202,7 +348,7 @@ Widget dashboardLineChart({
           ),
         ],
       ),
-    ),
+      ),
     ),
   );
 }
@@ -262,9 +408,11 @@ Widget dashboardBarChart({
       .toList(growable: false);
   final maxY = values.fold<double>(0, (a, b) => a > b ? a : b);
   final chartMax = maxY < 1 ? 1.0 : maxY * 1.2;
+  final minWidth = (points.length * 74).clamp(320, 1600).toDouble();
 
-  return SizedBox(
+  return _dashboardScrollableChart(
     height: height,
+    minWidth: minWidth,
     child: BarChart(
       BarChartData(
         maxY: chartMax,
@@ -283,9 +431,13 @@ Widget dashboardBarChart({
               getTitlesWidget: (value, meta) {
                 final i = value.toInt();
                 if (i < 0 || i >= points.length) return const SizedBox.shrink();
-                return Text(
-                  dashLabel(points[i][labelKey]),
-                  style: TextStyle(fontSize: 9, color: t.textMuted),
+                return DefaultTextStyle(
+                  style: TextStyle(color: t.textMuted),
+                  child: _dashboardAxisLabel(
+                    axisSide: meta.axisSide,
+                    label: dashLabel(points[i][labelKey], max: 14),
+                    angle: -0.5,
+                  ),
                 );
               },
             ),
@@ -336,9 +488,11 @@ Widget dashboardDualLineChart({
     despesas.add(FlSpot(i.toDouble(), d));
   }
   final chartMax = maxY < 1 ? 1.0 : maxY * 1.15;
+  final minWidth = (points.length * 52).clamp(320, 1400).toDouble();
 
-  return SizedBox(
+  return _dashboardScrollableChart(
     height: height,
+    minWidth: minWidth,
     child: ClipRect(
       child: LineChart(
       LineChartData(
@@ -369,7 +523,7 @@ Widget dashboardDualLineChart({
           ),
         ],
       ),
-    ),
+      ),
     ),
   );
 }
@@ -400,9 +554,11 @@ Widget dashboardIndexedBarChart({
       ];
   final maxY = values.fold<double>(0, (a, b) => a > b ? a : b);
   final chartMax = maxY < 1 ? 1.0 : maxY * 1.2;
+  final minWidth = (labels.length * 74).clamp(320, 1400).toDouble();
 
-  return SizedBox(
+  return _dashboardScrollableChart(
     height: height,
+    minWidth: minWidth,
     child: BarChart(
       BarChartData(
         maxY: chartMax,
@@ -421,9 +577,13 @@ Widget dashboardIndexedBarChart({
               getTitlesWidget: (value, meta) {
                 final i = value.toInt();
                 if (i < 0 || i >= labels.length) return const SizedBox.shrink();
-                return Text(
-                  labels[i],
-                  style: TextStyle(fontSize: 9, color: t.textMuted),
+                return DefaultTextStyle(
+                  style: TextStyle(color: t.textMuted),
+                  child: _dashboardAxisLabel(
+                    axisSide: meta.axisSide,
+                    label: labels[i],
+                    angle: -0.45,
+                  ),
                 );
               },
             ),
@@ -500,8 +660,9 @@ Widget dashboardPieChart({
     );
   }
 
-  return SizedBox(
+  return _dashboardScrollableChart(
     height: height,
+    minWidth: 320,
     child: PieChart(
       PieChartData(
         sectionsSpace: 2,
@@ -513,19 +674,28 @@ Widget dashboardPieChart({
 }
 
 Widget dashboardSimpleTable({
-  required String title,
+  String? title,
   required List<String> headers,
   required List<List<String>> rows,
+  List<DashboardTableColumn>? columns,
+  int? sortColumnIndex,
+  bool sortAscending = true,
+  ValueSetter<int>? onSortColumn,
+  String emptySubtitle = 'Sem registos para os filtros seleccionados.',
 }) {
+  final tableColumns = columns ??
+      headers.map((header) => DashboardTableColumn(label: header)).toList(growable: false);
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
-      const SizedBox(height: AppSpacing.sm),
+      if (title != null) ...[
+        Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+        const SizedBox(height: AppSpacing.sm),
+      ],
       if (rows.isEmpty)
         DashboardEmptyState(
-          title: title,
-          subtitle: 'Sem registos para os filtros seleccionados.',
+          title: title ?? 'Tabela',
+          subtitle: emptySubtitle,
         )
       else
         LayoutBuilder(
@@ -536,7 +706,17 @@ Widget dashboardSimpleTable({
                 constraints: BoxConstraints(minWidth: constraints.maxWidth),
                 child: EnterpriseDataTable(
                   showCheckboxColumn: false,
-                  columns: headers.map((h) => DataColumn(label: Text(h))).toList(),
+                  sortColumnIndex: sortColumnIndex,
+                  sortAscending: sortAscending,
+                  columns: List.generate(tableColumns.length, (index) {
+                    final column = tableColumns[index];
+                    return DataColumn(
+                      label: Text(column.label),
+                      onSort: column.sortKey == null || onSortColumn == null
+                          ? null
+                          : (_, __) => onSortColumn(index),
+                    );
+                  }),
                   rowCount: rows.length,
                   rowBuilder: (context, index) => DataRow(
                     cells: rows[index].map((cell) => DataCell(Text(cell))).toList(),
@@ -554,19 +734,32 @@ class DashboardPaginatedTable extends StatefulWidget {
   const DashboardPaginatedTable({
     super.key,
     required this.title,
-    required this.headers,
     required this.loadPage,
     required this.rowBuilder,
     required this.reloadKey,
+    this.headers = const [],
+    this.columns,
     this.initialPageSize = 10,
+    this.initialSortBy,
+    this.initialSortDir = 'desc',
+    this.emptySubtitle = 'Sem registos para os filtros seleccionados.',
   });
 
   final String title;
   final List<String> headers;
-  final Future<DashboardPagedTableResult> Function(int page, int pageSize) loadPage;
+  final List<DashboardTableColumn>? columns;
+  final Future<DashboardPagedTableResult> Function(
+    int page,
+    int pageSize,
+    String? sortBy,
+    String sortDir,
+  ) loadPage;
   final List<String> Function(Map<String, dynamic> row) rowBuilder;
   final Object reloadKey;
   final int initialPageSize;
+  final String? initialSortBy;
+  final String initialSortDir;
+  final String emptySubtitle;
 
   @override
   State<DashboardPaginatedTable> createState() => _DashboardPaginatedTableState();
@@ -577,6 +770,8 @@ class _DashboardPaginatedTableState extends State<DashboardPaginatedTable> {
   Object? _error;
   var _page = 1;
   late int _pageSize = widget.initialPageSize;
+  late String? _sortBy = widget.initialSortBy;
+  late String _sortDir = widget.initialSortDir;
   var _loading = false;
 
   @override
@@ -591,6 +786,8 @@ class _DashboardPaginatedTableState extends State<DashboardPaginatedTable> {
     if (oldWidget.reloadKey != widget.reloadKey) {
       _page = 1;
       _pageSize = widget.initialPageSize;
+      _sortBy = widget.initialSortBy;
+      _sortDir = widget.initialSortDir;
       _fetch();
     }
   }
@@ -601,7 +798,7 @@ class _DashboardPaginatedTableState extends State<DashboardPaginatedTable> {
       _error = null;
     });
     try {
-      final result = await widget.loadPage(_page, _pageSize);
+      final result = await widget.loadPage(_page, _pageSize, _sortBy, _sortDir);
       if (!mounted) return;
       setState(() {
         _result = result;
@@ -618,12 +815,42 @@ class _DashboardPaginatedTableState extends State<DashboardPaginatedTable> {
     }
   }
 
+  void _toggleSort(int index) {
+    final columns = widget.columns ??
+        widget.headers.map((header) => DashboardTableColumn(label: header)).toList(growable: false);
+    if (index < 0 || index >= columns.length) return;
+    final sortKey = columns[index].sortKey;
+    if (sortKey == null) return;
+    setState(() {
+      if (_sortBy == sortKey) {
+        _sortDir = _sortDir == 'asc' ? 'desc' : 'asc';
+      } else {
+        _sortBy = sortKey;
+        _sortDir = 'asc';
+      }
+      _page = 1;
+    });
+    _fetch();
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
+    final tableColumns = widget.columns ??
+        widget.headers.map((header) => DashboardTableColumn(label: header)).toList(growable: false);
+    final sortColumnIndex = _sortBy == null
+        ? null
+        : tableColumns.indexWhere((column) => column.sortKey == _sortBy);
 
     if (_loading && _result == null) {
-      return const Center(child: CircularProgressIndicator());
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(widget.title, style: const TextStyle(fontWeight: FontWeight.w800)),
+          const SizedBox(height: AppSpacing.sm),
+          const DashboardLoadingState(kpiCount: 0),
+        ],
+      );
     }
 
     if (_error != null && _result == null) {
@@ -652,9 +879,48 @@ class _DashboardPaginatedTableState extends State<DashboardPaginatedTable> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                widget.title,
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
+            if (_sortBy != null)
+              Text(
+                _sortDir == 'asc' ? 'Ordem ascendente' : 'Ordem descendente',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: t.textMuted,
+                    ),
+              ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          [
+            '${rows.length} itens nesta página',
+            if (result.totalCount != null) '${result.totalCount} no total',
+            if (result.totalPages != null) 'página ${result.page} de ${result.totalPages}',
+          ].join(' · '),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: t.textMuted,
+              ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
         if (_loading && _result != null)
           const LinearProgressIndicator(minHeight: 2),
-        dashboardSimpleTable(title: widget.title, headers: widget.headers, rows: rows),
+        dashboardSimpleTable(
+          headers: widget.headers,
+          rows: rows,
+          columns: tableColumns,
+          sortColumnIndex: sortColumnIndex != null && sortColumnIndex >= 0
+              ? sortColumnIndex
+              : null,
+          sortAscending: _sortDir == 'asc',
+          onSortColumn: _toggleSort,
+          emptySubtitle: widget.emptySubtitle,
+        ),
         const SizedBox(height: AppSpacing.sm),
         MovimentacoesPagination(
           page: result.page,
@@ -679,20 +945,6 @@ class _DashboardPaginatedTableState extends State<DashboardPaginatedTable> {
             _fetch();
           },
         ),
-        if (result.totalCount != null || result.totalPages != null)
-          Padding(
-            padding: const EdgeInsets.only(top: AppSpacing.xs),
-            child: Text(
-              [
-                if (result.totalCount != null) '${result.totalCount} registos',
-                if (result.totalPages != null)
-                  'página ${result.page} de ${result.totalPages}',
-              ].join(' · '),
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: t.textMuted,
-                  ),
-            ),
-          ),
       ],
     );
   }

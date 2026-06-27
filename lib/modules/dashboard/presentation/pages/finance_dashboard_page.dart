@@ -26,6 +26,17 @@ class _FinanceDashboardPageState extends ConsumerState<FinanceDashboardPage> {
     final async = ref.watch(financeDashboardProvider(_query));
     final dataSource = ref.watch(dashboardRemoteDataSourceProvider);
     final kpis = dashMap(async.valueOrNull?['kpis']);
+    final tables = dashMap(async.valueOrNull?['tables']);
+    final charts = dashMap(async.valueOrNull?['charts']);
+    final statusOptions = dashboardUniqueOptions(
+      dashList(tables?['ultimosPagamentos']).map((row) => row['status']),
+    );
+    final paymentMethodOptions = dashboardUniqueOptions(
+      [
+        ...dashList(charts?['metodosPagamento']).map((row) => row['metodo']),
+        ...dashList(tables?['ultimosPagamentos']).map((row) => row['metodo']),
+      ],
+    );
 
     Future<void> exportDashboard() async {
       final data = async.valueOrNull;
@@ -117,6 +128,8 @@ class _FinanceDashboardPageState extends ConsumerState<FinanceDashboardPage> {
       filters: DashboardPeriodFilters(
         query: _query,
         onChanged: (query) => setState(() => _query = query),
+        statusOptions: statusOptions,
+        paymentMethodOptions: paymentMethodOptions,
       ),
       kpis: kpis == null
           ? null
@@ -263,10 +276,14 @@ class _FinanceDashboardPageState extends ConsumerState<FinanceDashboardPage> {
                   title: 'Contas vencidas',
                   headers: const ['Cliente', 'Saldo', 'Vencimento'],
                   reloadKey: '${_query.reloadKey}-contas',
-                  loadPage: (page, pageSize) async {
+                  loadPage: (page, pageSize, sortBy, sortDir) async {
                     final result = await dataSource.financeDashboardTable(
                       table: 'contasVencidas',
-                      query: _query,
+                      query: _query.copyWith(
+                        sortBy: sortBy,
+                        sortDir: sortDir,
+                        clearSortBy: sortBy == null,
+                      ),
                       page: page,
                       pageSize: pageSize,
                     );
@@ -283,10 +300,14 @@ class _FinanceDashboardPageState extends ConsumerState<FinanceDashboardPage> {
                   title: 'Últimos pagamentos',
                   headers: const ['Fatura', 'Método', 'Valor'],
                   reloadKey: '${_query.reloadKey}-pagamentos',
-                  loadPage: (page, pageSize) async {
+                  loadPage: (page, pageSize, sortBy, sortDir) async {
                     final result = await dataSource.financeDashboardTable(
                       table: 'ultimosPagamentos',
-                      query: _query,
+                      query: _query.copyWith(
+                        sortBy: sortBy,
+                        sortDir: sortDir,
+                        clearSortBy: sortBy == null,
+                      ),
                       page: page,
                       pageSize: pageSize,
                     );
@@ -303,10 +324,14 @@ class _FinanceDashboardPageState extends ConsumerState<FinanceDashboardPage> {
                   title: 'Últimas receitas',
                   headers: const ['Tipo', 'Referência', 'Valor', 'Data'],
                   reloadKey: '${_query.reloadKey}-receitas',
-                  loadPage: (page, pageSize) async {
+                  loadPage: (page, pageSize, sortBy, sortDir) async {
                     final result = await dataSource.financeDashboardTable(
                       table: 'ultimasReceitas',
-                      query: _query,
+                      query: _query.copyWith(
+                        sortBy: sortBy,
+                        sortDir: sortDir,
+                        clearSortBy: sortBy == null,
+                      ),
                       page: page,
                       pageSize: pageSize,
                     );
@@ -324,10 +349,14 @@ class _FinanceDashboardPageState extends ConsumerState<FinanceDashboardPage> {
                   title: 'Últimas despesas',
                   headers: const ['Tipo', 'Referência', 'Valor', 'Data'],
                   reloadKey: '${_query.reloadKey}-despesas',
-                  loadPage: (page, pageSize) async {
+                  loadPage: (page, pageSize, sortBy, sortDir) async {
                     final result = await dataSource.financeDashboardTable(
                       table: 'ultimasDespesas',
-                      query: _query,
+                      query: _query.copyWith(
+                        sortBy: sortBy,
+                        sortDir: sortDir,
+                        clearSortBy: sortBy == null,
+                      ),
                       page: page,
                       pageSize: pageSize,
                     );

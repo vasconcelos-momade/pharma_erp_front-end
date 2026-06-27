@@ -29,6 +29,25 @@ class _PharmacyDashboardPageState extends ConsumerState<PharmacyDashboardPage> {
     final async = ref.watch(pharmacyDashboardProvider(_query));
     final dataSource = ref.watch(dashboardRemoteDataSourceProvider);
     final kpis = dashMap(async.valueOrNull?['kpis']);
+    final tables = dashMap(async.valueOrNull?['tables']);
+    final charts = dashMap(async.valueOrNull?['charts']);
+    final statusOptions = dashboardUniqueOptions(
+      dashList(tables?['ultimasDispensacoes']).map((row) => row['tipoDispensacao']),
+      labels: const {
+        'VENDA_LIVRE': 'Venda livre',
+        'RECEITA_OBRIGATORIA': 'Receita obrigatória',
+        'RECEITA_CONTROLADA': 'Receita controlada',
+        'PSICOTROPICO': 'Psicotrópico',
+        'NARCOTICO': 'Narcótico',
+      },
+    );
+    final movementTypeOptions = dashboardUniqueOptions(
+      dashList(charts?['entradasSaidas']).map((row) => row['tipo']),
+      labels: const {
+        'ENTRADA': 'Entrada',
+        'SAIDA': 'Saída',
+      },
+    );
 
     Future<void> exportDashboard() async {
       final data = async.valueOrNull;
@@ -120,6 +139,10 @@ class _PharmacyDashboardPageState extends ConsumerState<PharmacyDashboardPage> {
       filters: DashboardPeriodFilters(
         query: _query,
         onChanged: (query) => setState(() => _query = query),
+        showCategoryFilter: true,
+        showProductFilter: true,
+        statusOptions: statusOptions,
+        movementTypeOptions: movementTypeOptions,
         extraFilters: [
           ActionChip(
             label: const Text('Validades'),
@@ -392,10 +415,14 @@ class _PharmacyDashboardPageState extends ConsumerState<PharmacyDashboardPage> {
                   title: 'Produtos críticos',
                   headers: const ['Produto', 'Disponível', 'Mínimo'],
                   reloadKey: '${_query.reloadKey}-criticos',
-                  loadPage: (page, pageSize) async {
+                  loadPage: (page, pageSize, sortBy, sortDir) async {
                     final result = await dataSource.pharmacyDashboardTable(
                       table: 'produtosCriticos',
-                      query: _query,
+                      query: _query.copyWith(
+                        sortBy: sortBy,
+                        sortDir: sortDir,
+                        clearSortBy: sortBy == null,
+                      ),
                       page: page,
                       pageSize: pageSize,
                     );
@@ -412,10 +439,14 @@ class _PharmacyDashboardPageState extends ConsumerState<PharmacyDashboardPage> {
                   title: 'Últimas entradas',
                   headers: const ['Produto', 'Lote', 'Qtd', 'Origem'],
                   reloadKey: '${_query.reloadKey}-entradas',
-                  loadPage: (page, pageSize) async {
+                  loadPage: (page, pageSize, sortBy, sortDir) async {
                     final result = await dataSource.pharmacyDashboardTable(
                       table: 'ultimasEntradas',
-                      query: _query,
+                      query: _query.copyWith(
+                        sortBy: sortBy,
+                        sortDir: sortDir,
+                        clearSortBy: sortBy == null,
+                      ),
                       page: page,
                       pageSize: pageSize,
                     );
@@ -433,10 +464,14 @@ class _PharmacyDashboardPageState extends ConsumerState<PharmacyDashboardPage> {
                   title: 'Últimas dispensações',
                   headers: const ['Produto', 'Lote', 'Qtd', 'Tipo'],
                   reloadKey: '${_query.reloadKey}-dispensacoes',
-                  loadPage: (page, pageSize) async {
+                  loadPage: (page, pageSize, sortBy, sortDir) async {
                     final result = await dataSource.pharmacyDashboardTable(
                       table: 'ultimasDispensacoes',
-                      query: _query,
+                      query: _query.copyWith(
+                        sortBy: sortBy,
+                        sortDir: sortDir,
+                        clearSortBy: sortBy == null,
+                      ),
                       page: page,
                       pageSize: pageSize,
                     );
@@ -454,10 +489,14 @@ class _PharmacyDashboardPageState extends ConsumerState<PharmacyDashboardPage> {
                   title: 'Últimos alertas',
                   headers: const ['Produto', 'Tipo', 'Mensagem'],
                   reloadKey: '${_query.reloadKey}-alertas',
-                  loadPage: (page, pageSize) async {
+                  loadPage: (page, pageSize, sortBy, sortDir) async {
                     final result = await dataSource.pharmacyDashboardTable(
                       table: 'ultimosAlertas',
-                      query: _query,
+                      query: _query.copyWith(
+                        sortBy: sortBy,
+                        sortDir: sortDir,
+                        clearSortBy: sortBy == null,
+                      ),
                       page: page,
                       pageSize: pageSize,
                     );
