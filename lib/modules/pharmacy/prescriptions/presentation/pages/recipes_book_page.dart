@@ -1,32 +1,1073 @@
+import 'dart:async';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
-import '../../../../../shared/widgets/layout/module_page_frame.dart';
+import '../../../../../core/theme/spacing.dart';
+import '../../../../../core/utils/browser_file_handler.dart';
+import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
+import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
+import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
+import '../../../../stock/presentation/widgets/movimentacoes_pagination.dart';
+import '../../../regulatory/data/datasources/regulatory_remote_datasource.dart';
 
-class RecipesBookPage extends StatelessWidget {
+class RecipesBookPage extends ConsumerStatefulWidget {
   const RecipesBookPage({super.key});
+
+  @override
+  ConsumerState<RecipesBookPage> createState() => _RecipesBookPageState();
+}
+
+class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+  late final TextEditingController _receitasSearchController;
+  late final TextEditingController _livroSearchController;
+  Timer? _refreshTimer;
+
+  bool _loadingReceitas = true;
+  bool _loadingLivro = true;
+  String? _receitasError;
+  String? _livroError;
+
+  Map<String, dynamic>? _receitasDashboard;
+  List<Map<String, dynamic>> _receitasItems = <Map<String, dynamic>>[];
+  int _receitasPage = 1;
+  int _receitasPageSize = 20;
+  bool _receitasHasMore = false;
+  int _receitasTotal = 0;
+  String _receitasSearch = '';
+  String? _receitasStatus;
+  String? _receitasOrigem;
+  String _receitasSortBy = 'dataReceita';
+  String _receitasSortDir = 'desc';
+
+  Map<String, dynamic>? _livroDashboard;
+  List<Map<String, dynamic>> _livroItems = <Map<String, dynamic>>[];
+  int _livroPage = 1;
+  int _livroPageSize = 20;
+  bool _livroHasMore = false;
+  int _livroTotal = 0;
+  String _livroSearch = '';
+  String? _livroOrigem;
+  String? _livroTipoMovimento;
+  String _livroSortBy = 'createdAt';
+  String _livroSortDir = 'desc';
+
+  RegulatoryRemoteDataSource get _ds =>
+      ref.read(regulatoryRemoteDataSourceProvider);
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _receitasSearchController = TextEditingController();
+    _livroSearchController = TextEditingController();
+    _bootstrap();
+    _refreshTimer = Timer.periodic(
+      const Duration(seconds: 45),
+      (_) => _reloadCurrentTab(silent: true),
+    );
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    _tabController.dispose();
+    _receitasSearchController.dispose();
+    _livroSearchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _bootstrap() async {
+    await Future.wait([
+      _loadReceitas(),
+      _loadLivro(),
+    ]);
+  }
+
+  Future<void> _reloadCurrentTab({bool silent = false}) async {
+    if (_tabController.index == 0) {
+      await _loadReceitas(silent: silent);
+    } else {
+      await _loadLivro(silent: silent);
+    }
+  }
+
+  Future<void> _loadReceitas({bool silent = false}) async {
+    if (!silent && mounted) {
+      setState(() {
+        _loadingReceitas = true;
+        _receitasError = null;
+      });
+    }
+
+    try {
+      final results = await Future.wait([
+        _ds.receitasDashboard(
+          search: _receitasSearch.isEmpty ? null : _receitasSearch,
+        ),
+        _ds.listReceitas(
+          search: _receitasSearch.isEmpty ? null : _receitasSearch,
+          status: _receitasStatus,
+          origem: _receitasOrigem,
+          sortBy: _receitasSortBy,
+          sortDir: _receitasSortDir,
+          page: _receitasPage,
+          pageSize: _receitasPageSize,
+        ),
+      ]);
+      final page = results[1] as dynamic;
+      if (!mounted) return;
+      setState(() {
+        _receitasDashboard = results[0] as Map<String, dynamic>;
+        _receitasItems = page.items.cast<Map<String, dynamic>>();
+        _receitasPage = page.page as int;
+        _receitasPageSize = page.pageSize as int;
+        _receitasHasMore = page.hasMore as bool;
+        _receitasTotal = (page.totalCount as int?) ?? _receitasItems.length;
+        _loadingReceitas = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _loadingReceitas = false;
+        _receitasError = error.toString();
+      });
+    }
+  }
+
+  Future<void> _loadLivro({bool silent = false}) async {
+    if (!silent && mounted) {
+      setState(() {
+        _loadingLivro = true;
+        _livroError = null;
+      });
+    }
+
+    try {
+      final results = await Future.wait([
+        _ds.livroReceitasDashboard(
+          search: _livroSearch.isEmpty ? null : _livroSearch,
+          origem: _livroOrigem,
+          tipoMovimento: _livroTipoMovimento,
+        ),
+        _ds.listLivroReceitas(
+          search: _livroSearch.isEmpty ? null : _livroSearch,
+          origem: _livroOrigem,
+          tipoMovimento: _livroTipoMovimento,
+          sortBy: _livroSortBy,
+          sortDir: _livroSortDir,
+          page: _livroPage,
+          pageSize: _livroPageSize,
+        ),
+      ]);
+      final page = results[1] as dynamic;
+      if (!mounted) return;
+      setState(() {
+        _livroDashboard = results[0] as Map<String, dynamic>;
+        _livroItems = page.items.cast<Map<String, dynamic>>();
+        _livroPage = page.page as int;
+        _livroPageSize = page.pageSize as int;
+        _livroHasMore = page.hasMore as bool;
+        _livroTotal = (page.totalCount as int?) ?? _livroItems.length;
+        _loadingLivro = false;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _loadingLivro = false;
+        _livroError = error.toString();
+      });
+    }
+  }
+
+  Future<void> _exportCurrentTab() async {
+    final payload = _tabController.index == 0
+        ? {
+            'dashboard': _receitasDashboard,
+            'items': _receitasItems,
+          }
+        : {
+            'dashboard': _livroDashboard,
+            'items': _livroItems,
+          };
+    final bytes = utf8.encode(const JsonEncoder.withIndent('  ').convert(payload));
+    await BrowserFileHandler.downloadBytes(
+      bytes: bytes,
+      fileName: _tabController.index == 0
+          ? 'receitas.json'
+          : 'livro-receitas.json',
+      contentType: 'application/json',
+    );
+  }
+
+  Future<void> _openReceitaDetail(String id) async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) => Dialog(
+        child: SizedBox(
+          width: 920,
+          height: 680,
+          child: FutureBuilder<Map<String, dynamic>>(
+            future: _ds.getReceita(id),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState != ConnectionState.done) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return Center(child: Text(snapshot.error.toString()));
+              }
+              final data = snapshot.data ?? const <String, dynamic>{};
+              return _DetailScaffold(
+                title: data['numeroReceita']?.toString() ?? 'Receita',
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: [
+                        _InfoTile(
+                          label: 'Paciente',
+                          value: data['cliente']?['nome']?.toString() ?? '—',
+                        ),
+                        _InfoTile(
+                          label: 'Médico',
+                          value: data['medicoNome']?.toString() ?? '—',
+                        ),
+                        _InfoTile(
+                          label: 'Estado',
+                          value: data['status']?.toString() ?? '—',
+                        ),
+                        _InfoTile(
+                          label: 'Origem',
+                          value: data['origem']?.toString() ?? '—',
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Dispensações',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    ...(data['dispensacoes'] as List<dynamic>? ?? const [])
+                        .map(
+                          (item) => ListTile(
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(
+                              item['produto']?['nome']?.toString() ?? 'Produto',
+                            ),
+                            subtitle: Text(
+                              'Qtd: ${item['quantidade']} • ${item['tipoDispensacao']}',
+                            ),
+                          ),
+                        ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Histórico',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    ...(data['timeline'] as List<dynamic>? ?? const [])
+                        .map(
+                          (item) => ListTile(
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(item['description']?.toString() ?? '—'),
+                            subtitle: Text(item['at']?.toString() ?? '—'),
+                          ),
+                        ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openLivroDetail(String id) async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) => Dialog(
+        child: SizedBox(
+          width: 860,
+          height: 640,
+          child: FutureBuilder<Map<String, dynamic>>(
+            future: _ds.getLivroReceita(id),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState != ConnectionState.done) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (snapshot.hasError) {
+                return Center(child: Text(snapshot.error.toString()));
+              }
+              final data = snapshot.data ?? const <String, dynamic>{};
+              return _DetailScaffold(
+                title: 'Movimento ${data['numeroReceita'] ?? data['id']}',
+                child: ListView(
+                  padding: const EdgeInsets.all(16),
+                  children: [
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 12,
+                      children: [
+                        _InfoTile(
+                          label: 'Paciente',
+                          value: data['cliente']?['nome']?.toString() ?? '—',
+                        ),
+                        _InfoTile(
+                          label: 'Produto',
+                          value: data['produto']?['nome']?.toString() ?? '—',
+                        ),
+                        _InfoTile(
+                          label: 'Movimento',
+                          value: data['tipoMovimento']?.toString() ?? '—',
+                        ),
+                        _InfoTile(
+                          label: 'Origem',
+                          value: data['origemReceita']?.toString() ?? '—',
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Auditoria',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    ...(data['auditLogs'] as List<dynamic>? ?? const [])
+                        .map(
+                          (item) => ListTile(
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(item['action']?.toString() ?? '—'),
+                            subtitle: Text(item['createdAt']?.toString() ?? '—'),
+                          ),
+                        ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openReceitaForm([Map<String, dynamic>? item]) async {
+    final clienteId = TextEditingController(
+      text: item?['clienteId']?.toString() ?? '',
+    );
+    final numero = TextEditingController(
+      text: item?['numeroReceita']?.toString() ?? '',
+    );
+    final medico = TextEditingController(
+      text: item?['medicoNome']?.toString() ?? '',
+    );
+    final unidade = TextEditingController(
+      text: item?['unidadeSanitaria']?.toString() ?? '',
+    );
+    final data = TextEditingController(
+      text: item?['dataReceita']?.toString().substring(0, 10) ??
+          DateTime.now().toIso8601String().substring(0, 10),
+    );
+    final observacoes = TextEditingController(
+      text: item?['observacoes']?.toString() ?? '',
+    );
+
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(item == null ? 'Nova receita' : 'Editar receita'),
+        content: SizedBox(
+          width: 520,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: clienteId,
+                  decoration: const InputDecoration(labelText: 'Cliente ID'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: numero,
+                  decoration: const InputDecoration(labelText: 'Número da receita'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: medico,
+                  decoration: const InputDecoration(labelText: 'Médico'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: unidade,
+                  decoration: const InputDecoration(
+                    labelText: 'Unidade sanitária',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: data,
+                  decoration: const InputDecoration(labelText: 'Data (YYYY-MM-DD)'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: observacoes,
+                  maxLines: 3,
+                  decoration: const InputDecoration(labelText: 'Observações'),
+                ),
+              ],
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final body = <String, dynamic>{
+                'clienteId': clienteId.text.trim(),
+                'numeroReceita': numero.text.trim().isEmpty
+                    ? null
+                    : numero.text.trim(),
+                'medicoNome': medico.text.trim().isEmpty
+                    ? null
+                    : medico.text.trim(),
+                'unidadeSanitaria': unidade.text.trim().isEmpty
+                    ? null
+                    : unidade.text.trim(),
+                'dataReceita': data.text.trim(),
+                'observacoes': observacoes.text.trim().isEmpty
+                    ? null
+                    : observacoes.text.trim(),
+              };
+              try {
+                if (item == null) {
+                  await _ds.createReceita(body);
+                } else {
+                  await _ds.updateReceita(item['id'].toString(), body);
+                }
+                if (!context.mounted) return;
+                Navigator.of(context).pop(true);
+              } catch (error) {
+                if (!context.mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(error.toString())),
+                );
+              }
+            },
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+
+    clienteId.dispose();
+    numero.dispose();
+    medico.dispose();
+    unidade.dispose();
+    data.dispose();
+    observacoes.dispose();
+
+    if (saved == true) {
+      await _loadReceitas();
+    }
+  }
+
+  Future<void> _deleteReceita(Map<String, dynamic> item) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remover receita'),
+        content: Text(
+          'Deseja remover a receita ${item['numeroReceita'] ?? item['id']}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Remover'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+    try {
+      await _ds.deleteReceita(item['id'].toString());
+      await _loadReceitas();
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString())),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final currentDash =
+        _tabController.index == 0 ? _receitasDashboard : _livroDashboard;
+    return EnterpriseModuleHub(
+      title: 'Prescrições e Livro de Receitas',
+      subtitle:
+          'Receitas reais do backend, com rastreio de dispensação, auditoria e livro oficial.',
+      tag: 'Regulatório',
+      actions: [
+        IconButton(
+          onPressed: () => _reloadCurrentTab(),
+          icon: const Icon(Icons.refresh),
+        ),
+        IconButton(
+          onPressed: _exportCurrentTab,
+          icon: const Icon(Icons.download_outlined),
+        ),
+        if (_tabController.index == 0)
+          FilledButton.icon(
+            onPressed: _openReceitaForm,
+            icon: const Icon(Icons.add),
+            label: const Text('Nova receita'),
+          ),
+      ],
+      kpis: currentDash == null
+          ? null
+          : _tabController.index == 0
+              ? [
+                  EnterpriseStatCard(
+                    title: 'Emitidas',
+                    value: '${currentDash['kpis']?['emitidas'] ?? 0}',
+                    icon: Icons.description_outlined,
+                  ),
+                  EnterpriseStatCard(
+                    title: 'Utilizadas',
+                    value: '${currentDash['kpis']?['utilizadas'] ?? 0}',
+                    icon: Icons.check_circle_outline,
+                  ),
+                  EnterpriseStatCard(
+                    title: 'Pendentes',
+                    value: '${currentDash['kpis']?['pendentes'] ?? 0}',
+                    icon: Icons.pending_actions_outlined,
+                  ),
+                  EnterpriseStatCard(
+                    title: 'Expiradas',
+                    value: '${currentDash['kpis']?['expiradas'] ?? 0}',
+                    icon: Icons.event_busy_outlined,
+                  ),
+                ]
+              : [
+                  EnterpriseStatCard(
+                    title: 'Movimentos',
+                    value: '${currentDash['kpis']?['totalMovimentos'] ?? 0}',
+                    icon: Icons.menu_book_outlined,
+                  ),
+                  EnterpriseStatCard(
+                    title: 'Entradas',
+                    value: '${currentDash['kpis']?['entradas'] ?? 0}',
+                    icon: Icons.call_received_outlined,
+                  ),
+                  EnterpriseStatCard(
+                    title: 'Saídas',
+                    value: '${currentDash['kpis']?['saidas'] ?? 0}',
+                    icon: Icons.call_made_outlined,
+                  ),
+                  EnterpriseStatCard(
+                    title: 'Pacientes',
+                    value: '${currentDash['kpis']?['pacientesUnicos'] ?? 0}',
+                    icon: Icons.people_outline,
+                  ),
+                ],
+      filters: _tabController.index == 0
+          ? _buildReceitasFilters(context)
+          : _buildLivroFilters(context),
+      child: Column(
+        children: [
+          TabBar(
+            controller: _tabController,
+            onTap: (_) => setState(() {}),
+            tabs: const [
+              Tab(text: 'Receitas'),
+              Tab(text: 'Livro de receitas'),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Expanded(
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildReceitasTab(context),
+                _buildLivroTab(context),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReceitasFilters(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        SizedBox(
+          width: 260,
+          child: TextField(
+            controller: _receitasSearchController,
+            decoration: const InputDecoration(
+              hintText: 'Número, médico, paciente...',
+              prefixIcon: Icon(Icons.search),
+              border: OutlineInputBorder(),
+            ),
+            onSubmitted: (value) {
+              setState(() {
+                _receitasSearch = value.trim();
+                _receitasPage = 1;
+              });
+              _loadReceitas();
+            },
+          ),
+        ),
+        SizedBox(
+          width: 180,
+          child: DropdownButtonFormField<String?>(
+            value: _receitasStatus,
+            decoration: const InputDecoration(
+              labelText: 'Estado',
+              border: OutlineInputBorder(),
+            ),
+            items: const [
+              DropdownMenuItem(value: null, child: Text('Todos')),
+              DropdownMenuItem(value: 'PENDENTE', child: Text('Pendente')),
+              DropdownMenuItem(value: 'UTILIZADA', child: Text('Utilizada')),
+              DropdownMenuItem(value: 'EXPIRADA', child: Text('Expirada')),
+            ],
+            onChanged: (value) {
+              setState(() {
+                _receitasStatus = value;
+                _receitasPage = 1;
+              });
+              _loadReceitas();
+            },
+          ),
+        ),
+        SizedBox(
+          width: 180,
+          child: DropdownButtonFormField<String?>(
+            value: _receitasOrigem,
+            decoration: const InputDecoration(
+              labelText: 'Origem',
+              border: OutlineInputBorder(),
+            ),
+            items: const [
+              DropdownMenuItem(value: null, child: Text('Todas')),
+              DropdownMenuItem(value: 'FISICA', child: Text('Física')),
+              DropdownMenuItem(value: 'DIGITAL', child: Text('Digital')),
+              DropdownMenuItem(
+                value: 'SISTEMA_INTERNO',
+                child: Text('Sistema'),
+              ),
+            ],
+            onChanged: (value) {
+              setState(() {
+                _receitasOrigem = value;
+                _receitasPage = 1;
+              });
+              _loadReceitas();
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLivroFilters(BuildContext context) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        SizedBox(
+          width: 260,
+          child: TextField(
+            controller: _livroSearchController,
+            decoration: const InputDecoration(
+              hintText: 'Receita, paciente, produto...',
+              prefixIcon: Icon(Icons.search),
+              border: OutlineInputBorder(),
+            ),
+            onSubmitted: (value) {
+              setState(() {
+                _livroSearch = value.trim();
+                _livroPage = 1;
+              });
+              _loadLivro();
+            },
+          ),
+        ),
+        SizedBox(
+          width: 180,
+          child: DropdownButtonFormField<String?>(
+            value: _livroTipoMovimento,
+            decoration: const InputDecoration(
+              labelText: 'Movimento',
+              border: OutlineInputBorder(),
+            ),
+            items: const [
+              DropdownMenuItem(value: null, child: Text('Todos')),
+              DropdownMenuItem(value: 'ENTRADA', child: Text('Entrada')),
+              DropdownMenuItem(value: 'SAIDA', child: Text('Saída')),
+              DropdownMenuItem(
+                value: 'CANCELAMENTO',
+                child: Text('Cancelamento'),
+              ),
+            ],
+            onChanged: (value) {
+              setState(() {
+                _livroTipoMovimento = value;
+                _livroPage = 1;
+              });
+              _loadLivro();
+            },
+          ),
+        ),
+        SizedBox(
+          width: 180,
+          child: DropdownButtonFormField<String?>(
+            value: _livroOrigem,
+            decoration: const InputDecoration(
+              labelText: 'Origem',
+              border: OutlineInputBorder(),
+            ),
+            items: const [
+              DropdownMenuItem(value: null, child: Text('Todas')),
+              DropdownMenuItem(value: 'FISICA', child: Text('Física')),
+              DropdownMenuItem(value: 'DIGITAL', child: Text('Digital')),
+              DropdownMenuItem(
+                value: 'SISTEMA_INTERNO',
+                child: Text('Sistema'),
+              ),
+            ],
+            onChanged: (value) {
+              setState(() {
+                _livroOrigem = value;
+                _livroPage = 1;
+              });
+              _loadLivro();
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildReceitasTab(BuildContext context) {
+    final t = context.pharmaTokens;
+    return Column(
+      children: [
+        if (_loadingReceitas) const LinearProgressIndicator(),
+        if (_receitasError != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+            child: Text(
+              _receitasError!,
+              style: TextStyle(color: t.posDanger),
+            ),
+          ),
+        Expanded(
+          child: _receitasItems.isEmpty && !_loadingReceitas
+              ? const Center(
+                  child: Text('Sem resultados para os filtros selecionados.'),
+                )
+              : EnterpriseDataTable(
+                  columns: const [
+                    DataColumn(label: Text('RECEITA')),
+                    DataColumn(label: Text('PACIENTE')),
+                    DataColumn(label: Text('MÉDICO')),
+                    DataColumn(label: Text('DATA')),
+                    DataColumn(label: Text('ESTADO')),
+                    DataColumn(label: Text('ACÇÕES')),
+                  ],
+                  rowCount: _receitasItems.length,
+                  rowBuilder: (context, index) {
+                    final item = _receitasItems[index];
+                    return DataRow(
+                      onSelectChanged: (_) =>
+                          _openReceitaDetail(item['id'].toString()),
+                      cells: [
+                        DataCell(
+                          Text(item['numeroReceita']?.toString() ?? '—'),
+                        ),
+                        DataCell(
+                          Text(item['cliente']?['nome']?.toString() ?? '—'),
+                        ),
+                        DataCell(Text(item['medicoNome']?.toString() ?? '—')),
+                        DataCell(
+                          Text(
+                            item['dataReceita']?.toString().substring(0, 10) ??
+                                '—',
+                          ),
+                        ),
+                        DataCell(_StatusBadge(label: item['status']?.toString())),
+                        DataCell(
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                onPressed: () => _openReceitaForm(item),
+                                icon: const Icon(Icons.edit_outlined),
+                                tooltip: 'Editar',
+                              ),
+                              IconButton(
+                                onPressed: () => _deleteReceita(item),
+                                icon: const Icon(Icons.delete_outline),
+                                tooltip: 'Remover',
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        MovimentacoesPagination(
+          page: _receitasPage,
+          pageSize: _receitasPageSize,
+          hasMore: _receitasHasMore,
+          isBusy: _loadingReceitas,
+          onPrev: _receitasPage > 1
+              ? () {
+                  setState(() => _receitasPage -= 1);
+                  _loadReceitas();
+                }
+              : null,
+          onNext: _receitasHasMore
+              ? () {
+                  setState(() => _receitasPage += 1);
+                  _loadReceitas();
+                }
+              : null,
+          onPageSizeChanged: (value) {
+            setState(() {
+              _receitasPageSize = value;
+              _receitasPage = 1;
+            });
+            _loadReceitas();
+          },
+        ),
+        Text(
+          'Total: $_receitasTotal receita(s)',
+          style: TextStyle(color: t.textMuted, fontSize: 12),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLivroTab(BuildContext context) {
+    final t = context.pharmaTokens;
+    return Column(
+      children: [
+        if (_loadingLivro) const LinearProgressIndicator(),
+        if (_livroError != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+            child: Text(
+              _livroError!,
+              style: TextStyle(color: t.posDanger),
+            ),
+          ),
+        Expanded(
+          child: _livroItems.isEmpty && !_loadingLivro
+              ? const Center(
+                  child: Text('Sem resultados para os filtros selecionados.'),
+                )
+              : EnterpriseDataTable(
+                  columns: const [
+                    DataColumn(label: Text('RECEITA')),
+                    DataColumn(label: Text('PACIENTE')),
+                    DataColumn(label: Text('PRODUTO')),
+                    DataColumn(label: Text('QTD')),
+                    DataColumn(label: Text('MOVIMENTO')),
+                    DataColumn(label: Text('SALDO')),
+                  ],
+                  rowCount: _livroItems.length,
+                  rowBuilder: (context, index) {
+                    final item = _livroItems[index];
+                    return DataRow(
+                      onSelectChanged: (_) =>
+                          _openLivroDetail(item['id'].toString()),
+                      cells: [
+                        DataCell(
+                          Text(item['numeroReceita']?.toString() ?? '—'),
+                        ),
+                        DataCell(
+                          Text(item['cliente']?['nome']?.toString() ?? '—'),
+                        ),
+                        DataCell(
+                          Text(item['produto']?['nome']?.toString() ?? '—'),
+                        ),
+                        DataCell(Text('${item['quantidade'] ?? 0}')),
+                        DataCell(
+                          _StatusBadge(
+                            label: item['tipoMovimento']?.toString(),
+                          ),
+                        ),
+                        DataCell(Text('${item['saldoAtual'] ?? 0}')),
+                      ],
+                    );
+                  },
+                ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        MovimentacoesPagination(
+          page: _livroPage,
+          pageSize: _livroPageSize,
+          hasMore: _livroHasMore,
+          isBusy: _loadingLivro,
+          onPrev: _livroPage > 1
+              ? () {
+                  setState(() => _livroPage -= 1);
+                  _loadLivro();
+                }
+              : null,
+          onNext: _livroHasMore
+              ? () {
+                  setState(() => _livroPage += 1);
+                  _loadLivro();
+                }
+              : null,
+          onPageSizeChanged: (value) {
+            setState(() {
+              _livroPageSize = value;
+              _livroPage = 1;
+            });
+            _loadLivro();
+          },
+        ),
+        Text(
+          'Total: $_livroTotal movimento(s)',
+          style: TextStyle(color: t.textMuted, fontSize: 12),
+        ),
+      ],
+    );
+  }
+}
+
+class _DetailScaffold extends StatelessWidget {
+  const _DetailScaffold({
+    required this.title,
+    required this.child,
+  });
+
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+              IconButton(
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.close),
+              ),
+            ],
+          ),
+        ),
+        const Divider(height: 1),
+        Expanded(child: child),
+      ],
+    );
+  }
+}
+
+class _InfoTile extends StatelessWidget {
+  const _InfoTile({
+    required this.label,
+    required this.value,
+  });
+
+  final String label;
+  final String value;
 
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
-    return ModulePageFrame(
-      title: 'LIVRO DE RECEITAS',
+    return Container(
+      width: 200,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: t.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: t.border),
+      ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (var i = 0; i < 4; i++)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Material(
-                color: t.card,
-                borderRadius: BorderRadius.circular(t.radiusMd),
-                child: ListTile(
-                  leading: Icon(Icons.menu_book_outlined, color: t.posInfo),
-                  title: Text('Receita #${2400 + i}', style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w700)),
-                  subtitle: Text('Médico • utente • ANARME', style: TextStyle(color: t.textMuted, fontSize: 12)),
-                ),
-              ),
+          Text(
+            label,
+            style: TextStyle(color: t.textMuted, fontSize: 12),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              color: t.textPrimary,
+              fontWeight: FontWeight.w600,
             ),
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  const _StatusBadge({this.label});
+
+  final String? label;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+    final value = label ?? '—';
+    final color = switch (value) {
+      'UTILIZADA' || 'SAIDA' => t.brandGreen,
+      'PENDENTE' || 'ENTRADA' => t.posInfo,
+      'EXPIRADA' || 'CANCELAMENTO' => t.posDanger,
+      _ => t.textMuted,
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        value,
+        style: TextStyle(color: color, fontWeight: FontWeight.w600),
       ),
     );
   }
