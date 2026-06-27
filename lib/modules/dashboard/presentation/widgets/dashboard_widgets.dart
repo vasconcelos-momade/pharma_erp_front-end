@@ -113,7 +113,7 @@ class DashboardFilterSelect extends StatelessWidget {
     return SizedBox(
       width: width,
       child: DropdownButtonFormField<String>(
-        value: options.any((option) => option.value == value) ? value : null,
+        initialValue: options.any((option) => option.value == value) ? value : null,
         isExpanded: true,
         decoration: InputDecoration(
           labelText: label,
@@ -234,12 +234,12 @@ Widget _dashboardScrollableChart({
 }
 
 Widget _dashboardAxisLabel({
-  required AxisSide axisSide,
+  required TitleMeta meta,
   required String label,
   double angle = 0,
 }) {
   return SideTitleWidget(
-    axisSide: axisSide,
+    meta: meta,
     space: 8,
     angle: angle,
     child: Text(
@@ -323,7 +323,7 @@ Widget dashboardLineChart({
                       return DefaultTextStyle(
                         style: TextStyle(color: t.textMuted),
                         child: _dashboardAxisLabel(
-                          axisSide: meta.axisSide,
+                          meta: meta,
                           label: dashLabel(points[i][labelKey], max: 10),
                         ),
                       );
@@ -434,7 +434,7 @@ Widget dashboardBarChart({
                 return DefaultTextStyle(
                   style: TextStyle(color: t.textMuted),
                   child: _dashboardAxisLabel(
-                    axisSide: meta.axisSide,
+                    meta: meta,
                     label: dashLabel(points[i][labelKey], max: 14),
                     angle: -0.5,
                   ),
@@ -580,7 +580,7 @@ Widget dashboardIndexedBarChart({
                 return DefaultTextStyle(
                   style: TextStyle(color: t.textMuted),
                   child: _dashboardAxisLabel(
-                    axisSide: meta.axisSide,
+                    meta: meta,
                     label: labels[i],
                     angle: -0.45,
                   ),
@@ -714,7 +714,7 @@ Widget dashboardSimpleTable({
                       label: Text(column.label),
                       onSort: column.sortKey == null || onSortColumn == null
                           ? null
-                          : (_, __) => onSortColumn(index),
+                          : (_, _) => onSortColumn(index),
                     );
                   }),
                   rowCount: rows.length,
