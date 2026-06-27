@@ -55,23 +55,14 @@ class EnterpriseStatCard extends StatelessWidget {
     final gapAfterHeader = compact ? 4.0 : 10.0;
     final gapBeforeSubtitle = compact ? 2.0 : 8.0;
 
-    return Material(
-      color: t.card,
-      borderRadius: BorderRadius.circular(t.radiusMd),
-      child: InkWell(
-        onTap: onTap ?? () {},
+    final child = AnimatedContainer(
+      duration: const Duration(milliseconds: 120),
+      padding: pad,
+      decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(t.radiusMd),
-        mouseCursor: SystemMouseCursors.click,
-        hoverColor: fg.withValues(alpha: 0.06),
-        splashColor: fg.withValues(alpha: 0.08),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
-          padding: pad,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(t.radiusMd),
-            border: Border.all(color: t.border.withValues(alpha: 0.55)),
-          ),
-          child: LayoutBuilder(
+        border: Border.all(color: t.border.withValues(alpha: 0.55)),
+      ),
+      child: LayoutBuilder(
             builder: (context, constraints) {
               final content = Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -171,8 +162,26 @@ class EnterpriseStatCard extends StatelessWidget {
               );
             },
           ),
+        );
+
+    if (onTap != null) {
+      return Material(
+        color: t.card,
+        borderRadius: BorderRadius.circular(t.radiusMd),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(t.radiusMd),
+          mouseCursor: SystemMouseCursors.click,
+          hoverColor: fg.withValues(alpha: 0.06),
+          splashColor: fg.withValues(alpha: 0.08),
+          child: child,
         ),
-      ),
+      );
+    }
+    return Material(
+      color: t.card,
+      borderRadius: BorderRadius.circular(t.radiusMd),
+      child: child,
     );
   }
 }
