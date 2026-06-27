@@ -141,44 +141,36 @@ class EnterpriseDataTable extends StatelessWidget {
               border: Border.all(color: t.border.withValues(alpha: 0.55)),
             ),
             clipBehavior: Clip.antiAlias,
-            child: Scrollbar(
-              thumbVisibility: c.maxWidth < Breakpoints.tablet,
-              notificationPredicate: (notification) =>
-                  notification.metrics.axis == Axis.horizontal,
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minWidth: c.maxWidth),
-                  child: Scrollbar(
-                    thumbVisibility: boundedHeight,
-                    notificationPredicate: (notification) =>
-                        notification.metrics.axis == Axis.vertical,
-                    child: SingleChildScrollView(
-                      physics: boundedHeight
-                          ? const ClampingScrollPhysics()
-                          : const NeverScrollableScrollPhysics(),
-                      child: DataTable(
-                        showCheckboxColumn: showCheckboxColumn,
-                        sortColumnIndex: sortColumnIndex,
-                        sortAscending: sortAscending,
-                        headingRowColor: WidgetStatePropertyAll(
-                          t.bgSecondary.withValues(alpha: 0.92),
-                        ),
-                        dataRowMinHeight:
-                            PharmaScreenLayout.isTablet(context) ? 44 : 40,
-                        dataRowMaxHeight: 72,
-                        horizontalMargin: PharmaScreenLayout.isDesktop(context)
-                            ? AppSpacing.lg
-                            : AppSpacing.md,
-                        columnSpacing: PharmaScreenLayout.isDesktop(context)
-                            ? AppSpacing.xxl
-                            : AppSpacing.lg,
-                        columns: columns,
-                        rows: List.generate(
-                          rowCount,
-                          (i) => rowBuilder(context, i),
-                        ),
-                      ),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minWidth: c.maxWidth.isFinite ? c.maxWidth : Breakpoints.tablet,
+                ),
+                child: SingleChildScrollView(
+                  physics: boundedHeight
+                      ? const ClampingScrollPhysics()
+                      : const NeverScrollableScrollPhysics(),
+                  child: DataTable(
+                    showCheckboxColumn: showCheckboxColumn,
+                    sortColumnIndex: sortColumnIndex,
+                    sortAscending: sortAscending,
+                    headingRowColor: WidgetStatePropertyAll(
+                      t.bgSecondary.withValues(alpha: 0.92),
+                    ),
+                    dataRowMinHeight:
+                        PharmaScreenLayout.isTablet(context) ? 44 : 40,
+                    dataRowMaxHeight: 72,
+                    horizontalMargin: PharmaScreenLayout.isDesktop(context)
+                        ? AppSpacing.lg
+                        : AppSpacing.md,
+                    columnSpacing: PharmaScreenLayout.isDesktop(context)
+                        ? AppSpacing.xxl
+                        : AppSpacing.lg,
+                    columns: columns,
+                    rows: List.generate(
+                      rowCount,
+                      (i) => rowBuilder(context, i),
                     ),
                   ),
                 ),

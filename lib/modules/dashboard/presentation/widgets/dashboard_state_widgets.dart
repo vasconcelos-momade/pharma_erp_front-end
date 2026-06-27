@@ -87,14 +87,14 @@ class DashboardErrorState extends StatelessWidget {
 class DashboardEmptyState extends StatelessWidget {
   const DashboardEmptyState({
     super.key,
-    required this.title,
-    this.subtitle = 'Não existem registos para os filtros seleccionados.',
-    this.icon = Icons.inbox_outlined,
+    this.title,
+    this.subtitle = 'Sem resultados para os filtros selecionados.',
+    this.icon,
   });
 
-  final String title;
+  final String? title;
   final String subtitle;
-  final IconData icon;
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
@@ -106,16 +106,20 @@ class DashboardEmptyState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 44, color: t.textMuted),
-            SizedBox(height: s.sm),
-            Text(
-              title,
-              style: TextStyle(
-                color: t.textPrimary,
-                fontWeight: FontWeight.w800,
+            if (icon != null) ...[
+              Icon(icon, size: 44, color: t.textMuted),
+              SizedBox(height: s.sm),
+            ],
+            if (title != null && title!.isNotEmpty) ...[
+              Text(
+                title!,
+                style: TextStyle(
+                  color: t.textPrimary,
+                  fontWeight: FontWeight.w800,
+                ),
               ),
-            ),
-            SizedBox(height: s.xs),
+              SizedBox(height: s.xs),
+            ],
             Text(
               subtitle,
               textAlign: TextAlign.center,

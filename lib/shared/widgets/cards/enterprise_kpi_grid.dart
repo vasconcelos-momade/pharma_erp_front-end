@@ -48,17 +48,23 @@ class EnterpriseKpiGrid extends StatelessWidget {
           );
         }
 
-        return GridView.builder(
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: cross,
-            crossAxisSpacing: screen == PharmaScreenSize.mobile ? 10 : s.sm,
-            mainAxisSpacing: screen == PharmaScreenSize.mobile ? 10 : s.sm,
-            mainAxisExtent: cardHeight,
-          ),
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: cards.length,
-          itemBuilder: (context, index) => cards[index],
+        final spacing = screen == PharmaScreenSize.mobile ? 10.0 : s.sm;
+        final totalSpacing = spacing * (cross - 1);
+        final itemWidth = constraints.maxWidth.isFinite
+            ? ((constraints.maxWidth - totalSpacing) / cross).clamp(120.0, double.infinity)
+            : 240.0;
+
+        return Wrap(
+          spacing: spacing,
+          runSpacing: spacing,
+          children: [
+            for (final card in cards)
+              SizedBox(
+                width: itemWidth,
+                height: cardHeight,
+                child: card,
+              ),
+          ],
         );
       },
     );

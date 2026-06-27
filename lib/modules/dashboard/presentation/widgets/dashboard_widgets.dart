@@ -681,7 +681,7 @@ Widget dashboardSimpleTable({
   int? sortColumnIndex,
   bool sortAscending = true,
   ValueSetter<int>? onSortColumn,
-  String emptySubtitle = 'Sem registos para os filtros seleccionados.',
+  String emptySubtitle = 'Sem resultados para os filtros selecionados.',
 }) {
   final tableColumns = columns ??
       headers.map((header) => DashboardTableColumn(label: header)).toList(growable: false);
@@ -694,37 +694,26 @@ Widget dashboardSimpleTable({
       ],
       if (rows.isEmpty)
         DashboardEmptyState(
-          title: title ?? 'Tabela',
           subtitle: emptySubtitle,
         )
       else
-        LayoutBuilder(
-          builder: (context, constraints) {
-            return SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(minWidth: constraints.maxWidth),
-                child: EnterpriseDataTable(
-                  showCheckboxColumn: false,
-                  sortColumnIndex: sortColumnIndex,
-                  sortAscending: sortAscending,
-                  columns: List.generate(tableColumns.length, (index) {
-                    final column = tableColumns[index];
-                    return DataColumn(
-                      label: Text(column.label),
-                      onSort: column.sortKey == null || onSortColumn == null
-                          ? null
-                          : (_, _) => onSortColumn(index),
-                    );
-                  }),
-                  rowCount: rows.length,
-                  rowBuilder: (context, index) => DataRow(
-                    cells: rows[index].map((cell) => DataCell(Text(cell))).toList(),
-                  ),
-                ),
-              ),
+        EnterpriseDataTable(
+          showCheckboxColumn: false,
+          sortColumnIndex: sortColumnIndex,
+          sortAscending: sortAscending,
+          columns: List.generate(tableColumns.length, (index) {
+            final column = tableColumns[index];
+            return DataColumn(
+              label: Text(column.label),
+              onSort: column.sortKey == null || onSortColumn == null
+                  ? null
+                  : (_, _) => onSortColumn(index),
             );
-          },
+          }),
+          rowCount: rows.length,
+          rowBuilder: (context, index) => DataRow(
+            cells: rows[index].map((cell) => DataCell(Text(cell))).toList(),
+          ),
         ),
     ],
   );
@@ -742,7 +731,7 @@ class DashboardPaginatedTable extends StatefulWidget {
     this.initialPageSize = 10,
     this.initialSortBy,
     this.initialSortDir = 'desc',
-    this.emptySubtitle = 'Sem registos para os filtros seleccionados.',
+    this.emptySubtitle = 'Sem resultados para os filtros selecionados.',
   });
 
   final String title;
