@@ -5,7 +5,7 @@ Future<void> openBytesImpl({
   required String fileName,
   required String contentType,
 }) async {
-  throw UnsupportedError('Abertura de ficheiros só está disponível no ambiente web.');
+  throw UnsupportedError('Abertura de ficheiros não suportada nesta plataforma.');
 }
 
 Future<void> downloadBytesImpl({
@@ -13,5 +13,5 @@ Future<void> downloadBytesImpl({
   required String fileName,
   required String contentType,
 }) async {
-  throw UnsupportedError('Download de ficheiros só está disponível no ambiente web.');
+  throw UnsupportedError('Download de ficheiros não suportado nesta plataforma.');
 }

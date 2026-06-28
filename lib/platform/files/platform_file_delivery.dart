@@ -1,11 +1,12 @@
 import 'dart:typed_data';
 
-import 'browser_file_handler_stub.dart'
-    if (dart.library.io) 'browser_file_handler_io.dart'
-    if (dart.library.html) 'browser_file_handler_web.dart' as impl;
+import 'platform_file_delivery_stub.dart'
+    if (dart.library.io) 'platform_file_delivery_io.dart'
+    if (dart.library.html) 'platform_file_delivery_web.dart' as impl;
 
-abstract final class BrowserFileHandler {
-  BrowserFileHandler._();
+/// Entrega de ficheiros binários ao utilizador (preview ou download).
+abstract final class PlatformFileDelivery {
+  PlatformFileDelivery._();
 
   static Future<void> openBytes({
     required Uint8List bytes,

@@ -1,44 +1,201 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/theme/design_tokens.dart';
-import '../../../../shared/widgets/cards/enterprise_stat_card.dart';
-import '../../../../shared/widgets/layout/module_page_frame.dart';
+import '../../../../core/constants/report_paths.dart';
+import '../../../../core/extensions/async_value_extensions.dart';
+import '../../../../core/theme/spacing.dart';
+import '../../../../shared/widgets/cards/enterprise_kpi_grid.dart';
+import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
+import '../../../dashboard/data/datasources/dashboard_remote_datasource.dart';
+import '../../../dashboard/domain/dashboard_query.dart';
+import '../../../dashboard/presentation/providers/dashboard_providers.dart';
+import '../../../dashboard/presentation/widgets/dashboard_period_filters.dart';
+import '../../../dashboard/presentation/widgets/dashboard_widgets.dart';
+import '../../../reports/presentation/controllers/report_controller.dart';
+import '../widgets/finance_report_exports.dart';
 
-class FinancialPage extends StatelessWidget {
+class FinancialPage extends ConsumerStatefulWidget {
   const FinancialPage({super.key});
 
   @override
+  ConsumerState<FinancialPage> createState() => _FinancialPageState();
+}
+
+class _FinancialPageState extends ConsumerState<FinancialPage> {
+  var _query = const DashboardQuery();
+
+  @override
   Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
-    return ModulePageFrame(
-      title: 'FINANCEIRO',
-      child: Column(
-        children: [
-          GridView.count(
-            crossAxisCount: 2,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            crossAxisSpacing: 12,
-            mainAxisSpacing: 12,
-            childAspectRatio: 1.6,
-            children: const [
-              EnterpriseStatCard(title: 'Caixa hoje', value: '18 200 MT', icon: Icons.payments_outlined, accent: StatCardAccent.positive),
-              EnterpriseStatCard(title: 'A pagar', value: '4 100 MT', icon: Icons.schedule_outlined, accent: StatCardAccent.warning),
-            ],
-          ),
-          const SizedBox(height: 20),
-          Text('Movimentos recentes', style: TextStyle(color: t.textMuted, fontWeight: FontWeight.w800, letterSpacing: 1)),
-          const SizedBox(height: 8),
-          for (var i = 0; i < 6; i++)
-            Material(
-              color: t.card,
-              borderRadius: BorderRadius.circular(t.radiusMd),
-              child: ListTile(
-                title: Text(i.isEven ? 'Entrada — vendas' : 'Saída — fornecedor', style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w600)),
-                trailing: Text(i.isEven ? '+ 2 400 MT' : '- 900 MT', style: TextStyle(color: i.isEven ? t.brandGreen : t.posDanger, fontWeight: FontWeight.w800)),
+    final async = ref.watch(financeDashboardProvider(_query));
+    final reportState = ref.watch(reportControllerProvider);
+    final dataSource = ref.watch(dashboardRemoteDataSourceProvider);
+    final kpis = dashMap(async.valueOrNull?['kpis']);
+
+    return EnterpriseModuleHub(
+      title: 'Visão financeira',
+      subtitle: 'Resumo de receitas, despesas, caixa e contas.',
+      tag: 'Finanças',
+      scrollable: true,
+      actions: [
+        ...financeReportActions(
+          ref: ref,
+          enabled: async.valueOrNull != null && !reportState.isSubmitting,
+          path: ReportPaths.dashboardFinance,
+          queryParameters: _query.toParams(),
+        ),
+        OutlinedButton.icon(
+          onPressed: () => ref.invalidate(financeDashboardProvider(_query)),
+          icon: const Icon(Icons.refresh_rounded),
+          label: const Text('Atualizar'),
+        ),
+      ],
+      filters: DashboardPeriodFilters(
+        query: _query,
+        onChanged: (query) => setState(() => _query = query),
+      ),
+      kpis: kpis == null
+          ? null
+          : [
+              dashboardKpiCard(
+                title: 'Receita',
+                value: '${dashKpi(kpis, 'receita')} MZN',
+                icon: Icons.trending_up,
+                accent: StatCardAccent.positive,
               ),
+              dashboardKpiCard(
+                title: 'Despesas',
+                value: '${dashKpi(kpis, 'despesas')} MZN',
+                icon: Icons.trending_down,
+                accent: StatCardAccent.warning,
+              ),
+              dashboardKpiCard(
+                title: 'Saldo caixa',
+                value: '${dashKpi(kpis, 'saldoAtual')} MZN',
+                icon: Icons.account_balance_wallet,
+                accent: StatCardAccent.positive,
+              ),
+              dashboardKpiCard(
+                title: 'A receber',
+                value: '${dashKpi(kpis, 'contasReceber')} MZN',
+                icon: Icons.call_received,
+              ),
+              dashboardKpiCard(
+                title: 'A pagar',
+                value: '${dashKpi(kpis, 'contasPagar')} MZN',
+                icon: Icons.call_made,
+              ),
+            ],
+      child: dashboardAsyncBody(
+        async: async,
+        onRetry: () => ref.invalidate(financeDashboardProvider(_query)),
+        builder: (_) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (financeReportError(ref) != null)
+              Padding(
+                padding: EdgeInsets.only(bottom: context.spacing.sm),
+                child: financeReportError(ref),
+              ),
+            DashboardPaginatedTable(
+              title: 'Contas vencidas',
+              headers: const ['Cliente', 'Saldo', 'Vencimento'],
+              reloadKey: '${_query.reloadKey}-vencidas',
+              loadPage: (page, pageSize, sortBy, sortDir) async {
+                final result = await dataSource.financeDashboardTable(
+                  table: 'contasVencidas',
+                  query: _query.copyWith(
+                    sortBy: sortBy,
+                    sortDir: sortDir,
+                    clearSortBy: sortBy == null,
+                  ),
+                  page: page,
+                  pageSize: pageSize,
+                );
+                return DashboardPagedTableResult.fromMap(result);
+              },
+              rowBuilder: (row) => [
+                row['clienteNome']?.toString() ?? '—',
+                '${row['saldo'] ?? 0} MZN',
+                dashLabel(row['vencimento']),
+              ],
             ),
-        ],
+            const SizedBox(height: AppSpacing.lg),
+            DashboardPaginatedTable(
+              title: 'Últimos pagamentos',
+              headers: const ['Fatura', 'Método', 'Valor'],
+              reloadKey: '${_query.reloadKey}-pagamentos',
+              loadPage: (page, pageSize, sortBy, sortDir) async {
+                final result = await dataSource.financeDashboardTable(
+                  table: 'ultimosPagamentos',
+                  query: _query.copyWith(
+                    sortBy: sortBy,
+                    sortDir: sortDir,
+                    clearSortBy: sortBy == null,
+                  ),
+                  page: page,
+                  pageSize: pageSize,
+                );
+                return DashboardPagedTableResult.fromMap(result);
+              },
+              rowBuilder: (row) => [
+                row['faturaNumero']?.toString() ?? '—',
+                row['metodo']?.toString() ?? '—',
+                '${row['valor'] ?? 0} MZN',
+              ],
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            DashboardPaginatedTable(
+              title: 'Contas a receber',
+              headers: const ['Cliente', 'Fatura', 'Saldo', 'Estado', 'Vencimento'],
+              reloadKey: '${_query.reloadKey}-receber',
+              loadPage: (page, pageSize, sortBy, sortDir) async {
+                final result = await dataSource.financeDashboardTable(
+                  table: 'contasReceber',
+                  query: _query.copyWith(
+                    sortBy: sortBy,
+                    sortDir: sortDir,
+                    clearSortBy: sortBy == null,
+                  ),
+                  page: page,
+                  pageSize: pageSize,
+                );
+                return DashboardPagedTableResult.fromMap(result);
+              },
+              rowBuilder: (row) => [
+                row['clienteNome']?.toString() ?? '—',
+                row['faturaNumero']?.toString() ?? '—',
+                '${row['saldo'] ?? 0} MZN',
+                row['status']?.toString() ?? '—',
+                dashLabel(row['vencimento']),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            DashboardPaginatedTable(
+              title: 'Contas a pagar',
+              headers: const ['Fornecedor', 'Saldo', 'Estado', 'Vencimento'],
+              reloadKey: '${_query.reloadKey}-pagar',
+              loadPage: (page, pageSize, sortBy, sortDir) async {
+                final result = await dataSource.financeDashboardTable(
+                  table: 'contasPagar',
+                  query: _query.copyWith(
+                    sortBy: sortBy,
+                    sortDir: sortDir,
+                    clearSortBy: sortBy == null,
+                  ),
+                  page: page,
+                  pageSize: pageSize,
+                );
+                return DashboardPagedTableResult.fromMap(result);
+              },
+              rowBuilder: (row) => [
+                row['fornecedorNome']?.toString() ?? '—',
+                '${row['saldo'] ?? 0} MZN',
+                row['status']?.toString() ?? '—',
+                dashLabel(row['vencimento']),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

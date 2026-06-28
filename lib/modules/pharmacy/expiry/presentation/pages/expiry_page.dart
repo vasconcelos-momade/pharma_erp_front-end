@@ -2,15 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/extensions/async_value_extensions.dart';
+import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
+import '../../../../reports/presentation/controllers/report_controller.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../../../stock/presentation/widgets/movimentacoes_pagination.dart';
 import '../../../lots/presentation/widgets/lot_detail_drawer.dart';
 import '../providers/expiry_provider.dart';
-import '../utils/expiry_exporter.dart';
 
 class ExpiryPage extends ConsumerStatefulWidget {
   const ExpiryPage({super.key});
@@ -64,9 +65,15 @@ class _ExpiryPageState extends ConsumerState<ExpiryPage> {
   Widget build(BuildContext context) {
     final asyncState = ref.watch(expiryViewProvider);
     final controller = ref.read(expiryViewProvider.notifier);
+    final reportState = ref.watch(reportControllerProvider);
+    final reportController = ref.read(reportControllerProvider.notifier);
     final state = asyncState.valueOrNull;
     final dash = state?.dashboard;
     final s = context.spacing;
+    final reportQuery = <String, dynamic>{
+      if ((state?.query ?? '').isNotEmpty) 'q': state!.query,
+      'bucket': state?.bucket ?? 'todos',
+    };
 
     return EnterpriseModuleHub(
       title: 'Validades',
@@ -74,19 +81,52 @@ class _ExpiryPageState extends ConsumerState<ExpiryPage> {
       tag: 'Farmácia',
       actions: [
         OutlinedButton.icon(
-          onPressed: state == null
+          onPressed: state == null || reportState.isSubmitting
               ? null
-              : () => ExpiryExporter.exportPdf(
-                    dashboard: state.dashboard,
-                    items: state.items,
+              : () => reportController.previewPdf(
+                    path: ReportPaths.expiry,
+                    queryParameters: reportQuery,
                   ),
           icon: const Icon(Icons.picture_as_pdf_outlined),
-          label: const Text('Exportar PDF'),
+          label: const Text('Visualizar PDF'),
         ),
         OutlinedButton.icon(
-          onPressed: state == null
+          onPressed: state == null || reportState.isSubmitting
               ? null
-              : () => ExpiryExporter.exportExcel(items: state.items),
+              : () => reportController.downloadPdf(
+                    path: ReportPaths.expiry,
+                    queryParameters: reportQuery,
+                  ),
+          icon: const Icon(Icons.download_outlined),
+          label: const Text('Download PDF'),
+        ),
+        OutlinedButton.icon(
+          onPressed: state == null || reportState.isSubmitting
+              ? null
+              : () => reportController.printPdf(
+                    path: ReportPaths.expiry,
+                    queryParameters: reportQuery,
+                  ),
+          icon: const Icon(Icons.print_outlined),
+          label: const Text('Imprimir'),
+        ),
+        OutlinedButton.icon(
+          onPressed: state == null || reportState.isSubmitting
+              ? null
+              : () => reportController.exportCsv(
+                    path: ReportPaths.expiry,
+                    queryParameters: reportQuery,
+                  ),
+          icon: const Icon(Icons.table_rows_outlined),
+          label: const Text('Exportar CSV'),
+        ),
+        OutlinedButton.icon(
+          onPressed: state == null || reportState.isSubmitting
+              ? null
+              : () => reportController.exportExcel(
+                    path: ReportPaths.expiry,
+                    queryParameters: reportQuery,
+                  ),
           icon: const Icon(Icons.table_view_outlined),
           label: const Text('Exportar Excel'),
         ),
@@ -153,6 +193,14 @@ class _ExpiryPageState extends ConsumerState<ExpiryPage> {
               padding: EdgeInsets.only(bottom: s.sm),
               child: Text(
                 asyncState.error.toString(),
+                style: TextStyle(color: context.pharmaTokens.posDanger),
+              ),
+            ),
+          if (reportState.errorMessage != null)
+            Padding(
+              padding: EdgeInsets.only(bottom: s.sm),
+              child: Text(
+                reportState.errorMessage!,
                 style: TextStyle(color: context.pharmaTokens.posDanger),
               ),
             ),

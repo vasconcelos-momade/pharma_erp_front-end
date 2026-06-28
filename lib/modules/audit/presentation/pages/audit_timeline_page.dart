@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/constants/report_paths.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../shared/widgets/feedback/module_data_states.dart';
@@ -9,6 +10,7 @@ import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../stock/presentation/widgets/movimentacoes_pagination.dart';
 import '../../domain/entities/audit_entities.dart';
 import '../providers/audit_providers.dart';
+import '../widgets/audit_report_exports.dart';
 
 class AuditTimelinePage extends ConsumerStatefulWidget {
   const AuditTimelinePage({super.key});
@@ -53,6 +55,12 @@ class _AuditTimelinePageState extends ConsumerState<AuditTimelinePage> {
       subtitle: 'Imutável, assinado e correlacionado a utilizador/terminal.',
       tag: 'Auditoria',
       actions: [
+        ...auditReportActions(
+          ref: ref,
+          enabled: state.isInitialized && !state.isBusy,
+          path: ReportPaths.auditTimeline,
+          queryParameters: auditReportQueryFromAuditQuery(state.query, useType: true),
+        ),
         OutlinedButton.icon(
           onPressed: state.isBusy ? null : notifier.refresh,
           icon: const Icon(Icons.refresh_rounded),
@@ -83,7 +91,16 @@ class _AuditTimelinePageState extends ConsumerState<AuditTimelinePage> {
             ),
         ],
       ),
-      child: _buildBody(context, state, notifier),
+      child: Column(
+        children: [
+          if (auditReportError(ref) != null)
+            Padding(
+              padding: EdgeInsets.only(bottom: s.sm),
+              child: auditReportError(ref),
+            ),
+          Expanded(child: _buildBody(context, state, notifier)),
+        ],
+      ),
     );
   }
 

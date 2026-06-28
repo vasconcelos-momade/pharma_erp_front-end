@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/constants/report_paths.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../shared/widgets/feedback/pharma_feedback.dart';
@@ -10,6 +11,7 @@ import '../../../../shared/widgets/layout/module_page_frame.dart';
 import '../../domain/entities/inventario.dart';
 import '../providers/inventario_provider.dart';
 import '../providers/inventory_catalog_provider.dart';
+import '../widgets/stock_report_exports.dart';
 
 String _formatQuantity(num value) {
   return value.toStringAsFixed(2).replaceFirst(RegExp(r'\.?0+$'), '');
@@ -166,8 +168,27 @@ class _InventoryHubPageState extends ConsumerState<InventoryHubPage> {
       }
     });
 
+    final activeInventory = inventoryState.activeInventory;
+    final reportQuery = <String, dynamic>{
+      if (catalogState.query.isNotEmpty) 'q': catalogState.query,
+    };
+
     return ModulePageFrame(
       actions: [
+        if (activeInventory != null)
+          ...stockReportActions(
+            ref: ref,
+            enabled: !catalogState.isLoading,
+            path: ReportPaths.stockInventory(activeInventory.id),
+            queryParameters: reportQuery,
+          )
+        else
+          ...stockReportActions(
+            ref: ref,
+            enabled: !inventoryState.isLoadingLists,
+            path: ReportPaths.stockInventories,
+            queryParameters: const {},
+          ),
         OutlinedButton.icon(
           onPressed: _refreshPage,
           icon: const Icon(Icons.refresh_rounded),

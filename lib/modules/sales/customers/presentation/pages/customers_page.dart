@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
+import '../../../../reports/presentation/controllers/report_controller.dart';
 import '../../../../../shared/responsive/pharma_screen_layout.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../../shared/widgets/feedback/module_data_states.dart';
-import '../../../../../core/utils/list_csv_exporter.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
@@ -49,7 +50,10 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
     final s = context.spacing;
     final state = ref.watch(customerListProvider);
     final notifier = ref.read(customerListProvider.notifier);
+    final reportState = ref.watch(reportControllerProvider);
+    final reportController = ref.read(reportControllerProvider.notifier);
     final dash = state.dashboard;
+    final reportQuery = _buildReportQuery(state.query);
 
     if (_searchController.text != state.query.search) {
       _searchController.value = TextEditingValue(
@@ -64,9 +68,34 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
       tag: 'Terminal',
       actions: [
         OutlinedButton.icon(
-          onPressed: state.items.isEmpty ? null : () => _exportCustomers(state),
+          onPressed: state.items.isEmpty || reportState.isSubmitting
+              ? null
+              : () => reportController.exportCsv(
+                    path: ReportPaths.customers,
+                    queryParameters: reportQuery,
+                  ),
           icon: const Icon(Icons.download_outlined),
           label: const Text('Exportar CSV'),
+        ),
+        OutlinedButton.icon(
+          onPressed: state.items.isEmpty || reportState.isSubmitting
+              ? null
+              : () => reportController.exportExcel(
+                    path: ReportPaths.customers,
+                    queryParameters: reportQuery,
+                  ),
+          icon: const Icon(Icons.table_view_outlined),
+          label: const Text('Exportar Excel'),
+        ),
+        OutlinedButton.icon(
+          onPressed: state.items.isEmpty || reportState.isSubmitting
+              ? null
+              : () => reportController.downloadPdf(
+                    path: ReportPaths.customers,
+                    queryParameters: reportQuery,
+                  ),
+          icon: const Icon(Icons.picture_as_pdf_outlined),
+          label: const Text('Exportar PDF'),
         ),
         OutlinedButton.icon(
           onPressed: state.isBusy ? null : notifier.refresh,
@@ -399,38 +428,13 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
     }
   }
 
-  Future<void> _exportCustomers(CustomerListState state) async {
-    final dateFmt = DateFormat('dd/MM/yyyy');
-    await ListCsvExporter.export(
-      fileName: 'clientes-pagina-${state.query.page}',
-      headers: const [
-        'Nome',
-        'Tipo',
-        'NUIT',
-        'Telefone',
-        'Email',
-        'Saldo',
-        'Limite crédito',
-        'Faturas',
-        'Registo',
-      ],
-      rows: state.items
-          .map(
-            (c) => [
-              c.nome,
-              c.tipo,
-              c.nuit ?? '—',
-              c.telefone ?? '—',
-              c.email ?? '—',
-              _currency.format(c.saldoAtual),
-              c.limiteCredito != null
-                  ? _currency.format(c.limiteCredito!)
-                  : '—',
-              '${c.faturaCount}',
-              dateFmt.format(c.createdAt),
-            ],
-          )
-          .toList(),
-    );
+  Map<String, dynamic> _buildReportQuery(CustomerQuery query) {
+    return <String, dynamic>{
+      if (query.search.trim().isNotEmpty) 'q': query.search.trim(),
+      if (query.tipo != null) 'tipo': query.tipo,
+      if (query.comCredito != null) 'comCredito': query.comCredito.toString(),
+      if (query.temPrescricao != null)
+        'temPrescricao': query.temPrescricao.toString(),
+    };
   }
 }

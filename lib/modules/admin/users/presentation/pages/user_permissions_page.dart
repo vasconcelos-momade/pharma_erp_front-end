@@ -2,16 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../app/providers/session_access_notifier.dart';
+import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
-import '../../../../../core/utils/list_csv_exporter.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../../shared/widgets/feedback/module_data_states.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../providers/permission_matrix_provider.dart';
+import '../widgets/admin_report_exports.dart';
 
 class UserPermissionsPage extends ConsumerWidget {
   const UserPermissionsPage({super.key});
@@ -29,12 +30,13 @@ class UserPermissionsPage extends ConsumerWidget {
       subtitle: 'Granularidade por módulo e acção.',
       tag: 'Administração',
       actions: [
-        OutlinedButton.icon(
-          onPressed: state.rows.isEmpty
-              ? null
-              : () => _exportMatrix(state),
-          icon: const Icon(Icons.download_outlined),
-          label: const Text('Exportar CSV'),
+        ...adminReportActions(
+          ref: ref,
+          enabled: state.viewState == PermissionMatrixViewState.loaded && !state.isBusy,
+          path: ReportPaths.adminPermissionsMatrix,
+          queryParameters: adminPermissionsReportQuery(
+            role: state.selectedRole,
+          ),
         ),
         if (state.canEdit && state.hasChanges) ...[
           OutlinedButton(
@@ -249,40 +251,5 @@ class UserPermissionsPage extends ConsumerWidget {
     } catch (e) {
       if (context.mounted) PharmaFeedback.error(context, e.toString());
     }
-  }
-
-  Future<void> _exportMatrix(PermissionMatrixState state) async {
-    final headers = ['Módulo', ...permissionMatrixActions];
-    final rows = <List<String>>[];
-
-    for (final row in state.rows) {
-      if (state.canEdit) {
-        final moduleMap = state.editableMatrix[row.module] ?? {};
-        rows.add([
-          row.module,
-          for (final action in permissionMatrixActions)
-            (moduleMap[action] ?? false) ? 'Sim' : 'Não',
-        ]);
-      } else {
-        rows.add([
-          row.module,
-          for (final action in permissionMatrixActions)
-            _formatExportValue(row.actions[action]),
-        ]);
-      }
-    }
-
-    final suffix = state.selectedRole?.toLowerCase() ?? 'todos';
-    await ListCsvExporter.export(
-      fileName: 'permissoes-$suffix',
-      headers: headers,
-      rows: rows,
-    );
-  }
-
-  String _formatExportValue(dynamic value) {
-    if (value == true) return 'Sim';
-    if (value is List) return value.join(', ');
-    return '—';
   }
 }

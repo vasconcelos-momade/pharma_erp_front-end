@@ -3,13 +3,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../../app/providers/session_access_notifier.dart';
+import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/responsive/pharma_screen_layout.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../../shared/widgets/feedback/module_data_states.dart';
-import '../../../../../core/utils/list_csv_exporter.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
@@ -17,6 +17,7 @@ import '../../../../stock/presentation/widgets/movimentacoes_pagination.dart';
 import '../../data/repositories/user_repository_impl.dart';
 import '../../domain/entities/user_entities.dart';
 import '../providers/user_list_provider.dart';
+import '../widgets/admin_report_exports.dart';
 import '../widgets/user_detail_panel.dart';
 import '../widgets/user_form_dialog.dart';
 
@@ -66,12 +67,15 @@ class _UsersPageState extends ConsumerState<UsersPage> {
       subtitle: 'RBAC, multi-inquilino e políticas de sessão.',
       tag: 'Administração',
       actions: [
-        OutlinedButton.icon(
-          onPressed: state.items.isEmpty
-              ? null
-              : () => _exportUsers(state),
-          icon: const Icon(Icons.download_outlined),
-          label: const Text('Exportar CSV'),
+        ...adminReportActions(
+          ref: ref,
+          enabled: state.isInitialized && !state.isBusy,
+          path: ReportPaths.adminUsers,
+          queryParameters: adminUserReportQuery(
+            search: state.query.search,
+            role: state.query.role,
+            active: state.query.active,
+          ),
         ),
         OutlinedButton.icon(
           onPressed: state.isBusy ? null : notifier.refresh,
@@ -193,6 +197,12 @@ class _UsersPageState extends ConsumerState<UsersPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (adminReportError(ref) != null) ...[
+          Padding(
+            padding: EdgeInsets.only(bottom: s.sm),
+            child: adminReportError(ref),
+          ),
+        ],
         Expanded(
           flex: recentAccess.isEmpty ? 1 : 3,
           child: EnterpriseDataTable(
@@ -423,24 +433,5 @@ class _UsersPageState extends ConsumerState<UsersPage> {
     } on ApiFailure catch (e) {
       if (context.mounted) PharmaFeedback.error(context, e.message);
     }
-  }
-
-  Future<void> _exportUsers(UserListState state) async {
-    await ListCsvExporter.export(
-      fileName: 'utilizadores-pagina-${state.query.page}',
-      headers: const ['Nome', 'Email', 'Perfil', 'Estado', 'Permissões', 'Registo'],
-      rows: state.items
-          .map(
-            (u) => [
-              u.name,
-              u.email ?? '—',
-              _roleLabel(u.role),
-              u.active ? 'Activo' : 'Inactivo',
-              '${u.permissionCount}',
-              _dateFmt.format(u.createdAt),
-            ],
-          )
-          .toList(),
-    );
   }
 }

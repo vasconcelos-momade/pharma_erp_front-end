@@ -2,14 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../core/constants/report_paths.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/spacing.dart';
-import '../../../../core/utils/list_csv_exporter.dart';
 import '../../../../shared/widgets/feedback/module_data_states.dart';
 import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../stock/presentation/widgets/movimentacoes_pagination.dart';
 import '../../domain/entities/audit_entities.dart';
 import '../providers/audit_providers.dart';
+import '../widgets/audit_report_exports.dart';
 
 class AuditLogsPage extends ConsumerStatefulWidget {
   const AuditLogsPage({super.key});
@@ -54,12 +55,11 @@ class _AuditLogsPageState extends ConsumerState<AuditLogsPage> {
       subtitle: 'Registo imutável de alterações com encadeamento criptográfico.',
       tag: 'Auditoria',
       actions: [
-        OutlinedButton.icon(
-          onPressed: state.items.isEmpty
-              ? null
-              : () => _exportLogs(state.items),
-          icon: const Icon(Icons.download_outlined),
-          label: const Text('Exportar CSV'),
+        ...auditReportActions(
+          ref: ref,
+          enabled: state.isInitialized && !state.isBusy,
+          path: ReportPaths.auditLogs,
+          queryParameters: auditReportQueryFromAuditQuery(state.query),
         ),
         OutlinedButton.icon(
           onPressed: state.isBusy ? null : notifier.refresh,
@@ -91,7 +91,16 @@ class _AuditLogsPageState extends ConsumerState<AuditLogsPage> {
             ),
         ],
       ),
-      child: _buildBody(context, state, notifier),
+      child: Column(
+        children: [
+          if (auditReportError(ref) != null)
+            Padding(
+              padding: EdgeInsets.only(bottom: s.sm),
+              child: auditReportError(ref),
+            ),
+          Expanded(child: _buildBody(context, state, notifier)),
+        ],
+      ),
     );
   }
 
@@ -165,32 +174,6 @@ class _AuditLogsPageState extends ConsumerState<AuditLogsPage> {
           onPageSizeChanged: notifier.setPageSize,
         ),
       ],
-    );
-  }
-
-  Future<void> _exportLogs(List<AuditLogEntry> logs) async {
-    await ListCsvExporter.export(
-      fileName: 'auditoria-logs-pagina-${ref.read(auditLogsProvider).query.page}',
-      headers: const [
-        'Acção',
-        'Entidade',
-        'ID entidade',
-        'Utilizador',
-        'IP',
-        'Data',
-      ],
-      rows: logs
-          .map(
-            (log) => [
-              log.action,
-              log.entity,
-              log.entityId ?? '—',
-              log.userName ?? 'Sistema',
-              log.ip ?? '—',
-              _dateTime.format(log.createdAt),
-            ],
-          )
-          .toList(),
     );
   }
 }

@@ -5,6 +5,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/constants/api_constants.dart';
+import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/contracts/api_envelope.dart';
 import '../../../../../core/contracts/pagination_response.dart';
 import '../../../../../core/errors/api_failure.dart';
@@ -108,7 +109,11 @@ class InvoiceRemoteDataSourceImpl implements InvoiceRemoteDataSource {
   ) async {
     try {
       final response = await _dio.get<List<int>>(
-        ApiConstants.tenantPosFaturaPdf(invoiceId),
+        ReportPaths.invoice(invoiceId),
+        queryParameters: const <String, dynamic>{
+          'format': 'pdf',
+          'disposition': 'inline',
+        },
         options: Options(responseType: ResponseType.bytes),
       );
 

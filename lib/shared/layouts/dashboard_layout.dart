@@ -1022,11 +1022,9 @@ class _DrawerNav extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
     final drawerChildren = <Widget>[];
-    String? currentSection;
 
     for (final item in navItems) {
       if (item.isSectionLead) {
-        currentSection = item.section;
         drawerChildren.add(_ErpNavSectionHeader(title: item.section!));
       }
 

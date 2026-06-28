@@ -1,16 +1,16 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
-import '../../../../../core/utils/browser_file_handler.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../../../stock/presentation/widgets/movimentacoes_pagination.dart';
+import '../../../presentation/widgets/regulatory_report_exports.dart';
 import '../../../regulatory/data/datasources/regulatory_remote_datasource.dart';
 
 class RegulatoryPage extends ConsumerStatefulWidget {
@@ -144,20 +144,12 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
     }
   }
 
-  Future<void> _exportCurrentTab() async {
-    final payload = _tabController.index == 0
-        ? {'dashboard': _dashboard, 'items': _items}
-        : {'reports': _reports};
-    final bytes = utf8.encode(
-      const JsonEncoder.withIndent('  ').convert(payload),
-    );
-    await BrowserFileHandler.downloadBytes(
-      bytes: bytes,
-      fileName: _tabController.index == 0
-          ? 'sanitario-alertas.json'
-          : 'sanitario-relatorios.json',
-      contentType: 'application/json',
-    );
+  Map<String, dynamic> _sanitarioReportQuery() {
+    return {
+      if (_search.isNotEmpty) 'q': _search,
+      if (_estado != null) 'estado': _estado,
+      if (_alertaTipo != null) 'alertaTipo': _alertaTipo,
+    };
   }
 
   Future<void> _openHistory(String loteId) async {
@@ -265,10 +257,13 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
               _tabController.index == 0 ? _loadSanitario() : _loadReports(),
           icon: const Icon(Icons.refresh),
         ),
-        IconButton(
-          onPressed: _exportCurrentTab,
-          icon: const Icon(Icons.download_outlined),
-        ),
+        if (_tabController.index == 0)
+          ...regulatoryReportActions(
+            ref: ref,
+            enabled: !_loadingSanitario && _sanitarioError == null,
+            path: ReportPaths.regulatorySanitario,
+            queryParameters: _sanitarioReportQuery(),
+          ),
       ],
       kpis: dash == null || _tabController.index == 1
           ? null
@@ -309,6 +304,11 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
           : _buildReportsFilters(),
       child: Column(
         children: [
+          if (_tabController.index == 0 && regulatoryReportError(ref) != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: regulatoryReportError(ref),
+            ),
           TabBar(
             controller: _tabController,
             onTap: (_) => setState(() {}),
@@ -358,7 +358,7 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
         SizedBox(
           width: 180,
           child: DropdownButtonFormField<String?>(
-            value: _estado,
+            initialValue: _estado,
             decoration: const InputDecoration(
               labelText: 'Estado',
               border: OutlineInputBorder(),
@@ -383,7 +383,7 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
         SizedBox(
           width: 220,
           child: DropdownButtonFormField<String?>(
-            value: _alertaTipo,
+            initialValue: _alertaTipo,
             decoration: const InputDecoration(
               labelText: 'Tipo de alerta',
               border: OutlineInputBorder(),
@@ -428,7 +428,7 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
         SizedBox(
           width: 280,
           child: DropdownButtonFormField<String?>(
-            value: _reportTipo,
+            initialValue: _reportTipo,
             decoration: const InputDecoration(
               labelText: 'Tipo de relatório',
               border: OutlineInputBorder(),

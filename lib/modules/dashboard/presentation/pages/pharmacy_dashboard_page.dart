@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/constants/report_paths.dart';
 import '../../../../app/router/routes.dart';
 import '../../../../core/extensions/async_value_extensions.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../shared/widgets/cards/enterprise_kpi_grid.dart';
 import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
+import '../../../reports/presentation/controllers/report_controller.dart';
 import '../../data/datasources/dashboard_remote_datasource.dart';
 import '../../domain/dashboard_query.dart';
 import '../providers/dashboard_providers.dart';
@@ -28,6 +30,7 @@ class _PharmacyDashboardPageState extends ConsumerState<PharmacyDashboardPage> {
   @override
   Widget build(BuildContext context) {
     final async = ref.watch(pharmacyDashboardProvider(_query));
+    final reportState = ref.watch(reportControllerProvider);
     final dataSource = ref.watch(dashboardRemoteDataSourceProvider);
     final kpis = dashMap(async.valueOrNull?['kpis']);
     final tables = dashMap(async.valueOrNull?['tables']);
@@ -49,69 +52,13 @@ class _PharmacyDashboardPageState extends ConsumerState<PharmacyDashboardPage> {
       labels: const {'ENTRADA': 'Entrada', 'SAIDA': 'Saída'},
     );
 
-    Future<void> exportDashboard() async {
-      final data = async.valueOrNull;
-      if (data == null) return;
-      final tables = dashMap(data['tables']);
-      await dashboardExportCsv(
-        fileName: 'painel-farmacia.csv',
-        summary: kpis,
-        sections: [
-          DashboardExportSection(
-            title: 'Produtos criticos',
-            headers: const ['Produto', 'Disponivel', 'Minimo'],
-            rows: dashList(tables?['produtosCriticos'])
-                .map(
-                  (row) => [
-                    row['nome']?.toString() ?? '—',
-                    '${row['disponivel'] ?? 0}',
-                    '${row['minimo'] ?? 0}',
-                  ],
-                )
-                .toList(),
-          ),
-          DashboardExportSection(
-            title: 'Ultimas entradas',
-            headers: const ['Produto', 'Lote', 'Qtd', 'Origem'],
-            rows: dashList(tables?['ultimasEntradas'])
-                .map(
-                  (row) => [
-                    row['produtoNome']?.toString() ?? '—',
-                    row['numeroLote']?.toString() ?? '—',
-                    '${row['quantidade'] ?? 0}',
-                    row['origem']?.toString() ?? '—',
-                  ],
-                )
-                .toList(),
-          ),
-          DashboardExportSection(
-            title: 'Ultimas dispensacoes',
-            headers: const ['Produto', 'Lote', 'Qtd', 'Tipo'],
-            rows: dashList(tables?['ultimasDispensacoes'])
-                .map(
-                  (row) => [
-                    row['produtoNome']?.toString() ?? '—',
-                    row['numeroLote']?.toString() ?? '—',
-                    '${row['quantidade'] ?? 0}',
-                    row['tipoDispensacao']?.toString() ?? '—',
-                  ],
-                )
-                .toList(),
-          ),
-          DashboardExportSection(
-            title: 'Ultimos alertas',
-            headers: const ['Produto', 'Tipo', 'Mensagem'],
-            rows: dashList(tables?['ultimosAlertas'])
-                .map(
-                  (row) => [
-                    row['produtoNome']?.toString() ?? '—',
-                    row['tipo']?.toString() ?? '—',
-                    row['mensagem']?.toString() ?? '—',
-                  ],
-                )
-                .toList(),
-          ),
-        ],
+    Future<void> exportDashboard({String format = 'csv'}) async {
+      if (async.valueOrNull == null || reportState.isSubmitting) return;
+      await dashboardReportExport(
+        ref: ref,
+        path: ReportPaths.dashboardPharmacy,
+        query: _query,
+        format: format,
       );
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -128,9 +75,25 @@ class _PharmacyDashboardPageState extends ConsumerState<PharmacyDashboardPage> {
       scrollable: true,
       actions: [
         OutlinedButton.icon(
-          onPressed: async.valueOrNull == null ? null : exportDashboard,
+          onPressed: async.valueOrNull == null || reportState.isSubmitting
+              ? null
+              : () => exportDashboard(format: 'csv'),
           icon: const Icon(Icons.download_outlined),
-          label: const Text('Exportar'),
+          label: const Text('Exportar CSV'),
+        ),
+        OutlinedButton.icon(
+          onPressed: async.valueOrNull == null || reportState.isSubmitting
+              ? null
+              : () => exportDashboard(format: 'excel'),
+          icon: const Icon(Icons.table_view_outlined),
+          label: const Text('Exportar Excel'),
+        ),
+        OutlinedButton.icon(
+          onPressed: async.valueOrNull == null || reportState.isSubmitting
+              ? null
+              : () => exportDashboard(format: 'pdf'),
+          icon: const Icon(Icons.picture_as_pdf_outlined),
+          label: const Text('Exportar PDF'),
         ),
         OutlinedButton.icon(
           onPressed: () => ref.invalidate(pharmacyDashboardProvider(_query)),

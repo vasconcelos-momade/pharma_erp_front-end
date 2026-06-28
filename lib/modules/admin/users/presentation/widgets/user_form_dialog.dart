@@ -130,7 +130,7 @@ class _UserFormDialogState extends State<UserFormDialog> {
             ),
             SizedBox(height: s.md),
             DropdownButtonFormField<String>(
-              value: _role,
+              initialValue: _role,
               decoration: const InputDecoration(
                 labelText: 'Perfil',
                 border: OutlineInputBorder(),

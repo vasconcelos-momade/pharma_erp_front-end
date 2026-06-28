@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/extensions/async_value_extensions.dart';
+import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
@@ -13,6 +14,7 @@ import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../domain/entities/category.dart';
 import '../providers/category_provider.dart';
 import '../providers/category_stats_provider.dart';
+import '../../../presentation/widgets/pharmacy_report_exports.dart';
 
 class CategoriesPage extends ConsumerStatefulWidget {
   const CategoriesPage({super.key});
@@ -43,6 +45,10 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
     final statsAsync = ref.watch(categoryStatsProvider);
     final t = context.pharmaTokens;
     final s = context.spacing;
+    final reportQuery = <String, dynamic>{
+      if (state.query.isNotEmpty) 'q': state.query,
+      if (state.includeInactive) 'includeInactive': true,
+    };
 
     return EnterpriseModuleHub(
       title: 'Categorias',
@@ -74,6 +80,12 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
               ),
             ],
       actions: [
+        ...pharmacyReportActions(
+          ref: ref,
+          enabled: !state.isLoading,
+          path: ReportPaths.pharmacyCategories,
+          queryParameters: reportQuery,
+        ),
         FilledButton.icon(
           onPressed: state.isLoading ? null : () => _openForm(context),
           icon: const Icon(Icons.add),
@@ -111,6 +123,11 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
             Padding(
               padding: EdgeInsets.only(bottom: s.sm),
               child: Text(state.errorMessage!, style: TextStyle(color: t.posDanger)),
+            ),
+          if (pharmacyReportError(ref) != null)
+            Padding(
+              padding: EdgeInsets.only(bottom: s.sm),
+              child: pharmacyReportError(ref),
             ),
           Expanded(
             child: EnterpriseDataTable(

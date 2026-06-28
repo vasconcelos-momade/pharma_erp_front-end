@@ -178,6 +178,10 @@ class PharmaTokens extends ThemeExtension<PharmaTokens> {
   final double contentMaxWidth;
   final DensityTokens density;
 
+  // Backward-compatible aliases used by older widgets/layouts.
+  double get radiusSm => radiusMd;
+  double get radiusLg => radiusXl;
+
   static PharmaTokens enterpriseDark({DensityTokens density = DensityTokens.comfortable}) {
     return PharmaTokens(
       bgPrimary: AppColors.ink950,

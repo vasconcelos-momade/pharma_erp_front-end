@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import '../../../core/errors/api_failure.dart';
-import '../../../core/utils/browser_file_handler.dart';
+import '../../../platform/files/platform_file_delivery.dart';
 import 'network_printer_transport.dart';
 import 'printer_connection.dart';
 
@@ -31,7 +31,7 @@ abstract final class ThermalPrinterService {
       return _printOverBluetooth(connection, bytes, fileName, contentType);
     }
 
-    return BrowserFileHandler.downloadBytes(
+    return PlatformFileDelivery.downloadBytes(
       bytes: bytes,
       fileName: fileName,
       contentType: contentType,
@@ -67,7 +67,7 @@ abstract final class ThermalPrinterService {
     String contentType,
   ) async {
     if (kIsWeb) {
-      await BrowserFileHandler.downloadBytes(
+      await PlatformFileDelivery.downloadBytes(
         bytes: bytes,
         fileName: fileName,
         contentType: contentType,
@@ -120,7 +120,7 @@ abstract final class ThermalPrinterService {
     required String fileName,
     required String contentType,
   }) {
-    return BrowserFileHandler.downloadBytes(
+    return PlatformFileDelivery.downloadBytes(
       bytes: bytes,
       fileName: fileName,
       contentType: contentType,

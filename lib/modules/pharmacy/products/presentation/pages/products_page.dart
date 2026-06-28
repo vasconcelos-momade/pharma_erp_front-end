@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
@@ -17,6 +18,7 @@ import '../widgets/produto_detail_panel.dart';
 import '../widgets/produto_form_dialog.dart';
 import '../widgets/produto_regulacao_badges.dart';
 import '../../../../stock/presentation/widgets/movimentacoes_pagination.dart';
+import '../../../presentation/widgets/pharmacy_report_exports.dart';
 
 /// Catálogo master de produtos com filtros API, ordenação e painel de detalhe.
 class ProductsPage extends ConsumerStatefulWidget {
@@ -28,6 +30,19 @@ class ProductsPage extends ConsumerStatefulWidget {
 
 class _ProductsPageState extends ConsumerState<ProductsPage> {
   late final TextEditingController _searchController;
+  String _reportPath = ReportPaths.pharmacyProductsCatalog;
+
+  static const _reportOptions = <(String, String)>[
+    (ReportPaths.pharmacyProductsCatalog, 'Catálogo'),
+    (ReportPaths.pharmacyProductsByCategory, 'Por categoria'),
+    (ReportPaths.pharmacyProductsBySupplier, 'Por fornecedor'),
+    (ReportPaths.pharmacyProductsBySubstancia, 'Por substância'),
+    (ReportPaths.pharmacyProductsNoStock, 'Sem stock'),
+    (ReportPaths.pharmacyProductsBelowMinStock, 'Abaixo do mínimo'),
+    (ReportPaths.pharmacyProductsNearExpiry, 'Próximos da validade'),
+    (ReportPaths.pharmacyProductsExpired, 'Expirados'),
+    (ReportPaths.pharmacyProductsControlled, 'Controlados'),
+  ];
 
   static const _tipoDispensacaoOptions = <MapEntry<String?, String>>[
     MapEntry(null, 'Todas as regulações'),
@@ -67,6 +82,15 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
     final controller = ref.read(masterProductListProvider.notifier);
     final categoriesAsync = ref.watch(activeCategoriesProvider);
     final suppliersAsync = ref.watch(supplierListProvider);
+    final reportQuery = <String, dynamic>{
+      if (state.query.isNotEmpty) 'q': state.query,
+      if (state.categoriaId != null) 'categoriaId': state.categoriaId,
+      if (state.fornecedorId != null) 'fornecedorId': state.fornecedorId,
+      if (state.tipoDispensacao != null) 'tipoDispensacao': state.tipoDispensacao,
+      if (state.includeInactive) 'includeInactive': true,
+      'sortBy': state.sortBy,
+      'sortOrder': state.sortOrder,
+    };
 
     if (_searchController.text != state.query) {
       _searchController.value = TextEditingValue(
@@ -81,6 +105,39 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
           'Catálogo master com stock, lotes, validades e regras de dispensação.',
       tag: 'Farmácia',
       actions: [
+        SizedBox(
+          width: 220,
+          child: DropdownButtonFormField<String>(
+            key: ValueKey('report-$_reportPath'),
+            isExpanded: true,
+            initialValue: _reportPath,
+            decoration: const InputDecoration(
+              labelText: 'Relatório',
+              border: OutlineInputBorder(),
+              isDense: true,
+            ),
+            items: _reportOptions
+                .map(
+                  (option) => DropdownMenuItem(
+                    value: option.$1,
+                    child: Text(option.$2),
+                  ),
+                )
+                .toList(growable: false),
+            onChanged: state.isLoading
+                ? null
+                : (value) {
+                    if (value == null) return;
+                    setState(() => _reportPath = value);
+                  },
+          ),
+        ),
+        ...pharmacyReportActions(
+          ref: ref,
+          enabled: !state.isLoading,
+          path: _reportPath,
+          queryParameters: reportQuery,
+        ),
         OutlinedButton.icon(
           onPressed: state.isLoading
               ? null
@@ -298,6 +355,11 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                 state.errorMessage!,
                 style: TextStyle(color: t.posDanger),
               ),
+            ),
+          if (pharmacyReportError(ref) != null)
+            Padding(
+              padding: EdgeInsets.only(bottom: s.sm),
+              child: pharmacyReportError(ref),
             ),
           Expanded(
             child: !state.isInitialized && state.isLoading

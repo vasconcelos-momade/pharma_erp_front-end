@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../app/providers/session_access_notifier.dart';
+import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
@@ -10,6 +11,7 @@ import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../domain/entities/user_entities.dart';
 import '../providers/role_list_provider.dart';
+import '../widgets/admin_report_exports.dart';
 import '../widgets/role_permissions_editor_dialog.dart';
 
 class UserProfilesPage extends ConsumerWidget {
@@ -27,6 +29,12 @@ class UserProfilesPage extends ConsumerWidget {
       subtitle: 'Conjuntos de permissões reutilizáveis por unidade.',
       tag: 'Administração',
       actions: [
+        ...adminReportActions(
+          ref: ref,
+          enabled: state.viewState == RoleListViewState.loaded,
+          path: ReportPaths.adminRoles,
+          queryParameters: const {},
+        ),
         OutlinedButton.icon(
           onPressed: state.isBusy ? null : notifier.load,
           icon: const Icon(Icons.refresh_rounded),

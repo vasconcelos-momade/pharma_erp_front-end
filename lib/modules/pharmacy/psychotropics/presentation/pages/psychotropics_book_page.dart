@@ -1,16 +1,16 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
-import '../../../../../core/utils/browser_file_handler.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../../../stock/presentation/widgets/movimentacoes_pagination.dart';
+import '../../../presentation/widgets/regulatory_report_exports.dart';
 import '../../../regulatory/data/datasources/regulatory_remote_datasource.dart';
 
 class PsychotropicsBookPage extends ConsumerStatefulWidget {
@@ -36,8 +36,8 @@ class _PsychotropicsBookPageState
   int _total = 0;
   String _search = '';
   String? _tipoMovimento;
-  String _sortBy = 'createdAt';
-  String _sortDir = 'desc';
+  final String _sortBy = 'createdAt';
+  final String _sortDir = 'desc';
 
   RegulatoryRemoteDataSource get _ds =>
       ref.read(regulatoryRemoteDataSourceProvider);
@@ -103,18 +103,13 @@ class _PsychotropicsBookPageState
     }
   }
 
-  Future<void> _export() async {
-    final bytes = utf8.encode(
-      const JsonEncoder.withIndent('  ').convert({
-        'dashboard': _dashboard,
-        'items': _items,
-      }),
-    );
-    await BrowserFileHandler.downloadBytes(
-      bytes: bytes,
-      fileName: 'livro-psicotropicos.json',
-      contentType: 'application/json',
-    );
+  Map<String, dynamic> _reportQuery() {
+    return {
+      if (_search.isNotEmpty) 'q': _search,
+      if (_tipoMovimento != null) 'tipoMovimento': _tipoMovimento,
+      'sortBy': _sortBy,
+      'sortDir': _sortDir,
+    };
   }
 
   Future<void> _openDetail(String id) async {
@@ -223,9 +218,11 @@ class _PsychotropicsBookPageState
           onPressed: _load,
           icon: const Icon(Icons.refresh),
         ),
-        IconButton(
-          onPressed: _export,
-          icon: const Icon(Icons.download_outlined),
+        ...regulatoryReportActions(
+          ref: ref,
+          enabled: !_loading && _error == null,
+          path: ReportPaths.regulatoryLivroPsicotropicos,
+          queryParameters: _reportQuery(),
         ),
       ],
       kpis: dash == null
@@ -277,7 +274,7 @@ class _PsychotropicsBookPageState
           SizedBox(
             width: 180,
             child: DropdownButtonFormField<String?>(
-              value: _tipoMovimento,
+              initialValue: _tipoMovimento,
               decoration: const InputDecoration(
                 labelText: 'Movimento',
                 border: OutlineInputBorder(),
@@ -301,6 +298,11 @@ class _PsychotropicsBookPageState
       ),
       child: Column(
         children: [
+          if (regulatoryReportError(ref) != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: regulatoryReportError(ref),
+            ),
           if (_loading) const LinearProgressIndicator(),
           if (_error != null)
             Padding(

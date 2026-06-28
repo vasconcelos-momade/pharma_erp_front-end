@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/extensions/async_value_extensions.dart';
+import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
@@ -10,6 +11,7 @@ import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../../../stock/presentation/widgets/movimentacoes_pagination.dart';
 import '../providers/lots_provider.dart';
 import '../widgets/lot_detail_drawer.dart';
+import '../../../presentation/widgets/pharmacy_report_exports.dart';
 
 class LotsPage extends ConsumerStatefulWidget {
   const LotsPage({super.key});
@@ -49,6 +51,14 @@ class _LotsPageState extends ConsumerState<LotsPage> {
     final dash = current?.dashboard;
     final t = context.pharmaTokens;
     final s = context.spacing;
+    final reportPath = current?.expirado == true
+        ? ReportPaths.pharmacyLotsExpired
+        : ReportPaths.pharmacyLotsActive;
+    final reportQuery = <String, dynamic>{
+      if ((current?.query ?? '').isNotEmpty) 'q': current!.query,
+      if (current?.estadoSanitario != null) 'estadoSanitario': current!.estadoSanitario,
+      if (current?.disponibilidade != null) 'disponibilidade': current!.disponibilidade,
+    };
 
     if (current != null && _search.text != current.query) {
       _search.value = TextEditingValue(
@@ -86,6 +96,12 @@ class _LotsPageState extends ConsumerState<LotsPage> {
               ),
             ],
       actions: [
+        ...pharmacyReportActions(
+          ref: ref,
+          enabled: current != null && !asyncState.isLoading,
+          path: reportPath,
+          queryParameters: reportQuery,
+        ),
         IconButton(
           onPressed: () => controller.refresh(force: true),
           icon: const Icon(Icons.refresh),
@@ -148,6 +164,11 @@ class _LotsPageState extends ConsumerState<LotsPage> {
                 asyncState.error.toString(),
                 style: TextStyle(color: t.posDanger),
               ),
+            ),
+          if (pharmacyReportError(ref) != null)
+            Padding(
+              padding: EdgeInsets.only(bottom: s.sm),
+              child: pharmacyReportError(ref),
             ),
           Expanded(
             child: (current?.items.isEmpty ?? true) && !asyncState.isLoading

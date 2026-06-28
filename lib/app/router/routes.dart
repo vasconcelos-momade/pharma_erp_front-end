@@ -136,12 +136,21 @@ abstract final class AppRouteTitles {
     if (path.startsWith('/finance') || path == AppRoutePaths.financial) {
       return 'Financeiro';
     }
-    if (path.startsWith('/audit') || path == AppRoutePaths.audit)
+    if (path.startsWith('/audit') || path == AppRoutePaths.audit) {
       return 'Auditoria';
-    if (path.startsWith('/users')) return 'Administração';
-    if (path.startsWith('/settings')) return 'Sistema';
-    if (path.startsWith('/auth')) return 'Conta';
-    if (path == AppRoutePaths.purchasing) return 'Stock & Logística';
+    }
+    if (path.startsWith('/users')) {
+      return 'Administração';
+    }
+    if (path.startsWith('/settings')) {
+      return 'Sistema';
+    }
+    if (path.startsWith('/auth')) {
+      return 'Conta';
+    }
+    if (path == AppRoutePaths.purchasing) {
+      return 'Stock & Logística';
+    }
     return 'Pharma ERP';
   }
 }

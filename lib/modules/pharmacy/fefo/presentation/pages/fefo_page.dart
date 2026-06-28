@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/extensions/async_value_extensions.dart';
+import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
@@ -10,6 +11,7 @@ import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../../../stock/presentation/widgets/movimentacoes_pagination.dart';
 import '../../../lots/presentation/widgets/lot_detail_drawer.dart';
 import '../providers/fefo_provider.dart';
+import '../../../presentation/widgets/pharmacy_report_exports.dart';
 
 class FefoPage extends ConsumerStatefulWidget {
   const FefoPage({super.key});
@@ -68,12 +70,25 @@ class _FefoPageState extends ConsumerState<FefoPage> with SingleTickerProviderSt
       if ((dash?['lotesBloqueados'] ?? 0) > 0)
         '${dash?['lotesBloqueados']} lote(s) bloqueado(s) sanitariamente',
     ];
+    final reportPath = _tabIndex == 0
+        ? ReportPaths.pharmacyFefoOverview
+        : ReportPaths.pharmacyFefoAudit;
+    final reportQuery = <String, dynamic>{
+      if ((state?.query ?? '').isNotEmpty) 'q': state!.query,
+      if (_tabIndex == 1 && state?.situacao != null) 'situacao': state!.situacao,
+    };
 
     return EnterpriseModuleHub(
       title: 'FEFO',
       subtitle: 'First Expire, First Out — conformidade e auditoria de lotes.',
       tag: 'Farmácia',
       actions: [
+        ...pharmacyReportActions(
+          ref: ref,
+          enabled: state != null && !asyncState.isLoading,
+          path: reportPath,
+          queryParameters: reportQuery,
+        ),
         IconButton(
           onPressed: () => controller.refresh(force: true),
           icon: const Icon(Icons.refresh_rounded),
@@ -168,6 +183,11 @@ class _FefoPageState extends ConsumerState<FefoPage> with SingleTickerProviderSt
                 asyncState.error.toString(),
                 style: TextStyle(color: t.posDanger),
               ),
+            ),
+          if (pharmacyReportError(ref) != null)
+            Padding(
+              padding: EdgeInsets.only(bottom: s.sm),
+              child: pharmacyReportError(ref),
             ),
           Expanded(
             child: TabBarView(

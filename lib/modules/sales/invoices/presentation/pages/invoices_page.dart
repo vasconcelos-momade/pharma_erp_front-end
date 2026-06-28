@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 
+import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
-import '../../../../../core/utils/list_csv_exporter.dart';
+import '../../../../reports/presentation/controllers/report_controller.dart';
 import '../../../../../shared/responsive/pharma_screen_layout.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
@@ -25,8 +25,6 @@ class SalesInvoicesPage extends ConsumerStatefulWidget {
 
 class _SalesInvoicesPageState extends ConsumerState<SalesInvoicesPage> {
   late final TextEditingController _searchController;
-  static final _currency = NumberFormat('#,##0.00', 'pt_MZ');
-  static final _dateTime = DateFormat('dd/MM/yyyy HH:mm');
 
   @override
   void initState() {
@@ -61,7 +59,10 @@ class _SalesInvoicesPageState extends ConsumerState<SalesInvoicesPage> {
 
     final listState = ref.watch(invoiceListProvider);
     final detailState = ref.watch(invoiceDetailProvider);
+    final reportState = ref.watch(reportControllerProvider);
+    final reportController = ref.read(reportControllerProvider.notifier);
     final query = listState.query;
+    final reportQuery = _buildReportQuery(query);
 
     if (_searchController.text != query.search) {
       _searchController.value = TextEditingValue(
@@ -77,11 +78,34 @@ class _SalesInvoicesPageState extends ConsumerState<SalesInvoicesPage> {
       tag: 'Terminal',
       actions: [
         OutlinedButton.icon(
-          onPressed: listState.items.isEmpty
+          onPressed: listState.items.isEmpty || reportState.isSubmitting
               ? null
-              : () => _exportInvoices(listState),
+              : () => reportController.exportCsv(
+                    path: ReportPaths.invoices,
+                    queryParameters: reportQuery,
+                  ),
           icon: const Icon(Icons.download_outlined),
           label: const Text('Exportar CSV'),
+        ),
+        OutlinedButton.icon(
+          onPressed: listState.items.isEmpty || reportState.isSubmitting
+              ? null
+              : () => reportController.exportExcel(
+                    path: ReportPaths.invoices,
+                    queryParameters: reportQuery,
+                  ),
+          icon: const Icon(Icons.table_view_outlined),
+          label: const Text('Exportar Excel'),
+        ),
+        OutlinedButton.icon(
+          onPressed: listState.items.isEmpty || reportState.isSubmitting
+              ? null
+              : () => reportController.downloadPdf(
+                    path: ReportPaths.invoices,
+                    queryParameters: reportQuery,
+                  ),
+          icon: const Icon(Icons.picture_as_pdf_outlined),
+          label: const Text('Exportar PDF'),
         ),
         OutlinedButton.icon(
           onPressed: listState.isBusy
@@ -184,29 +208,25 @@ class _SalesInvoicesPageState extends ConsumerState<SalesInvoicesPage> {
     }
   }
 
-  Future<void> _exportInvoices(InvoiceListState listState) async {
-    await ListCsvExporter.export(
-      fileName: 'faturas-pagina-${listState.query.page}',
-      headers: const [
-        'Fatura',
-        'Cliente',
-        'Terminal',
-        'Total',
-        'Estado',
-        'Data',
-      ],
-      rows: listState.items
-          .map(
-            (inv) => [
-              inv.numero,
-              inv.cliente?.nome ?? '—',
-              inv.terminal?.codigo ?? inv.terminal?.nome ?? '—',
-              _currency.format(inv.total),
-              inv.estado,
-              _dateTime.format(inv.createdAt),
-            ],
-          )
-          .toList(),
-    );
+  Map<String, dynamic> _buildReportQuery(InvoiceQuery query) {
+    String? formatDate(DateTime? value) {
+      if (value == null) {
+        return null;
+      }
+      final year = value.year.toString().padLeft(4, '0');
+      final month = value.month.toString().padLeft(2, '0');
+      final day = value.day.toString().padLeft(2, '0');
+      return '$year-$month-$day';
+    }
+
+    return <String, dynamic>{
+      if (query.search.trim().isNotEmpty) 'search': query.search.trim(),
+      if (query.clienteId != null) 'clienteId': query.clienteId,
+      if (query.status != null) 'status': query.status,
+      if (query.dateFrom != null) 'dateFrom': formatDate(query.dateFrom),
+      if (query.dateTo != null) 'dateTo': formatDate(query.dateTo),
+      if (query.terminalId != null) 'terminalId': query.terminalId,
+      if (query.userId != null) 'userId': query.userId,
+    };
   }
 }

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/constants/report_paths.dart';
 import '../../../../core/extensions/async_value_extensions.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../shared/widgets/cards/enterprise_kpi_grid.dart';
 import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
+import '../../../reports/presentation/controllers/report_controller.dart';
 import '../../data/datasources/dashboard_remote_datasource.dart';
 import '../../domain/dashboard_query.dart';
 import '../providers/dashboard_providers.dart';
@@ -25,6 +27,7 @@ class _FinanceDashboardPageState extends ConsumerState<FinanceDashboardPage> {
   @override
   Widget build(BuildContext context) {
     final async = ref.watch(financeDashboardProvider(_query));
+    final reportState = ref.watch(reportControllerProvider);
     final dataSource = ref.watch(dashboardRemoteDataSourceProvider);
     final kpis = dashMap(async.valueOrNull?['kpis']);
     final tables = dashMap(async.valueOrNull?['tables']);
@@ -37,69 +40,13 @@ class _FinanceDashboardPageState extends ConsumerState<FinanceDashboardPage> {
       ...dashList(tables?['ultimosPagamentos']).map((row) => row['metodo']),
     ]);
 
-    Future<void> exportDashboard() async {
-      final data = async.valueOrNull;
-      if (data == null) return;
-      final tables = dashMap(data['tables']);
-      await dashboardExportCsv(
-        fileName: 'painel-financeiro.csv',
-        summary: kpis,
-        sections: [
-          DashboardExportSection(
-            title: 'Contas vencidas',
-            headers: const ['Cliente', 'Saldo', 'Vencimento'],
-            rows: dashList(tables?['contasVencidas'])
-                .map(
-                  (row) => [
-                    row['clienteNome']?.toString() ?? '—',
-                    '${row['saldo'] ?? 0} MZN',
-                    dashLabel(row['vencimento']),
-                  ],
-                )
-                .toList(),
-          ),
-          DashboardExportSection(
-            title: 'Ultimos pagamentos',
-            headers: const ['Fatura', 'Metodo', 'Valor'],
-            rows: dashList(tables?['ultimosPagamentos'])
-                .map(
-                  (row) => [
-                    row['faturaNumero']?.toString() ?? '—',
-                    row['metodo']?.toString() ?? '—',
-                    '${row['valor'] ?? 0} MZN',
-                  ],
-                )
-                .toList(),
-          ),
-          DashboardExportSection(
-            title: 'Ultimas receitas',
-            headers: const ['Tipo', 'Referencia', 'Valor', 'Data'],
-            rows: dashList(tables?['ultimasReceitas'])
-                .map(
-                  (row) => [
-                    row['tipo']?.toString() ?? '—',
-                    row['referencia']?.toString() ?? '—',
-                    '${row['valor'] ?? 0} MZN',
-                    dashLabel(row['createdAt']),
-                  ],
-                )
-                .toList(),
-          ),
-          DashboardExportSection(
-            title: 'Ultimas despesas',
-            headers: const ['Tipo', 'Referencia', 'Valor', 'Data'],
-            rows: dashList(tables?['ultimasDespesas'])
-                .map(
-                  (row) => [
-                    row['tipo']?.toString() ?? '—',
-                    row['referencia']?.toString() ?? '—',
-                    '${row['valor'] ?? 0} MZN',
-                    dashLabel(row['createdAt']),
-                  ],
-                )
-                .toList(),
-          ),
-        ],
+    Future<void> exportDashboard({String format = 'csv'}) async {
+      if (async.valueOrNull == null || reportState.isSubmitting) return;
+      await dashboardReportExport(
+        ref: ref,
+        path: ReportPaths.dashboardFinance,
+        query: _query,
+        format: format,
       );
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -116,9 +63,25 @@ class _FinanceDashboardPageState extends ConsumerState<FinanceDashboardPage> {
       scrollable: true,
       actions: [
         OutlinedButton.icon(
-          onPressed: async.valueOrNull == null ? null : exportDashboard,
+          onPressed: async.valueOrNull == null || reportState.isSubmitting
+              ? null
+              : () => exportDashboard(format: 'csv'),
           icon: const Icon(Icons.download_outlined),
-          label: const Text('Exportar'),
+          label: const Text('Exportar CSV'),
+        ),
+        OutlinedButton.icon(
+          onPressed: async.valueOrNull == null || reportState.isSubmitting
+              ? null
+              : () => exportDashboard(format: 'excel'),
+          icon: const Icon(Icons.table_view_outlined),
+          label: const Text('Exportar Excel'),
+        ),
+        OutlinedButton.icon(
+          onPressed: async.valueOrNull == null || reportState.isSubmitting
+              ? null
+              : () => exportDashboard(format: 'pdf'),
+          icon: const Icon(Icons.picture_as_pdf_outlined),
+          label: const Text('Exportar PDF'),
         ),
         OutlinedButton.icon(
           onPressed: () => ref.invalidate(financeDashboardProvider(_query)),

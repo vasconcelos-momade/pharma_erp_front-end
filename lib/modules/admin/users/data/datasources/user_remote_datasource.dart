@@ -268,9 +268,7 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
         ApiConstants.tenantPermissoes,
-        queryParameters: <String, dynamic>{
-          if (role != null) 'role': role,
-        },
+        queryParameters: role == null ? null : <String, dynamic>{'role': role},
       );
       final payload = ApiEnvelope.unwrapMap(response.data ?? {});
       final modules = payload['modules'];

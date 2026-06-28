@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/constants/report_paths.dart';
 import '../../../../core/extensions/async_value_extensions.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../shared/widgets/cards/enterprise_kpi_grid.dart';
 import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
+import '../../../reports/presentation/controllers/report_controller.dart';
 import '../../data/datasources/dashboard_remote_datasource.dart';
 import '../../domain/dashboard_query.dart';
 import '../providers/dashboard_providers.dart';
@@ -26,6 +28,7 @@ class _ExecutiveDashboardPageState
   @override
   Widget build(BuildContext context) {
     final async = ref.watch(executiveDashboardProvider(_query));
+    final reportState = ref.watch(reportControllerProvider);
     final dataSource = ref.watch(dashboardRemoteDataSourceProvider);
     final kpis = dashMap(async.valueOrNull?['kpis']);
     final tables = dashMap(async.valueOrNull?['tables']);
@@ -38,56 +41,13 @@ class _ExecutiveDashboardPageState
       ...dashList(tables?['ultimasVendas']).map((row) => row['tipoPagamento']),
     ]);
 
-    Future<void> exportDashboard() async {
-      final data = async.valueOrNull;
-      if (data == null) return;
-      final tables = dashMap(data['tables']);
-      await dashboardExportCsv(
-        fileName: 'painel-executivo.csv',
-        summary: kpis,
-        sections: [
-          DashboardExportSection(
-            title: 'Ultimas vendas',
-            headers: const ['Fatura', 'Cliente', 'Total', 'Estado'],
-            rows: dashList(tables?['ultimasVendas'])
-                .map(
-                  (row) => [
-                    row['numero']?.toString() ?? '—',
-                    row['clienteNome']?.toString() ?? '—',
-                    '${row['total'] ?? 0} MZN',
-                    row['estado']?.toString() ?? '—',
-                  ],
-                )
-                .toList(),
-          ),
-          DashboardExportSection(
-            title: 'Alertas criticos',
-            headers: const ['Produto', 'Tipo', 'Mensagem'],
-            rows: dashList(tables?['alertasCriticos'])
-                .map(
-                  (row) => [
-                    row['produtoNome']?.toString() ?? '—',
-                    row['tipo']?.toString() ?? '—',
-                    row['mensagem']?.toString() ?? '—',
-                  ],
-                )
-                .toList(),
-          ),
-          DashboardExportSection(
-            title: 'Ultimos eventos de negocio',
-            headers: const ['Tipo', 'Entidade', 'Utilizador', 'Data'],
-            rows: dashList(tables?['ultimosEventos'])
-                .map(
-                  (row) => [
-                    row['type']?.toString() ?? '—',
-                    row['entity']?.toString() ?? '—',
-                    row['userNome']?.toString() ?? '—',
-                    dashLabel(row['createdAt']),
-                  ],
-                )
-                .toList(),
-          ),
-        ],
+    Future<void> exportDashboard({String format = 'csv'}) async {
+      if (async.valueOrNull == null || reportState.isSubmitting) return;
+      await dashboardReportExport(
+        ref: ref,
+        path: ReportPaths.dashboardExecutive,
+        query: _query,
+        format: format,
       );
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -105,9 +65,25 @@ class _ExecutiveDashboardPageState
       scrollable: true,
       actions: [
         OutlinedButton.icon(
-          onPressed: async.valueOrNull == null ? null : exportDashboard,
+          onPressed: async.valueOrNull == null || reportState.isSubmitting
+              ? null
+              : () => exportDashboard(format: 'csv'),
           icon: const Icon(Icons.download_outlined),
-          label: const Text('Exportar'),
+          label: const Text('Exportar CSV'),
+        ),
+        OutlinedButton.icon(
+          onPressed: async.valueOrNull == null || reportState.isSubmitting
+              ? null
+              : () => exportDashboard(format: 'excel'),
+          icon: const Icon(Icons.table_view_outlined),
+          label: const Text('Exportar Excel'),
+        ),
+        OutlinedButton.icon(
+          onPressed: async.valueOrNull == null || reportState.isSubmitting
+              ? null
+              : () => exportDashboard(format: 'pdf'),
+          icon: const Icon(Icons.picture_as_pdf_outlined),
+          label: const Text('Exportar PDF'),
         ),
         OutlinedButton.icon(
           onPressed: () => ref.invalidate(executiveDashboardProvider(_query)),

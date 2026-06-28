@@ -1,28 +1,14 @@
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/utils/browser_file_handler.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../shared/widgets/tables/enterprise_data_table.dart';
+import '../../../reports/presentation/controllers/report_controller.dart';
 import '../../../stock/presentation/widgets/movimentacoes_pagination.dart';
+import '../../domain/dashboard_query.dart';
 import 'dashboard_state_widgets.dart';
-
-class DashboardExportSection {
-  const DashboardExportSection({
-    required this.title,
-    required this.headers,
-    required this.rows,
-  });
-
-  final String title;
-  final List<String> headers;
-  final List<List<String>> rows;
-}
 
 class DashboardPagedTableResult {
   const DashboardPagedTableResult({
@@ -939,41 +925,24 @@ class _DashboardPaginatedTableState extends State<DashboardPaginatedTable> {
   }
 }
 
-Future<void> dashboardExportCsv({
-  required String fileName,
-  Map<String, dynamic>? summary,
-  required List<DashboardExportSection> sections,
+Future<void> dashboardReportExport({
+  required WidgetRef ref,
+  required String path,
+  required DashboardQuery query,
+  String format = 'csv',
 }) async {
-  final buffer = StringBuffer();
+  final controller = ref.read(reportControllerProvider.notifier);
+  final params = query.toParams();
 
-  if (summary != null && summary.isNotEmpty) {
-    buffer.writeln('Resumo');
-    summary.forEach((key, value) {
-      buffer.writeln('${_csv(key)},${_csv(value)}');
-    });
-    buffer.writeln();
+  switch (format) {
+    case 'excel':
+      await controller.exportExcel(path: path, queryParameters: params);
+      return;
+    case 'pdf':
+      await controller.downloadPdf(path: path, queryParameters: params);
+      return;
+    case 'csv':
+    default:
+      await controller.exportCsv(path: path, queryParameters: params);
   }
-
-  for (var i = 0; i < sections.length; i++) {
-    final section = sections[i];
-    buffer.writeln(_csv(section.title));
-    buffer.writeln(section.headers.map(_csv).join(','));
-    for (final row in section.rows) {
-      buffer.writeln(row.map(_csv).join(','));
-    }
-    if (i < sections.length - 1) {
-      buffer.writeln();
-    }
-  }
-
-  await BrowserFileHandler.downloadBytes(
-    bytes: Uint8List.fromList(utf8.encode(buffer.toString())),
-    fileName: fileName,
-    contentType: 'text/csv;charset=utf-8',
-  );
-}
-
-String _csv(dynamic value) {
-  final raw = (value ?? '').toString().replaceAll('"', '""');
-  return '"$raw"';
 }

@@ -17,6 +17,7 @@ class RequisicaoCompraRightPane extends StatelessWidget {
     required this.onEditHeader,
     required this.onEditItem,
     required this.onRemoveItem,
+    this.onExportPdf,
     this.fullscreen = false,
   });
 
@@ -25,6 +26,7 @@ class RequisicaoCompraRightPane extends StatelessWidget {
   final Future<void> Function() onEditHeader;
   final Future<void> Function(RequisicaoItem item) onEditItem;
   final Future<void> Function(RequisicaoItem item) onRemoveItem;
+  final Future<void> Function()? onExportPdf;
   final bool fullscreen;
 
   @override
@@ -97,6 +99,7 @@ class RequisicaoCompraRightPane extends StatelessWidget {
       isLoading: state.isApprovingRequisicao,
       activeRequisicao: activeRequisicao,
       onConfirm: onConfirm,
+      onExportPdf: onExportPdf,
       stackActions: fullscreen,
     );
 
@@ -270,6 +273,7 @@ class RequisicaoConfirmFooter extends StatelessWidget {
     required this.isLoading,
     required this.activeRequisicao,
     required this.onConfirm,
+    this.onExportPdf,
     this.stackActions = false,
   });
 
@@ -277,6 +281,7 @@ class RequisicaoConfirmFooter extends StatelessWidget {
   final bool isLoading;
   final RequisicaoDetalhe? activeRequisicao;
   final Future<void> Function() onConfirm;
+  final Future<void> Function()? onExportPdf;
   final bool stackActions;
 
   @override
@@ -316,7 +321,7 @@ class RequisicaoConfirmFooter extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               OutlinedButton.icon(
-                onPressed: activeRequisicao != null ? () {} : null,
+                onPressed: onExportPdf != null ? () => onExportPdf!() : null,
                 icon: const Icon(Icons.picture_as_pdf_outlined),
                 label: const Text('Exportar PDF'),
               ),
@@ -342,7 +347,7 @@ class RequisicaoConfirmFooter extends StatelessWidget {
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
                 OutlinedButton.icon(
-                  onPressed: activeRequisicao != null ? () {} : null,
+                  onPressed: onExportPdf != null ? () => onExportPdf!() : null,
                   icon: const Icon(Icons.picture_as_pdf_outlined),
                   label: const Text('Exportar PDF'),
                 ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/constants/report_paths.dart';
 import '../../../../core/theme/dimensions.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../shared/responsive/breakpoints.dart';
@@ -18,6 +19,8 @@ import '../widgets/requisicao_compra_mobile_layout.dart';
 import '../widgets/requisicao_compra_right_pane.dart';
 import '../widgets/requisicao_stock_flow_view.dart';
 import '../widgets/requisicao_top_actions_bar.dart';
+import '../widgets/stock_report_exports.dart';
+import '../../../reports/presentation/controllers/report_controller.dart';
 
 class RequisicaoHubPage extends ConsumerStatefulWidget {
   const RequisicaoHubPage({super.key});
@@ -205,8 +208,33 @@ class _RequisicaoHubPageState extends ConsumerState<RequisicaoHubPage> {
         .updateActiveRequisitionHeader(request: result.toRequest());
   }
 
+  String _requisitionListReportPath() {
+    return switch (_selectedTipo) {
+      'entrada' => ReportPaths.stockRequisitionsEntrada,
+      'saida' => ReportPaths.stockRequisitionsSaida,
+      _ => ReportPaths.stockRequisitionsCompra,
+    };
+  }
+
+  Future<void> _exportActiveRequisitionPdf() async {
+    final activeId = _isCompraMode
+        ? ref.read(requisicaoCompraProvider).activeRequisicao?.id
+        : ref.read(requisicaoProvider).activeRequisicao?.id;
+    if (activeId == null) return;
+
+    await ref.read(reportControllerProvider.notifier).downloadPdf(
+          path: ReportPaths.stockRequisition(activeId),
+        );
+  }
+
   List<Widget> _buildTopActions({required bool isCreating}) {
     return [
+      ...stockReportActions(
+        ref: ref,
+        enabled: !isCreating,
+        path: _requisitionListReportPath(),
+        queryParameters: const {},
+      ),
       RequisicaoTopActionsBar(
         selectedTipo: _selectedTipo,
         isCreating: isCreating,
@@ -311,6 +339,7 @@ class _RequisicaoHubPageState extends ConsumerState<RequisicaoHubPage> {
       onEditHeader: _handleEditCompraHeader,
       onEditItem: _handleEditCompraItem,
       onRemoveItem: _confirmRemoveCompraItem,
+      onExportPdf: compraState.activeRequisicao != null ? _exportActiveRequisitionPdf : null,
     );
 
     return ModulePageFrame(

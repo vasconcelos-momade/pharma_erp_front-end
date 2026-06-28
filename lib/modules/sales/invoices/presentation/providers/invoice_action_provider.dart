@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/security/secure_storage_service.dart';
-import '../../../../../core/utils/browser_file_handler.dart';
+import '../../../../../platform/files/platform_file_delivery.dart';
 import '../../../../../platform/printing/thermal/printer_connection.dart';
 import '../../../../../platform/printing/thermal/thermal_printer_service.dart';
 import '../../data/repositories/invoice_repository_impl.dart';
@@ -53,7 +53,7 @@ class InvoiceActionController extends Notifier<InvoiceActionState> {
           invoiceId,
         );
 
-    await BrowserFileHandler.openBytes(
+    await PlatformFileDelivery.openBytes(
       bytes: document.bytes,
       fileName: document.fileName,
       contentType: document.contentType,

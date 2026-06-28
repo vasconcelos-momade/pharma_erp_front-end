@@ -4,14 +4,14 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../app/router/routes.dart';
+import '../../../../core/constants/report_paths.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/spacing.dart';
-import '../../../../core/utils/list_csv_exporter.dart';
 import '../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../shared/widgets/feedback/module_data_states.dart';
 import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
-import '../../domain/entities/audit_entities.dart';
 import '../providers/audit_providers.dart';
+import '../widgets/audit_report_exports.dart';
 
 class AuditPage extends ConsumerWidget {
   const AuditPage({super.key});
@@ -29,12 +29,11 @@ class AuditPage extends ConsumerWidget {
       subtitle: 'Trilho imutável de operações, permissões e eventos críticos.',
       tag: 'Auditoria',
       actions: [
-        OutlinedButton.icon(
-          onPressed: state.dashboard.recentEvents.isEmpty
-              ? null
-              : () => _exportEvents(state.dashboard.recentEvents),
-          icon: const Icon(Icons.download_outlined),
-          label: const Text('Exportar CSV'),
+        ...auditReportActions(
+          ref: ref,
+          enabled: !state.isBusy,
+          path: ReportPaths.auditDashboard,
+          queryParameters: const {},
         ),
         OutlinedButton.icon(
           onPressed: state.isBusy ? null : notifier.load,
@@ -73,12 +72,13 @@ class AuditPage extends ConsumerWidget {
           accent: StatCardAccent.warning,
         ),
       ],
-      child: _buildBody(context, state, notifier),
+      child: _buildBody(context, ref, state, notifier),
     );
   }
 
   Widget _buildBody(
     BuildContext context,
+    WidgetRef ref,
     AuditDashboardState state,
     AuditDashboardController notifier,
   ) {
@@ -108,6 +108,11 @@ class AuditPage extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (auditReportError(ref) != null)
+          Padding(
+            padding: EdgeInsets.only(bottom: s.sm),
+            child: auditReportError(ref),
+          ),
         Text(
           'Eventos recentes',
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -144,24 +149,6 @@ class AuditPage extends ConsumerWidget {
           ),
         ),
       ],
-    );
-  }
-
-  Future<void> _exportEvents(List<AuditEventSummary> events) async {
-    await ListCsvExporter.export(
-      fileName: 'auditoria-eventos-recentes',
-      headers: const ['Tipo', 'Entidade', 'ID entidade', 'Utilizador', 'Data'],
-      rows: events
-          .map(
-            (e) => [
-              e.type,
-              e.entity,
-              e.entityId ?? '—',
-              e.userName ?? 'Sistema',
-              _dateTime.format(e.createdAt),
-            ],
-          )
-          .toList(),
     );
   }
 }

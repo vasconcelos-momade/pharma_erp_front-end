@@ -14,6 +14,8 @@ import '../../modules/dashboard/presentation/pages/executive_dashboard_page.dart
 import '../../modules/dashboard/presentation/pages/finance_dashboard_page.dart';
 import '../../modules/dashboard/presentation/pages/pharmacy_dashboard_page.dart';
 import '../../modules/dashboard/presentation/pages/stock_dashboard_page.dart';
+import '../../modules/finance/presentation/pages/cashflow_page.dart';
+import '../../modules/finance/presentation/pages/expenses_page.dart';
 import '../../modules/finance/presentation/pages/financial_page.dart';
 import '../../modules/pharmacy/prescriptions/presentation/pages/recipes_book_page.dart';
 import '../../modules/pharmacy/products/presentation/pages/products_page.dart';
@@ -29,15 +31,13 @@ import '../../modules/sales/pdv/presentation/pages/pdv_page.dart';
 import '../../modules/stock/presentation/pages/inventory_hub_page.dart';
 import '../../modules/stock/presentation/pages/movimentacoes_hub_page.dart';
 import '../../modules/stock/presentation/pages/requisicao_hub_page.dart';
+import '../../modules/audit/presentation/pages/audit_psychotropics_page.dart';
+import '../../modules/settings/presentation/pages/printers_page.dart';
+import '../../modules/settings/presentation/pages/settings_page.dart';
+import '../../modules/settings/presentation/pages/sync_settings_page.dart';
+import '../../modules/settings/presentation/pages/terminals_page.dart';
 import '../../shared/layouts/app_main_shell.dart';
 import '../../shared/layouts/pos_shell_layout.dart';
-import '../../shared/presentation/stub_pages.dart'
-    hide
-        AuditLogsPage,
-        AuditTimelinePage,
-        CustomersPage,
-        SalesHistoryPage,
-        UsersPage;
 import '../app_observer.dart';
 import '../providers/auth_session_notifier.dart';
 import '../providers/session_access_notifier.dart';
@@ -213,7 +213,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: AppRoutePaths.auditPsych,
             name: 'audit-psych',
-            builder: (context, state) => const AuditPsychPage(),
+            builder: (context, state) => const AuditPsychotropicsPage(),
           ),
           GoRoute(
             path: AppRoutePaths.purchasing,

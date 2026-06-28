@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
-import '../../../../../core/utils/list_csv_exporter.dart';
+import '../../../../reports/presentation/controllers/report_controller.dart';
 import '../../../../../shared/responsive/pharma_screen_layout.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../../shared/widgets/feedback/module_data_states.dart';
@@ -49,7 +50,10 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
     final s = context.spacing;
     final state = ref.watch(salesHistoryProvider);
     final notifier = ref.read(salesHistoryProvider.notifier);
+    final reportState = ref.watch(reportControllerProvider);
+    final reportController = ref.read(reportControllerProvider.notifier);
     final dash = state.dashboard;
+    final reportQuery = _buildReportQuery(state.query);
 
     if (_searchController.text != state.query.search) {
       _searchController.value = TextEditingValue(
@@ -64,9 +68,34 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
       tag: 'Terminal',
       actions: [
         OutlinedButton.icon(
-          onPressed: state.items.isEmpty ? null : () => _exportHistory(state),
+          onPressed: state.items.isEmpty || reportState.isSubmitting
+              ? null
+              : () => reportController.exportCsv(
+                    path: ReportPaths.salesHistory,
+                    queryParameters: reportQuery,
+                  ),
           icon: const Icon(Icons.download_outlined),
           label: const Text('Exportar CSV'),
+        ),
+        OutlinedButton.icon(
+          onPressed: state.items.isEmpty || reportState.isSubmitting
+              ? null
+              : () => reportController.exportExcel(
+                    path: ReportPaths.salesHistory,
+                    queryParameters: reportQuery,
+                  ),
+          icon: const Icon(Icons.table_view_outlined),
+          label: const Text('Exportar Excel'),
+        ),
+        OutlinedButton.icon(
+          onPressed: state.items.isEmpty || reportState.isSubmitting
+              ? null
+              : () => reportController.downloadPdf(
+                    path: ReportPaths.salesHistory,
+                    queryParameters: reportQuery,
+                  ),
+          icon: const Icon(Icons.picture_as_pdf_outlined),
+          label: const Text('Exportar PDF'),
         ),
         OutlinedButton.icon(
           onPressed: state.isBusy ? null : notifier.refresh,
@@ -327,29 +356,22 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
     ref.read(invoiceDetailProvider.notifier).close();
   }
 
-  Future<void> _exportHistory(SalesHistoryState state) async {
-    await ListCsvExporter.export(
-      fileName: 'historico-vendas-pagina-${state.query.page}',
-      headers: const [
-        'Fatura',
-        'Cliente',
-        'Terminal',
-        'Total',
-        'Estado',
-        'Data',
-      ],
-      rows: state.items
-          .map(
-            (inv) => [
-              inv.numero,
-              inv.cliente?.nome ?? '—',
-              inv.terminal?.codigo ?? inv.terminal?.nome ?? '—',
-              _currency.format(inv.total),
-              inv.estado,
-              _dateTime.format(inv.createdAt),
-            ],
-          )
-          .toList(),
-    );
+  Map<String, dynamic> _buildReportQuery(SalesHistoryQuery query) {
+    String? formatDate(DateTime? value) {
+      if (value == null) {
+        return null;
+      }
+      final year = value.year.toString().padLeft(4, '0');
+      final month = value.month.toString().padLeft(2, '0');
+      final day = value.day.toString().padLeft(2, '0');
+      return '$year-$month-$day';
+    }
+
+    return <String, dynamic>{
+      if (query.search.trim().isNotEmpty) 'search': query.search.trim(),
+      if (query.status != null) 'status': query.status,
+      if (query.dateFrom != null) 'dateFrom': formatDate(query.dateFrom),
+      if (query.dateTo != null) 'dateTo': formatDate(query.dateTo),
+    };
   }
 }

@@ -151,7 +151,7 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
             ),
             SizedBox(height: s.md),
             DropdownButtonFormField<String>(
-              value: _tipo,
+              initialValue: _tipo,
               decoration: const InputDecoration(
                 labelText: 'Tipo',
                 border: OutlineInputBorder(),

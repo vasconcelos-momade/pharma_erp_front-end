@@ -1,18 +1,18 @@
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../app/router/routes.dart';
+import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
-import '../../../../../core/utils/browser_file_handler.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../../../stock/presentation/widgets/movimentacoes_pagination.dart';
+import '../../../presentation/widgets/regulatory_report_exports.dart';
 import '../../../regulatory/data/datasources/regulatory_remote_datasource.dart';
 
 enum RecipesBookTab { receitas, book }
@@ -47,8 +47,8 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
   String _receitasSearch = '';
   String? _receitasStatus;
   String? _receitasOrigem;
-  String _receitasSortBy = 'dataReceita';
-  String _receitasSortDir = 'desc';
+  final String _receitasSortBy = 'dataReceita';
+  final String _receitasSortDir = 'desc';
 
   Map<String, dynamic>? _livroDashboard;
   List<Map<String, dynamic>> _livroItems = <Map<String, dynamic>>[];
@@ -59,8 +59,8 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
   String _livroSearch = '';
   String? _livroOrigem;
   String? _livroTipoMovimento;
-  String _livroSortBy = 'createdAt';
-  String _livroSortDir = 'desc';
+  final String _livroSortBy = 'createdAt';
+  final String _livroSortDir = 'desc';
 
   RegulatoryRemoteDataSource get _ds =>
       ref.read(regulatoryRemoteDataSourceProvider);
@@ -191,20 +191,25 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
     }
   }
 
-  Future<void> _exportCurrentTab() async {
-    final payload = _tabController.index == 0
-        ? {'dashboard': _receitasDashboard, 'items': _receitasItems}
-        : {'dashboard': _livroDashboard, 'items': _livroItems};
-    final bytes = utf8.encode(
-      const JsonEncoder.withIndent('  ').convert(payload),
-    );
-    await BrowserFileHandler.downloadBytes(
-      bytes: bytes,
-      fileName: _tabController.index == 0
-          ? 'receitas.json'
-          : 'livro-receitas.json',
-      contentType: 'application/json',
-    );
+
+  Map<String, dynamic> _receitasReportQuery() {
+    return {
+      if (_receitasSearch.isNotEmpty) 'q': _receitasSearch,
+      if (_receitasStatus != null) 'status': _receitasStatus,
+      if (_receitasOrigem != null) 'origem': _receitasOrigem,
+      'sortBy': _receitasSortBy,
+      'sortDir': _receitasSortDir,
+    };
+  }
+
+  Map<String, dynamic> _livroReportQuery() {
+    return {
+      if (_livroSearch.isNotEmpty) 'q': _livroSearch,
+      if (_livroOrigem != null) 'origem': _livroOrigem,
+      if (_livroTipoMovimento != null) 'tipoMovimento': _livroTipoMovimento,
+      'sortBy': _livroSortBy,
+      'sortDir': _livroSortDir,
+    };
   }
 
   Future<void> _openReceitaDetail(String id) async {
@@ -528,6 +533,10 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
         ? _receitasDashboard
         : _livroDashboard;
     final showingLivro = _tabController.index == 1;
+    final showingReceitas = !showingLivro;
+    final reportEnabled = showingReceitas
+        ? !_loadingReceitas && _receitasError == null
+        : !_loadingLivro && _livroError == null;
     return EnterpriseModuleHub(
       title: showingLivro ? 'Livro de Receitas' : 'Receitas',
       subtitle: showingLivro
@@ -539,9 +548,15 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
           onPressed: () => _reloadCurrentTab(),
           icon: const Icon(Icons.refresh),
         ),
-        IconButton(
-          onPressed: _exportCurrentTab,
-          icon: const Icon(Icons.download_outlined),
+        ...regulatoryReportActions(
+          ref: ref,
+          enabled: reportEnabled,
+          path: showingReceitas
+              ? ReportPaths.regulatoryReceitas
+              : ReportPaths.regulatoryLivroReceitas,
+          queryParameters: showingReceitas
+              ? _receitasReportQuery()
+              : _livroReportQuery(),
         ),
         if (_tabController.index == 0)
           FilledButton.icon(
@@ -602,6 +617,11 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
           : _buildLivroFilters(context),
       child: Column(
         children: [
+          if (regulatoryReportError(ref) != null)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: regulatoryReportError(ref),
+            ),
           TabBar(
             controller: _tabController,
             onTap: (index) {
@@ -657,7 +677,7 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
         SizedBox(
           width: 180,
           child: DropdownButtonFormField<String?>(
-            value: _receitasStatus,
+            initialValue: _receitasStatus,
             decoration: const InputDecoration(
               labelText: 'Estado',
               border: OutlineInputBorder(),
@@ -680,7 +700,7 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
         SizedBox(
           width: 180,
           child: DropdownButtonFormField<String?>(
-            value: _receitasOrigem,
+            initialValue: _receitasOrigem,
             decoration: const InputDecoration(
               labelText: 'Origem',
               border: OutlineInputBorder(),
@@ -733,7 +753,7 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
         SizedBox(
           width: 180,
           child: DropdownButtonFormField<String?>(
-            value: _livroTipoMovimento,
+            initialValue: _livroTipoMovimento,
             decoration: const InputDecoration(
               labelText: 'Movimento',
               border: OutlineInputBorder(),
@@ -759,7 +779,7 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
         SizedBox(
           width: 180,
           child: DropdownButtonFormField<String?>(
-            value: _livroOrigem,
+            initialValue: _livroOrigem,
             decoration: const InputDecoration(
               labelText: 'Origem',
               border: OutlineInputBorder(),
