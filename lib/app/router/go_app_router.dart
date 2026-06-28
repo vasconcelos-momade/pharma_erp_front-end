@@ -1,7 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../modules/admin/users/presentation/pages/users_page.dart';
+import '../../modules/audit/presentation/pages/audit_logs_page.dart';
 import '../../modules/audit/presentation/pages/audit_page.dart';
+import '../../modules/audit/presentation/pages/audit_timeline_page.dart';
+import '../../modules/sales/customers/presentation/pages/customers_page.dart';
+import '../../modules/sales/history/presentation/pages/sales_history_page.dart';
 import '../../modules/auth/presentation/pages/forgot_password_page.dart';
 import '../../modules/auth/presentation/pages/login_page.dart';
 import '../../modules/auth/presentation/pages/tenant_select_page.dart';
@@ -10,7 +15,6 @@ import '../../modules/dashboard/presentation/pages/finance_dashboard_page.dart';
 import '../../modules/dashboard/presentation/pages/pharmacy_dashboard_page.dart';
 import '../../modules/dashboard/presentation/pages/stock_dashboard_page.dart';
 import '../../modules/finance/presentation/pages/financial_page.dart';
-import '../../modules/finance/reports/presentation/pages/reports_page.dart';
 import '../../modules/pharmacy/prescriptions/presentation/pages/recipes_book_page.dart';
 import '../../modules/pharmacy/products/presentation/pages/products_page.dart';
 import '../../modules/pharmacy/categories/presentation/pages/categories_page.dart';
@@ -19,6 +23,7 @@ import '../../modules/pharmacy/expiry/presentation/pages/expiry_page.dart';
 import '../../modules/pharmacy/fefo/presentation/pages/fefo_page.dart';
 import '../../modules/pharmacy/psychotropics/presentation/pages/psychotropics_book_page.dart';
 import '../../modules/pharmacy/sanitary/presentation/pages/regulatory_page.dart';
+import '../../modules/sales/quotations/presentation/pages/quotations_page.dart';
 import '../../modules/sales/invoices/presentation/pages/invoices_page.dart';
 import '../../modules/sales/pdv/presentation/pages/pdv_page.dart';
 import '../../modules/stock/presentation/pages/inventory_hub_page.dart';
@@ -26,14 +31,25 @@ import '../../modules/stock/presentation/pages/movimentacoes_hub_page.dart';
 import '../../modules/stock/presentation/pages/requisicao_hub_page.dart';
 import '../../shared/layouts/app_main_shell.dart';
 import '../../shared/layouts/pos_shell_layout.dart';
-import '../../shared/presentation/stub_pages.dart';
+import '../../shared/presentation/stub_pages.dart'
+    hide
+        AuditLogsPage,
+        AuditTimelinePage,
+        CustomersPage,
+        SalesHistoryPage,
+        UsersPage;
 import '../app_observer.dart';
 import '../providers/auth_session_notifier.dart';
+import '../providers/session_access_notifier.dart';
 import 'router_refresh.dart';
 import 'routes.dart';
 
 bool _isPublicAuthRoute(String loc) {
   return loc == AppRoutePaths.login || loc == AppRoutePaths.authForgotPassword;
+}
+
+bool _isAdministrationRoute(String loc) {
+  return loc == AppRoutePaths.users;
 }
 
 final goRouterProvider = Provider<GoRouter>((ref) {
@@ -45,6 +61,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     observers: [AppNavigatorObserver()],
     redirect: (context, state) {
       final auth = ref.read(authSessionProvider);
+      final access = ref.read(sessionAccessProvider);
       final loc = state.matchedLocation;
 
       if (auth.isBootstrapping) {
@@ -65,6 +82,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       if (loc == AppRoutePaths.login ||
           loc == AppRoutePaths.authForgotPassword ||
           loc == AppRoutePaths.authTenant) {
+        return AppRoutePaths.dashboard;
+      }
+
+      if (_isAdministrationRoute(loc) && !access.isResolved) {
+        return null;
+      }
+
+      if (_isAdministrationRoute(loc) && !access.canAccessAdministration) {
         return AppRoutePaths.dashboard;
       }
 
@@ -150,6 +175,12 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const RecipesBookPage(),
           ),
           GoRoute(
+            path: AppRoutePaths.recipesBook,
+            name: 'recipes-book',
+            builder: (context, state) =>
+                const RecipesBookPage(initialTab: RecipesBookTab.book),
+          ),
+          GoRoute(
             path: AppRoutePaths.financial,
             name: 'financial',
             builder: (context, state) => const FinancialPage(),
@@ -194,8 +225,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: AppRoutePaths.reports,
-            name: 'reports',
-            builder: (context, state) => const ReportsPage(),
+            redirect: (context, state) => AppRoutePaths.dashboard,
           ),
           GoRoute(
             path: AppRoutePaths.stockMovements,
@@ -232,6 +262,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const SalesInvoicesPage(),
           ),
           GoRoute(
+            path: AppRoutePaths.salesQuotations,
+            name: 'sales-quotations',
+            builder: (context, state) => const SalesQuotationsPage(),
+          ),
+          GoRoute(
             path: AppRoutePaths.salesHistory,
             name: 'sales-history',
             builder: (context, state) => const SalesHistoryPage(),
@@ -243,13 +278,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: AppRoutePaths.userProfiles,
-            name: 'user-profiles',
-            builder: (context, state) => const UserProfilesPage(),
+            redirect: (context, state) => AppRoutePaths.users,
           ),
           GoRoute(
             path: AppRoutePaths.userPermissions,
-            name: 'user-permissions',
-            builder: (context, state) => const UserPermissionsPage(),
+            redirect: (context, state) => AppRoutePaths.users,
           ),
           GoRoute(
             path: AppRoutePaths.settings,
@@ -276,9 +309,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutePaths.pos,
         name: 'pos',
-        builder: (context, state) => const PosShellLayout(
-          child: PdvPage(),
-        ),
+        builder: (context, state) => const PosShellLayout(child: PdvPage()),
       ),
     ],
   );

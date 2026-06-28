@@ -15,10 +15,12 @@ class ExecutiveDashboardPage extends ConsumerStatefulWidget {
   const ExecutiveDashboardPage({super.key});
 
   @override
-  ConsumerState<ExecutiveDashboardPage> createState() => _ExecutiveDashboardPageState();
+  ConsumerState<ExecutiveDashboardPage> createState() =>
+      _ExecutiveDashboardPageState();
 }
 
-class _ExecutiveDashboardPageState extends ConsumerState<ExecutiveDashboardPage> {
+class _ExecutiveDashboardPageState
+    extends ConsumerState<ExecutiveDashboardPage> {
   var _query = const DashboardQuery();
 
   @override
@@ -31,12 +33,10 @@ class _ExecutiveDashboardPageState extends ConsumerState<ExecutiveDashboardPage>
     final statusOptions = dashboardUniqueOptions(
       dashList(tables?['ultimasVendas']).map((row) => row['estado']),
     );
-    final paymentMethodOptions = dashboardUniqueOptions(
-      [
-        ...dashList(charts?['metodosPagamento']).map((row) => row['metodo']),
-        ...dashList(tables?['ultimasVendas']).map((row) => row['tipoPagamento']),
-      ],
-    );
+    final paymentMethodOptions = dashboardUniqueOptions([
+      ...dashList(charts?['metodosPagamento']).map((row) => row['metodo']),
+      ...dashList(tables?['ultimasVendas']).map((row) => row['tipoPagamento']),
+    ]);
 
     Future<void> exportDashboard() async {
       final data = async.valueOrNull;
@@ -91,14 +91,17 @@ class _ExecutiveDashboardPageState extends ConsumerState<ExecutiveDashboardPage>
       );
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Exportação do painel executivo concluída.')),
+        const SnackBar(
+          content: Text('Exportação do painel executivo concluída.'),
+        ),
       );
     }
 
     return EnterpriseModuleHub(
       title: 'Painel executivo',
-      subtitle: 'Visão consolidada de vendas, finanças, stock e alertas operacionais.',
-      tag: 'Painéis',
+      subtitle:
+          'Visão consolidada de vendas, finanças, stock e alertas operacionais.',
+      tag: 'Dashboard',
       scrollable: true,
       actions: [
         OutlinedButton.icon(
@@ -221,195 +224,195 @@ class _ExecutiveDashboardPageState extends ConsumerState<ExecutiveDashboardPage>
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final chartWidth = constraints.maxWidth >= 1100
-                        ? (constraints.maxWidth - AppSpacing.lg) / 2
-                        : constraints.maxWidth;
-                    return Wrap(
-                      spacing: AppSpacing.lg,
-                      runSpacing: AppSpacing.lg,
-                      children: [
-                        SizedBox(
-                          width: chartWidth,
-                          child: dashboardChartCard(
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final chartWidth = constraints.maxWidth >= 1100
+                      ? (constraints.maxWidth - AppSpacing.lg) / 2
+                      : constraints.maxWidth;
+                  return Wrap(
+                    spacing: AppSpacing.lg,
+                    runSpacing: AppSpacing.lg,
+                    children: [
+                      SizedBox(
+                        width: chartWidth,
+                        child: dashboardChartCard(
+                          context: context,
+                          title: 'Receita diária',
+                          child: dashboardLineChart(
                             context: context,
-                            title: 'Receita diária',
-                            child: dashboardLineChart(
-                              context: context,
-                              points: dashList(charts?['receitaDiaria']),
-                              valueKey: 'total',
-                              labelKey: 'data',
-                            ),
+                            points: dashList(charts?['receitaDiaria']),
+                            valueKey: 'total',
+                            labelKey: 'data',
                           ),
                         ),
-                        SizedBox(
-                          width: chartWidth,
-                          child: dashboardChartCard(
-                            context: context,
-                            title: 'Receita mensal',
-                            child: dashboardLineChart(
-                              context: context,
-                              points: dashList(charts?['receitaMensal']),
-                              valueKey: 'total',
-                              labelKey: 'mes',
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          width: chartWidth,
-                          child: dashboardChartCard(
-                            context: context,
-                            title: 'Fluxo financeiro',
-                            child: dashboardDualLineChart(
-                              context: context,
-                              points: dashList(charts?['fluxoFinanceiro']),
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          width: chartWidth,
-                          child: dashboardChartCard(
-                            context: context,
-                            title: 'Evolução das vendas',
-                            child: dashboardLineChart(
-                              context: context,
-                              points: dashList(charts?['evolucaoVendas']),
-                              valueKey: 'total',
-                              labelKey: 'data',
-                              color: Theme.of(context).colorScheme.tertiary,
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          width: chartWidth,
-                          child: dashboardChartCard(
-                            context: context,
-                            title: 'Métodos de pagamento',
-                            child: dashboardBarChart(
-                              context: context,
-                              points: dashList(charts?['metodosPagamento']),
-                              valueKey: 'total',
-                              labelKey: 'metodo',
-                              color: Theme.of(context).colorScheme.secondary,
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          width: chartWidth,
-                          child: dashboardChartCard(
-                            context: context,
-                            title: 'Top produtos vendidos',
-                            child: dashboardBarChart(
-                              context: context,
-                              points: dashList(charts?['topProdutos']),
-                              valueKey: 'total',
-                              labelKey: 'produtoNome',
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          width: chartWidth,
-                          child: dashboardChartCard(
-                            context: context,
-                            title: 'Top categorias',
-                            child: dashboardBarChart(
-                              context: context,
-                              points: dashList(charts?['topCategorias']),
-                              valueKey: 'total',
-                              labelKey: 'categoria',
-                              color: Theme.of(context).colorScheme.tertiary,
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                DashboardPaginatedTable(
-                  title: 'Últimas vendas',
-                  headers: const ['Fatura', 'Cliente', 'Total', 'Estado'],
-                  columns: const [
-                    DashboardTableColumn(label: 'Fatura', sortKey: 'numero'),
-                    DashboardTableColumn(label: 'Cliente'),
-                    DashboardTableColumn(label: 'Total', sortKey: 'total'),
-                    DashboardTableColumn(label: 'Estado'),
-                  ],
-                  reloadKey: '${_query.reloadKey}-vendas',
-                  initialSortBy: 'numero',
-                  initialSortDir: 'desc',
-                  loadPage: (page, pageSize, sortBy, sortDir) async {
-                    final result = await dataSource.executiveDashboardTable(
-                      table: 'ultimasVendas',
-                      query: _query.copyWith(
-                        sortBy: sortBy,
-                        sortDir: sortDir,
-                        clearSortBy: sortBy == null,
                       ),
-                      page: page,
-                      pageSize: pageSize,
-                    );
-                    return DashboardPagedTableResult.fromMap(result);
-                  },
-                  rowBuilder: (row) => [
-                    row['numero']?.toString() ?? '—',
-                    row['clienteNome']?.toString() ?? '—',
-                    '${row['total'] ?? 0} MZN',
-                    row['estado']?.toString() ?? '—',
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                DashboardPaginatedTable(
-                  title: 'Alertas críticos',
-                  headers: const ['Produto', 'Tipo', 'Mensagem'],
-                  reloadKey: '${_query.reloadKey}-alertas',
-                  loadPage: (page, pageSize, sortBy, sortDir) async {
-                    final result = await dataSource.executiveDashboardTable(
-                      table: 'alertasCriticos',
-                      query: _query.copyWith(
-                        sortBy: sortBy,
-                        sortDir: sortDir,
-                        clearSortBy: sortBy == null,
+                      SizedBox(
+                        width: chartWidth,
+                        child: dashboardChartCard(
+                          context: context,
+                          title: 'Receita mensal',
+                          child: dashboardLineChart(
+                            context: context,
+                            points: dashList(charts?['receitaMensal']),
+                            valueKey: 'total',
+                            labelKey: 'mes',
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
                       ),
-                      page: page,
-                      pageSize: pageSize,
-                    );
-                    return DashboardPagedTableResult.fromMap(result);
-                  },
-                  rowBuilder: (row) => [
-                    row['produtoNome']?.toString() ?? '—',
-                    row['tipo']?.toString() ?? '—',
-                    row['mensagem']?.toString() ?? '—',
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                DashboardPaginatedTable(
-                  title: 'Últimos eventos de negócio',
-                  headers: const ['Tipo', 'Entidade', 'Utilizador', 'Data'],
-                  reloadKey: '${_query.reloadKey}-eventos',
-                  loadPage: (page, pageSize, sortBy, sortDir) async {
-                    final result = await dataSource.executiveDashboardTable(
-                      table: 'ultimosEventos',
-                      query: _query.copyWith(
-                        sortBy: sortBy,
-                        sortDir: sortDir,
-                        clearSortBy: sortBy == null,
+                      SizedBox(
+                        width: chartWidth,
+                        child: dashboardChartCard(
+                          context: context,
+                          title: 'Fluxo financeiro',
+                          child: dashboardDualLineChart(
+                            context: context,
+                            points: dashList(charts?['fluxoFinanceiro']),
+                          ),
+                        ),
                       ),
-                      page: page,
-                      pageSize: pageSize,
-                    );
-                    return DashboardPagedTableResult.fromMap(result);
-                  },
-                  rowBuilder: (row) => [
-                    row['type']?.toString() ?? '—',
-                    row['entity']?.toString() ?? '—',
-                    row['userNome']?.toString() ?? '—',
-                    dashLabel(row['createdAt']),
-                  ],
-                ),
-              ],
+                      SizedBox(
+                        width: chartWidth,
+                        child: dashboardChartCard(
+                          context: context,
+                          title: 'Evolução das vendas',
+                          child: dashboardLineChart(
+                            context: context,
+                            points: dashList(charts?['evolucaoVendas']),
+                            valueKey: 'total',
+                            labelKey: 'data',
+                            color: Theme.of(context).colorScheme.tertiary,
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        width: chartWidth,
+                        child: dashboardChartCard(
+                          context: context,
+                          title: 'Métodos de pagamento',
+                          child: dashboardBarChart(
+                            context: context,
+                            points: dashList(charts?['metodosPagamento']),
+                            valueKey: 'total',
+                            labelKey: 'metodo',
+                            color: Theme.of(context).colorScheme.secondary,
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        width: chartWidth,
+                        child: dashboardChartCard(
+                          context: context,
+                          title: 'Top produtos vendidos',
+                          child: dashboardBarChart(
+                            context: context,
+                            points: dashList(charts?['topProdutos']),
+                            valueKey: 'total',
+                            labelKey: 'produtoNome',
+                          ),
+                        ),
+                      ),
+                      SizedBox(
+                        width: chartWidth,
+                        child: dashboardChartCard(
+                          context: context,
+                          title: 'Top categorias',
+                          child: dashboardBarChart(
+                            context: context,
+                            points: dashList(charts?['topCategorias']),
+                            valueKey: 'total',
+                            labelKey: 'categoria',
+                            color: Theme.of(context).colorScheme.tertiary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              DashboardPaginatedTable(
+                title: 'Últimas vendas',
+                headers: const ['Fatura', 'Cliente', 'Total', 'Estado'],
+                columns: const [
+                  DashboardTableColumn(label: 'Fatura', sortKey: 'numero'),
+                  DashboardTableColumn(label: 'Cliente'),
+                  DashboardTableColumn(label: 'Total', sortKey: 'total'),
+                  DashboardTableColumn(label: 'Estado'),
+                ],
+                reloadKey: '${_query.reloadKey}-vendas',
+                initialSortBy: 'numero',
+                initialSortDir: 'desc',
+                loadPage: (page, pageSize, sortBy, sortDir) async {
+                  final result = await dataSource.executiveDashboardTable(
+                    table: 'ultimasVendas',
+                    query: _query.copyWith(
+                      sortBy: sortBy,
+                      sortDir: sortDir,
+                      clearSortBy: sortBy == null,
+                    ),
+                    page: page,
+                    pageSize: pageSize,
+                  );
+                  return DashboardPagedTableResult.fromMap(result);
+                },
+                rowBuilder: (row) => [
+                  row['numero']?.toString() ?? '—',
+                  row['clienteNome']?.toString() ?? '—',
+                  '${row['total'] ?? 0} MZN',
+                  row['estado']?.toString() ?? '—',
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              DashboardPaginatedTable(
+                title: 'Alertas críticos',
+                headers: const ['Produto', 'Tipo', 'Mensagem'],
+                reloadKey: '${_query.reloadKey}-alertas',
+                loadPage: (page, pageSize, sortBy, sortDir) async {
+                  final result = await dataSource.executiveDashboardTable(
+                    table: 'alertasCriticos',
+                    query: _query.copyWith(
+                      sortBy: sortBy,
+                      sortDir: sortDir,
+                      clearSortBy: sortBy == null,
+                    ),
+                    page: page,
+                    pageSize: pageSize,
+                  );
+                  return DashboardPagedTableResult.fromMap(result);
+                },
+                rowBuilder: (row) => [
+                  row['produtoNome']?.toString() ?? '—',
+                  row['tipo']?.toString() ?? '—',
+                  row['mensagem']?.toString() ?? '—',
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              DashboardPaginatedTable(
+                title: 'Últimos eventos de negócio',
+                headers: const ['Tipo', 'Entidade', 'Utilizador', 'Data'],
+                reloadKey: '${_query.reloadKey}-eventos',
+                loadPage: (page, pageSize, sortBy, sortDir) async {
+                  final result = await dataSource.executiveDashboardTable(
+                    table: 'ultimosEventos',
+                    query: _query.copyWith(
+                      sortBy: sortBy,
+                      sortDir: sortDir,
+                      clearSortBy: sortBy == null,
+                    ),
+                    page: page,
+                    pageSize: pageSize,
+                  );
+                  return DashboardPagedTableResult.fromMap(result);
+                },
+                rowBuilder: (row) => [
+                  row['type']?.toString() ?? '—',
+                  row['entity']?.toString() ?? '—',
+                  row['userNome']?.toString() ?? '—',
+                  dashLabel(row['createdAt']),
+                ],
+              ),
+            ],
           );
         },
       ),

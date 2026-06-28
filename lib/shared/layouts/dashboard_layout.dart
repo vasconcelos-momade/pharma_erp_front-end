@@ -5,6 +5,7 @@ import 'package:responsive_framework/responsive_framework.dart';
 
 import '../../app/providers/app_theme_mode_provider.dart';
 import '../../app/providers/auth_session_notifier.dart';
+import '../../app/providers/session_access_notifier.dart';
 import '../../app/router/routes.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../core/theme/dimensions.dart';
@@ -32,6 +33,8 @@ class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
     final location = GoRouterState.of(context).uri.path;
+    final access = ref.watch(sessionAccessProvider);
+    final navItems = visibleNavItemsForAccess(access);
     final bp = ResponsiveBreakpoints.of(context);
     final isDesktop = bp.largerOrEqualTo(DESKTOP);
     final isTablet = bp.equals(TABLET);
@@ -55,6 +58,7 @@ class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
       backgroundColor: t.bgPrimary,
       drawer: _DrawerNav(
         location: location,
+        navItems: navItems,
         onSelect: (path) {
           context.go(path);
           Navigator.of(context).pop();
@@ -66,6 +70,7 @@ class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
           if (isDesktop)
             _Sidebar(
               location: location,
+              navItems: navItems,
               expanded: _sidebarExpanded,
               onToggle: () =>
                   setState(() => _sidebarExpanded = !_sidebarExpanded),
@@ -144,7 +149,7 @@ class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
                     label: '',
                   ),
                   NavigationDestination(
-                    tooltip: 'Stock',
+                    tooltip: 'Produtos',
                     icon: Icon(
                       Icons.inventory_2_outlined,
                       color: t.textSecondary,
@@ -178,7 +183,7 @@ class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
     if (path == AppRoutePaths.dashboard || path.startsWith('/dashboard')) {
       return 0;
     }
-    if (path == AppRoutePaths.pos) {
+    if (path == AppRoutePaths.pos || path.startsWith('/sales')) {
       return 1;
     }
     if (path == AppRoutePaths.products || path.startsWith('/pharmacy')) {
@@ -186,6 +191,9 @@ class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
     }
     if (path == AppRoutePaths.financial || path.startsWith('/finance')) {
       return 3;
+    }
+    if (path.startsWith('/stock')) {
+      return 2;
     }
     return 4;
   }
@@ -217,7 +225,8 @@ class _EnterpriseTopBar extends ConsumerWidget {
     final s = context.spacing;
     final theme = Theme.of(context);
     final mode = ref.watch(appThemeModeProvider);
-    final section = AppRouteTitles.sectionFor(location);
+    final section =
+        navSectionTitleForPath(location) ?? AppRouteTitles.sectionFor(location);
     final title = AppRouteTitles.titleFor(location);
     final compactSync = isMobile || MediaQuery.sizeOf(context).width < 520;
     final pagePadding = PharmaScreenLayout.pagePadding(context);
@@ -452,12 +461,14 @@ class _EnterpriseTopBar extends ConsumerWidget {
 class _Sidebar extends StatelessWidget {
   const _Sidebar({
     required this.location,
+    required this.navItems,
     required this.expanded,
     required this.onToggle,
     required this.onLogout,
   });
 
   final String location;
+  final List<AppNavItem> navItems;
   final bool expanded;
   final VoidCallback onToggle;
   final VoidCallback onLogout;
@@ -472,99 +483,205 @@ class _Sidebar extends StatelessWidget {
       duration: const Duration(milliseconds: 280),
       curve: Curves.easeOutCubic,
       width: w,
-      color: t.bgSecondary,
+      decoration: BoxDecoration(
+        color: t.bgSecondary,
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [
+            t.bgSecondary,
+            Color.lerp(t.bgSecondary, t.bgPrimary, 0.12) ?? t.bgSecondary,
+          ],
+        ),
+        border: Border(
+          right: BorderSide(color: t.border.withValues(alpha: 0.65)),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 18,
+            offset: const Offset(6, 0),
+          ),
+        ],
+      ),
       child: Column(
         children: [
-          SizedBox(
-            height: AppDimensions.topBarDesktop,
+          if (expanded)
+            Container(
+              height: 3,
+              margin: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.sm,
+                AppSpacing.lg,
+                0,
+              ),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: [t.brandBlue, t.brandGreen]),
+                borderRadius: BorderRadius.circular(999),
+              ),
+            ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              expanded ? AppSpacing.lg : AppSpacing.sm,
+              AppSpacing.lg,
+              expanded ? AppSpacing.lg : AppSpacing.sm,
+              AppSpacing.md,
+            ),
             child: Stack(
-              alignment: Alignment.center,
+              clipBehavior: Clip.none,
               children: [
-                if (expanded)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.lg,
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: t.avatarMd,
-                          height: t.avatarMd,
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 280),
+                  curve: Curves.easeOutCubic,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: expanded ? AppSpacing.md : AppSpacing.sm,
+                    vertical: expanded ? AppSpacing.md : AppSpacing.sm,
+                  ),
+                  decoration: BoxDecoration(
+                    color: t.card.withValues(alpha: 0.82),
+                    borderRadius: BorderRadius.circular(t.radiusLg),
+                    border: Border.all(color: t.border.withValues(alpha: 0.55)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: t.brandBlue.withValues(alpha: 0.12),
+                        blurRadius: 20,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
+                  ),
+                  child: expanded
+                      ? Row(
+                          children: [
+                            Container(
+                              width: t.avatarMd + 4,
+                              height: t.avatarMd + 4,
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [t.brandBlue, t.brandGreen],
+                                ),
+                                borderRadius: BorderRadius.circular(t.radiusMd),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: t.brandBlue.withValues(alpha: 0.35),
+                                    blurRadius: 14,
+                                  ),
+                                ],
+                              ),
+                              child: Icon(
+                                Icons.local_pharmacy_rounded,
+                                color: t.bgPrimary,
+                                size: 22,
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.md),
+                            Expanded(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(
+                                          'Pharma ERP',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleSmall
+                                              ?.copyWith(
+                                                color: t.textPrimary,
+                                                fontWeight: FontWeight.w800,
+                                              ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: t.brandBlue.withValues(
+                                            alpha: 0.12,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            999,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          'ERP',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .labelSmall
+                                              ?.copyWith(
+                                                color: t.brandBlue,
+                                                fontWeight: FontWeight.w800,
+                                                letterSpacing: 1.1,
+                                              ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: AppSpacing.xs),
+                                  Text(
+                                    'Offline-first • Multi-tenant',
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelSmall
+                                        ?.copyWith(
+                                          color: t.textMuted,
+                                          letterSpacing: 0.6,
+                                        ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: AppSpacing.sm),
+                                  Row(
+                                    children: [
+                                      _SidebarMetaChip(
+                                        icon: Icons.apartment_rounded,
+                                        label: 'Operações',
+                                      ),
+                                      const SizedBox(width: AppSpacing.sm),
+                                      _SidebarMetaChip(
+                                        icon: Icons.cloud_done_outlined,
+                                        label: 'Online',
+                                        accentColor: t.brandGreen,
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        )
+                      : Container(
+                          width: t.minTouchTarget,
+                          height: t.minTouchTarget,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               colors: [t.brandBlue, t.brandGreen],
                             ),
                             borderRadius: BorderRadius.circular(t.radiusMd),
-                            boxShadow: [
-                              BoxShadow(
-                                color: t.brandBlue.withValues(alpha: 0.35),
-                                blurRadius: 14,
-                              ),
-                            ],
                           ),
                           child: Icon(
                             Icons.local_pharmacy_rounded,
                             color: t.bgPrimary,
-                            size: 22,
+                            size: t.iconMd,
                           ),
                         ),
-                        const SizedBox(width: AppSpacing.md),
-                        Expanded(
-                          child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Pharma ERP',
-                                style: Theme.of(context).textTheme.titleSmall
-                                    ?.copyWith(
-                                      color: t.textPrimary,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              Text(
-                                'Offline-first • Multi-tenant',
-                                style: Theme.of(context).textTheme.labelSmall
-                                    ?.copyWith(
-                                      color: t.textMuted,
-                                      letterSpacing: 0.6,
-                                    ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                else
-                  Container(
-                    width: t.minTouchTarget,
-                    height: t.minTouchTarget,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [t.brandBlue, t.brandGreen],
-                      ),
-                      borderRadius: BorderRadius.circular(t.radiusMd),
-                    ),
-                    child: Icon(
-                      Icons.local_pharmacy_rounded,
-                      color: t.bgPrimary,
-                      size: t.iconMd,
-                    ),
-                  ),
+                ),
                 Positioned(
-                  right: -6,
+                  top: 18,
+                  right: -12,
                   child: IconButton(
                     style: IconButton.styleFrom(
                       backgroundColor: t.card,
                       side: BorderSide(color: t.border),
+                      shadowColor: Colors.black.withValues(alpha: 0.12),
+                      elevation: 2,
                     ),
                     onPressed: onToggle,
                     icon: Icon(
@@ -581,7 +698,11 @@ class _Sidebar extends StatelessWidget {
           ),
           Divider(height: 1, color: t.border.withValues(alpha: 0.45)),
           Expanded(
-            child: _NavList(location: location, expanded: expanded),
+            child: _NavList(
+              location: location,
+              navItems: navItems,
+              expanded: expanded,
+            ),
           ),
           Divider(height: 1, color: t.border.withValues(alpha: 0.45)),
           Padding(
@@ -590,25 +711,75 @@ class _Sidebar extends StatelessWidget {
               vertical: AppSpacing.sm,
             ),
             child: expanded
-                ? OutlinedButton.icon(
-                    onPressed: onLogout,
-                    icon: Icon(
-                      Icons.logout_rounded,
-                      size: 18,
-                      color: t.posDanger,
-                    ),
-                    label: Text(
-                      'Encerrar sessão',
-                      style: Theme.of(
-                        context,
-                      ).textTheme.labelSmall?.copyWith(color: t.posDanger),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      side: BorderSide(
-                        color: t.posDanger.withValues(alpha: 0.35),
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md,
+                          vertical: AppSpacing.sm,
+                        ),
+                        decoration: BoxDecoration(
+                          color: t.card.withValues(alpha: 0.68),
+                          borderRadius: BorderRadius.circular(t.radiusMd),
+                          border: Border.all(
+                            color: t.border.withValues(alpha: 0.4),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: BoxDecoration(
+                                color: t.brandGreen,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.sm),
+                            Expanded(
+                              child: Text(
+                                'Sessão activa',
+                                style: Theme.of(context).textTheme.labelMedium
+                                    ?.copyWith(
+                                      color: t.textPrimary,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                              ),
+                            ),
+                            Text(
+                              'ERP',
+                              style: Theme.of(context).textTheme.labelSmall
+                                  ?.copyWith(
+                                    color: t.textMuted,
+                                    letterSpacing: 1.0,
+                                  ),
+                            ),
+                          ],
+                        ),
                       ),
-                      backgroundColor: t.posDanger.withValues(alpha: 0.06),
-                    ),
+                      const SizedBox(height: AppSpacing.sm),
+                      OutlinedButton.icon(
+                        onPressed: onLogout,
+                        icon: Icon(
+                          Icons.logout_rounded,
+                          size: 18,
+                          color: t.posDanger,
+                        ),
+                        label: Text(
+                          'Encerrar sessão',
+                          style: Theme.of(
+                            context,
+                          ).textTheme.labelSmall?.copyWith(color: t.posDanger),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(
+                            color: t.posDanger.withValues(alpha: 0.35),
+                          ),
+                          backgroundColor: t.posDanger.withValues(alpha: 0.06),
+                        ),
+                      ),
+                    ],
                   )
                 : Tooltip(
                     message: 'Encerrar sessão',
@@ -635,129 +806,270 @@ class _Sidebar extends StatelessWidget {
 }
 
 class _NavList extends StatelessWidget {
-  const _NavList({required this.location, required this.expanded});
+  const _NavList({
+    required this.location,
+    required this.navItems,
+    required this.expanded,
+  });
 
   final String location;
+  final List<AppNavItem> navItems;
   final bool expanded;
 
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
-    String? lastSection;
+    String? currentSection;
     final children = <Widget>[];
-    for (final item in kAppNavItems) {
-      if (item.section != null && item.section != lastSection && expanded) {
-        lastSection = item.section;
-        children.add(
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg,
-              AppSpacing.xl,
-              AppSpacing.lg,
-              AppSpacing.sm,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.section!.toUpperCase(),
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: t.textMuted,
-                    letterSpacing: 2.4,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Container(
-                  height: 2,
-                  width: 36,
-                  decoration: BoxDecoration(
-                    color: t.brandBlue.withValues(alpha: 0.35),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
+
+    for (final item in navItems) {
+      if (item.isSectionLead) {
+        currentSection = item.section;
+        if (!expanded) {
+          children.add(const SizedBox(height: AppSpacing.sm));
+        } else {
+          children.add(_ErpNavSectionHeader(title: item.section!));
+        }
       }
+
       final active = location == item.path;
-      children.add(
-        Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.sm,
-            vertical: 2,
-          ),
-          child: Material(
-            color: active
-                ? t.brandGreen.withValues(alpha: 0.1)
-                : Colors.transparent,
-            borderRadius: BorderRadius.circular(t.radiusMd),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(t.radiusMd),
-              onTap: () => context.go(item.path),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md,
-                  vertical: AppSpacing.md,
+      final isChild = !item.isSectionLead;
+      final tooltipLabel = currentSection == null
+          ? item.label
+          : '$currentSection · ${item.label}';
+
+      final tile = Padding(
+        padding: EdgeInsets.only(
+          left: expanded && isChild ? AppSpacing.lg + 6 : AppSpacing.sm,
+          right: AppSpacing.sm,
+          top: 1,
+          bottom: 1,
+        ),
+        child: Material(
+          color: active
+              ? t.brandGreen.withValues(alpha: 0.1)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(t.radiusSm),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(t.radiusSm),
+            onTap: () => context.go(item.path),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(t.radiusSm),
+                border: Border(
+                  left: BorderSide(
+                    color: active ? t.brandGreen : Colors.transparent,
+                    width: 3,
+                  ),
                 ),
-                child: Row(
-                  children: [
-                    if (active)
-                      Container(
-                        width: 3,
-                        height: 28,
-                        margin: const EdgeInsets.only(right: AppSpacing.sm),
-                        decoration: BoxDecoration(
-                          color: t.brandGreen,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
+              ),
+              padding: EdgeInsets.symmetric(
+                horizontal: expanded ? AppSpacing.md : AppSpacing.sm,
+                vertical: AppSpacing.sm + 1,
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    item.icon,
+                    size: expanded ? 20 : 22,
+                    color: active ? t.brandGreen : t.textSecondary,
+                  ),
+                  if (expanded) ...[
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Text(
+                        item.label,
+                        style: Theme.of(context).textTheme.labelMedium
+                            ?.copyWith(
+                              color: active ? t.textPrimary : t.textSecondary,
+                              fontWeight: active
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                              fontSize: 13,
+                              height: 1.2,
+                            ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    Icon(
-                      item.icon,
-                      size: 22,
-                      color: active ? t.brandGreen : t.textSecondary,
                     ),
-                    if (expanded) ...[
-                      const SizedBox(width: AppSpacing.md),
-                      Expanded(
-                        child: Text(
-                          item.label,
-                          style: Theme.of(context).textTheme.labelMedium
-                              ?.copyWith(
-                                color: active ? t.brandGreen : t.textSecondary,
-                                letterSpacing: 0.4,
-                              ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
                   ],
-                ),
+                ],
               ),
             ),
           ),
         ),
       );
+
+      children.add(
+        expanded
+            ? tile
+            : Tooltip(
+                message: tooltipLabel,
+                waitDuration: const Duration(milliseconds: 400),
+                child: tile,
+              ),
+      );
     }
-    return ListView(children: children);
+
+    return Scrollbar(
+      thumbVisibility: expanded,
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.xs,
+          AppSpacing.sm,
+          AppSpacing.xs,
+          AppSpacing.lg,
+        ),
+        children: children,
+      ),
+    );
+  }
+}
+
+class _ErpNavSectionHeader extends StatelessWidget {
+  const _ErpNavSectionHeader({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.xs,
+      ),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        decoration: BoxDecoration(
+          color: t.card.withValues(alpha: 0.72),
+          borderRadius: BorderRadius.circular(t.radiusSm),
+          border: Border.all(color: t.border.withValues(alpha: 0.45)),
+        ),
+        child: Text(
+          title.toUpperCase(),
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: t.textMuted,
+            letterSpacing: 1.4,
+            fontWeight: FontWeight.w800,
+            fontSize: 10.5,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SidebarMetaChip extends StatelessWidget {
+  const _SidebarMetaChip({
+    required this.icon,
+    required this.label,
+    this.accentColor,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color? accentColor;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+    final color = accentColor ?? t.textMuted;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+              color: color,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
 
 class _DrawerNav extends StatelessWidget {
   const _DrawerNav({
     required this.location,
+    required this.navItems,
     required this.onSelect,
     required this.onLogout,
   });
 
   final String location;
+  final List<AppNavItem> navItems;
   final ValueChanged<String> onSelect;
   final VoidCallback onLogout;
 
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
+    final drawerChildren = <Widget>[];
+    String? currentSection;
+
+    for (final item in navItems) {
+      if (item.isSectionLead) {
+        currentSection = item.section;
+        drawerChildren.add(_ErpNavSectionHeader(title: item.section!));
+      }
+
+      final active = location == item.path;
+      final isChild = !item.isSectionLead;
+
+      drawerChildren.add(
+        Padding(
+          padding: EdgeInsets.only(
+            left: isChild ? AppSpacing.xl + 4 : AppSpacing.sm,
+            right: AppSpacing.sm,
+          ),
+          child: Material(
+            color: active
+                ? t.brandGreen.withValues(alpha: 0.1)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(t.radiusSm),
+            child: ListTile(
+              dense: true,
+              visualDensity: VisualDensity.compact,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+              ),
+              leading: Icon(
+                item.icon,
+                size: 20,
+                color: active ? t.brandGreen : t.textSecondary,
+              ),
+              title: Text(
+                item.label,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                  color: active ? t.textPrimary : t.textSecondary,
+                ),
+              ),
+              selected: active,
+              onTap: () => onSelect(item.path),
+            ),
+          ),
+        ),
+      );
+    }
     return Drawer(
       backgroundColor: t.bgSecondary,
       child: SafeArea(
@@ -766,82 +1078,94 @@ class _DrawerNav extends StatelessWidget {
           children: [
             Padding(
               padding: const EdgeInsets.all(AppSpacing.xl),
-              child: Row(
-                children: [
-                  Container(
-                    width: t.minTouchTarget,
-                    height: t.minTouchTarget,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [t.brandBlue, t.brandGreen],
-                      ),
-                      borderRadius: BorderRadius.circular(t.radiusMd),
-                    ),
-                    child: Icon(
-                      Icons.local_pharmacy_rounded,
-                      color: t.bgPrimary,
-                      size: t.iconMd,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: Text(
-                      'Pharma ERP',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () => Navigator.pop(context),
-                    icon: const Icon(Icons.close),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ListView(
-                children: [
-                  for (final item in kAppNavItems)
-                    Material(
-                      color: location == item.path
-                          ? t.brandGreen.withValues(alpha: 0.1)
-                          : Colors.transparent,
-                      child: ListTile(
-                        leading: Icon(
-                          item.icon,
-                          color: location == item.path
-                              ? t.brandGreen
-                              : t.textSecondary,
+              child: Container(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                decoration: BoxDecoration(
+                  color: t.card.withValues(alpha: 0.86),
+                  borderRadius: BorderRadius.circular(t.radiusLg),
+                  border: Border.all(color: t.border.withValues(alpha: 0.5)),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: t.minTouchTarget,
+                      height: t.minTouchTarget,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [t.brandBlue, t.brandGreen],
                         ),
-                        title: Text(
-                          item.label,
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: location == item.path
-                                ? t.brandGreen
-                                : t.textPrimary,
+                        borderRadius: BorderRadius.circular(t.radiusMd),
+                      ),
+                      child: Icon(
+                        Icons.local_pharmacy_rounded,
+                        color: t.bgPrimary,
+                        size: t.iconMd,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Pharma ERP',
+                            style: Theme.of(context).textTheme.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w800),
                           ),
-                        ),
-                        selected: location == item.path,
-                        onTap: () => onSelect(item.path),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Shell operacional',
+                            style: Theme.of(context).textTheme.labelSmall
+                                ?.copyWith(
+                                  color: t.textMuted,
+                                  letterSpacing: 0.8,
+                                ),
+                          ),
+                        ],
                       ),
                     ),
-                ],
+                    IconButton(
+                      style: IconButton.styleFrom(
+                        backgroundColor: t.bgPrimary,
+                        side: BorderSide(
+                          color: t.border.withValues(alpha: 0.45),
+                        ),
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                      icon: Icon(Icons.close, color: t.textSecondary),
+                    ),
+                  ],
+                ),
               ),
             ),
-            Material(
-              color: Colors.transparent,
-              child: ListTile(
-                leading: Icon(Icons.logout_rounded, color: t.posDanger),
-                title: Text(
-                  'Sair',
-                  style: TextStyle(
+            Expanded(child: ListView(children: drawerChildren)),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.sm,
+                AppSpacing.lg,
+                AppSpacing.lg,
+              ),
+              child: OutlinedButton.icon(
+                onPressed: onLogout,
+                icon: Icon(Icons.logout_rounded, color: t.posDanger, size: 18),
+                label: Text(
+                  'Encerrar sessão',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
                     color: t.posDanger,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                onTap: onLogout,
+                style: OutlinedButton.styleFrom(
+                  alignment: Alignment.centerLeft,
+                  side: BorderSide(color: t.posDanger.withValues(alpha: 0.28)),
+                  backgroundColor: t.posDanger.withValues(alpha: 0.06),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.md,
+                  ),
+                ),
               ),
             ),
           ],

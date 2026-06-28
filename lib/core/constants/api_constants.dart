@@ -127,6 +127,49 @@ abstract final class ApiConstants {
   ) =>
       '/tenant/requisicoes/$requisicaoId/items/$itemId';
 
+  static const tenantClientes = '/tenant/clientes';
+  static const tenantClientesDashboard = '/tenant/clientes/dashboard';
+  static String tenantCliente(String clienteId) => '/tenant/clientes/$clienteId';
+  static String tenantClienteFaturas(String clienteId) =>
+      '/tenant/clientes/$clienteId/faturas';
+  static String tenantClienteContasReceber(String clienteId) =>
+      '/tenant/clientes/$clienteId/contas-receber';
+  static String tenantClienteReceitas(String clienteId) =>
+      '/tenant/clientes/$clienteId/receitas';
+  static String tenantClienteAuditoria(String clienteId) =>
+      '/tenant/clientes/$clienteId/auditoria';
+
+  static const tenantFaturas = '/tenant/faturas';
+  static const tenantFaturasDashboard = '/tenant/faturas/dashboard';
+
+  static const tenantVendasHistorico = '/tenant/vendas/historico';
+  static const tenantVendasHistoricoDashboard =
+      '/tenant/vendas/historico/dashboard';
+
+  static const tenantUtilizadores = '/tenant/utilizadores';
+  static const tenantUtilizadoresDashboard = '/tenant/utilizadores/dashboard';
+  static const tenantUtilizadorAtualPermissoes = '/tenant/utilizadores/me/permissoes';
+  static String tenantUtilizador(String userId) => '/tenant/utilizadores/$userId';
+  static String tenantUtilizadorAuditoria(String userId) =>
+      '/tenant/utilizadores/$userId/auditoria';
+  static String tenantUtilizadorPermissoes(String userId) =>
+      '/tenant/utilizadores/$userId/permissoes';
+
+  static String tenantUtilizadorEventos(String userId) =>
+      '/tenant/utilizadores/$userId/eventos';
+
+  static const tenantPerfis = '/tenant/perfis';
+  static String tenantPerfil(String role) => '/tenant/perfis/$role';
+  static String tenantPerfilPermissoes(String role) =>
+      '/tenant/perfis/$role/permissoes';
+
+  static const tenantPermissoes = '/tenant/permissoes';
+  static const tenantPermissoesDashboard = '/tenant/permissoes/dashboard';
+
+  static const tenantAuditoriaDashboard = '/tenant/auditoria/dashboard';
+  static const tenantAuditoriaLogs = '/tenant/auditoria/logs';
+  static const tenantAuditoriaEventos = '/tenant/auditoria/eventos';
+
   static const headerAuthorization = 'Authorization';
   static const headerTenantId = 'x-tenant-id';
   static const headerBranchId = 'x-branch-id';

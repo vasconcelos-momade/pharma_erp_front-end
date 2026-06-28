@@ -3,7 +3,9 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../../app/router/routes.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../core/utils/browser_file_handler.dart';
@@ -13,8 +15,12 @@ import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../../../stock/presentation/widgets/movimentacoes_pagination.dart';
 import '../../../regulatory/data/datasources/regulatory_remote_datasource.dart';
 
+enum RecipesBookTab { receitas, book }
+
 class RecipesBookPage extends ConsumerStatefulWidget {
-  const RecipesBookPage({super.key});
+  const RecipesBookPage({super.key, this.initialTab = RecipesBookTab.receitas});
+
+  final RecipesBookTab initialTab;
 
   @override
   ConsumerState<RecipesBookPage> createState() => _RecipesBookPageState();
@@ -62,7 +68,11 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(
+      length: 2,
+      vsync: this,
+      initialIndex: widget.initialTab == RecipesBookTab.book ? 1 : 0,
+    );
     _receitasSearchController = TextEditingController();
     _livroSearchController = TextEditingController();
     _bootstrap();
@@ -82,10 +92,7 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
   }
 
   Future<void> _bootstrap() async {
-    await Future.wait([
-      _loadReceitas(),
-      _loadLivro(),
-    ]);
+    await Future.wait([_loadReceitas(), _loadLivro()]);
   }
 
   Future<void> _reloadCurrentTab({bool silent = false}) async {
@@ -186,15 +193,11 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
 
   Future<void> _exportCurrentTab() async {
     final payload = _tabController.index == 0
-        ? {
-            'dashboard': _receitasDashboard,
-            'items': _receitasItems,
-          }
-        : {
-            'dashboard': _livroDashboard,
-            'items': _livroItems,
-          };
-    final bytes = utf8.encode(const JsonEncoder.withIndent('  ').convert(payload));
+        ? {'dashboard': _receitasDashboard, 'items': _receitasItems}
+        : {'dashboard': _livroDashboard, 'items': _livroItems};
+    final bytes = utf8.encode(
+      const JsonEncoder.withIndent('  ').convert(payload),
+    );
     await BrowserFileHandler.downloadBytes(
       bytes: bytes,
       fileName: _tabController.index == 0
@@ -254,34 +257,32 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
-                    ...(data['dispensacoes'] as List<dynamic>? ?? const [])
-                        .map(
-                          (item) => ListTile(
-                            dense: true,
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(
-                              item['produto']?['nome']?.toString() ?? 'Produto',
-                            ),
-                            subtitle: Text(
-                              'Qtd: ${item['quantidade']} • ${item['tipoDispensacao']}',
-                            ),
-                          ),
+                    ...(data['dispensacoes'] as List<dynamic>? ?? const []).map(
+                      (item) => ListTile(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(
+                          item['produto']?['nome']?.toString() ?? 'Produto',
                         ),
+                        subtitle: Text(
+                          'Qtd: ${item['quantidade']} • ${item['tipoDispensacao']}',
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 16),
                     Text(
                       'Histórico',
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
-                    ...(data['timeline'] as List<dynamic>? ?? const [])
-                        .map(
-                          (item) => ListTile(
-                            dense: true,
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(item['description']?.toString() ?? '—'),
-                            subtitle: Text(item['at']?.toString() ?? '—'),
-                          ),
-                        ),
+                    ...(data['timeline'] as List<dynamic>? ?? const []).map(
+                      (item) => ListTile(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(item['description']?.toString() ?? '—'),
+                        subtitle: Text(item['at']?.toString() ?? '—'),
+                      ),
+                    ),
                   ],
                 ),
               );
@@ -342,15 +343,14 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
                       style: Theme.of(context).textTheme.titleMedium,
                     ),
                     const SizedBox(height: 8),
-                    ...(data['auditLogs'] as List<dynamic>? ?? const [])
-                        .map(
-                          (item) => ListTile(
-                            dense: true,
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(item['action']?.toString() ?? '—'),
-                            subtitle: Text(item['createdAt']?.toString() ?? '—'),
-                          ),
-                        ),
+                    ...(data['auditLogs'] as List<dynamic>? ?? const []).map(
+                      (item) => ListTile(
+                        dense: true,
+                        contentPadding: EdgeInsets.zero,
+                        title: Text(item['action']?.toString() ?? '—'),
+                        subtitle: Text(item['createdAt']?.toString() ?? '—'),
+                      ),
+                    ),
                   ],
                 ),
               );
@@ -375,7 +375,8 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
       text: item?['unidadeSanitaria']?.toString() ?? '',
     );
     final data = TextEditingController(
-      text: item?['dataReceita']?.toString().substring(0, 10) ??
+      text:
+          item?['dataReceita']?.toString().substring(0, 10) ??
           DateTime.now().toIso8601String().substring(0, 10),
     );
     final observacoes = TextEditingController(
@@ -399,7 +400,9 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
                 const SizedBox(height: 12),
                 TextField(
                   controller: numero,
-                  decoration: const InputDecoration(labelText: 'Número da receita'),
+                  decoration: const InputDecoration(
+                    labelText: 'Número da receita',
+                  ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -416,7 +419,9 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
                 const SizedBox(height: 12),
                 TextField(
                   controller: data,
-                  decoration: const InputDecoration(labelText: 'Data (YYYY-MM-DD)'),
+                  decoration: const InputDecoration(
+                    labelText: 'Data (YYYY-MM-DD)',
+                  ),
                 ),
                 const SizedBox(height: 12),
                 TextField(
@@ -461,9 +466,9 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
                 Navigator.of(context).pop(true);
               } catch (error) {
                 if (!context.mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(error.toString())),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text(error.toString())));
               }
             },
             child: const Text('Guardar'),
@@ -511,20 +516,23 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
       await _loadReceitas();
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(error.toString())),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.toString())));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentDash =
-        _tabController.index == 0 ? _receitasDashboard : _livroDashboard;
+    final currentDash = _tabController.index == 0
+        ? _receitasDashboard
+        : _livroDashboard;
+    final showingLivro = _tabController.index == 1;
     return EnterpriseModuleHub(
-      title: 'Prescrições e Livro de Receitas',
-      subtitle:
-          'Receitas reais do backend, com rastreio de dispensação, auditoria e livro oficial.',
+      title: showingLivro ? 'Livro de Receitas' : 'Receitas',
+      subtitle: showingLivro
+          ? 'Movimentos oficiais de livro de receitas com rastreio, auditoria e exportação.'
+          : 'Receitas reais do backend com dispensa rastreável, conformidade e histórico clínico.',
       tag: 'Regulatório',
       actions: [
         IconButton(
@@ -545,50 +553,50 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
       kpis: currentDash == null
           ? null
           : _tabController.index == 0
-              ? [
-                  EnterpriseStatCard(
-                    title: 'Emitidas',
-                    value: '${currentDash['kpis']?['emitidas'] ?? 0}',
-                    icon: Icons.description_outlined,
-                  ),
-                  EnterpriseStatCard(
-                    title: 'Utilizadas',
-                    value: '${currentDash['kpis']?['utilizadas'] ?? 0}',
-                    icon: Icons.check_circle_outline,
-                  ),
-                  EnterpriseStatCard(
-                    title: 'Pendentes',
-                    value: '${currentDash['kpis']?['pendentes'] ?? 0}',
-                    icon: Icons.pending_actions_outlined,
-                  ),
-                  EnterpriseStatCard(
-                    title: 'Expiradas',
-                    value: '${currentDash['kpis']?['expiradas'] ?? 0}',
-                    icon: Icons.event_busy_outlined,
-                  ),
-                ]
-              : [
-                  EnterpriseStatCard(
-                    title: 'Movimentos',
-                    value: '${currentDash['kpis']?['totalMovimentos'] ?? 0}',
-                    icon: Icons.menu_book_outlined,
-                  ),
-                  EnterpriseStatCard(
-                    title: 'Entradas',
-                    value: '${currentDash['kpis']?['entradas'] ?? 0}',
-                    icon: Icons.call_received_outlined,
-                  ),
-                  EnterpriseStatCard(
-                    title: 'Saídas',
-                    value: '${currentDash['kpis']?['saidas'] ?? 0}',
-                    icon: Icons.call_made_outlined,
-                  ),
-                  EnterpriseStatCard(
-                    title: 'Pacientes',
-                    value: '${currentDash['kpis']?['pacientesUnicos'] ?? 0}',
-                    icon: Icons.people_outline,
-                  ),
-                ],
+          ? [
+              EnterpriseStatCard(
+                title: 'Emitidas',
+                value: '${currentDash['kpis']?['emitidas'] ?? 0}',
+                icon: Icons.description_outlined,
+              ),
+              EnterpriseStatCard(
+                title: 'Utilizadas',
+                value: '${currentDash['kpis']?['utilizadas'] ?? 0}',
+                icon: Icons.check_circle_outline,
+              ),
+              EnterpriseStatCard(
+                title: 'Pendentes',
+                value: '${currentDash['kpis']?['pendentes'] ?? 0}',
+                icon: Icons.pending_actions_outlined,
+              ),
+              EnterpriseStatCard(
+                title: 'Expiradas',
+                value: '${currentDash['kpis']?['expiradas'] ?? 0}',
+                icon: Icons.event_busy_outlined,
+              ),
+            ]
+          : [
+              EnterpriseStatCard(
+                title: 'Movimentos',
+                value: '${currentDash['kpis']?['totalMovimentos'] ?? 0}',
+                icon: Icons.menu_book_outlined,
+              ),
+              EnterpriseStatCard(
+                title: 'Entradas',
+                value: '${currentDash['kpis']?['entradas'] ?? 0}',
+                icon: Icons.call_received_outlined,
+              ),
+              EnterpriseStatCard(
+                title: 'Saídas',
+                value: '${currentDash['kpis']?['saidas'] ?? 0}',
+                icon: Icons.call_made_outlined,
+              ),
+              EnterpriseStatCard(
+                title: 'Pacientes',
+                value: '${currentDash['kpis']?['pacientesUnicos'] ?? 0}',
+                icon: Icons.people_outline,
+              ),
+            ],
       filters: _tabController.index == 0
           ? _buildReceitasFilters(context)
           : _buildLivroFilters(context),
@@ -596,7 +604,16 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
         children: [
           TabBar(
             controller: _tabController,
-            onTap: (_) => setState(() {}),
+            onTap: (index) {
+              final targetPath = index == 0
+                  ? AppRoutePaths.recipes
+                  : AppRoutePaths.recipesBook;
+              if (GoRouterState.of(context).uri.path != targetPath) {
+                context.go(targetPath);
+              } else {
+                setState(() {});
+              }
+            },
             tabs: const [
               Tab(text: 'Receitas'),
               Tab(text: 'Livro de receitas'),
@@ -606,10 +623,7 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
           Expanded(
             child: TabBarView(
               controller: _tabController,
-              children: [
-                _buildReceitasTab(context),
-                _buildLivroTab(context),
-              ],
+              children: [_buildReceitasTab(context), _buildLivroTab(context)],
             ),
           ),
         ],
@@ -780,10 +794,7 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
         if (_receitasError != null)
           Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-            child: Text(
-              _receitasError!,
-              style: TextStyle(color: t.posDanger),
-            ),
+            child: Text(_receitasError!, style: TextStyle(color: t.posDanger)),
           ),
         Expanded(
           child: _receitasItems.isEmpty && !_loadingReceitas
@@ -819,7 +830,9 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
                                 '—',
                           ),
                         ),
-                        DataCell(_StatusBadge(label: item['status']?.toString())),
+                        DataCell(
+                          _StatusBadge(label: item['status']?.toString()),
+                        ),
                         DataCell(
                           Row(
                             mainAxisSize: MainAxisSize.min,
@@ -884,10 +897,7 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
         if (_livroError != null)
           Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-            child: Text(
-              _livroError!,
-              style: TextStyle(color: t.posDanger),
-            ),
+            child: Text(_livroError!, style: TextStyle(color: t.posDanger)),
           ),
         Expanded(
           child: _livroItems.isEmpty && !_loadingLivro
@@ -967,10 +977,7 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
 }
 
 class _DetailScaffold extends StatelessWidget {
-  const _DetailScaffold({
-    required this.title,
-    required this.child,
-  });
+  const _DetailScaffold({required this.title, required this.child});
 
   final String title;
   final Widget child;
@@ -1004,10 +1011,7 @@ class _DetailScaffold extends StatelessWidget {
 }
 
 class _InfoTile extends StatelessWidget {
-  const _InfoTile({
-    required this.label,
-    required this.value,
-  });
+  const _InfoTile({required this.label, required this.value});
 
   final String label;
   final String value;
@@ -1026,17 +1030,11 @@ class _InfoTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: TextStyle(color: t.textMuted, fontSize: 12),
-          ),
+          Text(label, style: TextStyle(color: t.textMuted, fontSize: 12)),
           const SizedBox(height: 4),
           Text(
             value,
-            style: TextStyle(
-              color: t.textPrimary,
-              fontWeight: FontWeight.w600,
-            ),
+            style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w600),
           ),
         ],
       ),

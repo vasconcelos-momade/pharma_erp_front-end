@@ -72,10 +72,7 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
   }
 
   Future<void> _bootstrap() async {
-    await Future.wait([
-      _loadSanitario(),
-      _loadReports(),
-    ]);
+    await Future.wait([_loadSanitario(), _loadReports()]);
   }
 
   Future<void> _loadSanitario({bool silent = false}) async {
@@ -87,9 +84,7 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
     }
     try {
       final results = await Future.wait([
-        _ds.sanitarioDashboard(
-          search: _search.isEmpty ? null : _search,
-        ),
+        _ds.sanitarioDashboard(search: _search.isEmpty ? null : _search),
         _ds.listSanitario(
           search: _search.isEmpty ? null : _search,
           estado: _estado,
@@ -153,7 +148,9 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
     final payload = _tabController.index == 0
         ? {'dashboard': _dashboard, 'items': _items}
         : {'reports': _reports};
-    final bytes = utf8.encode(const JsonEncoder.withIndent('  ').convert(payload));
+    final bytes = utf8.encode(
+      const JsonEncoder.withIndent('  ').convert(payload),
+    );
     await BrowserFileHandler.downloadBytes(
       bytes: bytes,
       fileName: _tabController.index == 0
@@ -218,7 +215,9 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
                                 title: Text(
                                   '${item['tipo']} • ${item['quantidade']}',
                                 ),
-                                subtitle: Text(item['motivo']?.toString() ?? '—'),
+                                subtitle: Text(
+                                  item['motivo']?.toString() ?? '—',
+                                ),
                               ),
                             ),
                         const SizedBox(height: 16),
@@ -227,20 +226,19 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         const SizedBox(height: 8),
-                        ...(data['incineracoes'] as List<dynamic>? ?? const [])
-                            .map(
-                              (item) => ListTile(
-                                dense: true,
-                                contentPadding: EdgeInsets.zero,
-                                title: Text(
-                                  item['incineracao']?['numeroAuto']?.toString() ??
-                                      '—',
-                                ),
-                                subtitle: Text(
-                                  'Qtd: ${item['quantidade']} • ${item['incineracao']?['dataIncineracao'] ?? '—'}',
-                                ),
-                              ),
+                        ...(data['incineracoes'] as List<dynamic>? ?? const []).map(
+                          (item) => ListTile(
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(
+                              item['incineracao']?['numeroAuto']?.toString() ??
+                                  '—',
                             ),
+                            subtitle: Text(
+                              'Qtd: ${item['quantidade']} • ${item['incineracao']?['dataIncineracao'] ?? '—'}',
+                            ),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -257,9 +255,9 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
   Widget build(BuildContext context) {
     final dash = _dashboard?['kpis'] as Map<String, dynamic>?;
     return EnterpriseModuleHub(
-      title: 'Sanitário e Alertas',
+      title: 'Sanitário / Alertas',
       subtitle:
-          'Validade, recall, quarentena, incineração, stock crítico e relatórios oficiais.',
+          'Validade, recall, quarentena, incineração, stock crítico e relatórios oficiais integrados.',
       tag: 'Regulatório',
       actions: [
         IconButton(
@@ -475,10 +473,7 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
         if (_sanitarioError != null)
           Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-            child: Text(
-              _sanitarioError!,
-              style: TextStyle(color: t.posDanger),
-            ),
+            child: Text(_sanitarioError!, style: TextStyle(color: t.posDanger)),
           ),
         Expanded(
           child: _items.isEmpty && !_loadingSanitario
@@ -512,14 +507,10 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
                           ),
                         ),
                         DataCell(
-                          _SanitaryBadge(
-                            label: item['status']?.toString(),
-                          ),
+                          _SanitaryBadge(label: item['status']?.toString()),
                         ),
                         DataCell(
-                          Text(
-                            item['latestAlert']?['tipo']?.toString() ?? '—',
-                          ),
+                          Text(item['latestAlert']?['tipo']?.toString() ?? '—'),
                         ),
                         DataCell(Text('${item['quantidadeAtual'] ?? 0}')),
                       ],
@@ -569,10 +560,7 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
         if (_reportsError != null)
           Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-            child: Text(
-              _reportsError!,
-              style: TextStyle(color: t.posDanger),
-            ),
+            child: Text(_reportsError!, style: TextStyle(color: t.posDanger)),
           ),
         Expanded(
           child: _reports.isEmpty && !_loadingReports
@@ -596,7 +584,8 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
                         DataCell(Text(item['arquivoUrl']?.toString() ?? '—')),
                         DataCell(
                           Text(
-                            item['createdAt']?.toString().substring(0, 10) ?? '—',
+                            item['createdAt']?.toString().substring(0, 10) ??
+                                '—',
                           ),
                         ),
                       ],

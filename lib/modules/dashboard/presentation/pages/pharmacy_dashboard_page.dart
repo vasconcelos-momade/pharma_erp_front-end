@@ -18,7 +18,8 @@ class PharmacyDashboardPage extends ConsumerStatefulWidget {
   const PharmacyDashboardPage({super.key});
 
   @override
-  ConsumerState<PharmacyDashboardPage> createState() => _PharmacyDashboardPageState();
+  ConsumerState<PharmacyDashboardPage> createState() =>
+      _PharmacyDashboardPageState();
 }
 
 class _PharmacyDashboardPageState extends ConsumerState<PharmacyDashboardPage> {
@@ -32,7 +33,9 @@ class _PharmacyDashboardPageState extends ConsumerState<PharmacyDashboardPage> {
     final tables = dashMap(async.valueOrNull?['tables']);
     final charts = dashMap(async.valueOrNull?['charts']);
     final statusOptions = dashboardUniqueOptions(
-      dashList(tables?['ultimasDispensacoes']).map((row) => row['tipoDispensacao']),
+      dashList(
+        tables?['ultimasDispensacoes'],
+      ).map((row) => row['tipoDispensacao']),
       labels: const {
         'VENDA_LIVRE': 'Venda livre',
         'RECEITA_OBRIGATORIA': 'Receita obrigatória',
@@ -43,10 +46,7 @@ class _PharmacyDashboardPageState extends ConsumerState<PharmacyDashboardPage> {
     );
     final movementTypeOptions = dashboardUniqueOptions(
       dashList(charts?['entradasSaidas']).map((row) => row['tipo']),
-      labels: const {
-        'ENTRADA': 'Entrada',
-        'SAIDA': 'Saída',
-      },
+      labels: const {'ENTRADA': 'Entrada', 'SAIDA': 'Saída'},
     );
 
     Future<void> exportDashboard() async {
@@ -115,14 +115,16 @@ class _PharmacyDashboardPageState extends ConsumerState<PharmacyDashboardPage> {
       );
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Exportação do painel farmácia concluída.')),
+        const SnackBar(
+          content: Text('Exportação do painel farmácia concluída.'),
+        ),
       );
     }
 
     return EnterpriseModuleHub(
       title: 'Painel da farmácia',
       subtitle: 'Produtos, regulação, validades, FEFO e dispensações.',
-      tag: 'Painéis',
+      tag: 'Dashboard',
       scrollable: true,
       actions: [
         OutlinedButton.icon(
@@ -254,261 +256,268 @@ class _PharmacyDashboardPageState extends ConsumerState<PharmacyDashboardPage> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-                LayoutBuilder(
-                  builder: (context, bx) {
-                    final narrow = bx.maxWidth < 520;
-                    final validadesChart = dashboardChartCard(
+              LayoutBuilder(
+                builder: (context, bx) {
+                  final narrow = bx.maxWidth < 520;
+                  final validadesChart = dashboardChartCard(
+                    context: context,
+                    title: 'Validades por prazo',
+                    child: dashboardIndexedBarChart(
                       context: context,
-                      title: 'Validades por prazo',
-                      child: dashboardIndexedBarChart(
-                        context: context,
-                        labels: const ['Exp.', '30d', '60d'],
-                        values: [
-                          (validades['lotesExpirados'] as num?)?.toDouble() ?? 0,
-                          (validades['expiramEm30Dias'] as num?)?.toDouble() ?? 0,
-                          (validades['expiramEm60Dias'] as num?)?.toDouble() ?? 0,
-                        ],
-                        barColors: [
-                          context.pharmaTokens.posDanger,
-                          context.pharmaTokens.posWarning,
-                          context.pharmaTokens.brandBlue,
-                        ],
-                        barWidth: 28,
-                      ),
-                    );
-                    final t = context.pharmaTokens;
-                    final fefoChart = dashboardChartCard(
+                      labels: const ['Exp.', '30d', '60d'],
+                      values: [
+                        (validades['lotesExpirados'] as num?)?.toDouble() ?? 0,
+                        (validades['expiramEm30Dias'] as num?)?.toDouble() ?? 0,
+                        (validades['expiramEm60Dias'] as num?)?.toDouble() ?? 0,
+                      ],
+                      barColors: [
+                        context.pharmaTokens.posDanger,
+                        context.pharmaTokens.posWarning,
+                        context.pharmaTokens.brandBlue,
+                      ],
+                      barWidth: 28,
+                    ),
+                  );
+                  final t = context.pharmaTokens;
+                  final fefoChart = dashboardChartCard(
+                    context: context,
+                    title: 'Distribuição FEFO',
+                    child: dashboardPieChart(
                       context: context,
-                      title: 'Distribuição FEFO',
-                      child: dashboardPieChart(
-                        context: context,
-                        slices: [
-                          DashboardPieSlice(
-                            label: 'FEFO',
-                            value: (fefo['produtosForaFefo'] as num?)?.toDouble() ?? 0,
-                            color: t.posDanger,
-                          ),
-                          DashboardPieSlice(
-                            label: 'Exp.',
-                            value: (fefo['lotesExpirados'] as num?)?.toDouble() ?? 0,
-                            color: t.posWarning,
-                          ),
-                          DashboardPieSlice(
-                            label: 'Bloq.',
-                            value: (fefo['lotesBloqueados'] as num?)?.toDouble() ?? 0,
-                            color: t.brandBlue,
-                          ),
-                          DashboardPieSlice(
-                            label: 'Alert.',
-                            value: (fefo['alertasFefo'] as num?)?.toDouble() ?? 0,
-                            color: t.brandGreen,
-                          ),
-                        ],
-                      ),
-                    );
-                    if (narrow) {
-                      return Column(
-                        children: [
-                          validadesChart,
-                          SizedBox(height: context.spacing.md),
-                          fefoChart,
-                        ],
-                      );
-                    }
-                    return IntrinsicHeight(
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Expanded(child: validadesChart),
-                          SizedBox(width: context.spacing.lg),
-                          Expanded(child: fefoChart),
-                        ],
-                      ),
-                    );
-                  },
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final chartWidth = constraints.maxWidth >= 1100
-                        ? (constraints.maxWidth - AppSpacing.lg) / 2
-                        : constraints.maxWidth;
-                    return Wrap(
-                      spacing: AppSpacing.lg,
-                      runSpacing: AppSpacing.lg,
-                      children: [
-                        SizedBox(
-                          width: chartWidth,
-                          child: dashboardChartCard(
-                            context: context,
-                            title: 'Produtos por categoria',
-                            child: dashboardBarChart(
-                              context: context,
-                              points: dashList(charts?['produtosPorCategoria']),
-                              valueKey: 'totalProdutos',
-                              labelKey: 'categoria',
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ),
+                      slices: [
+                        DashboardPieSlice(
+                          label: 'FEFO',
+                          value:
+                              (fefo['produtosForaFefo'] as num?)?.toDouble() ??
+                              0,
+                          color: t.posDanger,
                         ),
-                        SizedBox(
-                          width: chartWidth,
-                          child: dashboardChartCard(
-                            context: context,
-                            title: 'Produtos por regulação',
-                            child: dashboardBarChart(
-                              context: context,
-                              points: dashList(charts?['produtosPorRegulacao']),
-                              valueKey: 'total',
-                              labelKey: 'regulacao',
-                              color: Theme.of(context).colorScheme.secondary,
-                            ),
-                          ),
+                        DashboardPieSlice(
+                          label: 'Exp.',
+                          value:
+                              (fefo['lotesExpirados'] as num?)?.toDouble() ?? 0,
+                          color: t.posWarning,
                         ),
-                        SizedBox(
-                          width: chartWidth,
-                          child: dashboardChartCard(
-                            context: context,
-                            title: 'Stock por categoria',
-                            child: dashboardBarChart(
-                              context: context,
-                              points: dashList(charts?['stockPorCategoria']),
-                              valueKey: 'stock',
-                              labelKey: 'categoria',
-                              color: Theme.of(context).colorScheme.tertiary,
-                            ),
-                          ),
+                        DashboardPieSlice(
+                          label: 'Bloq.',
+                          value:
+                              (fefo['lotesBloqueados'] as num?)?.toDouble() ??
+                              0,
+                          color: t.brandBlue,
                         ),
-                        SizedBox(
-                          width: chartWidth,
-                          child: dashboardChartCard(
-                            context: context,
-                            title: 'Entradas x saídas',
-                            child: dashboardBarChart(
-                              context: context,
-                              points: dashList(charts?['entradasSaidas']),
-                              valueKey: 'quantidade',
-                              labelKey: 'tipo',
-                              color: Theme.of(context).colorScheme.error,
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          width: chartWidth,
-                          child: dashboardChartCard(
-                            context: context,
-                            title: 'Produtos mais dispensados',
-                            child: dashboardBarChart(
-                              context: context,
-                              points: dashList(charts?['produtosMaisDispensados']),
-                              valueKey: 'quantidade',
-                              labelKey: 'produtoNome',
-                            ),
-                          ),
+                        DashboardPieSlice(
+                          label: 'Alert.',
+                          value: (fefo['alertasFefo'] as num?)?.toDouble() ?? 0,
+                          color: t.brandGreen,
                         ),
                       ],
+                    ),
+                  );
+                  if (narrow) {
+                    return Column(
+                      children: [
+                        validadesChart,
+                        SizedBox(height: context.spacing.md),
+                        fefoChart,
+                      ],
                     );
-                  },
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                DashboardPaginatedTable(
-                  title: 'Produtos críticos',
-                  headers: const ['Produto', 'Disponível', 'Mínimo'],
-                  reloadKey: '${_query.reloadKey}-criticos',
-                  loadPage: (page, pageSize, sortBy, sortDir) async {
-                    final result = await dataSource.pharmacyDashboardTable(
-                      table: 'produtosCriticos',
-                      query: _query.copyWith(
-                        sortBy: sortBy,
-                        sortDir: sortDir,
-                        clearSortBy: sortBy == null,
+                  }
+                  return IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(child: validadesChart),
+                        SizedBox(width: context.spacing.lg),
+                        Expanded(child: fefoChart),
+                      ],
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final chartWidth = constraints.maxWidth >= 1100
+                      ? (constraints.maxWidth - AppSpacing.lg) / 2
+                      : constraints.maxWidth;
+                  return Wrap(
+                    spacing: AppSpacing.lg,
+                    runSpacing: AppSpacing.lg,
+                    children: [
+                      SizedBox(
+                        width: chartWidth,
+                        child: dashboardChartCard(
+                          context: context,
+                          title: 'Produtos por categoria',
+                          child: dashboardBarChart(
+                            context: context,
+                            points: dashList(charts?['produtosPorCategoria']),
+                            valueKey: 'totalProdutos',
+                            labelKey: 'categoria',
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
                       ),
-                      page: page,
-                      pageSize: pageSize,
-                    );
-                    return DashboardPagedTableResult.fromMap(result);
-                  },
-                  rowBuilder: (row) => [
-                    row['nome']?.toString() ?? '—',
-                    '${row['disponivel'] ?? 0}',
-                    '${row['minimo'] ?? 0}',
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                DashboardPaginatedTable(
-                  title: 'Últimas entradas',
-                  headers: const ['Produto', 'Lote', 'Qtd', 'Origem'],
-                  reloadKey: '${_query.reloadKey}-entradas',
-                  loadPage: (page, pageSize, sortBy, sortDir) async {
-                    final result = await dataSource.pharmacyDashboardTable(
-                      table: 'ultimasEntradas',
-                      query: _query.copyWith(
-                        sortBy: sortBy,
-                        sortDir: sortDir,
-                        clearSortBy: sortBy == null,
+                      SizedBox(
+                        width: chartWidth,
+                        child: dashboardChartCard(
+                          context: context,
+                          title: 'Produtos por regulação',
+                          child: dashboardBarChart(
+                            context: context,
+                            points: dashList(charts?['produtosPorRegulacao']),
+                            valueKey: 'total',
+                            labelKey: 'regulacao',
+                            color: Theme.of(context).colorScheme.secondary,
+                          ),
+                        ),
                       ),
-                      page: page,
-                      pageSize: pageSize,
-                    );
-                    return DashboardPagedTableResult.fromMap(result);
-                  },
-                  rowBuilder: (row) => [
-                    row['produtoNome']?.toString() ?? '—',
-                    row['numeroLote']?.toString() ?? '—',
-                    '${row['quantidade'] ?? 0}',
-                    row['origem']?.toString() ?? '—',
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                DashboardPaginatedTable(
-                  title: 'Últimas dispensações',
-                  headers: const ['Produto', 'Lote', 'Qtd', 'Tipo'],
-                  reloadKey: '${_query.reloadKey}-dispensacoes',
-                  loadPage: (page, pageSize, sortBy, sortDir) async {
-                    final result = await dataSource.pharmacyDashboardTable(
-                      table: 'ultimasDispensacoes',
-                      query: _query.copyWith(
-                        sortBy: sortBy,
-                        sortDir: sortDir,
-                        clearSortBy: sortBy == null,
+                      SizedBox(
+                        width: chartWidth,
+                        child: dashboardChartCard(
+                          context: context,
+                          title: 'Stock por categoria',
+                          child: dashboardBarChart(
+                            context: context,
+                            points: dashList(charts?['stockPorCategoria']),
+                            valueKey: 'stock',
+                            labelKey: 'categoria',
+                            color: Theme.of(context).colorScheme.tertiary,
+                          ),
+                        ),
                       ),
-                      page: page,
-                      pageSize: pageSize,
-                    );
-                    return DashboardPagedTableResult.fromMap(result);
-                  },
-                  rowBuilder: (row) => [
-                    row['produtoNome']?.toString() ?? '—',
-                    row['numeroLote']?.toString() ?? '—',
-                    '${row['quantidade'] ?? 0}',
-                    row['tipoDispensacao']?.toString() ?? '—',
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                DashboardPaginatedTable(
-                  title: 'Últimos alertas',
-                  headers: const ['Produto', 'Tipo', 'Mensagem'],
-                  reloadKey: '${_query.reloadKey}-alertas',
-                  loadPage: (page, pageSize, sortBy, sortDir) async {
-                    final result = await dataSource.pharmacyDashboardTable(
-                      table: 'ultimosAlertas',
-                      query: _query.copyWith(
-                        sortBy: sortBy,
-                        sortDir: sortDir,
-                        clearSortBy: sortBy == null,
+                      SizedBox(
+                        width: chartWidth,
+                        child: dashboardChartCard(
+                          context: context,
+                          title: 'Entradas x saídas',
+                          child: dashboardBarChart(
+                            context: context,
+                            points: dashList(charts?['entradasSaidas']),
+                            valueKey: 'quantidade',
+                            labelKey: 'tipo',
+                            color: Theme.of(context).colorScheme.error,
+                          ),
+                        ),
                       ),
-                      page: page,
-                      pageSize: pageSize,
-                    );
-                    return DashboardPagedTableResult.fromMap(result);
-                  },
-                  rowBuilder: (row) => [
-                    row['produtoNome']?.toString() ?? '—',
-                    row['tipo']?.toString() ?? '—',
-                    row['mensagem']?.toString() ?? '—',
-                  ],
-                ),
-              ],
+                      SizedBox(
+                        width: chartWidth,
+                        child: dashboardChartCard(
+                          context: context,
+                          title: 'Produtos mais dispensados',
+                          child: dashboardBarChart(
+                            context: context,
+                            points: dashList(
+                              charts?['produtosMaisDispensados'],
+                            ),
+                            valueKey: 'quantidade',
+                            labelKey: 'produtoNome',
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              DashboardPaginatedTable(
+                title: 'Produtos críticos',
+                headers: const ['Produto', 'Disponível', 'Mínimo'],
+                reloadKey: '${_query.reloadKey}-criticos',
+                loadPage: (page, pageSize, sortBy, sortDir) async {
+                  final result = await dataSource.pharmacyDashboardTable(
+                    table: 'produtosCriticos',
+                    query: _query.copyWith(
+                      sortBy: sortBy,
+                      sortDir: sortDir,
+                      clearSortBy: sortBy == null,
+                    ),
+                    page: page,
+                    pageSize: pageSize,
+                  );
+                  return DashboardPagedTableResult.fromMap(result);
+                },
+                rowBuilder: (row) => [
+                  row['nome']?.toString() ?? '—',
+                  '${row['disponivel'] ?? 0}',
+                  '${row['minimo'] ?? 0}',
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              DashboardPaginatedTable(
+                title: 'Últimas entradas',
+                headers: const ['Produto', 'Lote', 'Qtd', 'Origem'],
+                reloadKey: '${_query.reloadKey}-entradas',
+                loadPage: (page, pageSize, sortBy, sortDir) async {
+                  final result = await dataSource.pharmacyDashboardTable(
+                    table: 'ultimasEntradas',
+                    query: _query.copyWith(
+                      sortBy: sortBy,
+                      sortDir: sortDir,
+                      clearSortBy: sortBy == null,
+                    ),
+                    page: page,
+                    pageSize: pageSize,
+                  );
+                  return DashboardPagedTableResult.fromMap(result);
+                },
+                rowBuilder: (row) => [
+                  row['produtoNome']?.toString() ?? '—',
+                  row['numeroLote']?.toString() ?? '—',
+                  '${row['quantidade'] ?? 0}',
+                  row['origem']?.toString() ?? '—',
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              DashboardPaginatedTable(
+                title: 'Últimas dispensações',
+                headers: const ['Produto', 'Lote', 'Qtd', 'Tipo'],
+                reloadKey: '${_query.reloadKey}-dispensacoes',
+                loadPage: (page, pageSize, sortBy, sortDir) async {
+                  final result = await dataSource.pharmacyDashboardTable(
+                    table: 'ultimasDispensacoes',
+                    query: _query.copyWith(
+                      sortBy: sortBy,
+                      sortDir: sortDir,
+                      clearSortBy: sortBy == null,
+                    ),
+                    page: page,
+                    pageSize: pageSize,
+                  );
+                  return DashboardPagedTableResult.fromMap(result);
+                },
+                rowBuilder: (row) => [
+                  row['produtoNome']?.toString() ?? '—',
+                  row['numeroLote']?.toString() ?? '—',
+                  '${row['quantidade'] ?? 0}',
+                  row['tipoDispensacao']?.toString() ?? '—',
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              DashboardPaginatedTable(
+                title: 'Últimos alertas',
+                headers: const ['Produto', 'Tipo', 'Mensagem'],
+                reloadKey: '${_query.reloadKey}-alertas',
+                loadPage: (page, pageSize, sortBy, sortDir) async {
+                  final result = await dataSource.pharmacyDashboardTable(
+                    table: 'ultimosAlertas',
+                    query: _query.copyWith(
+                      sortBy: sortBy,
+                      sortDir: sortDir,
+                      clearSortBy: sortBy == null,
+                    ),
+                    page: page,
+                    pageSize: pageSize,
+                  );
+                  return DashboardPagedTableResult.fromMap(result);
+                },
+                rowBuilder: (row) => [
+                  row['produtoNome']?.toString() ?? '—',
+                  row['tipo']?.toString() ?? '—',
+                  row['mensagem']?.toString() ?? '—',
+                ],
+              ),
+            ],
           );
         },
       ),

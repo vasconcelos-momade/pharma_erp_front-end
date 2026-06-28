@@ -15,7 +15,8 @@ class FinanceDashboardPage extends ConsumerStatefulWidget {
   const FinanceDashboardPage({super.key});
 
   @override
-  ConsumerState<FinanceDashboardPage> createState() => _FinanceDashboardPageState();
+  ConsumerState<FinanceDashboardPage> createState() =>
+      _FinanceDashboardPageState();
 }
 
 class _FinanceDashboardPageState extends ConsumerState<FinanceDashboardPage> {
@@ -31,12 +32,10 @@ class _FinanceDashboardPageState extends ConsumerState<FinanceDashboardPage> {
     final statusOptions = dashboardUniqueOptions(
       dashList(tables?['ultimosPagamentos']).map((row) => row['status']),
     );
-    final paymentMethodOptions = dashboardUniqueOptions(
-      [
-        ...dashList(charts?['metodosPagamento']).map((row) => row['metodo']),
-        ...dashList(tables?['ultimosPagamentos']).map((row) => row['metodo']),
-      ],
-    );
+    final paymentMethodOptions = dashboardUniqueOptions([
+      ...dashList(charts?['metodosPagamento']).map((row) => row['metodo']),
+      ...dashList(tables?['ultimosPagamentos']).map((row) => row['metodo']),
+    ]);
 
     Future<void> exportDashboard() async {
       final data = async.valueOrNull;
@@ -104,14 +103,16 @@ class _FinanceDashboardPageState extends ConsumerState<FinanceDashboardPage> {
       );
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Exportação do painel financeiro concluída.')),
+        const SnackBar(
+          content: Text('Exportação do painel financeiro concluída.'),
+        ),
       );
     }
 
     return EnterpriseModuleHub(
       title: 'Painel financeiro',
       subtitle: 'Receitas, despesas, caixa e contas a receber/pagar.',
-      tag: 'Painéis',
+      tag: 'Dashboard',
       scrollable: true,
       actions: [
         OutlinedButton.icon(
@@ -194,182 +195,182 @@ class _FinanceDashboardPageState extends ConsumerState<FinanceDashboardPage> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final chartWidth = constraints.maxWidth >= 1100
-                        ? (constraints.maxWidth - AppSpacing.lg) / 2
-                        : constraints.maxWidth;
-                    return Wrap(
-                      spacing: AppSpacing.lg,
-                      runSpacing: AppSpacing.lg,
-                      children: [
-                        SizedBox(
-                          width: chartWidth,
-                          child: dashboardChartCard(
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final chartWidth = constraints.maxWidth >= 1100
+                      ? (constraints.maxWidth - AppSpacing.lg) / 2
+                      : constraints.maxWidth;
+                  return Wrap(
+                    spacing: AppSpacing.lg,
+                    runSpacing: AppSpacing.lg,
+                    children: [
+                      SizedBox(
+                        width: chartWidth,
+                        child: dashboardChartCard(
+                          context: context,
+                          title: 'Receitas x despesas',
+                          child: dashboardDualLineChart(
                             context: context,
-                            title: 'Receitas x despesas',
-                            child: dashboardDualLineChart(
-                              context: context,
-                              points: dashList(charts?['receitasDespesas']),
-                            ),
+                            points: dashList(charts?['receitasDespesas']),
                           ),
                         ),
-                        SizedBox(
-                          width: chartWidth,
-                          child: dashboardChartCard(
-                            context: context,
-                            title: 'Fluxo diário',
-                            child: dashboardLineChart(
-                              context: context,
-                              points: dashList(charts?['fluxoDiario']),
-                              valueKey: 'saldo',
-                              labelKey: 'data',
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          width: chartWidth,
-                          child: dashboardChartCard(
-                            context: context,
-                            title: 'Fluxo mensal',
-                            child: dashboardLineChart(
-                              context: context,
-                              points: dashList(charts?['fluxoMensal']),
-                              valueKey: 'saldo',
-                              labelKey: 'mes',
-                              color: Theme.of(context).colorScheme.secondary,
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          width: chartWidth,
-                          child: dashboardChartCard(
-                            context: context,
-                            title: 'Evolução financeira',
-                            child: dashboardDualLineChart(
-                              context: context,
-                              points: dashList(charts?['evolucaoFinanceira']),
-                            ),
-                          ),
-                        ),
-                        SizedBox(
-                          width: chartWidth,
-                          child: dashboardChartCard(
-                            context: context,
-                            title: 'Métodos de pagamento',
-                            child: dashboardBarChart(
-                              context: context,
-                              points: dashList(charts?['metodosPagamento']),
-                              valueKey: 'total',
-                              labelKey: 'metodo',
-                              color: Theme.of(context).colorScheme.tertiary,
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                DashboardPaginatedTable(
-                  title: 'Contas vencidas',
-                  headers: const ['Cliente', 'Saldo', 'Vencimento'],
-                  reloadKey: '${_query.reloadKey}-contas',
-                  loadPage: (page, pageSize, sortBy, sortDir) async {
-                    final result = await dataSource.financeDashboardTable(
-                      table: 'contasVencidas',
-                      query: _query.copyWith(
-                        sortBy: sortBy,
-                        sortDir: sortDir,
-                        clearSortBy: sortBy == null,
                       ),
-                      page: page,
-                      pageSize: pageSize,
-                    );
-                    return DashboardPagedTableResult.fromMap(result);
-                  },
-                  rowBuilder: (row) => [
-                    row['clienteNome']?.toString() ?? '—',
-                    '${row['saldo'] ?? 0} MZN',
-                    dashLabel(row['vencimento']),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                DashboardPaginatedTable(
-                  title: 'Últimos pagamentos',
-                  headers: const ['Fatura', 'Método', 'Valor'],
-                  reloadKey: '${_query.reloadKey}-pagamentos',
-                  loadPage: (page, pageSize, sortBy, sortDir) async {
-                    final result = await dataSource.financeDashboardTable(
-                      table: 'ultimosPagamentos',
-                      query: _query.copyWith(
-                        sortBy: sortBy,
-                        sortDir: sortDir,
-                        clearSortBy: sortBy == null,
+                      SizedBox(
+                        width: chartWidth,
+                        child: dashboardChartCard(
+                          context: context,
+                          title: 'Fluxo diário',
+                          child: dashboardLineChart(
+                            context: context,
+                            points: dashList(charts?['fluxoDiario']),
+                            valueKey: 'saldo',
+                            labelKey: 'data',
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
                       ),
-                      page: page,
-                      pageSize: pageSize,
-                    );
-                    return DashboardPagedTableResult.fromMap(result);
-                  },
-                  rowBuilder: (row) => [
-                    row['faturaNumero']?.toString() ?? '—',
-                    row['metodo']?.toString() ?? '—',
-                    '${row['valor'] ?? 0} MZN',
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                DashboardPaginatedTable(
-                  title: 'Últimas receitas',
-                  headers: const ['Tipo', 'Referência', 'Valor', 'Data'],
-                  reloadKey: '${_query.reloadKey}-receitas',
-                  loadPage: (page, pageSize, sortBy, sortDir) async {
-                    final result = await dataSource.financeDashboardTable(
-                      table: 'ultimasReceitas',
-                      query: _query.copyWith(
-                        sortBy: sortBy,
-                        sortDir: sortDir,
-                        clearSortBy: sortBy == null,
+                      SizedBox(
+                        width: chartWidth,
+                        child: dashboardChartCard(
+                          context: context,
+                          title: 'Fluxo mensal',
+                          child: dashboardLineChart(
+                            context: context,
+                            points: dashList(charts?['fluxoMensal']),
+                            valueKey: 'saldo',
+                            labelKey: 'mes',
+                            color: Theme.of(context).colorScheme.secondary,
+                          ),
+                        ),
                       ),
-                      page: page,
-                      pageSize: pageSize,
-                    );
-                    return DashboardPagedTableResult.fromMap(result);
-                  },
-                  rowBuilder: (row) => [
-                    row['tipo']?.toString() ?? '—',
-                    row['referencia']?.toString() ?? '—',
-                    '${row['valor'] ?? 0} MZN',
-                    dashLabel(row['createdAt']),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                DashboardPaginatedTable(
-                  title: 'Últimas despesas',
-                  headers: const ['Tipo', 'Referência', 'Valor', 'Data'],
-                  reloadKey: '${_query.reloadKey}-despesas',
-                  loadPage: (page, pageSize, sortBy, sortDir) async {
-                    final result = await dataSource.financeDashboardTable(
-                      table: 'ultimasDespesas',
-                      query: _query.copyWith(
-                        sortBy: sortBy,
-                        sortDir: sortDir,
-                        clearSortBy: sortBy == null,
+                      SizedBox(
+                        width: chartWidth,
+                        child: dashboardChartCard(
+                          context: context,
+                          title: 'Evolução financeira',
+                          child: dashboardDualLineChart(
+                            context: context,
+                            points: dashList(charts?['evolucaoFinanceira']),
+                          ),
+                        ),
                       ),
-                      page: page,
-                      pageSize: pageSize,
-                    );
-                    return DashboardPagedTableResult.fromMap(result);
-                  },
-                  rowBuilder: (row) => [
-                    row['tipo']?.toString() ?? '—',
-                    row['referencia']?.toString() ?? '—',
-                    '${row['valor'] ?? 0} MZN',
-                    dashLabel(row['createdAt']),
-                  ],
-                ),
-              ],
+                      SizedBox(
+                        width: chartWidth,
+                        child: dashboardChartCard(
+                          context: context,
+                          title: 'Métodos de pagamento',
+                          child: dashboardBarChart(
+                            context: context,
+                            points: dashList(charts?['metodosPagamento']),
+                            valueKey: 'total',
+                            labelKey: 'metodo',
+                            color: Theme.of(context).colorScheme.tertiary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              DashboardPaginatedTable(
+                title: 'Contas vencidas',
+                headers: const ['Cliente', 'Saldo', 'Vencimento'],
+                reloadKey: '${_query.reloadKey}-contas',
+                loadPage: (page, pageSize, sortBy, sortDir) async {
+                  final result = await dataSource.financeDashboardTable(
+                    table: 'contasVencidas',
+                    query: _query.copyWith(
+                      sortBy: sortBy,
+                      sortDir: sortDir,
+                      clearSortBy: sortBy == null,
+                    ),
+                    page: page,
+                    pageSize: pageSize,
+                  );
+                  return DashboardPagedTableResult.fromMap(result);
+                },
+                rowBuilder: (row) => [
+                  row['clienteNome']?.toString() ?? '—',
+                  '${row['saldo'] ?? 0} MZN',
+                  dashLabel(row['vencimento']),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              DashboardPaginatedTable(
+                title: 'Últimos pagamentos',
+                headers: const ['Fatura', 'Método', 'Valor'],
+                reloadKey: '${_query.reloadKey}-pagamentos',
+                loadPage: (page, pageSize, sortBy, sortDir) async {
+                  final result = await dataSource.financeDashboardTable(
+                    table: 'ultimosPagamentos',
+                    query: _query.copyWith(
+                      sortBy: sortBy,
+                      sortDir: sortDir,
+                      clearSortBy: sortBy == null,
+                    ),
+                    page: page,
+                    pageSize: pageSize,
+                  );
+                  return DashboardPagedTableResult.fromMap(result);
+                },
+                rowBuilder: (row) => [
+                  row['faturaNumero']?.toString() ?? '—',
+                  row['metodo']?.toString() ?? '—',
+                  '${row['valor'] ?? 0} MZN',
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              DashboardPaginatedTable(
+                title: 'Últimas receitas',
+                headers: const ['Tipo', 'Referência', 'Valor', 'Data'],
+                reloadKey: '${_query.reloadKey}-receitas',
+                loadPage: (page, pageSize, sortBy, sortDir) async {
+                  final result = await dataSource.financeDashboardTable(
+                    table: 'ultimasReceitas',
+                    query: _query.copyWith(
+                      sortBy: sortBy,
+                      sortDir: sortDir,
+                      clearSortBy: sortBy == null,
+                    ),
+                    page: page,
+                    pageSize: pageSize,
+                  );
+                  return DashboardPagedTableResult.fromMap(result);
+                },
+                rowBuilder: (row) => [
+                  row['tipo']?.toString() ?? '—',
+                  row['referencia']?.toString() ?? '—',
+                  '${row['valor'] ?? 0} MZN',
+                  dashLabel(row['createdAt']),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              DashboardPaginatedTable(
+                title: 'Últimas despesas',
+                headers: const ['Tipo', 'Referência', 'Valor', 'Data'],
+                reloadKey: '${_query.reloadKey}-despesas',
+                loadPage: (page, pageSize, sortBy, sortDir) async {
+                  final result = await dataSource.financeDashboardTable(
+                    table: 'ultimasDespesas',
+                    query: _query.copyWith(
+                      sortBy: sortBy,
+                      sortDir: sortDir,
+                      clearSortBy: sortBy == null,
+                    ),
+                    page: page,
+                    pageSize: pageSize,
+                  );
+                  return DashboardPagedTableResult.fromMap(result);
+                },
+                rowBuilder: (row) => [
+                  row['tipo']?.toString() ?? '—',
+                  row['referencia']?.toString() ?? '—',
+                  '${row['valor'] ?? 0} MZN',
+                  dashLabel(row['createdAt']),
+                ],
+              ),
+            ],
           );
         },
       ),

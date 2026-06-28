@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
+import '../../../../../core/utils/list_csv_exporter.dart';
 import '../../../../../shared/responsive/pharma_screen_layout.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
@@ -23,6 +25,8 @@ class SalesInvoicesPage extends ConsumerStatefulWidget {
 
 class _SalesInvoicesPageState extends ConsumerState<SalesInvoicesPage> {
   late final TextEditingController _searchController;
+  static final _currency = NumberFormat('#,##0.00', 'pt_MZ');
+  static final _dateTime = DateFormat('dd/MM/yyyy HH:mm');
 
   @override
   void initState() {
@@ -44,7 +48,9 @@ class _SalesInvoicesPageState extends ConsumerState<SalesInvoicesPage> {
         return;
       }
       final previousSubmitting = previous?.isSubmitting ?? false;
-      if (previousSubmitting && !next.isSubmitting && next.errorMessage == null) {
+      if (previousSubmitting &&
+          !next.isSubmitting &&
+          next.errorMessage == null) {
         PharmaFeedback.success(context, 'Fatura cancelada com sucesso.');
       }
       if (next.errorMessage != null &&
@@ -68,8 +74,15 @@ class _SalesInvoicesPageState extends ConsumerState<SalesInvoicesPage> {
       title: 'Faturas de venda',
       subtitle:
           'Histórico operacional do POS com pesquisa, filtros rápidos, cache em memória e cancelamento seguro.',
-      tag: 'Vendas',
+      tag: 'Terminal',
       actions: [
+        OutlinedButton.icon(
+          onPressed: listState.items.isEmpty
+              ? null
+              : () => _exportInvoices(listState),
+          icon: const Icon(Icons.download_outlined),
+          label: const Text('Exportar CSV'),
+        ),
         OutlinedButton.icon(
           onPressed: listState.isBusy
               ? null
@@ -159,7 +172,9 @@ class _SalesInvoicesPageState extends ConsumerState<SalesInvoicesPage> {
     }
 
     try {
-      await ref.read(invoiceActionProvider.notifier).cancelInvoice(
+      await ref
+          .read(invoiceActionProvider.notifier)
+          .cancelInvoice(
             invoiceId: invoice.id,
             motivo: result.motivo,
             observacoes: result.observacoes,
@@ -167,5 +182,31 @@ class _SalesInvoicesPageState extends ConsumerState<SalesInvoicesPage> {
     } catch (_) {
       // A mensagem ja e tratada pelo listener do provider.
     }
+  }
+
+  Future<void> _exportInvoices(InvoiceListState listState) async {
+    await ListCsvExporter.export(
+      fileName: 'faturas-pagina-${listState.query.page}',
+      headers: const [
+        'Fatura',
+        'Cliente',
+        'Terminal',
+        'Total',
+        'Estado',
+        'Data',
+      ],
+      rows: listState.items
+          .map(
+            (inv) => [
+              inv.numero,
+              inv.cliente?.nome ?? '—',
+              inv.terminal?.codigo ?? inv.terminal?.nome ?? '—',
+              _currency.format(inv.total),
+              inv.estado,
+              _dateTime.format(inv.createdAt),
+            ],
+          )
+          .toList(),
+    );
   }
 }

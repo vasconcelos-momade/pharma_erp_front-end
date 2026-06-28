@@ -30,12 +30,10 @@ class _StockDashboardPageState extends ConsumerState<StockDashboardPage> {
     final kpis = dashMap(async.valueOrNull?['kpis']);
     final tables = dashMap(async.valueOrNull?['tables']);
     final charts = dashMap(async.valueOrNull?['charts']);
-    final statusOptions = dashboardUniqueOptions(
-      [
-        ...dashList(tables?['inventarios']).map((row) => row['status']),
-        ...dashList(tables?['requisicoes']).map((row) => row['status']),
-      ],
-    );
+    final statusOptions = dashboardUniqueOptions([
+      ...dashList(tables?['inventarios']).map((row) => row['status']),
+      ...dashList(tables?['requisicoes']).map((row) => row['status']),
+    ]);
     final movementTypeOptions = dashboardUniqueOptions(
       [
         ...dashList(charts?['entradasSaidas']).map((row) => row['tipo']),
@@ -147,7 +145,7 @@ class _StockDashboardPageState extends ConsumerState<StockDashboardPage> {
     return EnterpriseModuleHub(
       title: 'Painel de stock',
       subtitle: 'Stock, movimentos, inventários, requisições e reservas.',
-      tag: 'Painéis',
+      tag: 'Dashboard',
       scrollable: true,
       actions: [
         OutlinedButton.icon(
@@ -261,242 +259,261 @@ class _StockDashboardPageState extends ConsumerState<StockDashboardPage> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-                LayoutBuilder(
-                  builder: (context, constraints) {
-                    final chartWidth = constraints.maxWidth >= 1100
-                        ? (constraints.maxWidth - AppSpacing.lg) / 2
-                        : constraints.maxWidth;
-                    return Wrap(
-                      spacing: AppSpacing.lg,
-                      runSpacing: AppSpacing.lg,
-                      children: [
-                        SizedBox(
-                          width: chartWidth,
-                          child: dashboardChartCard(
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final chartWidth = constraints.maxWidth >= 1100
+                      ? (constraints.maxWidth - AppSpacing.lg) / 2
+                      : constraints.maxWidth;
+                  return Wrap(
+                    spacing: AppSpacing.lg,
+                    runSpacing: AppSpacing.lg,
+                    children: [
+                      SizedBox(
+                        width: chartWidth,
+                        child: dashboardChartCard(
+                          context: context,
+                          title: 'Composição de lotes',
+                          child: dashboardIndexedBarChart(
                             context: context,
-                            title: 'Composição de lotes',
-                            child: dashboardIndexedBarChart(
-                              context: context,
-                              labels: const ['Total', 'Disp.', 'Sanit.', 'Reserv.', 'Exp.'],
-                              values: [
-                                (composicao['totalLotes'] as num?)?.toDouble() ?? 0,
-                                (composicao['lotesDisponiveis'] as num?)?.toDouble() ?? 0,
-                                (composicao['lotesSanitarios'] as num?)?.toDouble() ?? 0,
-                                (composicao['lotesReservados'] as num?)?.toDouble() ?? 0,
-                                (composicao['lotesExpirados'] as num?)?.toDouble() ?? 0,
-                              ],
-                            ),
+                            labels: const [
+                              'Total',
+                              'Disp.',
+                              'Sanit.',
+                              'Reserv.',
+                              'Exp.',
+                            ],
+                            values: [
+                              (composicao['totalLotes'] as num?)?.toDouble() ??
+                                  0,
+                              (composicao['lotesDisponiveis'] as num?)
+                                      ?.toDouble() ??
+                                  0,
+                              (composicao['lotesSanitarios'] as num?)
+                                      ?.toDouble() ??
+                                  0,
+                              (composicao['lotesReservados'] as num?)
+                                      ?.toDouble() ??
+                                  0,
+                              (composicao['lotesExpirados'] as num?)
+                                      ?.toDouble() ??
+                                  0,
+                            ],
                           ),
                         ),
-                        SizedBox(
-                          width: chartWidth,
-                          child: dashboardChartCard(
+                      ),
+                      SizedBox(
+                        width: chartWidth,
+                        child: dashboardChartCard(
+                          context: context,
+                          title: 'Entradas x saídas',
+                          child: dashboardBarChart(
                             context: context,
-                            title: 'Entradas x saídas',
-                            child: dashboardBarChart(
-                              context: context,
-                              points: dashList(charts?['entradasSaidas']),
-                              valueKey: 'quantidade',
-                              labelKey: 'tipo',
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
+                            points: dashList(charts?['entradasSaidas']),
+                            valueKey: 'quantidade',
+                            labelKey: 'tipo',
+                            color: Theme.of(context).colorScheme.primary,
                           ),
                         ),
-                        SizedBox(
-                          width: chartWidth,
-                          child: dashboardChartCard(
+                      ),
+                      SizedBox(
+                        width: chartWidth,
+                        child: dashboardChartCard(
+                          context: context,
+                          title: 'Movimentação mensal',
+                          child: dashboardDualLineChart(
                             context: context,
-                            title: 'Movimentação mensal',
-                            child: dashboardDualLineChart(
-                              context: context,
-                              points: dashList(charts?['movimentacaoMensal']).map((row) {
+                            points: dashList(charts?['movimentacaoMensal']).map(
+                              (row) {
                                 return {
                                   'receitas': row['entradas'],
                                   'despesas': row['saidas'],
                                   'mes': row['mes'],
                                 };
-                              }).toList(),
-                            ),
+                              },
+                            ).toList(),
                           ),
                         ),
-                        SizedBox(
-                          width: chartWidth,
-                          child: dashboardChartCard(
+                      ),
+                      SizedBox(
+                        width: chartWidth,
+                        child: dashboardChartCard(
+                          context: context,
+                          title: 'Produtos mais movimentados',
+                          child: dashboardBarChart(
                             context: context,
-                            title: 'Produtos mais movimentados',
-                            child: dashboardBarChart(
-                              context: context,
-                              points: dashList(charts?['produtosMaisMovimentados']),
-                              valueKey: 'quantidade',
-                              labelKey: 'produtoNome',
-                              color: Theme.of(context).colorScheme.secondary,
+                            points: dashList(
+                              charts?['produtosMaisMovimentados'],
                             ),
+                            valueKey: 'quantidade',
+                            labelKey: 'produtoNome',
+                            color: Theme.of(context).colorScheme.secondary,
                           ),
                         ),
-                        SizedBox(
-                          width: chartWidth,
-                          child: dashboardChartCard(
+                      ),
+                      SizedBox(
+                        width: chartWidth,
+                        child: dashboardChartCard(
+                          context: context,
+                          title: 'Valor stock por categoria',
+                          child: dashboardBarChart(
                             context: context,
-                            title: 'Valor stock por categoria',
-                            child: dashboardBarChart(
-                              context: context,
-                              points: dashList(charts?['valorStockPorCategoria']),
-                              valueKey: 'valor',
-                              labelKey: 'categoria',
-                              color: Theme.of(context).colorScheme.tertiary,
-                            ),
+                            points: dashList(charts?['valorStockPorCategoria']),
+                            valueKey: 'valor',
+                            labelKey: 'categoria',
+                            color: Theme.of(context).colorScheme.tertiary,
                           ),
                         ),
-                      ],
-                    );
-                  },
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                DashboardPaginatedTable(
-                  title: 'Últimos movimentos',
-                  headers: const ['Tipo', 'Produto', 'Qtd', 'Origem'],
-                  reloadKey: '${_query.reloadKey}-mov',
-                  loadPage: (page, pageSize, sortBy, sortDir) async {
-                    final result = await dataSource.stockDashboardTable(
-                      table: 'ultimosMovimentos',
-                      query: _query.copyWith(
-                        sortBy: sortBy,
-                        sortDir: sortDir,
-                        clearSortBy: sortBy == null,
                       ),
-                      page: page,
-                      pageSize: pageSize,
-                    );
-                    return DashboardPagedTableResult.fromMap(result);
-                  },
-                  rowBuilder: (row) => [
-                    row['tipo']?.toString() ?? '—',
-                    row['produtoNome']?.toString() ?? '—',
-                    '${row['quantidade'] ?? 0}',
-                    row['origem']?.toString() ?? '—',
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                DashboardPaginatedTable(
-                  title: 'Produtos críticos',
-                  headers: const ['Produto', 'Disponível', 'Mínimo'],
-                  reloadKey: '${_query.reloadKey}-criticos',
-                  loadPage: (page, pageSize, sortBy, sortDir) async {
-                    final result = await dataSource.stockDashboardTable(
-                      table: 'produtosCriticos',
-                      query: _query.copyWith(
-                        sortBy: sortBy,
-                        sortDir: sortDir,
-                        clearSortBy: sortBy == null,
-                      ),
-                      page: page,
-                      pageSize: pageSize,
-                    );
-                    return DashboardPagedTableResult.fromMap(result);
-                  },
-                  rowBuilder: (row) => [
-                    row['nome']?.toString() ?? '—',
-                    '${row['disponivel'] ?? 0}',
-                    '${row['minimo'] ?? 0}',
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                DashboardPaginatedTable(
-                  title: 'Inventários',
-                  headers: const ['Código', 'Estado', 'Início'],
-                  reloadKey: '${_query.reloadKey}-inv',
-                  loadPage: (page, pageSize, sortBy, sortDir) async {
-                    final result = await dataSource.stockDashboardTable(
-                      table: 'inventarios',
-                      query: _query.copyWith(
-                        sortBy: sortBy,
-                        sortDir: sortDir,
-                        clearSortBy: sortBy == null,
-                      ),
-                      page: page,
-                      pageSize: pageSize,
-                    );
-                    return DashboardPagedTableResult.fromMap(result);
-                  },
-                  rowBuilder: (row) => [
-                    row['codigo']?.toString() ?? '—',
-                    row['status']?.toString() ?? '—',
-                    dashLabel(row['iniciadoEm']),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                DashboardPaginatedTable(
-                  title: 'Requisições recentes',
-                  headers: const ['Documento', 'Tipo', 'Estado'],
-                  reloadKey: '${_query.reloadKey}-req',
-                  loadPage: (page, pageSize, sortBy, sortDir) async {
-                    final result = await dataSource.stockDashboardTable(
-                      table: 'requisicoes',
-                      query: _query.copyWith(
-                        sortBy: sortBy,
-                        sortDir: sortDir,
-                        clearSortBy: sortBy == null,
-                      ),
-                      page: page,
-                      pageSize: pageSize,
-                    );
-                    return DashboardPagedTableResult.fromMap(result);
-                  },
-                  rowBuilder: (row) => [
-                    row['numeroDocumento']?.toString() ?? '—',
-                    row['tipo']?.toString() ?? '—',
-                    row['status']?.toString() ?? '—',
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                DashboardPaginatedTable(
-                  title: 'Reservas',
-                  headers: const ['Produto', 'Lote', 'Qtd', 'Expira'],
-                  reloadKey: '${_query.reloadKey}-res',
-                  loadPage: (page, pageSize, sortBy, sortDir) async {
-                    final result = await dataSource.stockDashboardTable(
-                      table: 'reservas',
-                      query: _query.copyWith(
-                        sortBy: sortBy,
-                        sortDir: sortDir,
-                        clearSortBy: sortBy == null,
-                      ),
-                      page: page,
-                      pageSize: pageSize,
-                    );
-                    return DashboardPagedTableResult.fromMap(result);
-                  },
-                  rowBuilder: (row) => [
-                    row['produtoNome']?.toString() ?? '—',
-                    row['numeroLote']?.toString() ?? '—',
-                    '${row['quantidade'] ?? 0}',
-                    dashLabel(row['expiresAt']),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                DashboardPaginatedTable(
-                  title: 'Incinerações',
-                  headers: const ['Auto', 'Data'],
-                  reloadKey: '${_query.reloadKey}-inc',
-                  loadPage: (page, pageSize, sortBy, sortDir) async {
-                    final result = await dataSource.stockDashboardTable(
-                      table: 'incineracoes',
-                      query: _query.copyWith(
-                        sortBy: sortBy,
-                        sortDir: sortDir,
-                        clearSortBy: sortBy == null,
-                      ),
-                      page: page,
-                      pageSize: pageSize,
-                    );
-                    return DashboardPagedTableResult.fromMap(result);
-                  },
-                  rowBuilder: (row) => [
-                    row['numeroAuto']?.toString() ?? '—',
-                    dashLabel(row['dataIncineracao']),
-                  ],
-                ),
-              ],
+                    ],
+                  );
+                },
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              DashboardPaginatedTable(
+                title: 'Últimos movimentos',
+                headers: const ['Tipo', 'Produto', 'Qtd', 'Origem'],
+                reloadKey: '${_query.reloadKey}-mov',
+                loadPage: (page, pageSize, sortBy, sortDir) async {
+                  final result = await dataSource.stockDashboardTable(
+                    table: 'ultimosMovimentos',
+                    query: _query.copyWith(
+                      sortBy: sortBy,
+                      sortDir: sortDir,
+                      clearSortBy: sortBy == null,
+                    ),
+                    page: page,
+                    pageSize: pageSize,
+                  );
+                  return DashboardPagedTableResult.fromMap(result);
+                },
+                rowBuilder: (row) => [
+                  row['tipo']?.toString() ?? '—',
+                  row['produtoNome']?.toString() ?? '—',
+                  '${row['quantidade'] ?? 0}',
+                  row['origem']?.toString() ?? '—',
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              DashboardPaginatedTable(
+                title: 'Produtos críticos',
+                headers: const ['Produto', 'Disponível', 'Mínimo'],
+                reloadKey: '${_query.reloadKey}-criticos',
+                loadPage: (page, pageSize, sortBy, sortDir) async {
+                  final result = await dataSource.stockDashboardTable(
+                    table: 'produtosCriticos',
+                    query: _query.copyWith(
+                      sortBy: sortBy,
+                      sortDir: sortDir,
+                      clearSortBy: sortBy == null,
+                    ),
+                    page: page,
+                    pageSize: pageSize,
+                  );
+                  return DashboardPagedTableResult.fromMap(result);
+                },
+                rowBuilder: (row) => [
+                  row['nome']?.toString() ?? '—',
+                  '${row['disponivel'] ?? 0}',
+                  '${row['minimo'] ?? 0}',
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              DashboardPaginatedTable(
+                title: 'Inventários',
+                headers: const ['Código', 'Estado', 'Início'],
+                reloadKey: '${_query.reloadKey}-inv',
+                loadPage: (page, pageSize, sortBy, sortDir) async {
+                  final result = await dataSource.stockDashboardTable(
+                    table: 'inventarios',
+                    query: _query.copyWith(
+                      sortBy: sortBy,
+                      sortDir: sortDir,
+                      clearSortBy: sortBy == null,
+                    ),
+                    page: page,
+                    pageSize: pageSize,
+                  );
+                  return DashboardPagedTableResult.fromMap(result);
+                },
+                rowBuilder: (row) => [
+                  row['codigo']?.toString() ?? '—',
+                  row['status']?.toString() ?? '—',
+                  dashLabel(row['iniciadoEm']),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              DashboardPaginatedTable(
+                title: 'Requisições recentes',
+                headers: const ['Documento', 'Tipo', 'Estado'],
+                reloadKey: '${_query.reloadKey}-req',
+                loadPage: (page, pageSize, sortBy, sortDir) async {
+                  final result = await dataSource.stockDashboardTable(
+                    table: 'requisicoes',
+                    query: _query.copyWith(
+                      sortBy: sortBy,
+                      sortDir: sortDir,
+                      clearSortBy: sortBy == null,
+                    ),
+                    page: page,
+                    pageSize: pageSize,
+                  );
+                  return DashboardPagedTableResult.fromMap(result);
+                },
+                rowBuilder: (row) => [
+                  row['numeroDocumento']?.toString() ?? '—',
+                  row['tipo']?.toString() ?? '—',
+                  row['status']?.toString() ?? '—',
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              DashboardPaginatedTable(
+                title: 'Reservas',
+                headers: const ['Produto', 'Lote', 'Qtd', 'Expira'],
+                reloadKey: '${_query.reloadKey}-res',
+                loadPage: (page, pageSize, sortBy, sortDir) async {
+                  final result = await dataSource.stockDashboardTable(
+                    table: 'reservas',
+                    query: _query.copyWith(
+                      sortBy: sortBy,
+                      sortDir: sortDir,
+                      clearSortBy: sortBy == null,
+                    ),
+                    page: page,
+                    pageSize: pageSize,
+                  );
+                  return DashboardPagedTableResult.fromMap(result);
+                },
+                rowBuilder: (row) => [
+                  row['produtoNome']?.toString() ?? '—',
+                  row['numeroLote']?.toString() ?? '—',
+                  '${row['quantidade'] ?? 0}',
+                  dashLabel(row['expiresAt']),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              DashboardPaginatedTable(
+                title: 'Incinerações',
+                headers: const ['Auto', 'Data'],
+                reloadKey: '${_query.reloadKey}-inc',
+                loadPage: (page, pageSize, sortBy, sortDir) async {
+                  final result = await dataSource.stockDashboardTable(
+                    table: 'incineracoes',
+                    query: _query.copyWith(
+                      sortBy: sortBy,
+                      sortDir: sortDir,
+                      clearSortBy: sortBy == null,
+                    ),
+                    page: page,
+                    pageSize: pageSize,
+                  );
+                  return DashboardPagedTableResult.fromMap(result);
+                },
+                rowBuilder: (row) => [
+                  row['numeroAuto']?.toString() ?? '—',
+                  dashLabel(row['dataIncineracao']),
+                ],
+              ),
+            ],
           );
         },
       ),

@@ -22,6 +22,7 @@ abstract final class AppRoutePaths {
   static const String regulatory = '/regulatory';
   static const String psychotropics = '/psychotropics';
   static const String recipes = '/recipes';
+  static const String recipesBook = '/recipes/book';
 
   static const String financial = '/financial';
   static const String financeCashflow = '/finance/cashflow';
@@ -34,20 +35,24 @@ abstract final class AppRoutePaths {
 
   /// Rota legada de compras — redireccionada para [stockRequisitions].
   static const String purchasing = '/purchasing';
+
   /// Alias legado `/compras` — redireccionado para [stockRequisitions].
   static const String comprasLegacy = '/compras';
   static const String reports = '/reports';
 
   static const String stockMovements = '/stock/movements';
   static const String stockRequisitions = '/stock/requests';
+
   /// Rota legada PT — redireccionada para [stockRequisitions].
   static const String stockRequisitionsLegacy = '/stock/requisicoes';
+
   /// Rota legada — redireccionada para [stockRequisitions].
   static const String stockTransfersLegacy = '/stock/transferencias';
   static const String stockInventory = '/stock/inventory';
 
   static const String salesCustomers = '/sales/customers';
   static const String salesInvoices = '/sales/invoices';
+  static const String salesQuotations = '/sales/quotations';
   static const String salesHistory = '/sales/history';
 
   static const String users = '/users';
@@ -69,26 +74,27 @@ abstract final class AppRouteTitles {
       AppRoutePaths.login => 'Autenticação',
       AppRoutePaths.authForgotPassword => 'Recuperar palavra-passe',
       AppRoutePaths.authTenant => 'Selecção de unidade',
-      AppRoutePaths.dashboard => 'Painel executivo',
-      AppRoutePaths.dashboardPharmacy => 'Painel da farmácia',
-      AppRoutePaths.dashboardFinance => 'Painel financeiro',
-      AppRoutePaths.dashboardStock => 'Painel de stock',
-      AppRoutePaths.pos => 'PDV',
+      AppRoutePaths.dashboard => 'Executivo',
+      AppRoutePaths.dashboardPharmacy => 'Farmácia',
+      AppRoutePaths.dashboardFinance => 'Financeiro',
+      AppRoutePaths.dashboardStock => 'Stock',
+      AppRoutePaths.pos => 'POS / Caixa',
       AppRoutePaths.products => 'Produtos',
       AppRoutePaths.pharmacyCategories => 'Categorias',
       AppRoutePaths.pharmacyLots => 'Lotes',
       AppRoutePaths.pharmacyExpiry => 'Validades',
       AppRoutePaths.pharmacyFefo => 'FEFO',
-      AppRoutePaths.regulatory => 'Sanitário & alertas',
-      AppRoutePaths.psychotropics => 'Psicotrópicos',
-      AppRoutePaths.recipes => 'Prescrições',
-      AppRoutePaths.financial => 'Financeiro',
-      AppRoutePaths.financeCashflow => 'Fluxo de caixa',
+      AppRoutePaths.regulatory => 'Sanitário / Alertas',
+      AppRoutePaths.psychotropics => 'Livro de Psicotrópicos',
+      AppRoutePaths.recipes => 'Receitas',
+      AppRoutePaths.recipesBook => 'Livro de Receitas',
+      AppRoutePaths.financial => 'Visão Geral',
+      AppRoutePaths.financeCashflow => 'Fluxo de Caixa',
       AppRoutePaths.financeExpenses => 'Despesas',
-      AppRoutePaths.audit => 'Auditoria',
+      AppRoutePaths.audit => 'Visão Geral',
       AppRoutePaths.auditTimeline => 'Cronologia',
       AppRoutePaths.auditLogs => 'Logs',
-      AppRoutePaths.auditPsych => 'Auditoria psicotrópicos',
+      AppRoutePaths.auditPsych => 'Auditoria de Psicotrópicos',
       AppRoutePaths.purchasing => 'Requisições',
       AppRoutePaths.comprasLegacy => 'Requisições',
       AppRoutePaths.reports => 'Relatórios',
@@ -99,7 +105,8 @@ abstract final class AppRouteTitles {
       AppRoutePaths.stockInventory => 'Inventário',
       AppRoutePaths.salesCustomers => 'Clientes',
       AppRoutePaths.salesInvoices => 'Faturas',
-      AppRoutePaths.salesHistory => 'Histórico de vendas',
+      AppRoutePaths.salesQuotations => 'Cotações',
+      AppRoutePaths.salesHistory => 'Histórico de Vendas',
       AppRoutePaths.users => 'Utilizadores',
       AppRoutePaths.userProfiles => 'Perfis',
       AppRoutePaths.userPermissions => 'Permissões',
@@ -112,19 +119,29 @@ abstract final class AppRouteTitles {
   }
 
   static String sectionFor(String path) {
-    if (path.startsWith('/dashboard')) return 'Painéis';
-    if (path.startsWith('/pharmacy') || path == AppRoutePaths.products || path == AppRoutePaths.regulatory || path == AppRoutePaths.psychotropics || path == AppRoutePaths.recipes) {
-      return 'Farmácia & regulatório';
+    if (path.startsWith('/dashboard')) return 'Dashboard';
+    if (path.startsWith('/pharmacy') || path == AppRoutePaths.products) {
+      return 'Farmácia';
     }
-    if (path.startsWith('/sales')) return 'Vendas';
-    if (path.startsWith('/stock')) return 'Stock';
-    if (path.startsWith('/finance') || path == AppRoutePaths.financial) return 'Finanças';
-    if (path.startsWith('/audit') || path == AppRoutePaths.audit) return 'Auditoria';
-    if (path.startsWith('/users')) return 'Utilizadores';
+    if (path.startsWith('/sales') || path == AppRoutePaths.pos) {
+      return 'Terminal';
+    }
+    if (path.startsWith('/stock')) return 'Stock & Logística';
+    if (path == AppRoutePaths.regulatory ||
+        path == AppRoutePaths.psychotropics ||
+        path == AppRoutePaths.recipes ||
+        path == AppRoutePaths.recipesBook) {
+      return 'Regulatório';
+    }
+    if (path.startsWith('/finance') || path == AppRoutePaths.financial) {
+      return 'Financeiro';
+    }
+    if (path.startsWith('/audit') || path == AppRoutePaths.audit)
+      return 'Auditoria';
+    if (path.startsWith('/users')) return 'Administração';
     if (path.startsWith('/settings')) return 'Sistema';
     if (path.startsWith('/auth')) return 'Conta';
-    if (path == AppRoutePaths.pos) return 'Terminal';
-    if (path == AppRoutePaths.purchasing || path == AppRoutePaths.reports) return 'Operações';
+    if (path == AppRoutePaths.purchasing) return 'Stock & Logística';
     return 'Pharma ERP';
   }
 }
