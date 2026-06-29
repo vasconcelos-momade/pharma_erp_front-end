@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'design_metrics.dart';
-import 'spacing.dart';
 
 /// Raios e alturas de chrome — delega métricas a [DesignMetrics].
 abstract final class AppDimensions {

@@ -6,7 +6,6 @@ import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/theme/app_radius.dart';
 import '../../../../../core/theme/design_metrics.dart';
 import '../../../../../core/theme/design_tokens.dart';
-import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/buttons/pharma_button_loader.dart';

@@ -9,6 +9,35 @@ import 'package:google_fonts/google_fonts.dart';
 abstract final class AppTypography {
   AppTypography._();
 
+  /// Monospace para códigos, números tabulares e IDs.
+  static TextStyle monospace({
+    required Brightness brightness,
+    double fontSize = 12,
+    FontWeight fontWeight = FontWeight.w500,
+  }) {
+    final base = ThemeData(useMaterial3: true, brightness: brightness).textTheme;
+    final fallback = (base.bodySmall ?? const TextStyle()).copyWith(
+      fontFamily: 'monospace',
+      fontFeatures: const [FontFeature.tabularFigures()],
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      height: 1.35,
+    );
+    if (kIsWeb) return fallback;
+    return GoogleFonts.jetBrainsMono(textStyle: fallback);
+  }
+
+  /// Alias enterprise para "Caption" (compat). Material 3 não tem caption.
+  static TextStyle caption(TextTheme theme) =>
+      _w(theme.bodySmall).copyWith(fontSize: 12, height: 1.35);
+
+  /// Alias enterprise para "Overline" (compat). Material 3 não tem overline.
+  static TextStyle overline(TextTheme theme) => _w(theme.labelSmall).copyWith(
+        fontSize: 10,
+        letterSpacing: 1.1,
+        height: 1.15,
+      );
+
   static TextTheme textThemeFor(Brightness brightness) {
     final base = ThemeData(useMaterial3: true, brightness: brightness).textTheme;
     if (kIsWeb) {

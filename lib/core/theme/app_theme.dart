@@ -3,7 +3,18 @@ import 'package:flutter/material.dart';
 import 'app_colors.dart';
 import 'component_theme.dart';
 import 'design_tokens.dart';
+import 'pharma_border_tokens.dart';
+import 'pharma_color_tokens.dart';
+import 'pharma_dashboard_tokens.dart';
+import 'pharma_finance_tokens.dart';
+import 'pharma_healthcare_tokens.dart';
+import 'pharma_navigation_tokens.dart';
+import 'pharma_radius_tokens.dart';
 import 'typography.dart';
+import 'dashboard_theme.dart';
+import 'table_theme.dart';
+import 'healthcare_theme.dart';
+import 'navigation_theme.dart';
 
 abstract final class AppTheme {
   AppTheme._();
@@ -14,13 +25,39 @@ abstract final class AppTheme {
     required ColorScheme scheme,
   }) {
     final isDark = brightness == Brightness.dark;
+    final colorTokens = PharmaColorTokens.fromLegacy(tokens: tokens, scheme: scheme);
+    final radiusTokens = PharmaRadiusTokens.fromLegacy(tokens);
+    final borderTokens = PharmaBorderTokens.fromLegacy(tokens);
+    final navigationTokens =
+        PharmaNavigationTokens.fromLegacy(tokens: tokens, scheme: scheme);
+    final dashboardTokens = PharmaDashboardTokens.fromLegacy(tokens);
+    final financeTokens = PharmaFinanceTokens.fromLegacy(tokens);
+    final healthcareTokens = PharmaHealthcareTokens.fromLegacy(tokens);
+
+    final dashboardTheme = DashboardTheme.fromLegacy(tokens);
+    final tableTheme = TableTheme.fromLegacy(tokens);
+    final specificHealthcareTheme = HealthcareTheme.fromLegacy(tokens);
+    final specificNavigationTheme = NavigationThemeData.fromLegacy(tokens);
 
     return ThemeData(
       useMaterial3: true,
       brightness: brightness,
       colorScheme: scheme,
       scaffoldBackgroundColor: tokens.bgPrimary,
-      extensions: [tokens],
+      extensions: [
+        tokens,
+        colorTokens,
+        radiusTokens,
+        borderTokens,
+        navigationTokens,
+        dashboardTokens,
+        financeTokens,
+        healthcareTokens,
+        dashboardTheme,
+        tableTheme,
+        specificHealthcareTheme,
+        specificNavigationTheme,
+      ],
       textTheme: AppTypography.textThemeFor(brightness).apply(
         bodyColor: tokens.textPrimary,
         displayColor: tokens.textPrimary,
@@ -32,30 +69,18 @@ abstract final class AppTheme {
         scrolledUnderElevation: 0,
         surfaceTintColor: Colors.transparent,
       ),
-      cardTheme: CardThemeData(
-        color: tokens.card,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(tokens.radiusMd),
-          side: BorderSide(
-            color: tokens.border.withValues(alpha: isDark ? 0.6 : 0.85),
-          ),
-        ),
-      ),
-      dialogTheme: DialogThemeData(
-        backgroundColor: tokens.card,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(tokens.radiusMd),
-          side: BorderSide(
-            color: tokens.border.withValues(alpha: isDark ? 0.6 : 0.85),
-          ),
-        ),
-      ),
-      bottomSheetTheme: BottomSheetThemeData(
-        backgroundColor: tokens.card,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(tokens.radiusMd)),
-        ),
+      chipTheme: PharmaComponentTheme.chip(tokens, scheme, isDark: isDark),
+      tooltipTheme: PharmaComponentTheme.tooltip(tokens, scheme),
+      snackBarTheme: PharmaComponentTheme.snackBar(tokens, scheme),
+      scrollbarTheme: PharmaComponentTheme.scrollbar(tokens),
+      cardTheme: PharmaComponentTheme.card(tokens, isDark: isDark),
+      dialogTheme: PharmaComponentTheme.dialog(tokens, isDark: isDark),
+      bottomSheetTheme: PharmaComponentTheme.bottomSheet(tokens),
+      popupMenuTheme: PharmaComponentTheme.popupMenu(tokens),
+      menuTheme: PharmaComponentTheme.menu(tokens),
+      dropdownMenuTheme: DropdownMenuThemeData(
+        textStyle: TextStyle(color: tokens.textPrimary),
+        inputDecorationTheme: PharmaComponentTheme.input(tokens, scheme, isDark: isDark),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: PharmaComponentTheme.filled(tokens, scheme),
@@ -68,9 +93,18 @@ abstract final class AppTheme {
       ),
       iconButtonTheme: PharmaComponentTheme.iconButton(tokens, scheme),
       inputDecorationTheme: PharmaComponentTheme.input(tokens, scheme, isDark: isDark),
-      dividerTheme: DividerThemeData(
-        color: tokens.border.withValues(alpha: isDark ? 0.5 : 0.7),
-      ),
+      checkboxTheme: PharmaComponentTheme.checkbox(scheme),
+      switchTheme: PharmaComponentTheme.switchTheme(scheme),
+      radioTheme: PharmaComponentTheme.radio(scheme),
+      sliderTheme: PharmaComponentTheme.slider(scheme),
+      dividerTheme: PharmaComponentTheme.divider(tokens, isDark: isDark),
+      dataTableTheme: PharmaComponentTheme.dataTable(tokens),
+      listTileTheme: PharmaComponentTheme.listTile(tokens),
+      navigationRailTheme: PharmaComponentTheme.navigationRail(tokens, scheme),
+      navigationDrawerTheme: PharmaComponentTheme.navigationDrawer(tokens, scheme, isDark: isDark),
+      navigationBarTheme: PharmaComponentTheme.navigationBar(tokens, scheme, isDark: isDark),
+      progressIndicatorTheme: PharmaComponentTheme.progressIndicator(scheme),
+      tabBarTheme: PharmaComponentTheme.tabBar(tokens, scheme, isDark: isDark),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
           TargetPlatform.android: ZoomPageTransitionsBuilder(),

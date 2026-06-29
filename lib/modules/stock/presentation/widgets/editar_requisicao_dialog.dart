@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/design_metrics.dart';
-import '../../../../core/theme/spacing.dart';
 import '../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
 import '../../domain/entities/fornecedor.dart';
 import '../../domain/entities/requisicao.dart';
