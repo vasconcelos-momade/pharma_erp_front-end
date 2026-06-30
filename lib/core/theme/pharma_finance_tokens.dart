@@ -25,8 +25,8 @@ class PharmaFinanceTokens extends ThemeExtension<PharmaFinanceTokens> {
       income: tokens.posSuccess,
       expense: tokens.posDanger,
       profit: tokens.brandGreen,
-      cash: tokens.brandBlue,
-      invoice: tokens.brandBlueHover,
+      cash: tokens.brandGreen,
+      invoice: tokens.brandGreenHover,
       paymentPending: tokens.posWarning,
     );
   }
@@ -53,14 +53,7 @@ class PharmaFinanceTokens extends ThemeExtension<PharmaFinanceTokens> {
   @override
   PharmaFinanceTokens lerp(ThemeExtension<PharmaFinanceTokens>? other, double t) {
     if (other is! PharmaFinanceTokens) return this;
-    return PharmaFinanceTokens(
-      income: Color.lerp(income, other.income, t)!,
-      expense: Color.lerp(expense, other.expense, t)!,
-      profit: Color.lerp(profit, other.profit, t)!,
-      cash: Color.lerp(cash, other.cash, t)!,
-      invoice: Color.lerp(invoice, other.invoice, t)!,
-      paymentPending: Color.lerp(paymentPending, other.paymentPending, t)!,
-    );
+    return t < 0.5 ? this : other;
   }
 }
 

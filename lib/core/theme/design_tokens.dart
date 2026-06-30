@@ -1,5 +1,3 @@
-import 'dart:ui' show lerpDouble;
-
 import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
@@ -346,49 +344,16 @@ class PharmaTokens extends ThemeExtension<PharmaTokens> {
   @override
   PharmaTokens lerp(ThemeExtension<PharmaTokens>? other, double t) {
     if (other is! PharmaTokens) return this;
-    return PharmaTokens(
-      bgPrimary: Color.lerp(bgPrimary, other.bgPrimary, t)!,
-      bgSecondary: Color.lerp(bgSecondary, other.bgSecondary, t)!,
-      card: Color.lerp(card, other.card, t)!,
-      cardHover: Color.lerp(cardHover, other.cardHover, t)!,
-      border: Color.lerp(border, other.border, t)!,
-      textPrimary: Color.lerp(textPrimary, other.textPrimary, t)!,
-      textSecondary: Color.lerp(textSecondary, other.textSecondary, t)!,
-      textMuted: Color.lerp(textMuted, other.textMuted, t)!,
-      brandBlue: Color.lerp(brandBlue, other.brandBlue, t)!,
-      brandBlueHover: Color.lerp(brandBlueHover, other.brandBlueHover, t)!,
-      brandGreen: Color.lerp(brandGreen, other.brandGreen, t)!,
-      brandGreenHover: Color.lerp(brandGreenHover, other.brandGreenHover, t)!,
-      posSuccess: Color.lerp(posSuccess, other.posSuccess, t)!,
-      posWarning: Color.lerp(posWarning, other.posWarning, t)!,
-      posDanger: Color.lerp(posDanger, other.posDanger, t)!,
-      posInfo: Color.lerp(posInfo, other.posInfo, t)!,
-      psychotropic: Color.lerp(psychotropic, other.psychotropic, t)!,
-      quarantine: Color.lerp(quarantine, other.quarantine, t)!,
-      incineration: Color.lerp(incineration, other.incineration, t)!,
-      recall: Color.lerp(recall, other.recall, t)!,
-      radiusMd: lerpDouble(radiusMd, other.radiusMd, t)!,
-      radiusXl: lerpDouble(radiusXl, other.radiusXl, t)!,
-      radius2xl: lerpDouble(radius2xl, other.radius2xl, t)!,
-      radius3xl: lerpDouble(radius3xl, other.radius3xl, t)!,
-      minTouchTarget: lerpDouble(minTouchTarget, other.minTouchTarget, t)!,
-      iconMd: lerpDouble(iconMd, other.iconMd, t)!,
-      iconSm: lerpDouble(iconSm, other.iconSm, t)!,
-      avatarMd: lerpDouble(avatarMd, other.avatarMd, t)!,
-      topBarDesktop: lerpDouble(topBarDesktop, other.topBarDesktop, t)!,
-      topBarCompact: lerpDouble(topBarCompact, other.topBarCompact, t)!,
-      posHeader: lerpDouble(posHeader, other.posHeader, t)!,
-      posFooter: lerpDouble(posFooter, other.posFooter, t)!,
-      sidebarExpanded: lerpDouble(sidebarExpanded, other.sidebarExpanded, t)!,
-      sidebarCollapsed: lerpDouble(sidebarCollapsed, other.sidebarCollapsed, t)!,
-      contentMaxWidth: lerpDouble(contentMaxWidth, other.contentMaxWidth, t)!,
-      density: t < 0.5 ? density : other.density,
-    );
+    return t < 0.5 ? this : other;
   }
 }
 
 extension PharmaTokensX on BuildContext {
-  PharmaTokens get pharmaTokens =>
-      Theme.of(this).extension<PharmaTokens>() ??
-      PharmaTokens.enterpriseDark();
+  PharmaTokens get pharmaTokens {
+    final extension = Theme.of(this).extension<PharmaTokens>();
+    if (extension != null) return extension;
+    return Theme.of(this).brightness == Brightness.dark
+        ? PharmaTokens.enterpriseDark()
+        : PharmaTokens.enterpriseLight();
+  }
 }

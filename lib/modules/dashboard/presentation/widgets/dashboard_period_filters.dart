@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/spacing.dart';
+import '../../../../shared/responsive/pharma_screen_layout.dart';
 import '../providers/dashboard_providers.dart';
 import '../../domain/dashboard_query.dart';
 import 'dashboard_widgets.dart';
@@ -15,59 +15,34 @@ class DashboardPeriodFilters extends ConsumerStatefulWidget {
     required this.query,
     required this.onChanged,
     this.extraFilters,
-    this.showSearch = true,
     this.showCategoryFilter = false,
     this.showProductFilter = false,
     this.statusOptions = const [],
     this.paymentMethodOptions = const [],
     this.movementTypeOptions = const [],
+    this.actions,
   });
 
   final DashboardQuery query;
   final DashboardQueryChanged onChanged;
   final List<Widget>? extraFilters;
-  final bool showSearch;
   final bool showCategoryFilter;
   final bool showProductFilter;
   final List<DashboardFilterOption> statusOptions;
   final List<DashboardFilterOption> paymentMethodOptions;
   final List<DashboardFilterOption> movementTypeOptions;
+  final List<Widget>? actions;
 
   @override
   ConsumerState<DashboardPeriodFilters> createState() => _DashboardPeriodFiltersState();
 }
 
 class _DashboardPeriodFiltersState extends ConsumerState<DashboardPeriodFilters> {
-  late final TextEditingController _searchController;
-
   DashboardQuery get query => widget.query;
   DashboardQueryChanged get onChanged => widget.onChanged;
 
   @override
-  void initState() {
-    super.initState();
-    _searchController = TextEditingController(text: widget.query.search);
-  }
-
-  @override
-  void didUpdateWidget(covariant DashboardPeriodFilters oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.query.search != widget.query.search &&
-        _searchController.text != widget.query.search) {
-      _searchController.text = widget.query.search;
-    }
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
-    final s = context.spacing;
     final categoriesAsync = widget.showCategoryFilter
         ? ref.watch(dashboardFilterCategoriesProvider)
         : const AsyncValue.data([]);
@@ -78,11 +53,12 @@ class _DashboardPeriodFiltersState extends ConsumerState<DashboardPeriodFilters>
     final presets = <(DashboardPeriodPreset, String)>[
       (DashboardPeriodPreset.today, 'Hoje'),
       (DashboardPeriodPreset.yesterday, 'Ontem'),
-      (DashboardPeriodPreset.last7days, '7 dias'),
-      (DashboardPeriodPreset.last30days, '30 dias'),
+      (DashboardPeriodPreset.last7days, 'Últimos 7 dias'),
+      (DashboardPeriodPreset.last30days, 'Últimos 30 dias'),
       (DashboardPeriodPreset.thisMonth, 'Este mês'),
       (DashboardPeriodPreset.lastMonth, 'Mês anterior'),
       (DashboardPeriodPreset.thisYear, 'Este ano'),
+      (DashboardPeriodPreset.custom, 'Personalizado'),
     ];
 
     final hasCustomRange =
@@ -90,12 +66,22 @@ class _DashboardPeriodFiltersState extends ConsumerState<DashboardPeriodFilters>
         widget.query.from != null &&
         widget.query.to != null;
 
+    final periodOptions = presets
+        .map((p) => DashboardFilterOption(
+              value: p.$1.name,
+              label: p.$1 == DashboardPeriodPreset.custom && hasCustomRange
+                  ? _formatRange(widget.query.from!, widget.query.to!)
+                  : p.$2,
+            ))
+        .toList();
+
     final categoryOptions = categoriesAsync.maybeWhen(
       data: (items) => items
           .map((item) => DashboardFilterOption(value: item.id, label: item.nome))
           .toList(growable: false),
       orElse: () => const <DashboardFilterOption>[],
     );
+
     final productOptions = productsAsync.maybeWhen(
       data: (items) => items
           .map((item) => DashboardFilterOption(value: item.id, label: item.nome))
@@ -103,112 +89,44 @@ class _DashboardPeriodFiltersState extends ConsumerState<DashboardPeriodFilters>
       orElse: () => const <DashboardFilterOption>[],
     );
 
-    return Container(
-      padding: EdgeInsets.all(s.md),
-      decoration: BoxDecoration(
-        color: t.card,
-        borderRadius: BorderRadius.circular(t.radiusMd),
-        border: Border.all(color: t.border.withValues(alpha: 0.55)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Wrap(
-            spacing: s.sm,
-            runSpacing: s.sm,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              if (widget.showSearch)
-                SizedBox(
-                  width: 280,
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: InputDecoration(
-                      hintText: 'Pesquisar...',
-                      prefixIcon: const Icon(Icons.search_rounded),
-                      filled: true,
-                      fillColor: t.card,
-                      isDense: true,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(t.radiusXl),
-                      ),
-                    ),
-                    onChanged: (value) => onChanged(query.copyWith(search: value)),
-                  ),
-                ),
-              if (widget.showCategoryFilter)
-                DashboardFilterSelect(
-                  label: 'Categoria',
-                  options: categoryOptions,
-                  value: query.categoriaId,
-                  onChanged: (value) => onChanged(
-                    query.copyWith(
-                      categoriaId: value,
-                      clearCategoriaId: value == null,
-                    ),
-                  ),
-                ),
-              if (widget.showProductFilter)
-                DashboardFilterSelect(
-                  label: 'Produto',
-                  options: productOptions,
-                  value: query.produtoId,
-                  onChanged: (value) => onChanged(
-                    query.copyWith(
-                      produtoId: value,
-                      clearProdutoId: value == null,
-                    ),
-                  ),
-                ),
-              if (widget.statusOptions.isNotEmpty)
-                DashboardFilterSelect(
-                  label: 'Estado',
-                  options: widget.statusOptions,
-                  value: query.estado,
-                  onChanged: (value) => onChanged(
-                    query.copyWith(
-                      estado: value,
-                      clearEstado: value == null,
-                    ),
-                  ),
-                ),
-              if (widget.paymentMethodOptions.isNotEmpty)
-                DashboardFilterSelect(
-                  label: 'Pagamento',
-                  options: widget.paymentMethodOptions,
-                  value: query.metodoPagamento,
-                  onChanged: (value) => onChanged(
-                    query.copyWith(
-                      metodoPagamento: value,
-                      clearMetodoPagamento: value == null,
-                    ),
-                  ),
-                ),
-              if (widget.movementTypeOptions.isNotEmpty)
-                DashboardFilterSelect(
-                  label: 'Movimentação',
-                  options: widget.movementTypeOptions,
-                  value: query.tipoMovimentacao,
-                  onChanged: (value) => onChanged(
-                    query.copyWith(
-                      tipoMovimentacao: value,
-                      clearTipoMovimentacao: value == null,
-                    ),
-                  ),
-                ),
-            ],
-          ),
-          SizedBox(height: s.sm),
-          Wrap(
-            spacing: s.sm,
-            runSpacing: s.sm,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              for (final (preset, label) in presets)
-                FilterChip(
-                  label: Text(label),
-                  selected: query.period == preset,
-                  onSelected: (_) => onChanged(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final spacing = context.spacing.sm;
+        final availableWidth =
+            constraints.maxWidth.isFinite && constraints.maxWidth > 0
+                ? constraints.maxWidth
+                : MediaQuery.sizeOf(context).width;
+        final columns = PharmaScreenLayout.adaptiveCrossAxisCount(
+          availableWidth,
+          280,
+          maxColumns: availableWidth >= 1440 ? 5 : 4,
+        );
+        final fieldWidth =
+            ((availableWidth - (columns - 1) * spacing) / columns)
+                .clamp(220.0, 360.0);
+
+        Widget filterField(Widget child) => SizedBox(
+              width: fieldWidth,
+              child: child,
+            );
+
+        final filterChildren = <Widget>[
+          filterField(
+            DashboardFilterSelect(
+              label: 'Período',
+              options: periodOptions,
+              value: query.period.name,
+              onChanged: (value) {
+                if (value == null) return;
+                final preset = DashboardPeriodPreset.values.firstWhere(
+                  (p) => p.name == value,
+                  orElse: () => DashboardPeriodPreset.today,
+                );
+
+                if (preset == DashboardPeriodPreset.custom) {
+                  _pickCustomRange(context);
+                } else {
+                  onChanged(
                     query.copyWith(
                       period: preset,
                       clearFrom: true,
@@ -219,35 +137,116 @@ class _DashboardPeriodFiltersState extends ConsumerState<DashboardPeriodFilters>
                               ? 30
                               : query.days,
                     ),
+                  );
+                }
+              },
+            ),
+          ),
+          if (widget.showCategoryFilter)
+            filterField(
+              DashboardFilterSelect(
+                label: 'Categoria',
+                options: categoryOptions,
+                value: query.categoriaId,
+                onChanged: (value) => onChanged(
+                  query.copyWith(
+                    categoriaId: value,
+                    clearCategoriaId: value == null,
                   ),
                 ),
-              OutlinedButton.icon(
-                onPressed: () => _pickCustomRange(context),
-                icon: const Icon(Icons.date_range_rounded),
-                label: Text(
-                  hasCustomRange
-                      ? _formatRange(query.from!, query.to!)
-                      : 'Intervalo personalizado',
-                ),
-                style: OutlinedButton.styleFrom(
-                  backgroundColor:
-                      hasCustomRange ? t.brandBlue.withValues(alpha: 0.08) : null,
+              ),
+            ),
+          if (widget.showProductFilter)
+            filterField(
+              DashboardFilterSelect(
+                label: 'Produto',
+                options: productOptions,
+                value: query.produtoId,
+                onChanged: (value) => onChanged(
+                  query.copyWith(
+                    produtoId: value,
+                    clearProdutoId: value == null,
+                  ),
                 ),
               ),
-              if (query.hasActiveFilters)
-                TextButton.icon(
-                  onPressed: () {
-                    _searchController.clear();
-                    onChanged(const DashboardQuery());
-                  },
-                  icon: const Icon(Icons.filter_alt_off_outlined),
-                  label: const Text('Limpar'),
+            ),
+          if (widget.statusOptions.isNotEmpty)
+            filterField(
+              DashboardFilterSelect(
+                label: 'Estado',
+                options: widget.statusOptions,
+                value: query.estado,
+                onChanged: (value) => onChanged(
+                  query.copyWith(
+                    estado: value,
+                    clearEstado: value == null,
+                  ),
                 ),
-              if (widget.extraFilters != null) ...?widget.extraFilters,
-            ],
+              ),
+            ),
+          if (widget.paymentMethodOptions.isNotEmpty)
+            filterField(
+              DashboardFilterSelect(
+                label: 'Pagamento',
+                options: widget.paymentMethodOptions,
+                value: query.metodoPagamento,
+                onChanged: (value) => onChanged(
+                  query.copyWith(
+                    metodoPagamento: value,
+                    clearMetodoPagamento: value == null,
+                  ),
+                ),
+              ),
+            ),
+          if (widget.movementTypeOptions.isNotEmpty)
+            filterField(
+              DashboardFilterSelect(
+                label: 'Movimentação',
+                options: widget.movementTypeOptions,
+                value: query.tipoMovimentacao,
+                onChanged: (value) => onChanged(
+                  query.copyWith(
+                    tipoMovimentacao: value,
+                    clearTipoMovimentacao: value == null,
+                  ),
+                ),
+              ),
+            ),
+          if (widget.extraFilters != null) ...widget.extraFilters!,
+        ];
+
+        return Align(
+          alignment: Alignment.centerRight,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            reverse: true, // Começa do final (direita)
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                for (var i = 0; i < filterChildren.length; i++) ...[
+                  if (i > 0) SizedBox(width: spacing),
+                  filterChildren[i],
+                ],
+                if (query.hasActiveFilters) ...[
+                  SizedBox(width: spacing),
+                  TextButton.icon(
+                    onPressed: () => onChanged(const DashboardQuery()),
+                    icon: const Icon(Icons.filter_alt_off_outlined),
+                    label: const Text('Limpar'),
+                  ),
+                ],
+                if (widget.actions != null && widget.actions!.isNotEmpty) ...[
+                  for (final action in widget.actions!) ...[
+                    SizedBox(width: spacing),
+                    action,
+                  ],
+                ],
+              ],
+            ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 

@@ -18,6 +18,8 @@ class PharmaErpApp extends ConsumerWidget {
       theme: AppTheme.lightEnterprise(),
       darkTheme: AppTheme.darkEnterprise(),
       themeMode: mode,
+      themeAnimationDuration: Duration.zero,
+      themeAnimationCurve: Curves.linear,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
       builder: (context, child) {

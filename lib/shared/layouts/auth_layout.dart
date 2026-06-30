@@ -4,7 +4,7 @@ import '../../core/theme/design_tokens.dart';
 import '../../core/theme/spacing.dart';
 import '../widgets/sync/offline_mode_banner.dart';
 
-/// Layout autenticação: fundo premium, slot para biometria/indicadores offline.
+/// Layout autenticação: fundo do design system e indicadores offline.
 class AuthLayout extends StatelessWidget {
   const AuthLayout({
     super.key,
@@ -12,12 +12,14 @@ class AuthLayout extends StatelessWidget {
     this.showOfflineBanner = false,
     this.offlineMessage,
     this.footer,
+    this.scrollPadding,
   });
 
   final Widget child;
   final bool showOfflineBanner;
   final String? offlineMessage;
   final Widget? footer;
+  final EdgeInsets? scrollPadding;
 
   @override
   Widget build(BuildContext context) {
@@ -26,44 +28,66 @@ class AuthLayout extends StatelessWidget {
       backgroundColor: t.bgPrimary,
       body: Stack(
         children: [
-          Positioned.fill(
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    t.brandBlue.withValues(alpha: 0.12),
-                    t.bgPrimary,
-                    t.brandGreen.withValues(alpha: 0.06),
-                  ],
-                ),
-              ),
-            ),
-          ),
           Positioned(
             top: 0,
             left: 0,
             right: 0,
             child: SafeArea(
               bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, 0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (showOfflineBanner)
-                      OfflineModeBanner(
-                        message: offlineMessage ?? 'A trabalhar em modo offline. As alterações serão sincronizadas.',
-                      ),
-                  ],
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: t.contentMaxWidth),
+                  child: Padding(
+                    padding: t.density.pageInsets.copyWith(bottom: 0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: t.minTouchTarget,
+                                height: t.minTouchTarget,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: t.brandGreen,
+                                  borderRadius: BorderRadius.circular(t.radiusMd),
+                                ),
+                                child: Icon(
+                                  Icons.local_pharmacy_rounded,
+                                  color: t.bgPrimary,
+                                  size: 24,
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.md),
+                              Text(
+                                'Pharma ERP',
+                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      letterSpacing: -0.5,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (showOfflineBanner)
+                          OfflineModeBanner(
+                            message:
+                                offlineMessage ??
+                                'A trabalhar em modo offline. As alterações serão sincronizadas.',
+                          ),
+                      ],
+                    ),
+                  ),
                 ),
               ),
             ),
           ),
           Center(
             child: SingleChildScrollView(
-              padding: AppSpacing.pagePadding,
+              padding: scrollPadding ?? AppSpacing.pagePadding,
               child: child,
             ),
           ),

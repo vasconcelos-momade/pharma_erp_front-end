@@ -7,11 +7,14 @@ import '../../app/providers/app_theme_mode_provider.dart';
 import '../../app/providers/auth_session_notifier.dart';
 import '../../app/providers/session_access_notifier.dart';
 import '../../app/router/routes.dart';
+import '../../core/theme/app_shadows.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../core/theme/pharma_surface.dart';
 import '../../core/theme/dimensions.dart';
 import '../../core/theme/spacing.dart';
 import '../responsive/pharma_screen_layout.dart';
 import '../widgets/navigation/app_nav_config.dart';
+import '../widgets/navigation/sidebar_menu_icon.dart';
 import '../widgets/sync/sync_status_strip.dart';
 import 'tablet_layout.dart';
 
@@ -151,10 +154,10 @@ class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
                   NavigationDestination(
                     tooltip: 'Produtos',
                     icon: Icon(
-                      Icons.inventory_2_outlined,
+                      Icons.inventory_outlined,
                       color: t.textSecondary,
                     ),
-                    selectedIcon: Icon(Icons.inventory_2, color: t.brandGreen),
+                    selectedIcon: Icon(Icons.inventory, color: t.brandGreen),
                     label: '',
                   ),
                   NavigationDestination(
@@ -165,11 +168,8 @@ class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
                   ),
                   NavigationDestination(
                     tooltip: 'Menu',
-                    icon: Icon(Icons.menu_rounded, color: t.textSecondary),
-                    selectedIcon: Icon(
-                      Icons.menu_open_rounded,
-                      color: t.brandGreen,
-                    ),
+                    icon: SidebarMenuIcon(color: t.textSecondary),
+                    selectedIcon: SidebarMenuIcon(color: t.brandGreen),
                     label: '',
                   ),
                 ],
@@ -224,7 +224,10 @@ class _EnterpriseTopBar extends ConsumerWidget {
     final t = context.pharmaTokens;
     final s = context.spacing;
     final theme = Theme.of(context);
-    final mode = ref.watch(appThemeModeProvider);
+    final isDark = theme.brightness == Brightness.dark;
+    final userName = ref.watch(
+      authSessionProvider.select((auth) => auth.session?.user.name),
+    );
     final section =
         navSectionTitleForPath(location) ?? AppRouteTitles.sectionFor(location);
     final title = AppRouteTitles.titleFor(location);
@@ -238,6 +241,7 @@ class _EnterpriseTopBar extends ConsumerWidget {
 
     return Material(
       color: t.bgPrimary,
+      animationDuration: kPharmaInstantThemeDuration,
       elevation: 0,
       shadowColor: Colors.transparent,
       surfaceTintColor: Colors.transparent,
@@ -248,7 +252,7 @@ class _EnterpriseTopBar extends ConsumerWidget {
         padding: horizontalPadding,
         child: Row(
           children: [
-            if (!isDesktop) ...[
+            if (!isDesktop && !isMobile) ...[
               IconButton(
                 constraints: BoxConstraints(
                   minWidth: t.minTouchTarget,
@@ -256,8 +260,7 @@ class _EnterpriseTopBar extends ConsumerWidget {
                 ),
                 padding: EdgeInsets.zero,
                 tooltip: 'Menu',
-                icon: Icon(
-                  Icons.menu_rounded,
+                icon: SidebarMenuIcon(
                   color: t.textSecondary,
                   size: t.iconMd,
                 ),
@@ -280,7 +283,7 @@ class _EnterpriseTopBar extends ConsumerWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.labelSmall?.copyWith(
-                            color: t.brandBlue,
+                            color: t.brandGreen,
                             letterSpacing: 1.2,
                             fontWeight: FontWeight.w800,
                           ),
@@ -318,7 +321,7 @@ class _EnterpriseTopBar extends ConsumerWidget {
                           child: Text(
                             section.toUpperCase(),
                             style: theme.textTheme.labelSmall?.copyWith(
-                              color: t.brandBlue,
+                              color: t.brandGreen,
                               letterSpacing: 1.6,
                             ),
                             overflow: TextOverflow.ellipsis,
@@ -366,37 +369,12 @@ class _EnterpriseTopBar extends ConsumerWidget {
                           minHeight: t.minTouchTarget,
                         ),
                         padding: EdgeInsets.zero,
-                        tooltip: 'Alertas',
-                        onPressed: () {},
-                        icon: Badge(
-                          label: Text(
-                            '3',
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                          child: Icon(
-                            Icons.notifications_none_rounded,
-                            color: t.textSecondary,
-                            size: t.iconMd,
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: actionSpacing),
-                      IconButton(
-                        constraints: BoxConstraints(
-                          minWidth: t.minTouchTarget,
-                          minHeight: t.minTouchTarget,
-                        ),
-                        padding: EdgeInsets.zero,
-                        tooltip: mode == ThemeMode.dark
-                            ? 'Tema claro'
-                            : 'Tema escuro',
+                        tooltip: isDark ? 'Tema claro' : 'Tema escuro',
                         onPressed: () {
                           ref.read(appThemeModeProvider.notifier).toggle();
                         },
                         icon: Icon(
-                          mode == ThemeMode.dark
+                          isDark
                               ? Icons.light_mode_outlined
                               : Icons.dark_mode_outlined,
                           color: t.textSecondary,
@@ -415,7 +393,7 @@ class _EnterpriseTopBar extends ConsumerWidget {
                           radius: t.avatarMd / 2,
                           backgroundColor: t.brandGreen.withValues(alpha: 0.2),
                           child: Text(
-                            'OP',
+                            _userInitials(userName),
                             style: theme.textTheme.labelSmall?.copyWith(
                               color: t.brandGreen,
                               fontWeight: FontWeight.w900,
@@ -483,28 +461,15 @@ class _Sidebar extends StatelessWidget {
       duration: const Duration(milliseconds: 280),
       curve: Curves.easeOutCubic,
       width: w,
-      decoration: BoxDecoration(
-        color: t.bgSecondary,
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [
-            t.bgSecondary,
-            Color.lerp(t.bgSecondary, t.bgPrimary, 0.12) ?? t.bgSecondary,
-          ],
-        ),
-        border: Border(
-          right: BorderSide(color: t.border.withValues(alpha: 0.65)),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 18,
-            offset: const Offset(6, 0),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: t.bgSecondary,
+          border: Border(
+            right: BorderSide(color: t.border.withValues(alpha: 0.65)),
           ),
-        ],
-      ),
-      child: Column(
+          boxShadow: AppShadows.dialog(context),
+        ),
+        child: Column(
         children: [
           if (expanded)
             Container(
@@ -516,7 +481,7 @@ class _Sidebar extends StatelessWidget {
                 0,
               ),
               decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [t.brandBlue, t.brandGreen]),
+                color: t.brandGreen,
                 borderRadius: BorderRadius.circular(999),
               ),
             ),
@@ -530,128 +495,49 @@ class _Sidebar extends StatelessWidget {
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                AnimatedContainer(
+                AnimatedPadding(
                   duration: const Duration(milliseconds: 280),
                   curve: Curves.easeOutCubic,
                   padding: EdgeInsets.symmetric(
                     horizontal: expanded ? AppSpacing.md : AppSpacing.sm,
                     vertical: expanded ? AppSpacing.md : AppSpacing.sm,
                   ),
-                  decoration: BoxDecoration(
-                    color: t.card.withValues(alpha: 0.82),
-                    borderRadius: BorderRadius.circular(t.radiusLg),
-                    border: Border.all(color: t.border.withValues(alpha: 0.55)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: t.brandBlue.withValues(alpha: 0.12),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: expanded
-                      ? Row(
-                          children: [
-                            Container(
-                              width: t.avatarMd + 4,
-                              height: t.avatarMd + 4,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [t.brandBlue, t.brandGreen],
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: t.card.withValues(alpha: 0.82),
+                      borderRadius: BorderRadius.circular(t.radiusLg),
+                      border: Border.all(color: t.border.withValues(alpha: 0.55)),
+                    ),
+                    child: expanded
+                        ? Row(
+                            children: [
+                              Container(
+                                width: t.avatarMd + 4,
+                                height: t.avatarMd + 4,
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  color: t.brandGreen,
+                                  borderRadius: BorderRadius.circular(t.radiusMd),
                                 ),
-                                borderRadius: BorderRadius.circular(t.radiusMd),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: t.brandBlue.withValues(alpha: 0.35),
-                                    blurRadius: 14,
-                                  ),
-                                ],
+                                child: Icon(
+                                  Icons.local_pharmacy_rounded,
+                                  color: t.bgPrimary,
+                                  size: 22,
+                                ),
                               ),
-                              child: Icon(
-                                Icons.local_pharmacy_rounded,
-                                color: t.bgPrimary,
-                                size: 22,
-                              ),
-                            ),
                             const SizedBox(width: AppSpacing.md),
                             Expanded(
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: Text(
-                                          'Pharma ERP',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .titleSmall
-                                              ?.copyWith(
-                                                color: t.textPrimary,
-                                                fontWeight: FontWeight.w800,
-                                              ),
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: t.brandBlue.withValues(
-                                            alpha: 0.12,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            999,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          'ERP',
-                                          style: Theme.of(context)
-                                              .textTheme
-                                              .labelSmall
-                                              ?.copyWith(
-                                                color: t.brandBlue,
-                                                fontWeight: FontWeight.w800,
-                                                letterSpacing: 1.1,
-                                              ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: AppSpacing.xs),
-                                  Text(
-                                    'Offline-first • Multi-tenant',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .labelSmall
-                                        ?.copyWith(
-                                          color: t.textMuted,
-                                          letterSpacing: 0.6,
-                                        ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                  const SizedBox(height: AppSpacing.sm),
-                                  Row(
-                                    children: [
-                                      _SidebarMetaChip(
-                                        icon: Icons.apartment_rounded,
-                                        label: 'Operações',
-                                      ),
-                                      const SizedBox(width: AppSpacing.sm),
-                                      _SidebarMetaChip(
-                                        icon: Icons.cloud_done_outlined,
-                                        label: 'Online',
-                                        accentColor: t.brandGreen,
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                              child: Text(
+                                'PharmaERP',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleSmall
+                                    ?.copyWith(
+                                      color: t.textPrimary,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],
@@ -661,9 +547,7 @@ class _Sidebar extends StatelessWidget {
                           height: t.minTouchTarget,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [t.brandBlue, t.brandGreen],
-                            ),
+                            color: t.brandGreen,
                             borderRadius: BorderRadius.circular(t.radiusMd),
                           ),
                           child: Icon(
@@ -672,17 +556,19 @@ class _Sidebar extends StatelessWidget {
                             size: t.iconMd,
                           ),
                         ),
+                  ),
                 ),
                 Positioned(
-                  top: 18,
-                  right: -12,
+                  top: 12,
+                  right: 4,
                   child: IconButton(
-                    style: IconButton.styleFrom(
+                    style: pharmaInstantButtonStyle(IconButton.styleFrom(
                       backgroundColor: t.card,
                       side: BorderSide(color: t.border),
-                      shadowColor: Colors.black.withValues(alpha: 0.12),
                       elevation: 2,
-                    ),
+                      minimumSize: const Size(32, 32),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    )),
                     onPressed: onToggle,
                     icon: Icon(
                       expanded
@@ -772,12 +658,12 @@ class _Sidebar extends StatelessWidget {
                             context,
                           ).textTheme.labelSmall?.copyWith(color: t.posDanger),
                         ),
-                        style: OutlinedButton.styleFrom(
+                        style: pharmaInstantButtonStyle(OutlinedButton.styleFrom(
                           side: BorderSide(
                             color: t.posDanger.withValues(alpha: 0.35),
                           ),
                           backgroundColor: t.posDanger.withValues(alpha: 0.06),
-                        ),
+                        )),
                       ),
                     ],
                   )
@@ -785,12 +671,12 @@ class _Sidebar extends StatelessWidget {
                     message: 'Encerrar sessão',
                     child: OutlinedButton(
                       onPressed: onLogout,
-                      style: OutlinedButton.styleFrom(
+                      style: pharmaInstantButtonStyle(OutlinedButton.styleFrom(
                         side: BorderSide(
                           color: t.posDanger.withValues(alpha: 0.35),
                         ),
                         backgroundColor: t.posDanger.withValues(alpha: 0.06),
-                      ),
+                      )),
                       child: Icon(
                         Icons.logout_rounded,
                         size: 18,
@@ -800,9 +686,18 @@ class _Sidebar extends StatelessWidget {
                   ),
           ),
         ],
+        ),
       ),
     );
   }
+}
+
+String _userInitials(String? name) {
+  final trimmed = name?.trim() ?? '';
+  if (trimmed.isEmpty) return '?';
+  final parts = trimmed.split(RegExp(r'\s+')).where((part) => part.isNotEmpty).toList();
+  if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
+  return '${parts.first.substring(0, 1)}${parts.last.substring(0, 1)}'.toUpperCase();
 }
 
 class _NavList extends StatelessWidget {
@@ -833,14 +728,13 @@ class _NavList extends StatelessWidget {
       }
 
       final active = location == item.path;
-      final isChild = !item.isSectionLead;
       final tooltipLabel = currentSection == null
           ? item.label
           : '$currentSection · ${item.label}';
 
       final tile = Padding(
-        padding: EdgeInsets.only(
-          left: expanded && isChild ? AppSpacing.lg + 6 : AppSpacing.sm,
+        padding: const EdgeInsets.only(
+          left: AppSpacing.sm,
           right: AppSpacing.sm,
           top: 1,
           bottom: 1,
@@ -954,6 +848,8 @@ class _ErpNavSectionHeader extends StatelessWidget {
         ),
         child: Text(
           title.toUpperCase(),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
             color: t.textMuted,
             letterSpacing: 1.4,
@@ -961,45 +857,6 @@ class _ErpNavSectionHeader extends StatelessWidget {
             fontSize: 10.5,
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _SidebarMetaChip extends StatelessWidget {
-  const _SidebarMetaChip({
-    required this.icon,
-    required this.label,
-    this.accentColor,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color? accentColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
-    final color = accentColor ?? t.textMuted;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: color,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -1029,14 +886,10 @@ class _DrawerNav extends StatelessWidget {
       }
 
       final active = location == item.path;
-      final isChild = !item.isSectionLead;
 
       drawerChildren.add(
         Padding(
-          padding: EdgeInsets.only(
-            left: isChild ? AppSpacing.xl + 4 : AppSpacing.sm,
-            right: AppSpacing.sm,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
           child: Material(
             color: active
                 ? t.brandGreen.withValues(alpha: 0.1)
@@ -1090,7 +943,7 @@ class _DrawerNav extends StatelessWidget {
                       height: t.minTouchTarget,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [t.brandBlue, t.brandGreen],
+                          colors: [t.brandGreenHover, t.brandGreen],
                         ),
                         borderRadius: BorderRadius.circular(t.radiusMd),
                       ),
@@ -1102,34 +955,21 @@ class _DrawerNav extends StatelessWidget {
                     ),
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Pharma ERP',
-                            style: Theme.of(context).textTheme.titleMedium
-                                ?.copyWith(fontWeight: FontWeight.w800),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'Shell operacional',
-                            style: Theme.of(context).textTheme.labelSmall
-                                ?.copyWith(
-                                  color: t.textMuted,
-                                  letterSpacing: 0.8,
-                                ),
-                          ),
-                        ],
+                      child: Text(
+                        'PharmaERP',
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w800),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     IconButton(
-                      style: IconButton.styleFrom(
+                      style: pharmaInstantButtonStyle(IconButton.styleFrom(
                         backgroundColor: t.bgPrimary,
                         side: BorderSide(
                           color: t.border.withValues(alpha: 0.45),
                         ),
-                      ),
+                      )),
                       onPressed: () => Navigator.pop(context),
                       icon: Icon(Icons.close, color: t.textSecondary),
                     ),
@@ -1155,7 +995,7 @@ class _DrawerNav extends StatelessWidget {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                style: OutlinedButton.styleFrom(
+                style: pharmaInstantButtonStyle(OutlinedButton.styleFrom(
                   alignment: Alignment.centerLeft,
                   side: BorderSide(color: t.posDanger.withValues(alpha: 0.28)),
                   backgroundColor: t.posDanger.withValues(alpha: 0.06),
@@ -1163,7 +1003,7 @@ class _DrawerNav extends StatelessWidget {
                     horizontal: AppSpacing.md,
                     vertical: AppSpacing.md,
                   ),
-                ),
+                )),
               ),
             ),
           ],

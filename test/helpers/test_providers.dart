@@ -1,7 +1,9 @@
 import 'package:flutter/widgets.dart' hide ConnectionState;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:pharma_erp/app/app.dart';
+import 'package:pharma_erp/app/providers/app_theme_mode_provider.dart';
 import 'package:pharma_erp/app/providers/auth_session_notifier.dart';
 import 'package:pharma_erp/app/providers/connection_notifier.dart';
 import 'package:pharma_erp/core/network/connectivity/connection_status.dart';
@@ -19,10 +21,16 @@ class IdleConnectionNotifier extends ConnectionNotifier {
   }
 }
 
+Future<SharedPreferences> initTestSharedPreferences() async {
+  SharedPreferences.setMockInitialValues({});
+  return SharedPreferences.getInstance();
+}
+
 /// App pronta para testes de ecrã de login (sem bootstrapping).
-Widget testLoginApp() {
+Widget testLoginApp(SharedPreferences prefs) {
   return ProviderScope(
     overrides: [
+      sharedPreferencesProvider.overrideWithValue(prefs),
       authSessionProvider.overrideWith(IdleAuthSessionNotifier.new),
       connectionNotifierProvider.overrideWith(IdleConnectionNotifier.new),
     ],

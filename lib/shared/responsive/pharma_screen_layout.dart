@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 
 import '../../core/theme/design_tokens.dart';
 import 'breakpoints.dart';
@@ -13,6 +14,17 @@ enum PharmaScreenSize {
 /// Utilitários de layout e grelha para alta densidade operacional.
 abstract final class PharmaScreenLayout {
   PharmaScreenLayout._();
+
+  static int adaptiveCrossAxisCount(
+    double width,
+    double minItemWidth, {
+    int? maxColumns,
+  }) {
+    if (width <= 0 || minItemWidth <= 0) return 1;
+    final calculated = math.max(1, (width / minItemWidth).floor());
+    if (maxColumns == null) return calculated;
+    return math.min(calculated, maxColumns);
+  }
 
   static PharmaScreenSize sizeOf(BuildContext context) {
     final w = MediaQuery.sizeOf(context).width;
@@ -35,11 +47,7 @@ abstract final class PharmaScreenLayout {
 
   /// KPIs: 2 colunas em mobile (cartões pequenos), 2–4 em tablet/desktop.
   static int kpiCrossAxisCount(double width) {
-    if (width >= 1200) return 4;
-    if (width >= Breakpoints.desktop) return 4;
-    if (width >= 840) return 3;
-    if (width >= Breakpoints.tablet) return 2;
-    return 2;
+    return adaptiveCrossAxisCount(width, 280);
   }
 
   /// Altura fixa dos cartões KPI (ex.: movimentações — 88px em desktop).

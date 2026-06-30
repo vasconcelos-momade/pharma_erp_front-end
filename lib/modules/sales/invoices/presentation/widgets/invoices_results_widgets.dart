@@ -13,12 +13,16 @@ class InvoicesResults extends StatelessWidget {
     required this.invoices,
     required this.onView,
     required this.onCancel,
+    required this.onPrint,
+    this.searchController,
     this.embedded = false,
   });
 
   final List<InvoiceSummary> invoices;
   final ValueChanged<InvoiceSummary> onView;
   final ValueChanged<InvoiceSummary> onCancel;
+  final ValueChanged<InvoiceSummary> onPrint;
+  final TextEditingController? searchController;
   final bool embedded;
 
   @override
@@ -27,22 +31,72 @@ class InvoicesResults extends StatelessWidget {
       builder: (context, constraints) {
         final useCards = PharmaScreenLayout.isMobile(context) || constraints.maxWidth < 860;
         if (useCards) {
-          return InvoiceCardList(
-            invoices: invoices,
-            onView: onView,
-            onCancel: onCancel,
-            embedded: embedded,
+          return Column(
+            children: [
+              if (searchController != null) ...[
+                _buildSearchField(context),
+                SizedBox(height: context.spacing.sm),
+              ],
+              Expanded(
+                child: InvoiceCardList(
+                  invoices: invoices,
+                  onView: onView,
+                  onCancel: onCancel,
+                  onPrint: onPrint,
+                  embedded: embedded,
+                ),
+              ),
+            ],
           );
         }
-        return SingleChildScrollView(
-          padding: EdgeInsets.zero,
-          child: InvoiceDesktopTable(
-            invoices: invoices,
-            onView: onView,
-            onCancel: onCancel,
-          ),
+        return Column(
+          children: [
+            if (searchController != null) ...[
+              Align(
+                alignment: Alignment.centerLeft,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 520),
+                  child: _buildSearchField(context),
+                ),
+              ),
+              SizedBox(height: context.spacing.sm),
+            ],
+            Expanded(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.zero,
+                child: InvoiceDesktopTable(
+                  invoices: invoices,
+                  onView: onView,
+                  onCancel: onCancel,
+                  onPrint: onPrint,
+                ),
+              ),
+            ),
+          ],
         );
       },
+    );
+  }
+
+  Widget _buildSearchField(BuildContext context) {
+    final t = context.pharmaTokens;
+    return TextField(
+      controller: searchController,
+      decoration: InputDecoration(
+        hintText: 'Pesquisar nº da fatura, cliente ou terminal',
+        prefixIcon: const Icon(Icons.search_rounded),
+        filled: true,
+        fillColor: t.card,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(t.radiusXl),
+          borderSide: BorderSide(color: t.border.withValues(alpha: 0.45)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(t.radiusXl),
+          borderSide: BorderSide(color: t.border.withValues(alpha: 0.45)),
+        ),
+        isDense: true,
+      ),
     );
   }
 }
@@ -53,12 +107,14 @@ class InvoiceCardList extends StatelessWidget {
     required this.invoices,
     required this.onView,
     required this.onCancel,
+    required this.onPrint,
     this.embedded = false,
   });
 
   final List<InvoiceSummary> invoices;
   final ValueChanged<InvoiceSummary> onView;
   final ValueChanged<InvoiceSummary> onCancel;
+  final ValueChanged<InvoiceSummary> onPrint;
   final bool embedded;
 
   @override
@@ -144,7 +200,7 @@ class InvoiceCardList extends StatelessWidget {
                         ),
                         SizedBox(height: s.sm),
                         OutlinedButton.icon(
-                          onPressed: null,
+                          onPressed: () => onPrint(invoice),
                           icon: const Icon(Icons.print_outlined),
                           label: const Text('Imprimir'),
                         ),
@@ -175,11 +231,13 @@ class InvoiceDesktopTable extends StatelessWidget {
     required this.invoices,
     required this.onView,
     required this.onCancel,
+    required this.onPrint,
   });
 
   final List<InvoiceSummary> invoices;
   final ValueChanged<InvoiceSummary> onView;
   final ValueChanged<InvoiceSummary> onCancel;
+  final ValueChanged<InvoiceSummary> onPrint;
 
   @override
   Widget build(BuildContext context) {
@@ -245,8 +303,8 @@ class InvoiceDesktopTable extends StatelessWidget {
                                 icon: const Icon(Icons.block_rounded),
                               ),
                               IconButton(
-                                tooltip: 'Impressão (em breve)',
-                                onPressed: null,
+                                tooltip: 'Imprimir',
+                                onPressed: () => onPrint(invoice),
                                 icon: const Icon(Icons.print_outlined),
                               ),
                             ],

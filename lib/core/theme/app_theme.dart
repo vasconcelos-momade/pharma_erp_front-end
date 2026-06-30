@@ -117,48 +117,55 @@ abstract final class AppTheme {
     );
   }
 
-  static ThemeData lightEnterprise({DensityTokens density = DensityTokens.comfortable}) {
-    final tokens = PharmaTokens.enterpriseLight(density: density);
-    final scheme = ColorScheme.light(
-      surface: tokens.bgSecondary,
-      onSurface: tokens.textPrimary,
-      primary: tokens.brandGreen,
-      onPrimary: Colors.white,
-      secondary: tokens.brandBlue,
-      onSecondary: Colors.white,
-      error: tokens.posDanger,
-      onError: Colors.white,
-      outline: tokens.border,
-      surfaceContainerHighest: tokens.card,
-    );
+  static final Map<DensityLevel, ThemeData> _lightCache = {};
+  static final Map<DensityLevel, ThemeData> _darkCache = {};
 
-    return _enterpriseTheme(
-      tokens: tokens,
-      brightness: Brightness.light,
-      scheme: scheme,
-    );
+  static ThemeData lightEnterprise({DensityTokens density = DensityTokens.comfortable}) {
+    return _lightCache.putIfAbsent(density.level, () {
+      final tokens = PharmaTokens.enterpriseLight(density: density);
+      final scheme = ColorScheme.light(
+        surface: tokens.bgSecondary,
+        onSurface: tokens.textPrimary,
+        primary: tokens.brandGreen,
+        onPrimary: Colors.white,
+        secondary: tokens.brandGreenHover,
+        onSecondary: Colors.white,
+        error: tokens.posDanger,
+        onError: Colors.white,
+        outline: tokens.border,
+        surfaceContainerHighest: tokens.card,
+      );
+
+      return _enterpriseTheme(
+        tokens: tokens,
+        brightness: Brightness.light,
+        scheme: scheme,
+      );
+    });
   }
 
   static ThemeData darkEnterprise({DensityTokens density = DensityTokens.comfortable}) {
-    final tokens = PharmaTokens.enterpriseDark(density: density);
-    final scheme = ColorScheme.dark(
-      surface: tokens.bgSecondary,
-      onSurface: tokens.textPrimary,
-      primary: tokens.brandGreen,
-      onPrimary: AppColors.ink950,
-      secondary: tokens.brandBlue,
-      onSecondary: AppColors.ink950,
-      error: tokens.posDanger,
-      onError: Colors.white,
-      outline: tokens.border,
-      surfaceContainerHighest: tokens.card,
-    );
+    return _darkCache.putIfAbsent(density.level, () {
+      final tokens = PharmaTokens.enterpriseDark(density: density);
+      final scheme = ColorScheme.dark(
+        surface: tokens.bgSecondary,
+        onSurface: tokens.textPrimary,
+        primary: tokens.brandGreen,
+        onPrimary: AppColors.ink950,
+        secondary: tokens.brandGreenHover,
+        onSecondary: AppColors.ink950,
+        error: tokens.posDanger,
+        onError: Colors.white,
+        outline: tokens.border,
+        surfaceContainerHighest: tokens.card,
+      );
 
-    return _enterpriseTheme(
-      tokens: tokens,
-      brightness: Brightness.dark,
-      scheme: scheme,
-    );
+      return _enterpriseTheme(
+        tokens: tokens,
+        brightness: Brightness.dark,
+        scheme: scheme,
+      );
+    });
   }
 
   static ThemeData get light => ThemeData(

@@ -75,9 +75,9 @@ abstract final class AppRouteTitles {
       AppRoutePaths.authForgotPassword => 'Recuperar palavra-passe',
       AppRoutePaths.authTenant => 'Selecção de unidade',
       AppRoutePaths.dashboard => 'Executivo',
-      AppRoutePaths.dashboardPharmacy => 'Farmácia',
-      AppRoutePaths.dashboardFinance => 'Financeiro',
-      AppRoutePaths.dashboardStock => 'Stock',
+      AppRoutePaths.dashboardPharmacy => 'Visão Farmácia',
+      AppRoutePaths.dashboardFinance => 'Visão Financeira',
+      AppRoutePaths.dashboardStock => 'Visão Stock',
       AppRoutePaths.pos => 'POS / Caixa',
       AppRoutePaths.products => 'Produtos',
       AppRoutePaths.pharmacyCategories => 'Categorias',
@@ -126,7 +126,7 @@ abstract final class AppRouteTitles {
     if (path.startsWith('/sales') || path == AppRoutePaths.pos) {
       return 'Terminal';
     }
-    if (path.startsWith('/stock')) return 'Stock & Logística';
+    if (path.startsWith('/stock')) return 'Stock';
     if (path == AppRoutePaths.regulatory ||
         path == AppRoutePaths.psychotropics ||
         path == AppRoutePaths.recipes ||
@@ -149,7 +149,7 @@ abstract final class AppRouteTitles {
       return 'Conta';
     }
     if (path == AppRoutePaths.purchasing) {
-      return 'Stock & Logística';
+      return 'Stock';
     }
     return 'Pharma ERP';
   }

@@ -34,10 +34,10 @@ class PharmaHealthcareTokens extends ThemeExtension<PharmaHealthcareTokens> {
 
   factory PharmaHealthcareTokens.fromLegacy(PharmaTokens tokens) {
     return PharmaHealthcareTokens(
-      prescription: tokens.brandBlue,
+      prescription: tokens.brandGreen,
       dispensed: tokens.posSuccess,
       controlledMedicine: tokens.psychotropic,
-      batch: tokens.brandBlueHover,
+      batch: tokens.brandGreenHover,
       expiry: tokens.posWarning,
       expired: tokens.posDanger,
       coldChain: tokens.posInfo,
@@ -86,22 +86,7 @@ class PharmaHealthcareTokens extends ThemeExtension<PharmaHealthcareTokens> {
     double t,
   ) {
     if (other is! PharmaHealthcareTokens) return this;
-    return PharmaHealthcareTokens(
-      prescription: Color.lerp(prescription, other.prescription, t)!,
-      dispensed: Color.lerp(dispensed, other.dispensed, t)!,
-      controlledMedicine:
-          Color.lerp(controlledMedicine, other.controlledMedicine, t)!,
-      batch: Color.lerp(batch, other.batch, t)!,
-      expiry: Color.lerp(expiry, other.expiry, t)!,
-      expired: Color.lerp(expired, other.expired, t)!,
-      coldChain: Color.lerp(coldChain, other.coldChain, t)!,
-      inventory: Color.lerp(inventory, other.inventory, t)!,
-      quarantine: Color.lerp(quarantine, other.quarantine, t)!,
-      recall: Color.lerp(recall, other.recall, t)!,
-      incineration: Color.lerp(incineration, other.incineration, t)!,
-      temperatureAlert:
-          Color.lerp(temperatureAlert, other.temperatureAlert, t)!,
-    );
+    return t < 0.5 ? this : other;
   }
 }
 

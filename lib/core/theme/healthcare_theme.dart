@@ -22,7 +22,7 @@ class HealthcareTheme extends ThemeExtension<HealthcareTheme> {
 
   factory HealthcareTheme.fromLegacy(PharmaTokens tokens) {
     return HealthcareTheme(
-      prescriptionColor: tokens.brandBlue,
+      prescriptionColor: tokens.brandGreen,
       dispensedColor: tokens.brandGreen,
       controlledMedicineColor: tokens.psychotropic,
       batchColor: tokens.posInfo,
@@ -53,14 +53,7 @@ class HealthcareTheme extends ThemeExtension<HealthcareTheme> {
   @override
   HealthcareTheme lerp(ThemeExtension<HealthcareTheme>? other, double t) {
     if (other is! HealthcareTheme) return this;
-    return HealthcareTheme(
-      prescriptionColor: Color.lerp(prescriptionColor, other.prescriptionColor, t)!,
-      dispensedColor: Color.lerp(dispensedColor, other.dispensedColor, t)!,
-      controlledMedicineColor: Color.lerp(controlledMedicineColor, other.controlledMedicineColor, t)!,
-      batchColor: Color.lerp(batchColor, other.batchColor, t)!,
-      expiryColor: Color.lerp(expiryColor, other.expiryColor, t)!,
-      expiredColor: Color.lerp(expiredColor, other.expiredColor, t)!,
-    );
+    return t < 0.5 ? this : other;
   }
 }
 

@@ -6,9 +6,11 @@ import '../../../../core/extensions/async_value_extensions.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../shared/widgets/cards/enterprise_kpi_grid.dart';
 import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
+import '../../../../shared/widgets/navigation/app_nav_config.dart';
 import '../../../dashboard/data/datasources/dashboard_remote_datasource.dart';
 import '../../../dashboard/domain/dashboard_query.dart';
 import '../../../dashboard/presentation/providers/dashboard_providers.dart';
+import '../../../dashboard/presentation/widgets/dashboard_charts_section.dart';
 import '../../../dashboard/presentation/widgets/dashboard_period_filters.dart';
 import '../../../dashboard/presentation/widgets/dashboard_widgets.dart';
 import '../../../reports/presentation/controllers/report_controller.dart';
@@ -34,7 +36,7 @@ class _CashflowPageState extends ConsumerState<CashflowPage> {
     return EnterpriseModuleHub(
       title: 'Fluxo de caixa',
       subtitle: 'Tesouraria, movimentos financeiros e evolução do saldo.',
-      tag: 'Finanças',
+      tag: AppNavSections.finance,
       scrollable: true,
       actions: [
         ...financeReportActions(
@@ -94,57 +96,45 @@ class _CashflowPageState extends ConsumerState<CashflowPage> {
                   padding: EdgeInsets.only(bottom: context.spacing.sm),
                   child: financeReportError(ref),
                 ),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  final chartWidth = constraints.maxWidth >= 1100
-                      ? (constraints.maxWidth - AppSpacing.lg) / 2
-                      : constraints.maxWidth;
-                  return Wrap(
-                    spacing: AppSpacing.lg,
-                    runSpacing: AppSpacing.lg,
-                    children: [
-                      SizedBox(
-                        width: chartWidth,
-                        child: dashboardChartCard(
-                          context: context,
-                          title: 'Fluxo diário',
-                          child: dashboardLineChart(
-                            context: context,
-                            points: dashList(chartData?['fluxoDiario']),
-                            valueKey: 'saldo',
-                            labelKey: 'data',
-                            color: Theme.of(context).colorScheme.primary,
-                          ),
-                        ),
+              DashboardChartsSection(
+                charts: [
+                  DashboardChartSlot(
+                    fullWidth: true,
+                    child: dashboardChartCard(
+                      context: context,
+                      title: 'Fluxo diário',
+                      child: dashboardLineChart(
+                        context: context,
+                        points: dashList(chartData?['fluxoDiario']),
+                        valueKey: 'saldo',
+                        labelKey: 'data',
+                        color: Theme.of(context).colorScheme.primary,
                       ),
-                      SizedBox(
-                        width: chartWidth,
-                        child: dashboardChartCard(
-                          context: context,
-                          title: 'Fluxo mensal',
-                          child: dashboardLineChart(
-                            context: context,
-                            points: dashList(chartData?['fluxoMensal']),
-                            valueKey: 'saldo',
-                            labelKey: 'mes',
-                            color: Theme.of(context).colorScheme.secondary,
-                          ),
-                        ),
+                    ),
+                  ),
+                  DashboardChartSlot(
+                    fullWidth: true,
+                    child: dashboardChartCard(
+                      context: context,
+                      title: 'Fluxo mensal',
+                      child: dashboardLineChart(
+                        context: context,
+                        points: dashList(chartData?['fluxoMensal']),
+                        valueKey: 'saldo',
+                        labelKey: 'mes',
+                        color: Theme.of(context).colorScheme.secondary,
                       ),
-                      SizedBox(
-                        width: chartWidth,
-                        child: dashboardChartCard(
-                          context: context,
-                          title: 'Receitas x despesas',
-                          child: dashboardDualLineChart(
-                            context: context,
-                            points: dashList(chartData?['receitasDespesas']),
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                },
+                    ),
+                  ),
+                  dashboardChartCard(
+                    context: context,
+                    title: 'Receitas x despesas',
+                    child: dashboardDualLineChart(
+                      context: context,
+                      points: dashList(chartData?['receitasDespesas']),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: AppSpacing.lg),
               DashboardPaginatedTable(

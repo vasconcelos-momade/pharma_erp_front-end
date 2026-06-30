@@ -53,6 +53,11 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<void> signOut() async {
     await _local.clearSession();
   }
+
+  @override
+  Future<void> requestPasswordReset({required String email}) {
+    return _remote.requestPasswordReset(email: email);
+  }
 }
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {

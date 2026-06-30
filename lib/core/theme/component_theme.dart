@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 
 import 'design_tokens.dart';
+import 'pharma_surface.dart';
 
 abstract final class PharmaComponentTheme {
   PharmaComponentTheme._();
 
   static ButtonStyle _baseButtonStyle(PharmaTokens tokens) {
     return ButtonStyle(
+      animationDuration: kPharmaInstantThemeDuration,
       minimumSize: WidgetStateProperty.all(
         Size(tokens.minTouchTarget, tokens.minTouchTarget),
       ),
@@ -71,6 +73,7 @@ abstract final class PharmaComponentTheme {
   static IconButtonThemeData iconButton(PharmaTokens tokens, ColorScheme scheme) {
     return IconButtonThemeData(
       style: ButtonStyle(
+        animationDuration: kPharmaInstantThemeDuration,
         minimumSize: WidgetStateProperty.all(
           Size.square(tokens.minTouchTarget),
         ),
@@ -107,9 +110,7 @@ abstract final class PharmaComponentTheme {
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(tokens.radiusMd),
         borderSide: BorderSide(
-          color: isDark
-              ? tokens.brandGreen.withValues(alpha: 0.55)
-              : tokens.brandBlue.withValues(alpha: 0.65),
+          color: tokens.brandGreen.withValues(alpha: isDark ? 0.55 : 0.65),
           width: 2,
         ),
       ),

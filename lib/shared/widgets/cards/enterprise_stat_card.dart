@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/theme/pharma_surface.dart';
 
 /// Densidade visual do KPI (balcão / tablet compacto / desktop).
 enum StatCardDensity {
@@ -55,116 +56,96 @@ class EnterpriseStatCard extends StatelessWidget {
     final gapAfterHeader = compact ? 4.0 : 10.0;
     final gapBeforeSubtitle = compact ? 2.0 : 8.0;
 
-    final child = AnimatedContainer(
-      duration: const Duration(milliseconds: 120),
-      padding: pad,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(t.radiusMd),
-        border: Border.all(color: t.border.withValues(alpha: 0.55)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  title.toUpperCase(),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: titleSize,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: compact ? 1.2 : 1.8,
-                    color: t.textMuted,
-                    height: 1.1,
-                  ),
+    final content = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                title.toUpperCase(),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: titleSize,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: compact ? 1.2 : 1.8,
+                  color: t.textMuted,
+                  height: 1.1,
                 ),
               ),
-              if (badge != null)
-                Padding(
-                  padding: const EdgeInsets.only(right: 4),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-                    decoration: BoxDecoration(
-                      color: fg.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      badge!,
-                      style: TextStyle(
-                        fontSize: 7.5,
-                        fontWeight: FontWeight.w900,
-                        color: fg,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ),
-                ),
-              Container(
-                padding: EdgeInsets.all(iconBox),
-                decoration: BoxDecoration(
-                  color: bg,
-                  borderRadius: BorderRadius.circular(t.radiusMd),
-                ),
-                child: Icon(icon, size: iconSize, color: fg),
-              ),
-            ],
-          ),
-          SizedBox(height: gapAfterHeader),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: valueSize,
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.3,
-              height: 1.0,
-              color: accent == StatCardAccent.danger
-                  ? t.posDanger
-                  : accent == StatCardAccent.info
-                      ? t.brandBlue
-                      : t.textPrimary,
             ),
-          ),
-          if (subtitle != null && subtitle!.isNotEmpty) ...[
-            SizedBox(height: gapBeforeSubtitle),
-            Text(
-              subtitle!,
-              maxLines: compact ? 1 : 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: compact ? 9.5 : 11,
-                fontWeight: FontWeight.w600,
-                color: t.textMuted,
-                height: 1.1,
+            if (badge != null)
+              Padding(
+                padding: const EdgeInsets.only(right: 4),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: fg.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: Text(
+                    badge!,
+                    style: TextStyle(
+                      fontSize: 7.5,
+                      fontWeight: FontWeight.w900,
+                      color: fg,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ),
               ),
+            Container(
+              padding: EdgeInsets.all(iconBox),
+              decoration: BoxDecoration(
+                color: bg,
+                borderRadius: BorderRadius.circular(t.radiusMd),
+              ),
+              child: Icon(icon, size: iconSize, color: fg),
             ),
           ],
+        ),
+        SizedBox(height: gapAfterHeader),
+        Text(
+          value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: valueSize,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.3,
+            height: 1.0,
+            color: accent == StatCardAccent.danger
+                ? t.posDanger
+                : accent == StatCardAccent.info
+                    ? t.brandBlue
+                    : t.textPrimary,
+          ),
+        ),
+        if (subtitle != null && subtitle!.isNotEmpty) ...[
+          SizedBox(height: gapBeforeSubtitle),
+          Text(
+            subtitle!,
+            maxLines: compact ? 1 : 2,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: compact ? 9.5 : 11,
+              fontWeight: FontWeight.w600,
+              color: t.textMuted,
+              height: 1.1,
+            ),
+          ),
         ],
-      ),
+      ],
     );
 
-    if (onTap != null) {
-      return Material(
-        color: t.card,
-        borderRadius: BorderRadius.circular(t.radiusMd),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(t.radiusMd),
-          mouseCursor: SystemMouseCursors.click,
-          hoverColor: fg.withValues(alpha: 0.06),
-          splashColor: fg.withValues(alpha: 0.08),
-          child: child,
-        ),
-      );
-    }
-    return Material(
-      color: t.card,
-      borderRadius: BorderRadius.circular(t.radiusMd),
-      child: child,
+    return PharmaSurface(
+      padding: pad,
+      onTap: onTap,
+      hoverColor: onTap != null ? fg.withValues(alpha: 0.06) : null,
+      splashColor: onTap != null ? fg.withValues(alpha: 0.08) : null,
+      child: content,
     );
   }
 }

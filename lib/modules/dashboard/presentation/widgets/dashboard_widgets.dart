@@ -1,8 +1,11 @@
+import 'dart:math' as math;
+
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/design_tokens.dart';
+import '../../../../core/theme/pharma_surface.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../../reports/presentation/controllers/report_controller.dart';
@@ -84,49 +87,37 @@ class DashboardFilterSelect extends StatelessWidget {
     required this.options,
     required this.value,
     required this.onChanged,
-    this.width = 220,
+    this.width,
   });
 
   final String label;
   final List<DashboardFilterOption> options;
   final String? value;
   final ValueChanged<String?> onChanged;
-  final double width;
+  final double? width;
 
   @override
   Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
-    return SizedBox(
+    return PharmaInstantDropdown<String>(
+      label: label,
       width: width,
-      child: DropdownButtonFormField<String>(
-        initialValue: options.any((option) => option.value == value) ? value : null,
-        isExpanded: true,
-        decoration: InputDecoration(
-          labelText: label,
-          filled: true,
-          fillColor: t.card,
-          isDense: true,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(t.radiusXl),
-          ),
+      value: options.any((option) => option.value == value) ? value : null,
+      items: [
+        const DropdownMenuItem<String>(
+          value: null,
+          child: Text('Todos'),
         ),
-        items: [
-          const DropdownMenuItem<String>(
-            value: null,
-            child: Text('Todos'),
-          ),
-          ...options.map(
-            (option) => DropdownMenuItem<String>(
-              value: option.value,
-              child: Text(
-                option.label,
-                overflow: TextOverflow.ellipsis,
-              ),
+        ...options.map(
+          (option) => DropdownMenuItem<String>(
+            value: option.value,
+            child: Text(
+              option.label,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-        ],
-        onChanged: onChanged,
-      ),
+        ),
+      ],
+      onChanged: onChanged,
     );
   }
 }
@@ -192,31 +183,121 @@ List<DashboardFilterOption> dashboardUniqueOptions(
   return items;
 }
 
+/// Altura mínima e máxima recomendadas para a área de gráfico dentro do card.
+const double kDashboardChartMinHeight = 240.0;
+const double kDashboardChartMaxHeight = 420.0;
+
+Widget _dashboardChartEmptyState(
+  BuildContext context, {
+  String message = 'Sem dados no período',
+}) {
+  final t = context.pharmaTokens;
+  return LayoutBuilder(
+    builder: (context, constraints) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+          child: Text(
+            message,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: t.textMuted),
+          ),
+        ),
+      );
+    },
+  );
+}
+
 Widget _dashboardScrollableChart({
-  required double height,
   required double minWidth,
   required Widget child,
 }) {
-  return SizedBox(
-    height: height,
-    child: LayoutBuilder(
-      builder: (context, constraints) {
-        final width = constraints.maxWidth.isFinite
-            ? constraints.maxWidth > minWidth
-                ? constraints.maxWidth
-                : minWidth
-            : minWidth;
+  return LayoutBuilder(
+    builder: (context, constraints) {
+      final maxW = constraints.maxWidth.isFinite && constraints.maxWidth > 0
+          ? constraints.maxWidth
+          : minWidth;
+      final maxH = constraints.maxHeight.isFinite && constraints.maxHeight > 0
+          ? constraints.maxHeight
+          : null;
+      final contentWidth = math.max(maxW, minWidth);
+      final needsHorizontalScroll = contentWidth > maxW + 0.5;
+
+      final chart = SizedBox(
+        width: needsHorizontalScroll ? contentWidth : maxW,
+        height: maxH,
+        child: child,
+      );
+
+      if (needsHorizontalScroll) {
         return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          child: SizedBox(
-            width: width,
-            height: height,
-            child: child,
-          ),
+          child: chart,
         );
-      },
-    ),
+      }
+      return chart;
+    },
   );
+}
+
+Widget _dashboardChartLegend({
+  required List<(String label, Color color)> items,
+}) {
+  return LayoutBuilder(
+    builder: (context, constraints) {
+      final legend = Wrap(
+        spacing: AppSpacing.sm,
+        runSpacing: AppSpacing.xs,
+        children: [
+          for (final (label, color) in items)
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: constraints.maxWidth.isFinite
+                    ? constraints.maxWidth
+                    : double.infinity,
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      );
+
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minWidth: constraints.maxWidth),
+          child: legend,
+        ),
+      );
+    },
+  );
+}
+
+double _dashboardChartMinWidthForCount(int count, {double perItem = 52}) {
+  if (count <= 0) return 280;
+  return (count * perItem).clamp(280, 1600).toDouble();
 }
 
 Widget _dashboardAxisLabel({
@@ -259,14 +340,10 @@ Widget dashboardLineChart({
   required String valueKey,
   String? labelKey,
   Color? color,
-  double height = 220,
 }) {
   final t = context.pharmaTokens;
   if (points.isEmpty) {
-    return SizedBox(
-      height: height,
-      child: Center(child: Text('Sem dados no período', style: TextStyle(color: t.textMuted))),
-    );
+    return _dashboardChartEmptyState(context);
   }
 
   final spots = <FlSpot>[];
@@ -277,63 +354,64 @@ Widget dashboardLineChart({
     spots.add(FlSpot(i.toDouble(), y));
   }
   final chartMax = maxY < 1 ? 1.0 : maxY * 1.15;
-  final minWidth = labelKey == null ? 320.0 : (points.length * 52).clamp(320, 1400).toDouble();
+  final minWidth = labelKey == null
+      ? 280.0
+      : _dashboardChartMinWidthForCount(points.length);
 
   return _dashboardScrollableChart(
-    height: height,
     minWidth: minWidth,
     child: ClipRect(
       child: LineChart(
-      LineChartData(
-        minY: 0,
-        maxY: chartMax,
-        gridData: FlGridData(
-          show: true,
-          drawVerticalLine: false,
-          getDrawingHorizontalLine: (v) =>
-              FlLine(color: t.border.withValues(alpha: 0.22), strokeWidth: 1),
-        ),
-        borderData: FlBorderData(show: false),
-        titlesData: FlTitlesData(
-          bottomTitles: labelKey == null
-              ? const AxisTitles(sideTitles: SideTitles(showTitles: false))
-              : AxisTitles(
-                  sideTitles: SideTitles(
-                    showTitles: true,
-                    reservedSize: 28,
-                    getTitlesWidget: (value, meta) {
-                      final i = value.toInt();
-                      if (i < 0 || i >= points.length) {
-                        return const SizedBox.shrink();
-                      }
-                      return DefaultTextStyle(
-                        style: TextStyle(color: t.textMuted),
-                        child: _dashboardAxisLabel(
-                          meta: meta,
-                          label: dashLabel(points[i][labelKey], max: 10),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-        ),
-        lineBarsData: [
-          LineChartBarData(
-            spots: spots,
-            isCurved: true,
-            color: color ?? t.brandGreen,
-            barWidth: 2.5,
-            dotData: const FlDotData(show: false),
-            belowBarData: BarAreaData(
-              show: true,
-              color: (color ?? t.brandGreen).withValues(alpha: 0.1),
-            ),
+        LineChartData(
+          minY: 0,
+          maxY: chartMax,
+          gridData: FlGridData(
+            show: true,
+            drawVerticalLine: false,
+            getDrawingHorizontalLine: (v) =>
+                FlLine(color: t.border.withValues(alpha: 0.22), strokeWidth: 1),
           ),
-        ],
-      ),
+          borderData: FlBorderData(show: false),
+          titlesData: FlTitlesData(
+            bottomTitles: labelKey == null
+                ? const AxisTitles(sideTitles: SideTitles(showTitles: false))
+                : AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 28,
+                      getTitlesWidget: (value, meta) {
+                        final i = value.toInt();
+                        if (i < 0 || i >= points.length) {
+                          return const SizedBox.shrink();
+                        }
+                        return DefaultTextStyle(
+                          style: TextStyle(color: t.textMuted),
+                          child: _dashboardAxisLabel(
+                            meta: meta,
+                            label: dashLabel(points[i][labelKey], max: 10),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+            leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+            rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          ),
+          lineBarsData: [
+            LineChartBarData(
+              spots: spots,
+              isCurved: true,
+              color: color ?? t.brandGreen,
+              barWidth: 2.5,
+              dotData: const FlDotData(show: false),
+              belowBarData: BarAreaData(
+                show: true,
+                color: (color ?? t.brandGreen).withValues(alpha: 0.1),
+              ),
+            ),
+          ],
+        ),
       ),
     ),
   );
@@ -345,30 +423,24 @@ Widget dashboardChartCard({
   required Widget child,
 }) {
   final t = context.pharmaTokens;
-  return Material(
-    color: t.card,
-    borderRadius: BorderRadius.circular(t.radiusMd),
-    child: Container(
-      padding: t.density.cardPadding,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(t.radiusMd),
-        border: Border.all(color: t.border.withValues(alpha: 0.55)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            title.toUpperCase(),
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: t.textMuted,
-                  letterSpacing: 1.6,
-                  fontWeight: FontWeight.w800,
-                ),
-          ),
-          SizedBox(height: t.density.md),
-          child,
-        ],
-      ),
+  return PharmaSurface(
+    padding: t.density.cardPadding,
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          title.toUpperCase(),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: t.textMuted,
+                letterSpacing: 1.6,
+                fontWeight: FontWeight.w800,
+              ),
+        ),
+        SizedBox(height: t.density.md),
+        Expanded(child: child),
+      ],
     ),
   );
 }
@@ -378,15 +450,11 @@ Widget dashboardBarChart({
   required List<Map<String, dynamic>> points,
   required String valueKey,
   required String labelKey,
-  double height = 240,
   Color? color,
 }) {
   final t = context.pharmaTokens;
   if (points.isEmpty) {
-    return SizedBox(
-      height: height,
-      child: Center(child: Text('Sem dados no período', style: TextStyle(color: t.textMuted))),
-    );
+    return _dashboardChartEmptyState(context);
   }
 
   final values = points
@@ -394,10 +462,9 @@ Widget dashboardBarChart({
       .toList(growable: false);
   final maxY = values.fold<double>(0, (a, b) => a > b ? a : b);
   final chartMax = maxY < 1 ? 1.0 : maxY * 1.2;
-  final minWidth = (points.length * 74).clamp(320, 1600).toDouble();
+  final minWidth = _dashboardChartMinWidthForCount(points.length, perItem: 74);
 
   return _dashboardScrollableChart(
-    height: height,
     minWidth: minWidth,
     child: BarChart(
       BarChartData(
@@ -453,14 +520,10 @@ Widget dashboardBarChart({
 Widget dashboardDualLineChart({
   required BuildContext context,
   required List<Map<String, dynamic>> points,
-  double height = 240,
 }) {
   final t = context.pharmaTokens;
   if (points.isEmpty) {
-    return SizedBox(
-      height: height,
-      child: Center(child: Text('Sem dados no período', style: TextStyle(color: t.textMuted))),
-    );
+    return _dashboardChartEmptyState(context);
   }
 
   final receitas = <FlSpot>[];
@@ -474,43 +537,58 @@ Widget dashboardDualLineChart({
     despesas.add(FlSpot(i.toDouble(), d));
   }
   final chartMax = maxY < 1 ? 1.0 : maxY * 1.15;
-  final minWidth = (points.length * 52).clamp(320, 1400).toDouble();
+  final minWidth = _dashboardChartMinWidthForCount(points.length);
 
-  return _dashboardScrollableChart(
-    height: height,
-    minWidth: minWidth,
-    child: ClipRect(
-      child: LineChart(
-      LineChartData(
-        minY: 0,
-        maxY: chartMax,
-        gridData: FlGridData(
-          show: true,
-          drawVerticalLine: false,
-          getDrawingHorizontalLine: (v) =>
-              FlLine(color: t.border.withValues(alpha: 0.22), strokeWidth: 1),
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      Expanded(
+        child: _dashboardScrollableChart(
+          minWidth: minWidth,
+          child: ClipRect(
+            child: LineChart(
+              LineChartData(
+                minY: 0,
+                maxY: chartMax,
+                gridData: FlGridData(
+                  show: true,
+                  drawVerticalLine: false,
+                  getDrawingHorizontalLine: (v) => FlLine(
+                    color: t.border.withValues(alpha: 0.22),
+                    strokeWidth: 1,
+                  ),
+                ),
+                borderData: FlBorderData(show: false),
+                titlesData: const FlTitlesData(show: false),
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: receitas,
+                    isCurved: true,
+                    color: t.brandGreen,
+                    barWidth: 2.5,
+                    dotData: const FlDotData(show: false),
+                  ),
+                  LineChartBarData(
+                    spots: despesas,
+                    isCurved: true,
+                    color: t.brandBlue,
+                    barWidth: 2,
+                    dotData: const FlDotData(show: false),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
-        borderData: FlBorderData(show: false),
-        titlesData: const FlTitlesData(show: false),
-        lineBarsData: [
-          LineChartBarData(
-            spots: receitas,
-            isCurved: true,
-            color: t.brandGreen,
-            barWidth: 2.5,
-            dotData: const FlDotData(show: false),
-          ),
-          LineChartBarData(
-            spots: despesas,
-            isCurved: true,
-            color: t.brandBlue,
-            barWidth: 2,
-            dotData: const FlDotData(show: false),
-          ),
+      ),
+      const SizedBox(height: AppSpacing.xs),
+      _dashboardChartLegend(
+        items: [
+          ('Receitas', t.brandGreen),
+          ('Despesas', t.brandBlue),
         ],
       ),
-      ),
-    ),
+    ],
   );
 }
 
@@ -519,15 +597,11 @@ Widget dashboardIndexedBarChart({
   required List<double> values,
   required List<String> labels,
   List<Color>? barColors,
-  double height = 220,
   double barWidth = 22,
 }) {
   final t = context.pharmaTokens;
   if (values.isEmpty) {
-    return SizedBox(
-      height: height,
-      child: Center(child: Text('Sem dados no período', style: TextStyle(color: t.textMuted))),
-    );
+    return _dashboardChartEmptyState(context);
   }
 
   final palette = barColors ??
@@ -540,10 +614,9 @@ Widget dashboardIndexedBarChart({
       ];
   final maxY = values.fold<double>(0, (a, b) => a > b ? a : b);
   final chartMax = maxY < 1 ? 1.0 : maxY * 1.2;
-  final minWidth = (labels.length * 74).clamp(320, 1400).toDouble();
+  final minWidth = _dashboardChartMinWidthForCount(labels.length, perItem: 74);
 
   return _dashboardScrollableChart(
-    height: height,
     minWidth: minWidth,
     child: BarChart(
       BarChartData(
@@ -611,51 +684,73 @@ class DashboardPieSlice {
 Widget dashboardPieChart({
   required BuildContext context,
   required List<DashboardPieSlice> slices,
-  double height = 220,
   String emptyLabel = 'OK',
 }) {
   final t = context.pharmaTokens;
   final total = slices.fold<double>(0, (sum, slice) => sum + slice.value);
-  final sections = total <= 0
-      ? [
-          PieChartSectionData(
-            value: 1,
-            color: t.brandGreen.withValues(alpha: 0.35),
-            title: emptyLabel,
-            radius: 48,
-            titleStyle: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: t.textMuted),
-          ),
-        ]
-      : slices
-          .where((slice) => slice.value > 0)
-          .map(
-            (slice) => PieChartSectionData(
-              value: slice.value,
-              color: slice.color,
-              title: slice.label,
-              radius: 48,
-              titleStyle: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: t.textPrimary),
-            ),
-          )
-          .toList(growable: false);
+  final activeSlices = slices.where((slice) => slice.value > 0).toList(growable: false);
 
-  if (sections.isEmpty) {
-    return SizedBox(
-      height: height,
-      child: Center(child: Text('Sem dados no período', style: TextStyle(color: t.textMuted))),
-    );
+  if (total <= 0 && activeSlices.isEmpty) {
+    return _dashboardChartEmptyState(context);
   }
 
-  return _dashboardScrollableChart(
-    height: height,
-    minWidth: 320,
-    child: PieChart(
-      PieChartData(
-        sectionsSpace: 2,
-        centerSpaceRadius: 28,
-        sections: sections,
-      ),
-    ),
+  return LayoutBuilder(
+    builder: (context, constraints) {
+      final maxW = constraints.maxWidth.isFinite ? constraints.maxWidth : 280.0;
+      final maxH = constraints.maxHeight.isFinite ? constraints.maxHeight : 280.0;
+      final chartDim = math.min(maxW, math.max(maxH - 40, 120));
+      final sectionRadius = (chartDim * 0.18).clamp(20.0, 56.0);
+      final centerSpaceRadius = (chartDim * 0.12).clamp(12.0, 36.0);
+
+      final sections = total <= 0
+          ? [
+              PieChartSectionData(
+                value: 1,
+                color: t.brandGreen.withValues(alpha: 0.35),
+                title: emptyLabel,
+                radius: sectionRadius,
+                titleStyle: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  color: t.textMuted,
+                ),
+              ),
+            ]
+          : activeSlices
+              .map(
+                (slice) => PieChartSectionData(
+                  value: slice.value,
+                  color: slice.color,
+                  title: '',
+                  radius: sectionRadius,
+                ),
+              )
+              .toList(growable: false);
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: PieChart(
+              PieChartData(
+                sectionsSpace: 2,
+                centerSpaceRadius: centerSpaceRadius,
+                sections: sections,
+              ),
+            ),
+          ),
+          if (activeSlices.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.xs),
+            _dashboardChartLegend(
+              items: [
+                for (final slice in activeSlices)
+                  (slice.label, slice.color),
+              ],
+            ),
+          ],
+        ],
+      );
+    },
   );
 }
 

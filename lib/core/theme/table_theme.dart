@@ -30,7 +30,7 @@ class TableTheme extends ThemeExtension<TableTheme> {
       rowHeight: 52,
       dividerColor: tokens.border,
       hoverColor: tokens.cardHover,
-      selectedColor: tokens.brandBlue.withValues(alpha: 0.12),
+      selectedColor: tokens.brandGreen.withValues(alpha: 0.12),
     );
   }
 
@@ -56,14 +56,7 @@ class TableTheme extends ThemeExtension<TableTheme> {
   @override
   TableTheme lerp(ThemeExtension<TableTheme>? other, double t) {
     if (other is! TableTheme) return this;
-    return TableTheme(
-      headerBackgroundColor: Color.lerp(headerBackgroundColor, other.headerBackgroundColor, t)!,
-      headerTextStyle: TextStyle.lerp(headerTextStyle, other.headerTextStyle, t)!,
-      rowHeight: lerpDouble(rowHeight, other.rowHeight, t)!,
-      dividerColor: Color.lerp(dividerColor, other.dividerColor, t)!,
-      hoverColor: Color.lerp(hoverColor, other.hoverColor, t)!,
-      selectedColor: Color.lerp(selectedColor, other.selectedColor, t)!,
-    );
+    return t < 0.5 ? this : other;
   }
 
   static double? lerpDouble(num? a, num? b, double t) {

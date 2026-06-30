@@ -639,15 +639,6 @@ class _PdvPageState extends ConsumerState<PdvPage>
                       size: isMobile ? t.iconSm : t.iconMd,
                     ),
                   ),
-                IconButton(
-                  tooltip: 'Scanner',
-                  onPressed: () {},
-                  icon: Icon(
-                    Icons.qr_code_scanner_rounded,
-                    color: t.brandGreen,
-                    size: isMobile ? t.iconSm : t.iconMd,
-                  ),
-                ),
               ],
             ),
           ),

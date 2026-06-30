@@ -79,17 +79,7 @@ class PharmaNavigationTokens extends ThemeExtension<PharmaNavigationTokens> {
     double t,
   ) {
     if (other is! PharmaNavigationTokens) return this;
-    return PharmaNavigationTokens(
-      sidebarBackground: Color.lerp(sidebarBackground, other.sidebarBackground, t)!,
-      sidebarSelected: Color.lerp(sidebarSelected, other.sidebarSelected, t)!,
-      sidebarHover: Color.lerp(sidebarHover, other.sidebarHover, t)!,
-      sidebarBorder: Color.lerp(sidebarBorder, other.sidebarBorder, t)!,
-      topbarBackground: Color.lerp(topbarBackground, other.topbarBackground, t)!,
-      topbarBorder: Color.lerp(topbarBorder, other.topbarBorder, t)!,
-      navigationRail: Color.lerp(navigationRail, other.navigationRail, t)!,
-      drawerBackground: Color.lerp(drawerBackground, other.drawerBackground, t)!,
-      drawerBorder: Color.lerp(drawerBorder, other.drawerBorder, t)!,
-    );
+    return t < 0.5 ? this : other;
   }
 }
 

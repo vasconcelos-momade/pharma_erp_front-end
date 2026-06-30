@@ -12,6 +12,8 @@ abstract class AuthRemoteDataSource {
     required String email,
     required String password,
   });
+
+  Future<void> requestPasswordReset({required String email});
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -45,6 +47,30 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         );
       }
       return LoginResponseModel.fromJson(ApiEnvelope.unwrapMap(data));
+    } on DioException catch (e) {
+      throw ApiFailure.fromDio(e);
+    }
+  }
+
+  @override
+  Future<void> requestPasswordReset({required String email}) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(
+        ApiConstants.centralAuthForgotPassword,
+        data: <String, dynamic>{'email': email.trim()},
+      );
+      final data = response.data;
+      if (data == null) {
+        throw const ApiFailure('Resposta inválida do servidor.');
+      }
+      if (data['success'] == false) {
+        final err = data['error'];
+        final msg = err is Map ? err['message'] : err;
+        throw ApiFailure(
+          msg is String && msg.isNotEmpty ? msg : 'Falha ao solicitar recuperação.',
+          statusCode: response.statusCode,
+        );
+      }
     } on DioException catch (e) {
       throw ApiFailure.fromDio(e);
     }

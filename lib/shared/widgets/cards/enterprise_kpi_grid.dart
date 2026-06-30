@@ -12,10 +12,12 @@ class EnterpriseKpiGrid extends StatelessWidget {
     super.key,
     required this.cards,
     this.useDesktopRowWhenSingleLine = false,
+    this.minCardWidth = 280,
   });
 
   final List<Widget> cards;
   final bool useDesktopRowWhenSingleLine;
+  final double minCardWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -49,21 +51,45 @@ class EnterpriseKpiGrid extends StatelessWidget {
         }
 
         final spacing = screen == PharmaScreenSize.mobile ? 10.0 : s.sm;
-        final totalSpacing = spacing * (cross - 1);
-        final itemWidth = constraints.maxWidth.isFinite
-            ? ((constraints.maxWidth - totalSpacing) / cross).clamp(120.0, double.infinity)
-            : 240.0;
+        final availableWidth =
+            constraints.maxWidth.isFinite && constraints.maxWidth > 0
+                ? constraints.maxWidth
+                : minCardWidth;
+        final crossAxisCount = PharmaScreenLayout.adaptiveCrossAxisCount(
+          availableWidth,
+          minCardWidth,
+        );
+        final rows = <Widget>[];
 
-        return Wrap(
-          spacing: spacing,
-          runSpacing: spacing,
+        for (var i = 0; i < cards.length; i += crossAxisCount) {
+          final rowChildren = cards.skip(i).take(crossAxisCount).toList();
+          rows.add(
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (var j = 0; j < rowChildren.length; j++) ...[
+                  if (j > 0) SizedBox(width: spacing),
+                  Expanded(
+                    child: SizedBox(
+                      height: cardHeight,
+                      child: rowChildren[j],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          );
+        }
+
+        if (rows.length == 1) return rows.first;
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            for (final card in cards)
-              SizedBox(
-                width: itemWidth,
-                height: cardHeight,
-                child: card,
-              ),
+            for (var i = 0; i < rows.length; i++) ...[
+              if (i > 0) SizedBox(height: spacing),
+              rows[i],
+            ],
           ],
         );
       },

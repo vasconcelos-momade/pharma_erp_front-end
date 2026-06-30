@@ -3,6 +3,21 @@ import 'package:flutter/material.dart';
 import '../../../app/providers/session_access_notifier.dart';
 import '../../../app/router/routes.dart';
 
+/// Títulos oficiais das secções — única fonte para sidebar, drawer e tags de página.
+abstract final class AppNavSections {
+  AppNavSections._();
+
+  static const dashboard = 'Dashboard';
+  static const terminal = 'Terminal';
+  static const pharmacy = 'Farmácia';
+  static const stock = 'Stock';
+  static const finance = 'Financeiro';
+  static const regulatory = 'Regulatório';
+  static const audit = 'Auditoria';
+  static const administration = 'Administração';
+  static const system = 'Sistema';
+}
+
 /// Entrada de navegação (item folha).
 class AppNavItem {
   const AppNavItem({
@@ -10,6 +25,8 @@ class AppNavItem {
     required this.label,
     required this.path,
     required this.icon,
+    this.permissionModule,
+    this.permissionAction = 'VIEW',
   });
 
   /// Título do grupo ERP quando este item abre uma secção.
@@ -18,7 +35,29 @@ class AppNavItem {
   final String path;
   final IconData icon;
 
+  /// Módulo de permissão tenant (ex.: POS, PRODUTOS). Null = visível para todos autenticados.
+  final String? permissionModule;
+  final String permissionAction;
+
   bool get isSectionLead => section != null;
+
+  AppNavItem copyWith({
+    String? section,
+    String? label,
+    String? path,
+    IconData? icon,
+    String? permissionModule,
+    String? permissionAction,
+  }) {
+    return AppNavItem(
+      section: section ?? this.section,
+      label: label ?? this.label,
+      path: path ?? this.path,
+      icon: icon ?? this.icon,
+      permissionModule: permissionModule ?? this.permissionModule,
+      permissionAction: permissionAction ?? this.permissionAction,
+    );
+  }
 }
 
 /// Grupo de navegação (Primavera / SAP B1 / Odoo style).
@@ -35,216 +74,260 @@ class AppNavSection {
 /// Hierarquia oficial do menu — única fonte para sidebar e drawer.
 const List<AppNavSection> kAppNavSections = <AppNavSection>[
   AppNavSection(
-    title: 'Dashboard',
+    title: AppNavSections.dashboard,
     items: <AppNavItem>[
       AppNavItem(
         label: 'Executivo',
         path: AppRoutePaths.dashboard,
         icon: Icons.dashboard_outlined,
+        permissionModule: 'RELATORIOS',
       ),
       AppNavItem(
-        label: 'Farmácia',
+        label: 'Visão Farmácia',
         path: AppRoutePaths.dashboardPharmacy,
         icon: Icons.local_pharmacy_outlined,
+        permissionModule: 'RELATORIOS',
       ),
       AppNavItem(
-        label: 'Financeiro',
+        label: 'Visão Financeira',
         path: AppRoutePaths.dashboardFinance,
         icon: Icons.account_balance_outlined,
+        permissionModule: 'RELATORIOS',
       ),
       AppNavItem(
-        label: 'Stock',
+        label: 'Visão Stock',
         path: AppRoutePaths.dashboardStock,
         icon: Icons.warehouse_outlined,
+        permissionModule: 'RELATORIOS',
       ),
     ],
   ),
   AppNavSection(
-    title: 'Terminal',
+    title: AppNavSections.terminal,
     items: <AppNavItem>[
       AppNavItem(
         label: 'POS / Caixa',
         path: AppRoutePaths.pos,
         icon: Icons.point_of_sale_outlined,
+        permissionModule: 'POS',
       ),
       AppNavItem(
         label: 'Faturas',
         path: AppRoutePaths.salesInvoices,
         icon: Icons.receipt_long_outlined,
+        permissionModule: 'POS',
       ),
       AppNavItem(
         label: 'Cotações',
         path: AppRoutePaths.salesQuotations,
         icon: Icons.request_quote_outlined,
+        permissionModule: 'COTACOES',
       ),
       AppNavItem(
         label: 'Clientes',
         path: AppRoutePaths.salesCustomers,
         icon: Icons.people_outline,
+        permissionModule: 'CLIENTES',
       ),
       AppNavItem(
         label: 'Histórico de Vendas',
         path: AppRoutePaths.salesHistory,
         icon: Icons.history,
+        permissionModule: 'RELATORIOS',
       ),
     ],
   ),
   AppNavSection(
-    title: 'Farmácia',
+    title: AppNavSections.pharmacy,
     items: <AppNavItem>[
       AppNavItem(
         label: 'Produtos',
         path: AppRoutePaths.products,
-        icon: Icons.inventory_2_outlined,
+        icon: Icons.inventory_outlined,
+        permissionModule: 'PRODUTOS',
       ),
       AppNavItem(
         label: 'Categorias',
         path: AppRoutePaths.pharmacyCategories,
         icon: Icons.category_outlined,
+        permissionModule: 'PRODUTOS',
       ),
       AppNavItem(
         label: 'Lotes',
         path: AppRoutePaths.pharmacyLots,
         icon: Icons.layers_outlined,
+        permissionModule: 'LOTES',
       ),
       AppNavItem(
         label: 'Validades',
         path: AppRoutePaths.pharmacyExpiry,
         icon: Icons.event_note_outlined,
+        permissionModule: 'LOTES',
       ),
       AppNavItem(
         label: 'FEFO',
         path: AppRoutePaths.pharmacyFefo,
         icon: Icons.account_tree_outlined,
+        permissionModule: 'LOTES',
       ),
     ],
   ),
   AppNavSection(
-    title: 'Stock & Logística',
+    title: AppNavSections.stock,
     items: <AppNavItem>[
       AppNavItem(
         label: 'Inventário',
         path: AppRoutePaths.stockInventory,
         icon: Icons.fact_check_outlined,
+        permissionModule: 'INVENTARIO',
       ),
       AppNavItem(
         label: 'Movimentos',
         path: AppRoutePaths.stockMovements,
         icon: Icons.swap_horiz,
+        permissionModule: 'INVENTARIO',
       ),
       AppNavItem(
         label: 'Requisições',
         path: AppRoutePaths.stockRequisitions,
         icon: Icons.assignment_outlined,
+        permissionModule: 'REQUISICOES',
       ),
     ],
   ),
   AppNavSection(
-    title: 'Financeiro',
+    title: AppNavSections.finance,
     items: <AppNavItem>[
       AppNavItem(
         label: 'Visão Geral',
         path: AppRoutePaths.financial,
         icon: Icons.payments_outlined,
+        permissionModule: 'RELATORIOS',
       ),
       AppNavItem(
         label: 'Fluxo de Caixa',
         path: AppRoutePaths.financeCashflow,
         icon: Icons.stacked_line_chart,
+        permissionModule: 'RELATORIOS',
       ),
       AppNavItem(
         label: 'Despesas',
         path: AppRoutePaths.financeExpenses,
         icon: Icons.money_off_csred_outlined,
+        permissionModule: 'RELATORIOS',
       ),
     ],
   ),
   AppNavSection(
-    title: 'Regulatório',
+    title: AppNavSections.regulatory,
     items: <AppNavItem>[
       AppNavItem(
         label: 'Receitas',
         path: AppRoutePaths.recipes,
         icon: Icons.description_outlined,
+        permissionModule: 'RELATORIOS',
       ),
       AppNavItem(
         label: 'Livro de Receitas',
         path: AppRoutePaths.recipesBook,
         icon: Icons.menu_book_outlined,
+        permissionModule: 'RELATORIOS',
       ),
       AppNavItem(
         label: 'Livro de Psicotrópicos',
         path: AppRoutePaths.psychotropics,
         icon: Icons.medical_information_outlined,
+        permissionModule: 'RELATORIOS',
       ),
       AppNavItem(
         label: 'Sanitário / Alertas',
         path: AppRoutePaths.regulatory,
         icon: Icons.health_and_safety_outlined,
+        permissionModule: 'RELATORIOS',
       ),
     ],
   ),
   AppNavSection(
-    title: 'Auditoria',
+    title: AppNavSections.audit,
     items: <AppNavItem>[
       AppNavItem(
         label: 'Visão Geral',
         path: AppRoutePaths.audit,
         icon: Icons.gavel_outlined,
+        permissionModule: 'RELATORIOS',
       ),
       AppNavItem(
         label: 'Cronologia',
         path: AppRoutePaths.auditTimeline,
         icon: Icons.timeline,
+        permissionModule: 'RELATORIOS',
       ),
       AppNavItem(
         label: 'Logs',
         path: AppRoutePaths.auditLogs,
         icon: Icons.terminal,
+        permissionModule: 'RELATORIOS',
       ),
       AppNavItem(
         label: 'Auditoria de Psicotrópicos',
         path: AppRoutePaths.auditPsych,
         icon: Icons.verified_user_outlined,
+        permissionModule: 'RELATORIOS',
       ),
     ],
   ),
   AppNavSection(
-    title: 'Administração',
+    title: AppNavSections.administration,
     items: <AppNavItem>[
       AppNavItem(
         label: 'Utilizadores',
         path: AppRoutePaths.users,
         icon: Icons.group_outlined,
+        permissionModule: 'UTILIZADORES',
       ),
     ],
   ),
   AppNavSection(
-    title: 'Sistema',
+    title: AppNavSections.system,
     items: <AppNavItem>[
       AppNavItem(
         label: 'Definições',
         path: AppRoutePaths.settings,
         icon: Icons.settings_outlined,
+        permissionModule: 'CONFIGURACOES',
       ),
       AppNavItem(
         label: 'Impressoras',
         path: AppRoutePaths.settingsPrinters,
         icon: Icons.print_outlined,
+        permissionModule: 'CONFIGURACOES',
       ),
       AppNavItem(
         label: 'Terminais',
         path: AppRoutePaths.settingsTerminals,
         icon: Icons.devices_other_outlined,
+        permissionModule: 'CONFIGURACOES',
       ),
       AppNavItem(
         label: 'Sincronização',
         path: AppRoutePaths.settingsSync,
         icon: Icons.sync_alt,
+        permissionModule: 'CONFIGURACOES',
       ),
     ],
   ),
 ];
+
+bool _canAccessNavItem(AppNavItem item, SessionAccessState access) {
+  final module = item.permissionModule;
+  if (module == null) {
+    return true;
+  }
+  if (!access.isResolved || access.viewState == SessionAccessViewState.error) {
+    return true;
+  }
+  return access.can(module, item.permissionAction);
+}
 
 /// Lista plana com metadado [AppNavItem.section] no primeiro item de cada grupo.
 List<AppNavItem> buildFlatNavItems(List<AppNavSection> sections) {
@@ -253,12 +336,7 @@ List<AppNavItem> buildFlatNavItems(List<AppNavSection> sections) {
     for (var index = 0; index < group.items.length; index++) {
       final item = group.items[index];
       flat.add(
-        AppNavItem(
-          section: index == 0 ? group.title : null,
-          label: item.label,
-          path: item.path,
-          icon: item.icon,
-        ),
+        item.copyWith(section: index == 0 ? group.title : null),
       );
     }
   }
@@ -269,15 +347,28 @@ List<AppNavItem> buildFlatNavItems(List<AppNavSection> sections) {
 final List<AppNavItem> kAppNavItems = buildFlatNavItems(kAppNavSections);
 
 List<AppNavItem> visibleNavItemsForAccess(SessionAccessState access) {
-  if (access.canAccessAdministration) {
-    return kAppNavItems;
+  final visible = <AppNavItem>[];
+
+  for (final group in kAppNavSections) {
+    final allowedItems = group.items
+        .where((item) => _canAccessNavItem(item, access))
+        .toList(growable: false);
+    if (allowedItems.isEmpty) {
+      continue;
+    }
+
+    for (var index = 0; index < allowedItems.length; index++) {
+      final item = allowedItems[index];
+      visible.add(
+        item.copyWith(section: index == 0 ? group.title : null),
+      );
+    }
   }
-  return kAppNavItems
-      .where((item) => item.path != AppRoutePaths.users)
-      .toList(growable: false);
+
+  return visible;
 }
 
-/// Resolve o grupo ERP de um path (breadcrumbs / topbar).
+/// Resolve o grupo ERP de um path (breadcrumbs / topbar / tags de página).
 String? navSectionTitleForPath(String path) {
   for (final group in kAppNavSections) {
     if (group.items.any((item) => item.path == path)) {
@@ -285,4 +376,9 @@ String? navSectionTitleForPath(String path) {
     }
   }
   return AppRouteTitles.sectionFor(path);
+}
+
+/// Tag de secção para cabeçalhos de módulo ([EnterpriseModuleHub]).
+String navTagForPath(String path) {
+  return navSectionTitleForPath(path) ?? AppNavSections.dashboard;
 }

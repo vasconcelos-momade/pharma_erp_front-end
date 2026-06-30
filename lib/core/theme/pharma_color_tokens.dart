@@ -163,40 +163,7 @@ class PharmaColorTokens extends ThemeExtension<PharmaColorTokens> {
   @override
   PharmaColorTokens lerp(ThemeExtension<PharmaColorTokens>? other, double t) {
     if (other is! PharmaColorTokens) return this;
-    return PharmaColorTokens(
-      primary: Color.lerp(primary, other.primary, t)!,
-      secondary: Color.lerp(secondary, other.secondary, t)!,
-      tertiary: Color.lerp(tertiary, other.tertiary, t)!,
-      surface: Color.lerp(surface, other.surface, t)!,
-      surfaceVariant: Color.lerp(surfaceVariant, other.surfaceVariant, t)!,
-      surfaceContainer: Color.lerp(surfaceContainer, other.surfaceContainer, t)!,
-      surfaceContainerLow:
-          Color.lerp(surfaceContainerLow, other.surfaceContainerLow, t)!,
-      surfaceContainerHigh:
-          Color.lerp(surfaceContainerHigh, other.surfaceContainerHigh, t)!,
-      surfaceContainerHighest: Color.lerp(
-        surfaceContainerHighest,
-        other.surfaceContainerHighest,
-        t,
-      )!,
-      background: Color.lerp(background, other.background, t)!,
-      backgroundSecondary:
-          Color.lerp(backgroundSecondary, other.backgroundSecondary, t)!,
-      overlay: Color.lerp(overlay, other.overlay, t)!,
-      divider: Color.lerp(divider, other.divider, t)!,
-      hover: Color.lerp(hover, other.hover, t)!,
-      pressed: Color.lerp(pressed, other.pressed, t)!,
-      focused: Color.lerp(focused, other.focused, t)!,
-      selected: Color.lerp(selected, other.selected, t)!,
-      disabled: Color.lerp(disabled, other.disabled, t)!,
-      inverseSurface: Color.lerp(inverseSurface, other.inverseSurface, t)!,
-      inversePrimary: Color.lerp(inversePrimary, other.inversePrimary, t)!,
-      success: Color.lerp(success, other.success, t)!,
-      warning: Color.lerp(warning, other.warning, t)!,
-      error: Color.lerp(error, other.error, t)!,
-      info: Color.lerp(info, other.info, t)!,
-      neutral: Color.lerp(neutral, other.neutral, t)!,
-    );
+    return t < 0.5 ? this : other;
   }
 }
 

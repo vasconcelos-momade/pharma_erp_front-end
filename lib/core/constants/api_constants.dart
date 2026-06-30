@@ -2,6 +2,7 @@ abstract final class ApiConstants {
   ApiConstants._();
 
   static const centralAuthLogin = '/central/auth/login';
+  static const centralAuthForgotPassword = '/central/auth/forgot-password';
   static const centralTenants = '/central/tenants';
 
   static const tenantProdutos = '/tenant/produtos';

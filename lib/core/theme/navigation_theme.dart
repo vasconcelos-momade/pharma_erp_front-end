@@ -21,7 +21,7 @@ class NavigationThemeData extends ThemeExtension<NavigationThemeData> {
   factory NavigationThemeData.fromLegacy(PharmaTokens tokens) {
     return NavigationThemeData(
       sidebarBackground: tokens.bgSecondary,
-      sidebarSelected: tokens.brandBlue.withValues(alpha: 0.12),
+      sidebarSelected: tokens.brandGreen.withValues(alpha: 0.12),
       sidebarHover: tokens.cardHover,
       topbarBackground: tokens.bgPrimary,
       drawerBackground: tokens.bgSecondary,
@@ -48,13 +48,7 @@ class NavigationThemeData extends ThemeExtension<NavigationThemeData> {
   @override
   NavigationThemeData lerp(ThemeExtension<NavigationThemeData>? other, double t) {
     if (other is! NavigationThemeData) return this;
-    return NavigationThemeData(
-      sidebarBackground: Color.lerp(sidebarBackground, other.sidebarBackground, t)!,
-      sidebarSelected: Color.lerp(sidebarSelected, other.sidebarSelected, t)!,
-      sidebarHover: Color.lerp(sidebarHover, other.sidebarHover, t)!,
-      topbarBackground: Color.lerp(topbarBackground, other.topbarBackground, t)!,
-      drawerBackground: Color.lerp(drawerBackground, other.drawerBackground, t)!,
-    );
+    return t < 0.5 ? this : other;
   }
 }
 

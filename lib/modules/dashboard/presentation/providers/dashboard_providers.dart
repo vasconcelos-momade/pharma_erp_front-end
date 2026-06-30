@@ -27,6 +27,25 @@ final stockDashboardProvider =
   return ref.watch(dashboardRemoteDataSourceProvider).stockDashboard(query);
 });
 
+const _defaultExecutiveQuery = DashboardQuery();
+
+/// Contagem operacional para o indicador de alertas no shell (dados reais do dashboard executivo).
+final operationalAlertsCountProvider = Provider<int>((ref) {
+  final async = ref.watch(executiveDashboardProvider(_defaultExecutiveQuery));
+  return async.when(
+    data: (data) {
+      final kpis = data['kpis'];
+      if (kpis is! Map) return 0;
+      final criticos = (kpis['produtosCriticos'] as num?)?.toInt() ?? 0;
+      final expirados = (kpis['lotesExpirados'] as num?)?.toInt() ?? 0;
+      final proximos = (kpis['produtosProximosValidade'] as num?)?.toInt() ?? 0;
+      return criticos + expirados + proximos;
+    },
+    loading: () => 0,
+    error: (_, _) => 0,
+  );
+});
+
 final dashboardFilterCategoriesProvider =
     FutureProvider.autoDispose<List<Category>>((ref) async {
   return ref.watch(activeCategoriesProvider.future);

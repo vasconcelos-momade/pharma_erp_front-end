@@ -51,14 +51,7 @@ class PharmaDashboardTokens extends ThemeExtension<PharmaDashboardTokens> {
     double t,
   ) {
     if (other is! PharmaDashboardTokens) return this;
-    return PharmaDashboardTokens(
-      dashboardBackground:
-          Color.lerp(dashboardBackground, other.dashboardBackground, t)!,
-      dashboardCard: Color.lerp(dashboardCard, other.dashboardCard, t)!,
-      widgetBackground: Color.lerp(widgetBackground, other.widgetBackground, t)!,
-      widgetBorder: Color.lerp(widgetBorder, other.widgetBorder, t)!,
-      widgetShadow: t < 0.5 ? widgetShadow : other.widgetShadow,
-    );
+    return t < 0.5 ? this : other;
   }
 }
 

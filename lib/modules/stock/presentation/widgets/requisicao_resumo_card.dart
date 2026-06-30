@@ -101,20 +101,10 @@ class RequisicaoResumoCard extends StatelessWidget {
             );
 
             final actionButtons = isFinalized
-                ? Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      IconButton(
-                        icon: Icon(Icons.print_outlined, size: t.iconSm),
-                        onPressed: () {},
-                        tooltip: 'Imprimir requisição',
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.visibility_outlined, size: t.iconSm),
-                        onPressed: onTap,
-                        tooltip: 'Ver detalhes',
-                      ),
-                    ],
+                ? IconButton(
+                    icon: Icon(Icons.visibility_outlined, size: t.iconSm),
+                    onPressed: onTap,
+                    tooltip: 'Ver detalhes',
                   )
                 : const SizedBox.shrink();
 

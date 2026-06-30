@@ -6,9 +6,11 @@ import '../../../../core/extensions/async_value_extensions.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../shared/widgets/cards/enterprise_kpi_grid.dart';
 import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
+import '../../../../shared/widgets/navigation/app_nav_config.dart';
 import '../../../dashboard/data/datasources/dashboard_remote_datasource.dart';
 import '../../../dashboard/domain/dashboard_query.dart';
 import '../../../dashboard/presentation/providers/dashboard_providers.dart';
+import '../../../dashboard/presentation/widgets/dashboard_kpi_section.dart';
 import '../../../dashboard/presentation/widgets/dashboard_period_filters.dart';
 import '../../../dashboard/presentation/widgets/dashboard_widgets.dart';
 import '../../../reports/presentation/controllers/report_controller.dart';
@@ -34,7 +36,7 @@ class _FinancialPageState extends ConsumerState<FinancialPage> {
     return EnterpriseModuleHub(
       title: 'Visão financeira',
       subtitle: 'Resumo de receitas, despesas, caixa e contas.',
-      tag: 'Finanças',
+      tag: AppNavSections.finance,
       scrollable: true,
       actions: [
         ...financeReportActions(
@@ -53,44 +55,48 @@ class _FinancialPageState extends ConsumerState<FinancialPage> {
         query: _query,
         onChanged: (query) => setState(() => _query = query),
       ),
-      kpis: kpis == null
-          ? null
-          : [
-              dashboardKpiCard(
-                title: 'Receita',
-                value: '${dashKpi(kpis, 'receita')} MZN',
-                icon: Icons.trending_up,
-                accent: StatCardAccent.positive,
-              ),
-              dashboardKpiCard(
-                title: 'Despesas',
-                value: '${dashKpi(kpis, 'despesas')} MZN',
-                icon: Icons.trending_down,
-                accent: StatCardAccent.warning,
-              ),
-              dashboardKpiCard(
-                title: 'Saldo caixa',
-                value: '${dashKpi(kpis, 'saldoAtual')} MZN',
-                icon: Icons.account_balance_wallet,
-                accent: StatCardAccent.positive,
-              ),
-              dashboardKpiCard(
-                title: 'A receber',
-                value: '${dashKpi(kpis, 'contasReceber')} MZN',
-                icon: Icons.call_received,
-              ),
-              dashboardKpiCard(
-                title: 'A pagar',
-                value: '${dashKpi(kpis, 'contasPagar')} MZN',
-                icon: Icons.call_made,
-              ),
-            ],
       child: dashboardAsyncBody(
         async: async,
         onRetry: () => ref.invalidate(financeDashboardProvider(_query)),
+        loadingKpiCount: 5,
         builder: (_) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (kpis != null) ...[
+              DashboardKpiSection(
+                primaryKpis: [
+                  dashboardKpiCard(
+                    title: 'Receita',
+                    value: '${dashKpi(kpis, 'receita')} MZN',
+                    icon: Icons.trending_up,
+                    accent: StatCardAccent.positive,
+                  ),
+                  dashboardKpiCard(
+                    title: 'Despesas',
+                    value: '${dashKpi(kpis, 'despesas')} MZN',
+                    icon: Icons.trending_down,
+                    accent: StatCardAccent.warning,
+                  ),
+                  dashboardKpiCard(
+                    title: 'Saldo caixa',
+                    value: '${dashKpi(kpis, 'saldoAtual')} MZN',
+                    icon: Icons.account_balance_wallet,
+                    accent: StatCardAccent.positive,
+                  ),
+                  dashboardKpiCard(
+                    title: 'A receber',
+                    value: '${dashKpi(kpis, 'contasReceber')} MZN',
+                    icon: Icons.call_received,
+                  ),
+                  dashboardKpiCard(
+                    title: 'A pagar',
+                    value: '${dashKpi(kpis, 'contasPagar')} MZN',
+                    icon: Icons.call_made,
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+            ],
             if (financeReportError(ref) != null)
               Padding(
                 padding: EdgeInsets.only(bottom: context.spacing.sm),

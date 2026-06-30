@@ -121,6 +121,7 @@ class _SalesInvoicesPageState extends ConsumerState<SalesInvoicesPage> {
         detailState: detailState,
         onView: _openDetails,
         onCancel: _confirmCancelInvoice,
+        onPrint: _printInvoice,
       ),
     );
   }
@@ -179,6 +180,25 @@ class _SalesInvoicesPageState extends ConsumerState<SalesInvoicesPage> {
       },
     );
     ref.read(invoiceDetailProvider.notifier).close();
+  }
+
+  Future<void> _printInvoice(InvoiceSummary invoice) async {
+    try {
+      await ref.read(invoiceActionProvider.notifier).printReceipt(
+            invoiceId: invoice.id,
+          );
+      if (!mounted) return;
+      PharmaFeedback.success(context, 'Documento enviado para impressão.');
+    } catch (e) {
+      if (!mounted) return;
+      final message =
+          ref.read(invoiceActionProvider).errorMessage ?? e.toString();
+      await PharmaFeedback.criticalError(
+        context: context,
+        title: 'Falha na impressão',
+        message: message,
+      );
+    }
   }
 
   Future<void> _confirmCancelInvoice(InvoiceSummary invoice) async {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/theme/pharma_surface.dart';
 import '../../../core/theme/spacing.dart';
 import '../../responsive/breakpoints.dart';
 import '../../responsive/pharma_screen_layout.dart';
@@ -64,114 +65,102 @@ class EnterpriseDataTable extends StatelessWidget {
         final boundedHeight = c.hasBoundedHeight && c.maxHeight.isFinite;
 
         if (useCards) {
-          final boundedHeight = c.hasBoundedHeight && c.maxHeight.isFinite;
-          return Material(
-            color: Colors.transparent,
-            child: ListView.separated(
-              shrinkWrap: !boundedHeight,
-              physics: boundedHeight
-                  ? const ClampingScrollPhysics()
-                  : const NeverScrollableScrollPhysics(),
-              itemCount: rowCount,
-              separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.xs),
-              itemBuilder: (context, i) {
-                final row = rowBuilder(context, i);
-                final parts = row.cells.map((e) => _describeCellWidget(e.child)).where((s) => s.isNotEmpty).toList();
-                final title = parts.isNotEmpty ? parts.first : '—';
-                final rest = parts.length > 1 ? parts.sublist(1).join(' · ') : null;
-                return Material(
-                  color: t.card,
-                  borderRadius: BorderRadius.circular(t.radiusMd),
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(t.radiusMd),
-                    onTap: row.onSelectChanged != null ? () => row.onSelectChanged!(true) : null,
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  title,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w700,
-                                        height: 1.2,
-                                        color: t.textPrimary,
-                                      ),
-                                ),
-                                if (rest != null && rest.isNotEmpty) ...[
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    rest,
-                                    maxLines: 3,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                          fontSize: 11,
-                                          color: t.textMuted,
-                                          height: 1.25,
-                                        ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                          Icon(Icons.chevron_right_rounded, size: 20, color: t.textMuted),
-                        ],
-                      ),
-                    ),
+          return ListView.separated(
+            shrinkWrap: !boundedHeight,
+            physics: boundedHeight
+                ? const ClampingScrollPhysics()
+                : const NeverScrollableScrollPhysics(),
+            itemCount: rowCount,
+            separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.xs),
+            itemBuilder: (context, i) {
+              final row = rowBuilder(context, i);
+              final parts = row.cells
+                  .map((e) => _describeCellWidget(e.child))
+                  .where((s) => s.isNotEmpty)
+                  .toList();
+              final title = parts.isNotEmpty ? parts.first : '—';
+              final rest = parts.length > 1 ? parts.sublist(1).join(' · ') : null;
+              return PharmaSurface(
+                onTap: row.onSelectChanged != null ? () => row.onSelectChanged!(true) : null,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
                   ),
-                );
-              },
-            ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w700,
+                                    height: 1.2,
+                                    color: t.textPrimary,
+                                  ),
+                            ),
+                            if (rest != null && rest.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                rest,
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      fontSize: 11,
+                                      color: t.textMuted,
+                                      height: 1.25,
+                                    ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.chevron_right_rounded, size: 20, color: t.textMuted),
+                    ],
+                  ),
+                ),
+              );
+            },
           );
         }
 
-        return Material(
-          color: t.card,
-          borderRadius: BorderRadius.circular(t.radiusMd),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(t.radiusMd),
-              border: Border.all(color: t.border.withValues(alpha: 0.55)),
-            ),
-            clipBehavior: Clip.antiAlias,
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minWidth: c.maxWidth.isFinite ? c.maxWidth : Breakpoints.tablet,
-                ),
-                child: SingleChildScrollView(
-                  physics: boundedHeight
-                      ? const ClampingScrollPhysics()
-                      : const NeverScrollableScrollPhysics(),
-                  child: DataTable(
-                    showCheckboxColumn: showCheckboxColumn,
-                    sortColumnIndex: sortColumnIndex,
-                    sortAscending: sortAscending,
-                    headingRowColor: WidgetStatePropertyAll(
-                      t.bgSecondary.withValues(alpha: 0.92),
-                    ),
-                    dataRowMinHeight:
-                        PharmaScreenLayout.isTablet(context) ? 44 : 40,
-                    dataRowMaxHeight: 72,
-                    horizontalMargin: PharmaScreenLayout.isDesktop(context)
-                        ? AppSpacing.lg
-                        : AppSpacing.md,
-                    columnSpacing: PharmaScreenLayout.isDesktop(context)
-                        ? AppSpacing.xxl
-                        : AppSpacing.lg,
-                    columns: columns,
-                    rows: List.generate(
-                      rowCount,
-                      (i) => rowBuilder(context, i),
-                    ),
+        return PharmaSurface(
+          clipBehavior: Clip.antiAlias,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minWidth: c.maxWidth.isFinite ? c.maxWidth : Breakpoints.tablet,
+              ),
+              child: SingleChildScrollView(
+                physics: boundedHeight
+                    ? const ClampingScrollPhysics()
+                    : const NeverScrollableScrollPhysics(),
+                child: DataTable(
+                  showCheckboxColumn: showCheckboxColumn,
+                  sortColumnIndex: sortColumnIndex,
+                  sortAscending: sortAscending,
+                  headingRowColor: WidgetStatePropertyAll(
+                    t.bgSecondary.withValues(alpha: 0.92),
+                  ),
+                  dataRowMinHeight: PharmaScreenLayout.isTablet(context) ? 44 : 40,
+                  dataRowMaxHeight: 72,
+                  horizontalMargin: PharmaScreenLayout.isDesktop(context)
+                      ? AppSpacing.lg
+                      : AppSpacing.md,
+                  columnSpacing: PharmaScreenLayout.isDesktop(context)
+                      ? AppSpacing.xxl
+                      : AppSpacing.lg,
+                  columns: columns,
+                  rows: List.generate(
+                    rowCount,
+                    (i) => rowBuilder(context, i),
                   ),
                 ),
               ),

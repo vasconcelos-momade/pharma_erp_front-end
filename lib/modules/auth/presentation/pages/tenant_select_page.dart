@@ -137,7 +137,7 @@ class _TenantSelectPageState extends ConsumerState<TenantSelectPage> {
                       ? 'Modo nuvem'
                       : 'Modo local',
                   color: connection.mode == ConnectionMode.cloud
-                      ? t.brandBlue
+                      ? t.brandGreenHover
                       : t.brandGreen,
                 ),
                 _TenantStatusChip(
@@ -231,7 +231,7 @@ class _TenantSelectPageState extends ConsumerState<TenantSelectPage> {
                   padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                   child: Material(
                     color: _branchId == branch.id
-                        ? t.brandBlue.withValues(alpha: 0.12)
+                        ? t.brandGreen.withValues(alpha: 0.12)
                         : t.card,
                     borderRadius: BorderRadius.circular(t.radiusMd),
                     child: InkWell(
@@ -252,7 +252,7 @@ class _TenantSelectPageState extends ConsumerState<TenantSelectPage> {
                               _branchId == branch.id
                                   ? Icons.store_rounded
                                   : Icons.store_outlined,
-                              color: _branchId == branch.id ? t.brandBlue : t.textMuted,
+                              color: _branchId == branch.id ? t.brandGreen : t.textMuted,
                             ),
                             const SizedBox(width: AppSpacing.md),
                             Expanded(

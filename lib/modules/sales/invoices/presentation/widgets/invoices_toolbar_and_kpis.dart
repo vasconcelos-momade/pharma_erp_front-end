@@ -5,7 +5,6 @@ import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/responsive/pharma_screen_layout.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
-import '../../domain/entities/invoice_summary.dart';
 import '../providers/invoice_list_provider.dart';
 
 class InvoicesToolbarV2 extends ConsumerWidget {
@@ -47,17 +46,6 @@ class InvoicesToolbarV2 extends ConsumerWidget {
     );
 
     final chips = <Widget>[
-      for (final filter in InvoiceQuickFilter.values.where(
-        (f) => f != InvoiceQuickFilter.none,
-      ))
-        Padding(
-          padding: EdgeInsets.only(right: s.sm),
-          child: FilterChip(
-            selected: query.quickFilter == filter,
-            label: Text(_quickFilterLabel(filter)),
-            onSelected: (_) => notifier.setQuickFilter(filter),
-          ),
-        ),
       if (query.hasFilters)
         Padding(
           padding: EdgeInsets.only(right: s.sm),
@@ -74,11 +62,13 @@ class InvoicesToolbarV2 extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           searchField,
-          SizedBox(height: s.sm),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(children: chips),
-          ),
+          if (chips.isNotEmpty) ...[
+            SizedBox(height: s.sm),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(children: chips),
+            ),
+          ],
         ],
       );
     }
@@ -91,32 +81,22 @@ class InvoicesToolbarV2 extends ConsumerWidget {
             child: searchField,
           ),
         ),
-        SizedBox(width: s.md),
-        Expanded(
-          flex: 2,
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: Wrap(
-              spacing: 0,
-              runSpacing: s.sm,
-              children: chips,
+        if (chips.isNotEmpty) ...[
+          SizedBox(width: s.md),
+          Expanded(
+            flex: 2,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Wrap(
+                spacing: 0,
+                runSpacing: s.sm,
+                children: chips,
+              ),
             ),
           ),
-        ),
+        ],
       ],
     );
-  }
-
-  String _quickFilterLabel(InvoiceQuickFilter filter) {
-    return switch (filter) {
-      InvoiceQuickFilter.today => 'Hoje',
-      InvoiceQuickFilter.week => 'Semana',
-      InvoiceQuickFilter.month => 'Mês',
-      InvoiceQuickFilter.cancelled => 'Canceladas',
-      InvoiceQuickFilter.paid => 'Pagas',
-      InvoiceQuickFilter.pending => 'Pendentes',
-      InvoiceQuickFilter.none => 'Todas',
-    };
   }
 }
 

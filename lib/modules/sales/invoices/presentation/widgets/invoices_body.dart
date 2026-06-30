@@ -195,6 +195,7 @@ class InvoicesMobileContent extends ConsumerWidget {
                       invoices: listState.items,
                       onView: onView,
                       onCancel: onCancel,
+                      searchController: searchController,
                       embedded: true,
                     ),
                     Positioned(
@@ -222,6 +223,7 @@ class InvoicesMobileContent extends ConsumerWidget {
                       invoices: listState.items,
                       onView: onView,
                       onCancel: onCancel,
+                      searchController: searchController,
                       embedded: true,
                     ),
                     SizedBox(height: s.md),

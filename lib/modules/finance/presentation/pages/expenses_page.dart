@@ -6,6 +6,7 @@ import '../../../../core/extensions/async_value_extensions.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../shared/widgets/cards/enterprise_kpi_grid.dart';
 import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
+import '../../../../shared/widgets/navigation/app_nav_config.dart';
 import '../../../dashboard/data/datasources/dashboard_remote_datasource.dart';
 import '../../../dashboard/domain/dashboard_query.dart';
 import '../../../dashboard/presentation/providers/dashboard_providers.dart';
@@ -34,7 +35,7 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
     return EnterpriseModuleHub(
       title: 'Despesas',
       subtitle: 'Movimentos de despesa, compras e reembolsos.',
-      tag: 'Finanças',
+      tag: AppNavSections.finance,
       scrollable: true,
       actions: [
         ...financeReportActions(
