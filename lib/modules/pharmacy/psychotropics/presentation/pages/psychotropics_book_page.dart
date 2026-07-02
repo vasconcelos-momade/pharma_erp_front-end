@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
@@ -297,7 +298,7 @@ class _PsychotropicsBookPageState
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
               child: Text(
                 _error!,
-                style: TextStyle(color: t.posDanger),
+                style: Theme.of(context).textTheme.erpBody.copyWith(color: t.posDanger),
               ),
             ),
           Expanded(
@@ -348,6 +349,8 @@ class _PsychotropicsBookPageState
             pageSize: _pageSize,
             hasMore: _hasMore,
             isBusy: _loading,
+            totalCount: _total,
+            itemsOnPage: _items.length,
             onPrev: _page > 1
                 ? () {
                     setState(() => _page -= 1);
@@ -370,7 +373,7 @@ class _PsychotropicsBookPageState
           ),
           Text(
             'Total: $_total movimento(s)',
-            style: TextStyle(color: t.textMuted, fontSize: 12),
+            style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
           ),
         ],
       ),
@@ -401,11 +404,11 @@ class _PsychInfo extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(color: t.textMuted, fontSize: 12)),
+          Text(label, style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted)),
           const SizedBox(height: 4),
           Text(
             value,
-            style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w600),
+            style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
           ),
         ],
       ),
@@ -435,7 +438,7 @@ class _PsychBadge extends StatelessWidget {
       ),
       child: Text(
         value,
-        style: TextStyle(color: color, fontWeight: FontWeight.w600),
+        style: Theme.of(context).textTheme.erpLabel.copyWith(color: color),
       ),
     );
   }

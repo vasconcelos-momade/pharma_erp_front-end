@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../data/repositories/user_repository_impl.dart';
 import '../../domain/entities/user_entities.dart';
@@ -95,11 +96,7 @@ class _UserDetailPanelState extends ConsumerState<UserDetailPanel>
               Expanded(
                 child: Text(
                   _detail?.name ?? 'Utilizador',
-                  style: TextStyle(
-                    color: t.textPrimary,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 18,
-                  ),
+                  style: Theme.of(context).textTheme.erpCardTitle.copyWith(color: t.textPrimary),
                 ),
               ),
               if (widget.onToggleActive != null)
@@ -145,7 +142,10 @@ class _UserDetailPanelState extends ConsumerState<UserDetailPanel>
               ? const Center(child: CircularProgressIndicator())
               : _error != null
                   ? Center(
-                      child: Text(_error!, style: TextStyle(color: t.posDanger)),
+                      child: Text(
+                        _error!,
+                        style: Theme.of(context).textTheme.erpBody.copyWith(color: t.posDanger),
+                      ),
                     )
                   : TabBarView(
                       controller: _tabs,
@@ -176,11 +176,7 @@ class _UserDetailPanelState extends ConsumerState<UserDetailPanel>
           SizedBox(height: s.md),
           Text(
             'Overrides de permissão (${d.permissions.length})',
-            style: TextStyle(
-              color: t.textMuted,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-            ),
+            style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textMuted),
           ),
           SizedBox(height: s.sm),
           Wrap(
@@ -191,7 +187,7 @@ class _UserDetailPanelState extends ConsumerState<UserDetailPanel>
                 Chip(
                   label: Text(
                     '${p.module}.${p.action}',
-                    style: const TextStyle(fontSize: 11),
+                    style: Theme.of(context).textTheme.erpCaption,
                   ),
                   avatar: Icon(
                     p.allowed ? Icons.check : Icons.block,
@@ -211,7 +207,7 @@ class _UserDetailPanelState extends ConsumerState<UserDetailPanel>
       return Center(
         child: Text(
           'Sem registos de auditoria.',
-          style: TextStyle(color: t.textMuted),
+          style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
         ),
       );
     }
@@ -227,11 +223,11 @@ class _UserDetailPanelState extends ConsumerState<UserDetailPanel>
           leading: Icon(Icons.history, color: t.brandBlue, size: 20),
           title: Text(
             a.action,
-            style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w700),
+            style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
           ),
           subtitle: Text(
             '${a.entity}${a.entityId != null ? ' #${a.entityId}' : ''} • ${_dateTimeFmt.format(a.createdAt)}',
-            style: TextStyle(color: t.textMuted, fontSize: 12),
+            style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
           ),
         );
       },
@@ -243,7 +239,7 @@ class _UserDetailPanelState extends ConsumerState<UserDetailPanel>
       return Center(
         child: Text(
           'Sem eventos de negócio.',
-          style: TextStyle(color: t.textMuted),
+          style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
         ),
       );
     }
@@ -259,11 +255,11 @@ class _UserDetailPanelState extends ConsumerState<UserDetailPanel>
           leading: Icon(Icons.bolt, color: t.brandBlue, size: 20),
           title: Text(
             e.type,
-            style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w700),
+            style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
           ),
           subtitle: Text(
             '${e.entity}${e.entityId != null ? ' #${e.entityId}' : ''} • ${_dateTimeFmt.format(e.createdAt)}',
-            style: TextStyle(color: t.textMuted, fontSize: 12),
+            style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
           ),
         );
       },
@@ -278,12 +274,15 @@ class _UserDetailPanelState extends ConsumerState<UserDetailPanel>
         children: [
           SizedBox(
             width: 120,
-            child: Text(label, style: TextStyle(color: t.textMuted, fontSize: 12)),
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
+            ),
           ),
           Expanded(
             child: Text(
               value,
-              style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w600),
+              style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
             ),
           ),
         ],

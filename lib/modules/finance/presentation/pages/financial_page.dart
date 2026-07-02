@@ -38,6 +38,7 @@ class _FinancialPageState extends ConsumerState<FinancialPage> {
       subtitle: 'Resumo de receitas, despesas, caixa e contas.',
       tag: AppNavSections.finance,
       scrollable: true,
+      mobileKpisHorizontalScroll: true,
       actions: [
         ...financeReportActions(
           ref: ref,

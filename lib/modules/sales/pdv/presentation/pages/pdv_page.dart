@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/widgets/buttons/pharma_button_loader.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
@@ -450,7 +451,7 @@ class _PdvPageState extends ConsumerState<PdvPage>
               _isProductsTab
                   ? 'Carregando produtos...'
                   : 'Carregando serviços...',
-              style: TextStyle(color: t.textMuted),
+              style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
             ),
           ],
         ),
@@ -464,7 +465,7 @@ class _PdvPageState extends ConsumerState<PdvPage>
           children: [
             Icon(Icons.error_outline, size: t.minTouchTarget, color: t.posDanger),
             SizedBox(height: s.lg),
-            Text(activeErrorMessage, style: TextStyle(color: t.textMuted)),
+            Text(activeErrorMessage, style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted)),
             SizedBox(height: s.sm),
             FilledButton(
               onPressed: _isProductsTab
@@ -525,7 +526,7 @@ class _PdvPageState extends ConsumerState<PdvPage>
                     Expanded(
                       child: Text(
                         activeErrorMessage,
-                        style: TextStyle(color: t.textPrimary),
+                        style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textPrimary),
                       ),
                     ),
                     TextButton(
@@ -560,7 +561,7 @@ class _PdvPageState extends ConsumerState<PdvPage>
             padding: EdgeInsets.only(bottom: s.xs),
             child: Text(
               'Preços e stock são indicativos; o total oficial é calculado no servidor ao finalizar.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              style: Theme.of(context).textTheme.erpCaption.copyWith(
                     color: t.textMuted,
                   ),
             ),
@@ -840,7 +841,7 @@ class _ProductCatalogList extends StatelessWidget {
                           Text(
                             product.nome,
                             style:
-                                Theme.of(context).textTheme.titleSmall?.copyWith(
+                                Theme.of(context).textTheme.erpTabLabel.copyWith(
                                       color: tokens.textPrimary,
                                       fontWeight: FontWeight.w700,
                                     ),
@@ -851,10 +852,7 @@ class _ProductCatalogList extends StatelessWidget {
                             SizedBox(height: s.xxs),
                             Text(
                               product.substanciaActiva!,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(color: tokens.textSecondary),
+                              style: Theme.of(context).textTheme.erpCaption.copyWith(color: tokens.textSecondary),
                             ),
                           ],
                           SizedBox(height: s.xs),
@@ -862,10 +860,7 @@ class _ProductCatalogList extends StatelessWidget {
                           SizedBox(height: s.xs),
                           Text(
                             'PV ${_formatMoney(product.precoVenda)} • Date Exp. ${_formatDate(product.dataValidade)} • Lote ${product.lote ?? '-'} • Stock ${product.estoqueAtual.toInt()}',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(color: stockColor),
+                            style: Theme.of(context).textTheme.erpCaption.copyWith(color: stockColor),
                           ),
                           if (product.requiresPsychotropicBook || stockIndisponivel)
                             Padding(
@@ -890,10 +885,7 @@ class _ProductCatalogList extends StatelessWidget {
                                       ),
                                       visualDensity: VisualDensity.compact,
                                       label: const Text('Stock indisponível'),
-                                      labelStyle: TextStyle(
-                                        color: tokens.posDanger,
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                                      labelStyle: Theme.of(context).textTheme.erpCaption.copyWith(color: tokens.posDanger, fontWeight: FontWeight.w600),
                                       backgroundColor: tokens.posDanger
                                           .withValues(alpha: 0.12),
                                       side: BorderSide(
@@ -997,7 +989,7 @@ class _ServiceCatalogList extends StatelessWidget {
                         Text(
                           service.nome,
                           style:
-                              Theme.of(context).textTheme.titleSmall?.copyWith(
+                              Theme.of(context).textTheme.erpTabLabel.copyWith(
                                     color: tokens.textPrimary,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -1008,19 +1000,13 @@ class _ServiceCatalogList extends StatelessWidget {
                           SizedBox(height: s.xxs),
                           Text(
                             service.tipoServicoClinico!,
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(color: tokens.textSecondary),
+                            style: Theme.of(context).textTheme.erpCaption.copyWith(color: tokens.textSecondary),
                           ),
                         ],
                         SizedBox(height: s.xs),
                         Text(
                           'PV ${_formatMoney(service.preco)} • Serviço clínico ${service.tipoServicoClinico ?? '-'}',
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.copyWith(color: tokens.textMuted),
+                          style: Theme.of(context).textTheme.erpCaption.copyWith(color: tokens.textMuted),
                         ),
                       ],
                     ),
@@ -1070,17 +1056,12 @@ class _CatalogEmptyState extends StatelessWidget {
           SizedBox(height: s.md),
           Text(
             title,
-            style: TextStyle(
-              color: tokens.textMuted,
-              fontWeight: FontWeight.w600,
-            ),
+            style: Theme.of(context).textTheme.erpCaption.copyWith(color: tokens.textMuted, fontWeight: FontWeight.w600),
           ),
           if (subtitle != null)
             Text(
               subtitle!,
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: tokens.textMuted),
+              style: Theme.of(context).textTheme.erpCaption.copyWith(color: tokens.textMuted),
             ),
         ],
       ),
@@ -1116,7 +1097,7 @@ class _ServiceResultsBar extends StatelessWidget {
         itemCount == 0
             ? (query.isEmpty ? 'Sem serviços disponíveis' : 'Sem serviços para esta pesquisa')
             : 'Mostrando $itemCount serviço(s)',
-        style: TextStyle(color: t.textMuted),
+        style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
       ),
     );
   }
@@ -1234,7 +1215,7 @@ class _CartPane extends StatelessWidget {
                 children: [
                   Text(
                     'CARRINHO ATUAL',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    style: Theme.of(context).textTheme.erpOverline.copyWith(
                           color: t.textMuted,
                           fontWeight: FontWeight.w700,
                         ),
@@ -1261,13 +1242,11 @@ class _CartPane extends StatelessWidget {
                           SizedBox(height: s.md),
                           Text(
                             'Carrinho vazio',
-                            style: TextStyle(color: t.textMuted, fontWeight: FontWeight.w600),
+                            style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted, fontWeight: FontWeight.w600),
                           ),
                           Text(
                             'Escaneie ou pesquise um produto ou serviço',
-                            style: Theme.of(
-                              context,
-                            ).textTheme.bodySmall?.copyWith(color: t.textMuted),
+                            style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
                           ),
                         ],
                       ),
@@ -1289,7 +1268,7 @@ class _CartPane extends StatelessWidget {
                                   children: [
                                     Text(
                                       line.nome,
-                                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
                                             color: t.textPrimary,
                                             fontWeight: FontWeight.w700,
                                           ),
@@ -1297,16 +1276,12 @@ class _CartPane extends StatelessWidget {
                                     SizedBox(height: s.xxs),
                                     Text(
                                       '${_formatMoney(line.precoUnitario)} / un',
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodySmall?.copyWith(color: t.textMuted),
+                                      style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
                                     ),
                                     if ((line.service?.tipoServicoClinico ?? '').isNotEmpty)
                                       Text(
                                         line.service!.tipoServicoClinico!,
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.bodySmall?.copyWith(color: t.textSecondary),
+                                        style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textSecondary),
                                       ),
                                   ],
                                 ),
@@ -1316,7 +1291,7 @@ class _CartPane extends StatelessWidget {
                                 children: [
                                   Text(
                                     _formatMoney(line.lineTotal),
-                                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                    style: Theme.of(context).textTheme.erpTabLabel.copyWith(
                                           color: t.brandGreen,
                                           fontWeight: FontWeight.w800,
                                         ),
@@ -1338,10 +1313,7 @@ class _CartPane extends StatelessWidget {
                                         padding: EdgeInsets.symmetric(horizontal: s.sm),
                                         child: Text(
                                           '${line.qty}',
-                                          style: TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: t.textPrimary,
-                                          ),
+                                          style: Theme.of(context).textTheme.erpLabel.copyWith(fontWeight: FontWeight.bold, color: t.textPrimary),
                                         ),
                                       ),
                                       SizedBox.square(
@@ -1389,24 +1361,24 @@ class _CartPane extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Subtotal', style: TextStyle(color: t.textSecondary)),
-                    Text(_formatMoney(subtotal), style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w600)),
+                    Text('Subtotal', style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textSecondary)),
+                    Text(_formatMoney(subtotal), style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary)),
                   ],
                 ),
                 SizedBox(height: s.xs),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Desconto', style: TextStyle(color: t.textSecondary)),
-                    Text('- ${_formatMoney(discount)}', style: TextStyle(color: t.posDanger, fontWeight: FontWeight.w600)),
+                    Text('Desconto', style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textSecondary)),
+                    Text('- ${_formatMoney(discount)}', style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.posDanger)),
                   ],
                 ),
                 SizedBox(height: s.xs),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(taxLabel, style: TextStyle(color: t.textSecondary)),
-                    Text(_formatMoney(tax), style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w600)),
+                    Text(taxLabel, style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textSecondary)),
+                    Text(_formatMoney(tax), style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary)),
                   ],
                 ),
               ],
@@ -1423,10 +1395,10 @@ class _CartPane extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('TOTAL', style: Theme.of(context).textTheme.titleSmall?.copyWith(color: t.brandGreen, fontWeight: FontWeight.w900)),
+                  Text('TOTAL', style: Theme.of(context).textTheme.erpTabLabel.copyWith(color: t.brandGreen, fontWeight: FontWeight.w900)),
                   Text(
                     _formatMoney(total),
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    style: Theme.of(context).textTheme.erpCardTitle.copyWith(
                           color: t.brandGreen,
                           fontWeight: FontWeight.w900,
                         ),
@@ -1456,7 +1428,7 @@ class _CartPane extends StatelessWidget {
                   SizedBox(width: s.xs),
                   Text(
                     'FEFO automático aplicado na dispensa',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(color: t.textMuted),
+                    style: Theme.of(context).textTheme.erpOverline.copyWith(color: t.textMuted),
                   ),
                 ],
               ),
@@ -1518,10 +1490,7 @@ class _ProductsPaginationBar extends StatelessWidget {
                 Expanded(
                   child: Text(
                     '$resultsLabel • Página $page',
-                    style: TextStyle(
-                      color: t.textPrimary,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
                     textAlign: TextAlign.center,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
@@ -1543,7 +1512,7 @@ class _ProductsPaginationBar extends StatelessWidget {
               children: [
                 Text(
                   resultsLabel,
-                  style: TextStyle(color: t.textMuted),
+                  style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
                 ),
                 SizedBox(height: s.sm),
                 Row(
@@ -1556,7 +1525,7 @@ class _ProductsPaginationBar extends StatelessWidget {
                     SizedBox(width: s.sm),
                     Text(
                       'Página $page',
-                      style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w600),
+                      style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
                     ),
                     const Spacer(),
                     FilledButton.icon(

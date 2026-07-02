@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../core/theme/design_tokens.dart';
+import '../../../../core/theme/extensions.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
@@ -323,7 +324,7 @@ class RequisicaoItemDialogProductHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
     final s = context.spacing;
-    final theme = Theme.of(context);
+    final textTheme = Theme.of(context).textTheme;
 
     return Container(
       padding: EdgeInsets.all(s.md),
@@ -337,25 +338,20 @@ class RequisicaoItemDialogProductHeader extends StatelessWidget {
         children: [
           Text(
             'Produto',
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: t.brandBlue,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.3,
-            ),
+            style: textTheme.erpOverline.copyWith(color: t.brandBlue),
           ),
           SizedBox(height: s.xs),
           Text(
             productName,
-            style: theme.textTheme.titleMedium?.copyWith(
+            style: textTheme.erpCardTitle.copyWith(
               color: t.textPrimary,
-              fontWeight: FontWeight.w800,
               height: 1.2,
             ),
           ),
           SizedBox(height: s.xs),
           Text(
             description,
-            style: theme.textTheme.bodyMedium?.copyWith(color: t.textSecondary),
+            style: textTheme.erpBodySecondary.copyWith(color: t.textSecondary),
           ),
           if (metadata.isNotEmpty) ...[
             SizedBox(height: s.sm),
@@ -378,7 +374,7 @@ class RequisicaoItemDialogProductHeader extends StatelessWidget {
                     ),
                     child: Text(
                       item,
-                      style: theme.textTheme.labelSmall?.copyWith(
+                      style: textTheme.erpCaption.copyWith(
                         color: t.textPrimary,
                         fontWeight: FontWeight.w700,
                       ),

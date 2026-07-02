@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../../core/theme/design_tokens.dart';
+import '../../../../../../core/theme/extensions.dart';
 import '../../../../../../core/theme/spacing.dart';
 import '../../../domain/entities/product.dart';
 import '../produto_categoria_chip.dart';
@@ -42,11 +43,8 @@ class ProductHeader extends StatelessWidget {
             ),
           Text(
             product.nome,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
+            style: theme.textTheme.erpCardTitle.copyWith(
               color: t.textPrimary,
-              height: 1.25,
             ),
           ),
           SizedBox(height: s.sm),

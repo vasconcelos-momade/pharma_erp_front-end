@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../app/providers/auth_session_notifier.dart';
 import '../../../../core/theme/design_tokens.dart';
+import '../../../../core/theme/extensions.dart';
 import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
 
 class SyncSettingsPage extends ConsumerWidget {
@@ -23,11 +24,11 @@ class SyncSettingsPage extends ConsumerWidget {
             leading: Icon(Icons.cloud_sync_outlined, color: t.brandBlue),
             title: Text(
               'Entidade',
-              style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w700),
+              style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
             ),
             subtitle: Text(
               tenant?.companyName ?? '—',
-              style: TextStyle(color: t.textMuted),
+              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
             ),
           ),
           Divider(color: t.border.withValues(alpha: 0.35)),
@@ -35,23 +36,23 @@ class SyncSettingsPage extends ConsumerWidget {
             leading: Icon(Icons.sync, color: t.brandGreen),
             title: Text(
               'Sincronização central',
-              style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w700),
+              style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
             ),
             subtitle: Text(
               'A sincronização entre a unidade e a plataforma central é gerida pelo backend. '
               'O POS mantém operação local com reconciliação automática quando a ligação é restabelecida.',
-              style: TextStyle(color: t.textMuted),
+              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
             ),
           ),
           ListTile(
             leading: Icon(Icons.schedule, color: t.brandBlue),
             title: Text(
               'Política de conflitos',
-              style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w700),
+              style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
             ),
             subtitle: Text(
               'Conflitos de stock e vendas são resolvidos pelo motor de sincronização do tenant.',
-              style: TextStyle(color: t.textMuted),
+              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
             ),
           ),
         ],

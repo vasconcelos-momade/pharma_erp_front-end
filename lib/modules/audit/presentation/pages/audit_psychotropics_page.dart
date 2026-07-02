@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/constants/report_paths.dart';
 import '../../../../core/theme/design_tokens.dart';
+import '../../../../core/theme/extensions.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../shared/widgets/feedback/module_data_states.dart';
@@ -186,12 +187,7 @@ class _AuditPsychotropicsPageState extends ConsumerState<AuditPsychotropicsPage>
                 DataColumn(
                   label: Text(
                     label.toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.2,
-                      color: t.textMuted,
-                    ),
+                    style: Theme.of(context).textTheme.erpOverline.copyWith(color: t.textMuted),
                   ),
                 ),
             ],
@@ -206,29 +202,23 @@ class _AuditPsychotropicsPageState extends ConsumerState<AuditPsychotropicsPage>
                 cells: [
                   DataCell(Text(
                     _dateTime.format(createdAt),
-                    style: TextStyle(color: t.textMuted, fontSize: 12),
+                    style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
                   )),
                   DataCell(Text(
                     item['numeroDocumento']?.toString() ?? '—',
-                    style: TextStyle(
-                      color: t.textPrimary,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
                   )),
                   DataCell(Text(
                     item['produto']?['nome']?.toString() ?? '—',
-                    style: TextStyle(color: t.textSecondary),
+                    style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textSecondary),
                   )),
                   DataCell(Text(
                     item['tipoMovimento']?.toString() ?? '—',
-                    style: TextStyle(color: t.textPrimary),
+                    style: Theme.of(context).textTheme.erpBody.copyWith(color: t.textPrimary),
                   )),
                   DataCell(Text(
                     '${item['quantidade'] ?? 0}',
-                    style: TextStyle(
-                      color: t.brandGreen,
-                      fontWeight: FontWeight.w800,
-                    ),
+                    style: Theme.of(context).textTheme.erpTabLabel.copyWith(color: t.brandGreen),
                   )),
                 ],
               );

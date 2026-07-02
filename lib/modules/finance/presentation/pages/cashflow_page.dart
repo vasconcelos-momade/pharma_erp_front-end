@@ -38,6 +38,7 @@ class _CashflowPageState extends ConsumerState<CashflowPage> {
       subtitle: 'Tesouraria, movimentos financeiros e evolução do saldo.',
       tag: AppNavSections.finance,
       scrollable: true,
+      mobileKpisHorizontalScroll: true,
       actions: [
         ...financeReportActions(
           ref: ref,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/spacing.dart';
 
 class ProdutoEmptyState extends StatelessWidget {
@@ -20,17 +21,17 @@ class ProdutoEmptyState extends StatelessWidget {
             SizedBox(height: s.md),
             Text(
               'Nenhum produto encontrado',
-              style: TextStyle(
-                color: t.textPrimary,
-                fontWeight: FontWeight.w700,
-                fontSize: 18,
-              ),
+              style: Theme.of(context).textTheme.erpCardTitle.copyWith(
+                    color: t.textPrimary,
+                  ),
             ),
             SizedBox(height: s.xs),
             Text(
               'Ajuste os filtros ou crie um novo produto.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: t.textMuted, fontSize: 14),
+              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
+                    color: t.textMuted,
+                  ),
             ),
           ],
         ),

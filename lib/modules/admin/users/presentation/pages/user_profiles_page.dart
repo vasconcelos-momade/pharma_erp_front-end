@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../app/providers/session_access_notifier.dart';
 import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../../shared/widgets/feedback/module_data_states.dart';
@@ -95,12 +96,7 @@ class UserProfilesPage extends ConsumerWidget {
                 DataColumn(
                   label: Text(
                     label.toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.2,
-                      color: t.textMuted,
-                    ),
+                    style: Theme.of(context).textTheme.erpOverline.copyWith(color: t.textMuted),
                   ),
                 ),
             ],
@@ -114,18 +110,15 @@ class UserProfilesPage extends ConsumerWidget {
                 cells: [
                   DataCell(Text(
                     _roleLabel(role.role),
-                    style: TextStyle(
-                      color: t.textPrimary,
-                      fontWeight: FontWeight.w800,
-                    ),
+                    style: Theme.of(context).textTheme.erpCardTitle.copyWith(color: t.textPrimary),
                   )),
                   DataCell(Text(
                     role.description ?? '—',
-                    style: TextStyle(color: t.textSecondary),
+                    style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textSecondary),
                   )),
                   DataCell(Text(
                     '${role.userCount}',
-                    style: TextStyle(color: t.brandBlue, fontWeight: FontWeight.w900),
+                    style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.brandBlue),
                   )),
                   DataCell(Icon(
                     isSelected ? Icons.expand_less : Icons.chevron_right,
@@ -200,10 +193,7 @@ class _RoleDetailPanel extends StatelessWidget {
                 Expanded(
                   child: Text(
                     '${detail.role} — ${detail.permissions.length} permissões',
-                    style: TextStyle(
-                      color: t.textPrimary,
-                      fontWeight: FontWeight.w800,
-                    ),
+                    style: Theme.of(context).textTheme.erpCardTitle.copyWith(color: t.textPrimary),
                   ),
                 ),
                 FilledButton.tonalIcon(
@@ -218,13 +208,21 @@ class _RoleDetailPanel extends StatelessWidget {
             Expanded(
               child: ListView(
                 children: [
-                  Text('Utilizadores (${detail.users.length})',
-                      style: TextStyle(color: t.textMuted, fontSize: 12)),
+                  Text(
+                    'Utilizadores (${detail.users.length})',
+                    style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
+                  ),
                   for (final u in detail.users)
                     ListTile(
                       dense: true,
-                      title: Text(u.name, style: TextStyle(color: t.textPrimary)),
-                      subtitle: Text(u.email ?? '—', style: TextStyle(color: t.textMuted, fontSize: 11)),
+                      title: Text(
+                        u.name,
+                        style: Theme.of(context).textTheme.erpBody.copyWith(color: t.textPrimary),
+                      ),
+                      subtitle: Text(
+                        u.email ?? '—',
+                        style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
+                      ),
                       trailing: Icon(
                         u.active ? Icons.check_circle : Icons.cancel,
                         color: u.active ? t.brandGreen : t.posDanger,
@@ -232,15 +230,20 @@ class _RoleDetailPanel extends StatelessWidget {
                       ),
                     ),
                   Divider(color: t.border.withValues(alpha: 0.35)),
-                  Text('Permissões', style: TextStyle(color: t.textMuted, fontSize: 12)),
+                  Text(
+                    'Permissões',
+                    style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
+                  ),
                   Wrap(
                     spacing: s.sm,
                     runSpacing: s.sm,
                     children: [
                       for (final p in detail.permissions)
                         Chip(
-                          label: Text('${p.module}.${p.action}',
-                              style: const TextStyle(fontSize: 11)),
+                          label: Text(
+                            '${p.module}.${p.action}',
+                            style: Theme.of(context).textTheme.erpCaption,
+                          ),
                         ),
                     ],
                   ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../data/repositories/customer_repository_impl.dart';
 import '../../domain/entities/customer.dart';
@@ -101,11 +102,7 @@ class _CustomerDetailPanelState extends ConsumerState<CustomerDetailPanel>
               Expanded(
                 child: Text(
                   _detail?.nome ?? 'Cliente',
-                  style: TextStyle(
-                    color: t.textPrimary,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 18,
-                  ),
+                  style: Theme.of(context).textTheme.erpAppBarTitle.copyWith(color: t.textPrimary, fontWeight: FontWeight.w800),
                 ),
               ),
               if (widget.onEdit != null)
@@ -142,7 +139,7 @@ class _CustomerDetailPanelState extends ConsumerState<CustomerDetailPanel>
           child: _loading
               ? const Center(child: CircularProgressIndicator())
               : _error != null
-                  ? Center(child: Text(_error!, style: TextStyle(color: t.posDanger)))
+                  ? Center(child: Text(_error!, style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.posDanger)))
                   : TabBarView(
                       controller: _tabs,
                       children: [
@@ -231,7 +228,7 @@ class _CustomerDetailPanelState extends ConsumerState<CustomerDetailPanel>
       padding: EdgeInsets.all(context.spacing.lg),
       child: Text(
         content,
-        style: TextStyle(color: t.textSecondary, height: 1.6),
+        style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textSecondary, height: 1.6),
       ),
     );
   }
@@ -246,16 +243,13 @@ class _CustomerDetailPanelState extends ConsumerState<CustomerDetailPanel>
             width: 120,
             child: Text(
               label,
-              style: TextStyle(color: t.textMuted, fontSize: 12),
+              style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: TextStyle(
-                color: t.textPrimary,
-                fontWeight: FontWeight.w600,
-              ),
+              style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
             ),
           ),
         ],

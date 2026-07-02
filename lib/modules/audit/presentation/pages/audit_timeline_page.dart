@@ -2,15 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/constants/report_paths.dart';
-import '../../../../core/theme/design_tokens.dart';
-import '../../../../core/theme/spacing.dart';
-import '../../../../shared/widgets/feedback/module_data_states.dart';
+import '../../../../shared/widgets/cards/enterprise_list_card.dart';
 import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
-import '../../../stock/presentation/widgets/movimentacoes_pagination.dart';
 import '../../domain/entities/audit_entities.dart';
 import '../providers/audit_providers.dart';
-import '../widgets/audit_report_exports.dart';
+import '../widgets/audit_adaptive_list_layout.dart';
 
 class AuditTimelinePage extends ConsumerStatefulWidget {
   const AuditTimelinePage({super.key});
@@ -21,6 +17,7 @@ class AuditTimelinePage extends ConsumerStatefulWidget {
 
 class _AuditTimelinePageState extends ConsumerState<AuditTimelinePage> {
   late final TextEditingController _searchController;
+  final List<AuditEventSummary> _accumulatedItems = [];
   static final _dateTime = DateFormat('dd/MM/yyyy HH:mm');
 
   @override
@@ -39,9 +36,29 @@ class _AuditTimelinePageState extends ConsumerState<AuditTimelinePage> {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.spacing;
     final state = ref.watch(auditEventsProvider);
     final notifier = ref.read(auditEventsProvider.notifier);
+
+    ref.listen(auditEventsProvider, (previous, next) {
+      if (previous?.query.page != next.query.page ||
+          previous?.query.search != next.query.search ||
+          previous?.query.pageSize != next.query.pageSize) {
+        if (next.query.page == 1) {
+          _accumulatedItems
+            ..clear()
+            ..addAll(next.items);
+        } else {
+          final newItems = next.items
+              .where((e) => !_accumulatedItems.any((a) => a.id == e.id))
+              .toList();
+          _accumulatedItems.addAll(newItems);
+        }
+      } else if (previous?.items != next.items && next.query.page == 1) {
+        _accumulatedItems
+          ..clear()
+          ..addAll(next.items);
+      }
+    });
 
     if (_searchController.text != state.query.search) {
       _searchController.value = TextEditingValue(
@@ -54,115 +71,59 @@ class _AuditTimelinePageState extends ConsumerState<AuditTimelinePage> {
       title: 'Cronologia de eventos',
       subtitle: 'Imutável, assinado e correlacionado a utilizador/terminal.',
       tag: 'Auditoria',
-      actions: [
-        OutlinedButton.icon(
-          onPressed: state.isBusy ? null : notifier.refresh,
-          icon: const Icon(Icons.refresh_rounded),
-          label: const Text('Atualizar'),
-        ),
-      ],
-      filters: Wrap(
-        spacing: s.sm,
-        runSpacing: s.sm,
-        children: [
-          SizedBox(
-            width: 280,
-            child: TextField(
-              controller: _searchController,
-              onChanged: notifier.onSearchChanged,
-              decoration: const InputDecoration(
-                hintText: 'Tipo, entidade...',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ),
-          if (state.query.hasFilters)
-            TextButton.icon(
-              onPressed: state.isBusy ? null : notifier.clearFilters,
-              icon: const Icon(Icons.filter_alt_off_outlined),
-              label: const Text('Limpar'),
-            ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Expanded(child: _buildBody(context, state, notifier)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBody(
-    BuildContext context,
-    AuditListState<AuditEventSummary> state,
-    AuditEventsController notifier,
-  ) {
-    if (state.viewState == AuditViewState.loading) {
-      return const ModuleLoadingState();
-    }
-    if (state.viewState == AuditViewState.error) {
-      return ModuleErrorState(
-        title: 'Falha ao carregar eventos',
-        message: state.errorMessage ?? 'Erro desconhecido',
-        onRetry: notifier.refresh,
-        icon: Icons.timeline,
-      );
-    }
-    if (state.viewState == AuditViewState.empty) {
-      return ModuleEmptyState(
-        title: 'Nenhum evento encontrado',
-        subtitle: state.query.hasFilters
+      actions: null,
+      filters: null,
+      child: AuditAdaptiveListBody<AuditEventSummary>(
+        state: state,
+        searchController: _searchController,
+        searchHint: 'Tipo, entidade...',
+        emptyTitle: 'Nenhum evento encontrado',
+        emptySubtitle: state.query.hasFilters
             ? 'Tenta limpar os filtros.'
             : 'Ainda não existem eventos registados.',
-        onClearFilters: state.query.hasFilters ? notifier.clearFilters : null,
-      );
-    }
-
-    final t = context.pharmaTokens;
-    final s = context.spacing;
-
-    return Column(
-      children: [
-        Expanded(
-          child: ListView.separated(
-            itemCount: state.items.length,
-            separatorBuilder: (_, _) =>
-                Divider(color: t.border.withValues(alpha: 0.35)),
-            itemBuilder: (context, index) {
-              final e = state.items[index];
-              return ListTile(
-                leading: Icon(Icons.bolt, color: t.brandBlue),
-                title: Text(
-                  '${e.type} • ${e.entity}',
-                  style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w700),
-                ),
-                subtitle: Text(
-                  '${e.userName ?? 'Sistema'} • ${_dateTime.format(e.createdAt)}',
-                  style: TextStyle(color: t.textMuted, fontSize: 12),
-                ),
-                trailing: e.entityId != null
-                    ? Text('#${e.entityId}', style: TextStyle(color: t.textMuted, fontSize: 11))
-                    : null,
-              );
-            },
+        errorTitle: 'Falha ao carregar eventos',
+        errorIcon: Icons.timeline,
+        accumulatedItems: _accumulatedItems,
+        onSearchChanged: notifier.onSearchChanged,
+        onClearFilters: notifier.clearFilters,
+        onRefresh: notifier.refresh,
+        onGoToPage: notifier.goToPage,
+        onPageSizeChanged: notifier.setPageSize,
+        headerActions: [
+          OutlinedButton.icon(
+            onPressed: state.isBusy ? null : notifier.refresh,
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('Atualizar'),
           ),
+        ],
+        columns: const [
+          DataColumn(label: Text('TIPO')),
+          DataColumn(label: Text('ENTIDADE')),
+          DataColumn(label: Text('UTILIZADOR')),
+          DataColumn(label: Text('DATA')),
+          DataColumn(label: Text('ID')),
+        ],
+        rowBuilder: (event) => DataRow(
+          cells: [
+            DataCell(Text(event.type)),
+            DataCell(Text(event.entity)),
+            DataCell(Text(event.userName ?? 'Sistema')),
+            DataCell(Text(_dateTime.format(event.createdAt))),
+            DataCell(Text(event.entityId ?? '—')),
+          ],
         ),
-        SizedBox(height: s.md),
-        MovimentacoesPagination(
-          page: state.query.page,
-          pageSize: state.query.pageSize,
-          hasMore: state.hasMore,
-          isBusy: state.isBusy,
-          onPrev: state.query.page > 1
-              ? () => notifier.goToPage(state.query.page - 1)
-              : null,
-          onNext: state.hasMore
-              ? () => notifier.goToPage(state.query.page + 1)
-              : null,
-          onPageSizeChanged: notifier.setPageSize,
+        mobileCardBuilder: (event) => EnterpriseListCard(
+          leading: Icons.bolt,
+          title: '${event.type} • ${event.entity}',
+          subtitle: event.entityId != null ? '#${event.entityId}' : null,
+          metadata: [
+            EnterpriseListCardMeta(
+              label: '${event.userName ?? 'Sistema'} • ${_dateTime.format(event.createdAt)}',
+            ),
+          ],
         ),
-      ],
+        itemId: (event) => event.id,
+      ),
     );
   }
 }

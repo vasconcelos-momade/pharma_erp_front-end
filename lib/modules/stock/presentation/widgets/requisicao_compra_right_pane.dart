@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/design_tokens.dart';
+import '../../../../core/theme/extensions.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../shared/widgets/buttons/pharma_button_loader.dart';
 import '../../domain/entities/requisicao.dart';
@@ -47,11 +48,9 @@ class RequisicaoCompraRightPane extends StatelessWidget {
             activeRequisicao == null
                 ? 'Nova Requisição'
                 : 'Requisição #${activeRequisicao.id}',
-            style: TextStyle(
-              color: t.textPrimary,
-              fontWeight: FontWeight.w900,
-              fontSize: 20,
-            ),
+            style: Theme.of(context).textTheme.erpPageTitle.copyWith(
+                  color: t.textPrimary,
+                ),
           ),
         ),
         if (isBusy) const PharmaButtonLoader(),
@@ -222,10 +221,9 @@ class RequisicaoActivePurchaseHeader extends StatelessWidget {
                   purchase.numeroDocumento.isNotEmpty
                       ? 'Documento ${purchase.numeroDocumento}'
                       : 'Requisição #${purchase.id}',
-                  style: TextStyle(
-                    color: t.textPrimary,
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: Theme.of(context).textTheme.erpCardTitle.copyWith(
+                        color: t.textPrimary,
+                      ),
                 ),
               ),
               if (canEdit && onEdit != null)
@@ -288,7 +286,7 @@ class RequisicaoConfirmFooter extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
     final s = context.spacing;
-    final theme = Theme.of(context);
+    final textTheme = Theme.of(context).textTheme;
     final helperText = switch (activeRequisicao?.status) {
       null => 'Inicie uma requisição para habilitar ações.',
       RequisicaoStatus.pendente =>
@@ -310,9 +308,9 @@ class RequisicaoConfirmFooter extends StatelessWidget {
       children: [
         Text(
           helperText,
-          style: theme.textTheme.bodySmall?.copyWith(
+          style: textTheme.erpBodySecondary.copyWith(
             color: isPendingWithItems ? t.textSecondary : t.textMuted,
-            fontWeight: isPendingWithItems ? FontWeight.w600 : FontWeight.w400,
+            fontWeight: isPendingWithItems ? FontWeight.w600 : FontWeight.w500,
           ),
         ),
         SizedBox(height: s.sm),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/theme/design_metrics.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
 import '../../../categories/presentation/providers/category_provider.dart';
@@ -311,7 +312,9 @@ class _ProdutoFormDialogState extends ConsumerState<ProdutoFormDialog> {
           SizedBox(height: s.xs),
           Text(
             'Não foi possível carregar as taxas de IVA.',
-            style: TextStyle(color: Theme.of(context).colorScheme.error),
+            style: Theme.of(context).textTheme.erpBody.copyWith(
+                  color: Theme.of(context).colorScheme.error,
+                ),
           ),
         ],
         SizedBox(height: s.md),
@@ -491,9 +494,7 @@ class _ProdutoFormSideSheet extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                  style: Theme.of(context).textTheme.erpCardTitle,
                 ),
               ),
               IconButton(

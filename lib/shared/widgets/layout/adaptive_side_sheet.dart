@@ -160,8 +160,8 @@ class _AdaptiveSideSheetOverlayState<T> extends State<_AdaptiveSideSheetOverlay<
                             ),
                             boxShadow: AppShadows.dialog(context),
                           ),
-                          child: _AdaptiveSideSheetScope<T>(
-                            close: _close,
+                          child: _AdaptiveSideSheetScope(
+                            close: ([result]) => _close(result as T?),
                             child: widget.child,
                           ),
                         ),
@@ -178,29 +178,29 @@ class _AdaptiveSideSheetOverlayState<T> extends State<_AdaptiveSideSheetOverlay<
   }
 }
 
-class _AdaptiveSideSheetScope<T> extends InheritedWidget {
+class _AdaptiveSideSheetScope extends InheritedWidget {
   const _AdaptiveSideSheetScope({
     required this.close,
     required super.child,
   });
 
-  final Future<void> Function([T? result]) close;
+  final Future<void> Function([Object? result]) close;
 
-  static _AdaptiveSideSheetScope<T>? maybeOf<T>(BuildContext context) {
-    return context
-        .dependOnInheritedWidgetOfExactType<_AdaptiveSideSheetScope<T>>();
+  static _AdaptiveSideSheetScope? maybeOf(BuildContext context) {
+    return context.dependOnInheritedWidgetOfExactType<_AdaptiveSideSheetScope>();
   }
 
   @override
-  bool updateShouldNotify(_AdaptiveSideSheetScope<T> oldWidget) => false;
+  bool updateShouldNotify(_AdaptiveSideSheetScope oldWidget) => false;
 }
 
 /// Fecha o side sheet activo (se existir) com resultado opcional.
 Future<void> closeAdaptiveSideSheet<T>(BuildContext context, [T? result]) {
-  final scope = _AdaptiveSideSheetScope.maybeOf<T>(context);
+  final scope = _AdaptiveSideSheetScope.maybeOf(context);
   return scope?.close(result) ?? Future.value();
 }
 
 /// Indica se o [context] está dentro de um [AdaptiveSideSheet].
-bool isInsideAdaptiveSideSheet(BuildContext context) =>
-    _AdaptiveSideSheetScope.maybeOf(context) != null;
+bool isInsideAdaptiveSideSheet(BuildContext context) {
+  return _AdaptiveSideSheetScope.maybeOf(context) != null;
+}

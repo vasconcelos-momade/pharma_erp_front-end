@@ -2,41 +2,64 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-/// **Inter** corpo / UI; **Poppins** títulos (estilo executivo). SF Pro → Inter no ecossistema Flutter.
+import 'breakpoints.dart';
+
+/// **Inter** corpo / UI; **Poppins** títulos (estilo executivo).
 ///
-/// Na **web** usa apenas o `TextTheme` do Material (sem [GoogleFonts] em runtime), para evitar
-/// downloads a `fonts.gstatic.com` no primeiro paint — o que costuma atrasar visivelmente o navegador.
+/// Na **web** usa apenas o `TextTheme` do Material (sem [GoogleFonts] em runtime).
 abstract final class AppTypography {
   AppTypography._();
 
   /// Monospace para códigos, números tabulares e IDs.
   static TextStyle monospace({
     required Brightness brightness,
-    double fontSize = 12,
-    FontWeight fontWeight = FontWeight.w500,
+    double? fontSize,
+    FontWeight? fontWeight,
   }) {
-    final base = ThemeData(useMaterial3: true, brightness: brightness).textTheme;
-    final fallback = (base.bodySmall ?? const TextStyle()).copyWith(
+    final theme = textThemeFor(brightness);
+    final base = theme.bodySmall ?? const TextStyle();
+    final fallback = base.copyWith(
       fontFamily: 'monospace',
       fontFeatures: const [FontFeature.tabularFigures()],
-      fontSize: fontSize,
-      fontWeight: fontWeight,
+      fontSize: fontSize ?? base.fontSize,
+      fontWeight: fontWeight ?? FontWeight.w500,
       height: 1.35,
     );
     if (kIsWeb) return fallback;
     return GoogleFonts.jetBrainsMono(textStyle: fallback);
   }
 
-  /// Alias enterprise para "Caption" (compat). Material 3 não tem caption.
-  static TextStyle caption(TextTheme theme) =>
-      _w(theme.bodySmall).copyWith(fontSize: 12, height: 1.35);
+  /// Caption — alias de [TextTheme.bodySmall].
+  static TextStyle caption(TextTheme theme) => theme.erpCaption;
 
-  /// Alias enterprise para "Overline" (compat). Material 3 não tem overline.
-  static TextStyle overline(TextTheme theme) => _w(theme.labelSmall).copyWith(
-        fontSize: 10,
-        letterSpacing: 1.1,
-        height: 1.15,
-      );
+  /// Overline — alias de [TextTheme.labelSmall] com tracking ERP.
+  static TextStyle overline(TextTheme theme) => theme.erpOverline;
+
+  /// AppBar discreta (18px) — apenas contexto da rota, não o registo.
+  static TextStyle appBarTitle(TextTheme theme) => theme.erpAppBarTitle;
+
+  /// Título de página no conteúdo — responsivo centralizado.
+  static TextStyle pageTitle(BuildContext context) {
+    final theme = Theme.of(context).textTheme;
+    return Breakpoints.responsiveValue(
+      context,
+      mobile: theme.headlineMedium ?? theme.erpPageTitle,
+      tablet: theme.headlineLarge ?? theme.erpPageTitle,
+      desktop: theme.headlineLarge ?? theme.erpPageTitle,
+    );
+  }
+
+  /// KPI: rótulo superior compacto.
+  static TextStyle kpiLabel(TextTheme theme, {bool compact = true}) {
+    return compact ? theme.erpOverline : theme.labelSmall ?? theme.erpCaption;
+  }
+
+  /// KPI: valor numérico.
+  static TextStyle kpiValue(TextTheme theme, {bool compact = true}) {
+    return compact
+        ? (theme.titleMedium ?? theme.erpCardTitle)
+        : (theme.headlineSmall ?? theme.erpSectionTitle);
+  }
 
   static TextTheme textThemeFor(Brightness brightness) {
     final base = ThemeData(useMaterial3: true, brightness: brightness).textTheme;
@@ -63,17 +86,61 @@ abstract final class AppTypography {
         letterSpacing: -0.5,
         height: 1.15,
       ),
-      headlineLarge: GoogleFonts.poppins(fontSize: 32, fontWeight: FontWeight.w600, height: 1.2),
-      headlineMedium: GoogleFonts.poppins(fontSize: 28, fontWeight: FontWeight.w600, height: 1.22),
-      headlineSmall: GoogleFonts.poppins(fontSize: 24, fontWeight: FontWeight.w600, height: 1.25),
-      titleLarge: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.w600, height: 1.27),
-      titleMedium: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w600, height: 1.35),
-      titleSmall: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, height: 1.35),
-      bodyLarge: GoogleFonts.inter(fontSize: 16, fontWeight: FontWeight.w500, height: 1.45),
-      bodyMedium: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w500, height: 1.45),
-      bodySmall: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w500, height: 1.4),
-      labelLarge: GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 0.1),
-      labelMedium: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 0.2),
+      headlineLarge: GoogleFonts.poppins(
+        fontSize: 32,
+        fontWeight: FontWeight.w600,
+        height: 1.2,
+      ),
+      headlineMedium: GoogleFonts.poppins(
+        fontSize: 28,
+        fontWeight: FontWeight.w600,
+        height: 1.22,
+      ),
+      headlineSmall: GoogleFonts.poppins(
+        fontSize: 24,
+        fontWeight: FontWeight.w600,
+        height: 1.25,
+      ),
+      titleLarge: GoogleFonts.poppins(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        height: 1.27,
+      ),
+      titleMedium: GoogleFonts.inter(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        height: 1.35,
+      ),
+      titleSmall: GoogleFonts.inter(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        height: 1.35,
+      ),
+      bodyLarge: GoogleFonts.inter(
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        height: 1.45,
+      ),
+      bodyMedium: GoogleFonts.inter(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        height: 1.45,
+      ),
+      bodySmall: GoogleFonts.inter(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        height: 1.4,
+      ),
+      labelLarge: GoogleFonts.inter(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.1,
+      ),
+      labelMedium: GoogleFonts.inter(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.2,
+      ),
       labelSmall: GoogleFonts.inter(
         fontSize: 11,
         fontWeight: FontWeight.w700,
@@ -105,17 +172,61 @@ abstract final class AppTypography {
         letterSpacing: -0.5,
         height: 1.15,
       ),
-      headlineLarge: _w(base.headlineLarge).copyWith(fontSize: 32, fontWeight: FontWeight.w600, height: 1.2),
-      headlineMedium: _w(base.headlineMedium).copyWith(fontSize: 28, fontWeight: FontWeight.w600, height: 1.22),
-      headlineSmall: _w(base.headlineSmall).copyWith(fontSize: 24, fontWeight: FontWeight.w600, height: 1.25),
-      titleLarge: _w(base.titleLarge).copyWith(fontSize: 22, fontWeight: FontWeight.w600, height: 1.27),
-      titleMedium: _w(base.titleMedium).copyWith(fontSize: 16, fontWeight: FontWeight.w600, height: 1.35),
-      titleSmall: _w(base.titleSmall).copyWith(fontSize: 14, fontWeight: FontWeight.w600, height: 1.35),
-      bodyLarge: _w(base.bodyLarge).copyWith(fontSize: 16, fontWeight: FontWeight.w500, height: 1.45),
-      bodyMedium: _w(base.bodyMedium).copyWith(fontSize: 14, fontWeight: FontWeight.w500, height: 1.45),
-      bodySmall: _w(base.bodySmall).copyWith(fontSize: 12, fontWeight: FontWeight.w500, height: 1.4),
-      labelLarge: _w(base.labelLarge).copyWith(fontSize: 14, fontWeight: FontWeight.w600, letterSpacing: 0.1),
-      labelMedium: _w(base.labelMedium).copyWith(fontSize: 12, fontWeight: FontWeight.w600, letterSpacing: 0.2),
+      headlineLarge: _w(base.headlineLarge).copyWith(
+        fontSize: 32,
+        fontWeight: FontWeight.w600,
+        height: 1.2,
+      ),
+      headlineMedium: _w(base.headlineMedium).copyWith(
+        fontSize: 28,
+        fontWeight: FontWeight.w600,
+        height: 1.22,
+      ),
+      headlineSmall: _w(base.headlineSmall).copyWith(
+        fontSize: 24,
+        fontWeight: FontWeight.w600,
+        height: 1.25,
+      ),
+      titleLarge: _w(base.titleLarge).copyWith(
+        fontSize: 20,
+        fontWeight: FontWeight.w600,
+        height: 1.27,
+      ),
+      titleMedium: _w(base.titleMedium).copyWith(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        height: 1.35,
+      ),
+      titleSmall: _w(base.titleSmall).copyWith(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        height: 1.35,
+      ),
+      bodyLarge: _w(base.bodyLarge).copyWith(
+        fontSize: 16,
+        fontWeight: FontWeight.w500,
+        height: 1.45,
+      ),
+      bodyMedium: _w(base.bodyMedium).copyWith(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        height: 1.45,
+      ),
+      bodySmall: _w(base.bodySmall).copyWith(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        height: 1.4,
+      ),
+      labelLarge: _w(base.labelLarge).copyWith(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.1,
+      ),
+      labelMedium: _w(base.labelMedium).copyWith(
+        fontSize: 12,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.2,
+      ),
       labelSmall: _w(base.labelSmall).copyWith(
         fontSize: 11,
         fontWeight: FontWeight.w700,
@@ -125,6 +236,30 @@ abstract final class AppTypography {
     );
   }
 
-  /// Legado — tema único; preferir [textThemeFor].
+  /// Legado — preferir [textThemeFor].
   static TextTheme get textTheme => textThemeFor(Brightness.dark);
+}
+
+/// Papéis tipográficos ERP sobre [TextTheme] Material 3.
+extension EnterpriseTextTheme on TextTheme {
+  TextStyle get erpDisplayLarge => displayLarge ?? const TextStyle();
+  TextStyle get erpDisplayMedium => displayMedium ?? const TextStyle();
+  TextStyle get erpPageTitle => headlineLarge ?? const TextStyle();
+  TextStyle get erpSectionTitle => headlineMedium ?? const TextStyle();
+  TextStyle get erpCardTitle => titleLarge ?? const TextStyle();
+  TextStyle get erpAppBarTitle => (titleLarge ?? const TextStyle()).copyWith(
+        fontSize: 18,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0,
+        height: 1.3,
+      );
+  TextStyle get erpTabLabel => titleSmall ?? const TextStyle();
+  TextStyle get erpLabel => labelLarge ?? const TextStyle();
+  TextStyle get erpBody => bodyLarge ?? const TextStyle();
+  TextStyle get erpBodySecondary => bodyMedium ?? const TextStyle();
+  TextStyle get erpCaption => bodySmall ?? const TextStyle();
+  TextStyle get erpOverline => (labelSmall ?? const TextStyle()).copyWith(
+        letterSpacing: 1.1,
+        height: 1.15,
+      );
 }

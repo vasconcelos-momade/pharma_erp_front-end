@@ -5,6 +5,7 @@ import '../../../../../core/extensions/async_value_extensions.dart';
 import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/responsive/responsive_builder.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
@@ -148,7 +149,10 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
                 if (state.errorMessage != null)
                   Padding(
                     padding: EdgeInsets.only(bottom: s.sm),
-                    child: Text(state.errorMessage!, style: TextStyle(color: t.posDanger)),
+                    child: Text(
+                      state.errorMessage!,
+                      style: Theme.of(context).textTheme.erpBody.copyWith(color: t.posDanger),
+                    ),
                   ),
                 Expanded(
                   child: isMobile
@@ -421,7 +425,10 @@ class _StatusChip extends StatelessWidget {
       ),
       child: Text(
         ativo ? 'Activa' : 'Inactiva',
-        style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),
+        style: Theme.of(context).textTheme.erpCaption.copyWith(
+              color: color,
+              fontWeight: FontWeight.w600,
+            ),
       ),
     );
   }
@@ -479,7 +486,7 @@ class _CategoryMobileListState extends State<_CategoryMobileList> {
       return Center(
         child: Text(
           'Nenhuma categoria encontrada',
-          style: TextStyle(color: t.textMuted),
+          style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
         ),
       );
     }
@@ -509,7 +516,7 @@ class _CategoryMobileListState extends State<_CategoryMobileList> {
               child: Center(
                 child: Text(
                   'Fim da lista',
-                  style: TextStyle(color: t.textMuted, fontSize: 12),
+                  style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
                 ),
               ),
             );
@@ -574,10 +581,7 @@ class _CategoryMobileCard extends StatelessWidget {
                       children: [
                         Text(
                           category.nome,
-                          style: theme.textTheme.titleSmall?.copyWith(
-                            color: t.textPrimary,
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: theme.textTheme.erpTabLabel.copyWith(color: t.textPrimary),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -585,9 +589,7 @@ class _CategoryMobileCard extends StatelessWidget {
                           SizedBox(height: s.xxs),
                           Text(
                             category.descricao!.trim(),
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: t.textSecondary,
-                            ),
+                            style: theme.textTheme.erpCaption.copyWith(color: t.textSecondary),
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -634,7 +636,7 @@ class _CategoryMobileCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       (category.descricao ?? 'Sem descrição'),
-                      style: theme.textTheme.bodySmall?.copyWith(color: t.textMuted),
+                      style: theme.textTheme.erpCaption.copyWith(color: t.textMuted),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -642,7 +644,7 @@ class _CategoryMobileCard extends StatelessWidget {
                   SizedBox(width: s.sm),
                   Text(
                     'Produtos: ${category.productCount}',
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    style: theme.textTheme.erpCaption.copyWith(
                       color: t.textMuted,
                       fontWeight: FontWeight.w600,
                     ),

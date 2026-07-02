@@ -3,7 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/errors/api_failure.dart';
 import '../../../../core/theme/design_tokens.dart';
+import '../../../../core/theme/extensions.dart';
+import '../../../../core/theme/spacing.dart';
+import '../../../../shared/responsive/responsive_builder.dart';
+import '../../../../shared/widgets/cards/enterprise_list_card.dart';
 import '../../../../shared/widgets/feedback/module_data_states.dart';
+import '../../../../shared/widgets/layout/enterprise_mobile_scroll_list.dart';
 import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../../sales/pdv/data/datasources/pdv_remote_datasource.dart';
@@ -52,24 +57,22 @@ class _TerminalsPageState extends ConsumerState<TerminalsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
-
     return EnterpriseModuleHub(
       title: 'Terminais & PDV',
       subtitle: 'Registo de dispositivos, licenças e heartbeat.',
       tag: 'Sistema',
-      actions: [
-        OutlinedButton.icon(
-          onPressed: _loading ? null : _load,
-          icon: const Icon(Icons.refresh_rounded),
-          label: const Text('Atualizar'),
-        ),
-      ],
-      child: _buildBody(t),
+      actions: null,
+      filters: null,
+      child: ResponsiveBuilder(
+        builder: (context, constraints) {
+          final isMobile = !constraints.isTabletOrWider;
+          return _buildBody(context, context.pharmaTokens, isMobile);
+        },
+      ),
     );
   }
 
-  Widget _buildBody(PharmaTokens t) {
+  Widget _buildBody(BuildContext context, PharmaTokens t, bool isMobile) {
     if (_loading) return const ModuleLoadingState();
     if (_error != null) {
       return ModuleErrorState(
@@ -86,18 +89,59 @@ class _TerminalsPageState extends ConsumerState<TerminalsPage> {
       );
     }
 
+    if (isMobile) {
+      final s = context.spacing;
+      return EnterpriseMobileScrollList(
+        stickyHeader: ColoredBox(
+          color: t.bgPrimary,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(s.md, s.sm, s.md, s.sm),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Terminais registados',
+                    style: Theme.of(context).textTheme.erpSectionTitle.copyWith(
+                          color: t.textPrimary,
+                        ),
+                  ),
+                ),
+                IconButton(
+                  onPressed: _load,
+                  icon: const Icon(Icons.refresh_rounded),
+                ),
+              ],
+            ),
+          ),
+        ),
+        itemCount: _items.length,
+        itemBuilder: (context, index) {
+          final item = _items[index];
+          return EnterpriseListCard(
+            leading: Icons.point_of_sale_outlined,
+            title: item.terminalNome,
+            subtitle: item.terminalCodigo,
+            metadata: [
+              EnterpriseListCardMeta(label: 'Localização: ${item.localizacao ?? '—'}'),
+              EnterpriseListCardMeta(label: 'Caixa: ${item.caixaId}'),
+            ],
+          );
+        },
+        hasMore: false,
+        isLoading: false,
+        emptyMessage: 'Nenhum terminal disponível',
+      );
+    }
+
     return EnterpriseDataTable(
+      adaptive: false,
+      showCheckboxColumn: false,
       columns: [
         for (final label in ['Terminal', 'Código', 'Localização', 'Caixa'])
           DataColumn(
             label: Text(
               label.toUpperCase(),
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.2,
-                color: t.textMuted,
-              ),
+              style: Theme.of(context).textTheme.erpOverline.copyWith(color: t.textMuted),
             ),
           ),
       ],
@@ -108,22 +152,19 @@ class _TerminalsPageState extends ConsumerState<TerminalsPage> {
           cells: [
             DataCell(Text(
               item.terminalNome,
-              style: TextStyle(
-                color: t.textPrimary,
-                fontWeight: FontWeight.w800,
-              ),
+              style: Theme.of(context).textTheme.erpCardTitle.copyWith(color: t.textPrimary),
             )),
             DataCell(Text(
               item.terminalCodigo,
-              style: TextStyle(color: t.textSecondary),
+              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textSecondary),
             )),
             DataCell(Text(
               item.localizacao ?? '—',
-              style: TextStyle(color: t.textMuted),
+              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textSecondary),
             )),
             DataCell(Text(
               item.caixaId,
-              style: TextStyle(color: t.textMuted),
+              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textSecondary),
             )),
           ],
         );

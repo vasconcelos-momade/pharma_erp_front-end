@@ -39,6 +39,11 @@ abstract final class AppTheme {
     final specificHealthcareTheme = HealthcareTheme.fromLegacy(tokens);
     final specificNavigationTheme = NavigationThemeData.fromLegacy(tokens);
 
+    final textTheme = AppTypography.textThemeFor(brightness).apply(
+        bodyColor: tokens.textPrimary,
+        displayColor: tokens.textPrimary,
+      );
+
     return ThemeData(
       useMaterial3: true,
       brightness: brightness,
@@ -58,16 +63,17 @@ abstract final class AppTheme {
         specificHealthcareTheme,
         specificNavigationTheme,
       ],
-      textTheme: AppTypography.textThemeFor(brightness).apply(
-        bodyColor: tokens.textPrimary,
-        displayColor: tokens.textPrimary,
-      ),
+      textTheme: textTheme,
       appBarTheme: AppBarTheme(
         backgroundColor: tokens.bgSecondary,
         foregroundColor: tokens.textPrimary,
         elevation: 0,
         scrolledUnderElevation: 0,
         surfaceTintColor: Colors.transparent,
+        titleTextStyle: AppTypography.appBarTitle(textTheme).copyWith(
+          color: tokens.textPrimary,
+        ),
+        toolbarTextStyle: textTheme.erpTabLabel.copyWith(color: tokens.textSecondary),
       ),
       chipTheme: PharmaComponentTheme.chip(tokens, scheme, isDark: isDark),
       tooltipTheme: PharmaComponentTheme.tooltip(tokens, scheme),
@@ -104,7 +110,7 @@ abstract final class AppTheme {
       navigationDrawerTheme: PharmaComponentTheme.navigationDrawer(tokens, scheme, isDark: isDark),
       navigationBarTheme: PharmaComponentTheme.navigationBar(tokens, scheme, isDark: isDark),
       progressIndicatorTheme: PharmaComponentTheme.progressIndicator(scheme),
-      tabBarTheme: PharmaComponentTheme.tabBar(tokens, scheme, isDark: isDark),
+      tabBarTheme: PharmaComponentTheme.tabBar(tokens, scheme, isDark: isDark, textTheme: textTheme),
       pageTransitionsTheme: const PageTransitionsTheme(
         builders: {
           TargetPlatform.android: ZoomPageTransitionsBuilder(),

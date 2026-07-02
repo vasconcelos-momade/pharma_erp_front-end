@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../../core/theme/design_tokens.dart';
+import '../../../../../../core/theme/extensions.dart';
 import '../../../../../../core/theme/spacing.dart';
 
 /// Card de lote na aba Lotes.
@@ -34,8 +35,7 @@ class LotCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     numero,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
+                    style: theme.textTheme.erpLabel.copyWith(
                       color: t.textPrimary,
                     ),
                   ),
@@ -48,10 +48,8 @@ class LotCard extends StatelessWidget {
                   ),
                   child: Text(
                     _estadoLabel(estado),
-                    style: TextStyle(
+                    style: theme.textTheme.erpCaption.copyWith(
                       color: estadoColor,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
@@ -116,14 +114,17 @@ class _Metric extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(color: t.textMuted, fontSize: 12)),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.erpCaption.copyWith(
+                color: t.textMuted,
+              ),
+        ),
         Text(
           value,
-          style: TextStyle(
-            color: t.textPrimary,
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-          ),
+          style: Theme.of(context).textTheme.erpLabel.copyWith(
+                color: t.textPrimary,
+              ),
         ),
       ],
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../../core/theme/design_tokens.dart';
+import '../../../../../../core/theme/extensions.dart';
 
 /// Propriedade com título pequeno e valor destacado (Material 3).
 class PropertyTile extends StatefulWidget {
@@ -38,9 +39,7 @@ class _PropertyTileState extends State<PropertyTile> {
         children: [
           Text(
             widget.label,
-            style: theme.textTheme.bodySmall?.copyWith(
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
+            style: theme.textTheme.erpCaption.copyWith(
               color: t.textMuted,
             ),
           ),
@@ -49,11 +48,8 @@ class _PropertyTileState extends State<PropertyTile> {
             display,
             maxLines: _expanded ? null : widget.maxLines,
             overflow: _expanded ? null : TextOverflow.ellipsis,
-            style: theme.textTheme.bodyLarge?.copyWith(
-              fontSize: 16,
-              fontWeight: FontWeight.w400,
+            style: theme.textTheme.erpBody.copyWith(
               color: t.textPrimary,
-              height: 1.35,
             ),
           ),
           if (needsExpand && !_expanded)

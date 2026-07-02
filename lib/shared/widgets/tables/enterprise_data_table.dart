@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/theme/typography.dart';
 import '../../../core/theme/pharma_surface.dart';
 import '../../../core/theme/spacing.dart';
 import '../../responsive/breakpoints.dart';
@@ -100,9 +101,7 @@ class EnterpriseDataTable extends StatelessWidget {
                               title,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w700,
+                              style: Theme.of(context).textTheme.erpCardTitle.copyWith(
                                     height: 1.2,
                                     color: t.textPrimary,
                                   ),
@@ -113,8 +112,7 @@ class EnterpriseDataTable extends StatelessWidget {
                                 rest,
                                 maxLines: 3,
                                 overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      fontSize: 11,
+                                style: Theme.of(context).textTheme.erpCaption.copyWith(
                                       color: t.textMuted,
                                       height: 1.25,
                                     ),

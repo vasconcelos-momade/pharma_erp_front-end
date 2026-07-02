@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../../core/theme/design_tokens.dart';
+import '../../../../../../core/theme/extensions.dart';
 
 /// Badge de estado activo/inactivo.
 class StatusBadge extends StatelessWidget {
@@ -23,11 +24,7 @@ class StatusBadge extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(
-          color: color,
-          fontSize: 12,
-          fontWeight: FontWeight.w600,
-        ),
+        style: Theme.of(context).textTheme.erpCaption.copyWith(color: color),
       ),
     );
   }

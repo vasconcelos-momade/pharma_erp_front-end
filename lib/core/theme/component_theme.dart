@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'design_tokens.dart';
 import 'pharma_surface.dart';
+import 'typography.dart';
 
 abstract final class PharmaComponentTheme {
   PharmaComponentTheme._();
@@ -339,10 +340,15 @@ abstract final class PharmaComponentTheme {
     );
   }
 
-  static TabBarThemeData tabBar(PharmaTokens tokens, ColorScheme scheme, {required bool isDark}) {
+  static TabBarThemeData tabBar(PharmaTokens tokens, ColorScheme scheme, {required bool isDark, required TextTheme textTheme}) {
     return TabBarThemeData(
       labelColor: scheme.primary,
       unselectedLabelColor: tokens.textSecondary,
+      labelStyle: textTheme.erpTabLabel,
+      unselectedLabelStyle: textTheme.erpTabLabel.copyWith(
+        fontWeight: FontWeight.w500,
+        color: tokens.textSecondary,
+      ),
       indicatorColor: scheme.primary,
       dividerColor: tokens.border.withValues(alpha: isDark ? 0.5 : 0.7),
     );

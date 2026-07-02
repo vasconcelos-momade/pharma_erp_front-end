@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/design_tokens.dart';
+import '../../../../core/theme/extensions.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../shared/widgets/feedback/pharma_feedback.dart';
@@ -540,15 +541,16 @@ class _MobileStockFlowSummaryBar extends StatelessWidget {
                   children: [
                     Text(
                       '${requisicao.totalItens} item${requisicao.totalItens == 1 ? '' : 's'}',
-                      style: TextStyle(
-                        color: t.textPrimary,
-                        fontWeight: FontWeight.w800,
-                      ),
+                      style: Theme.of(context).textTheme.erpCardTitle.copyWith(
+                            color: t.textPrimary,
+                          ),
                     ),
                     SizedBox(height: s.xxs),
                     Text(
                       'Quantidade: ${stockFlowFormatQuantity(requisicao.quantidadeTotal)}',
-                      style: TextStyle(color: t.textMuted),
+                      style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
+                            color: t.textMuted,
+                          ),
                     ),
                   ],
                 ),
@@ -825,11 +827,9 @@ class _RightPane extends StatelessWidget {
             requisicao == null
                 ? 'Nova Requisição'
                 : 'Requisição #${requisicao.id}',
-            style: TextStyle(
-              color: t.textPrimary,
-              fontWeight: FontWeight.w900,
-              fontSize: 20,
-            ),
+            style: Theme.of(context).textTheme.erpPageTitle.copyWith(
+                  color: t.textPrimary,
+                ),
           ),
         ),
         if (isBusy) const PharmaButtonLoader(),
@@ -890,14 +890,18 @@ class _RightPane extends StatelessWidget {
                         SizedBox(height: s.sm),
                         Text(
                           requisicao.observacao!,
-                          style: TextStyle(color: t.textMuted),
+                          style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
+                                color: t.textMuted,
+                              ),
                         ),
                       ],
                       if (requisicao.user != null) ...[
                         SizedBox(height: s.xs),
                         Text(
                           'Criada por ${requisicao.user!.nome}',
-                          style: TextStyle(color: t.textMuted),
+                          style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
+                                color: t.textMuted,
+                              ),
                         ),
                       ],
                       SizedBox(height: s.md),
@@ -957,14 +961,18 @@ class _RightPane extends StatelessWidget {
               SizedBox(height: s.sm),
               Text(
                 requisicao.observacao!,
-                style: TextStyle(color: t.textMuted),
+                style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
+                      color: t.textMuted,
+                    ),
               ),
             ],
             if (requisicao.user != null) ...[
               SizedBox(height: s.xs),
               Text(
                 'Criada por ${requisicao.user!.nome}',
-                style: TextStyle(color: t.textMuted),
+                style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
+                      color: t.textMuted,
+                    ),
               ),
             ],
             SizedBox(height: s.md),
@@ -1030,10 +1038,9 @@ class _ActiveStockFlowHeader extends StatelessWidget {
                   requisicao.numeroDocumento.isNotEmpty
                       ? 'Documento ${requisicao.numeroDocumento}'
                       : 'Requisição #${requisicao.id}',
-                  style: TextStyle(
-                    color: t.textPrimary,
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: Theme.of(context).textTheme.erpCardTitle.copyWith(
+                        color: t.textPrimary,
+                      ),
                 ),
               ),
               if (canEdit && onEdit != null)
@@ -1115,10 +1122,10 @@ class _StockFlowActionFooter extends StatelessWidget {
         children: [
           Text(
             helperText,
-            style: TextStyle(
-              color: highlightHelper ? t.textPrimary : t.textMuted,
-              fontWeight: highlightHelper ? FontWeight.w700 : FontWeight.normal,
-            ),
+            style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
+                  color: highlightHelper ? t.textPrimary : t.textMuted,
+                  fontWeight: highlightHelper ? FontWeight.w600 : FontWeight.w500,
+                ),
           ),
           if (state.canEditActiveRequisicao) ...[
             SizedBox(height: s.md),
@@ -1466,7 +1473,9 @@ class _StockFlowItemCard extends StatelessWidget {
         children: [
           Text(
             item.produtoNome,
-            style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w800),
+            style: Theme.of(context).textTheme.erpCardTitle.copyWith(
+                  color: t.textPrimary,
+                ),
           ),
           SizedBox(height: s.sm),
           Wrap(
@@ -1520,14 +1529,15 @@ class _StockFlowItemInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
+    final textTheme = Theme.of(context).textTheme;
 
     return RichText(
       text: TextSpan(
-        style: TextStyle(color: t.textMuted, fontSize: 12),
+        style: textTheme.erpCaption.copyWith(color: t.textMuted),
         children: [
           TextSpan(
             text: '$label: ',
-            style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w700),
+            style: textTheme.erpLabel.copyWith(color: t.textPrimary),
           ),
           TextSpan(text: value),
         ],
@@ -1660,6 +1670,7 @@ class _DialogDetailRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
+    final textTheme = Theme.of(context).textTheme;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1668,13 +1679,13 @@ class _DialogDetailRow extends StatelessWidget {
           width: 120,
           child: Text(
             label,
-            style: TextStyle(color: t.textMuted, fontWeight: FontWeight.w600),
+            style: textTheme.erpBodySecondary.copyWith(color: t.textMuted),
           ),
         ),
         Expanded(
           child: Text(
             value,
-            style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w700),
+            style: textTheme.erpLabel.copyWith(color: t.textPrimary),
           ),
         ),
       ],
@@ -1700,7 +1711,7 @@ class _InfoTag extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w600),
+        style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
       ),
     );
   }
@@ -1732,17 +1743,17 @@ class _EmptyPane extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                color: t.textPrimary,
-                fontWeight: FontWeight.w800,
-                fontSize: 16,
-              ),
+              style: Theme.of(context).textTheme.erpCardTitle.copyWith(
+                    color: t.textPrimary,
+                  ),
             ),
             SizedBox(height: s.sm),
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: TextStyle(color: t.textMuted),
+              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
+                    color: t.textMuted,
+                  ),
             ),
           ],
         ),
@@ -2097,7 +2108,10 @@ class _RequisicaoLoteDialogState extends ConsumerState<_RequisicaoLoteDialog> {
               child: const LinearProgressIndicator(),
             ),
           if (_error != null) ...[
-            Text(_error!, style: TextStyle(color: t.posDanger)),
+            Text(
+              _error!,
+              style: Theme.of(context).textTheme.erpBody.copyWith(color: t.posDanger),
+            ),
             SizedBox(height: s.sm),
           ],
           TextFormField(
@@ -2219,7 +2233,7 @@ class _ItemDialogProductHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
     final s = context.spacing;
-    final theme = Theme.of(context);
+    final textTheme = Theme.of(context).textTheme;
 
     return Container(
       padding: EdgeInsets.all(s.md),
@@ -2233,25 +2247,20 @@ class _ItemDialogProductHeader extends StatelessWidget {
         children: [
           Text(
             'Produto',
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: t.brandBlue,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.3,
-            ),
+            style: textTheme.erpOverline.copyWith(color: t.brandBlue),
           ),
           SizedBox(height: s.xs),
           Text(
             productName,
-            style: theme.textTheme.titleMedium?.copyWith(
+            style: textTheme.erpCardTitle.copyWith(
               color: t.textPrimary,
-              fontWeight: FontWeight.w800,
               height: 1.2,
             ),
           ),
           SizedBox(height: s.xs),
           Text(
             description,
-            style: theme.textTheme.bodyMedium?.copyWith(color: t.textSecondary),
+            style: textTheme.erpBodySecondary.copyWith(color: t.textSecondary),
           ),
           if (metadata.isNotEmpty) ...[
             SizedBox(height: s.sm),
@@ -2274,7 +2283,7 @@ class _ItemDialogProductHeader extends StatelessWidget {
                     ),
                     child: Text(
                       item,
-                      style: theme.textTheme.labelSmall?.copyWith(
+                      style: textTheme.erpCaption.copyWith(
                         color: t.textPrimary,
                         fontWeight: FontWeight.w700,
                       ),

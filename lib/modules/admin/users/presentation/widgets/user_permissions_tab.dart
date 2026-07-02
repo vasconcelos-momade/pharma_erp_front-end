@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
@@ -214,7 +215,10 @@ class _UserPermissionsTabState extends ConsumerState<UserPermissionsTab> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(_error!, style: TextStyle(color: t.posDanger)),
+            Text(
+              _error!,
+              style: Theme.of(context).textTheme.erpBody.copyWith(color: t.posDanger),
+            ),
             SizedBox(height: s.sm),
             OutlinedButton(onPressed: _load, child: const Text('Tentar novamente')),
           ],
@@ -238,14 +242,11 @@ class _UserPermissionsTabState extends ConsumerState<UserPermissionsTab> {
                   children: [
                     Text(
                       'Perfil ${widget.role}',
-                      style: TextStyle(
-                        color: t.textPrimary,
-                        fontWeight: FontWeight.w800,
-                      ),
+                      style: Theme.of(context).textTheme.erpCardTitle.copyWith(color: t.textPrimary),
                     ),
                     Text(
                       '$overrideCount override(s) • ${_effective?.permissions.where((p) => p.allowed).length ?? 0} permissões efectivas',
-                      style: TextStyle(color: t.textMuted, fontSize: 12),
+                      style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
                     ),
                   ],
                 ),
@@ -281,7 +282,7 @@ class _UserPermissionsTabState extends ConsumerState<UserPermissionsTab> {
             child: Text(
               'Marque para conceder ou retire para negar face ao perfil. '
               'Quando o valor coincide com o perfil, o override é removido.',
-              style: TextStyle(color: t.textMuted, fontSize: 11),
+              style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
             ),
           ),
         SizedBox(height: s.sm),
@@ -298,7 +299,7 @@ class _UserPermissionsTabState extends ConsumerState<UserPermissionsTab> {
       return Center(
         child: Text(
           'Sem permissões efectivas para este perfil.',
-          style: TextStyle(color: t.textMuted),
+          style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
         ),
       );
     }
@@ -320,17 +321,13 @@ class _UserPermissionsTabState extends ConsumerState<UserPermissionsTab> {
           dense: true,
           title: Text(
             '${p.module} • ${p.action}',
-            style: TextStyle(
-              color: t.textPrimary,
-              fontWeight: FontWeight.w600,
-            ),
+            style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
           ),
           subtitle: Text(
             p.isOverride ? 'Override' : 'Herdado do perfil',
-            style: TextStyle(
-              color: p.isOverride ? t.brandBlue : t.textMuted,
-              fontSize: 11,
-            ),
+            style: Theme.of(context).textTheme.erpCaption.copyWith(
+                  color: p.isOverride ? t.brandBlue : t.textMuted,
+                ),
           ),
           trailing: Icon(
             p.allowed ? Icons.check_circle : Icons.cancel,
@@ -347,7 +344,7 @@ class _UserPermissionsTabState extends ConsumerState<UserPermissionsTab> {
       return Center(
         child: Text(
           'Matriz de permissões indisponível.',
-          style: TextStyle(color: t.textMuted),
+          style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
         ),
       );
     }
@@ -357,24 +354,14 @@ class _UserPermissionsTabState extends ConsumerState<UserPermissionsTab> {
         DataColumn(
           label: Text(
             'MÓDULO',
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.2,
-              color: t.textMuted,
-            ),
+            style: Theme.of(context).textTheme.erpOverline.copyWith(color: t.textMuted),
           ),
         ),
         for (final action in permissionMatrixActions)
           DataColumn(
             label: Text(
               action,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.2,
-                color: t.textMuted,
-              ),
+              style: Theme.of(context).textTheme.erpOverline.copyWith(color: t.textMuted),
             ),
           ),
       ],
@@ -385,7 +372,7 @@ class _UserPermissionsTabState extends ConsumerState<UserPermissionsTab> {
           cells: [
             DataCell(Text(
               row.module,
-              style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w700),
+              style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
             )),
             for (final action in permissionMatrixActions)
               DataCell(_buildEditorCell(t, row.module, action)),

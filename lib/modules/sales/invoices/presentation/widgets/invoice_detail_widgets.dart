@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/spacing.dart';
 
 class DetailSection extends StatelessWidget {
@@ -30,7 +31,7 @@ class DetailSection extends StatelessWidget {
         children: [
           Text(
             title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            style: Theme.of(context).textTheme.erpTabLabel.copyWith(
                   color: t.textPrimary,
                   fontWeight: FontWeight.w800,
                 ),
@@ -66,7 +67,7 @@ class DetailRow extends StatelessWidget {
             width: 140,
             child: Text(
               label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
                     color: t.textMuted,
                   ),
             ),
@@ -74,7 +75,7 @@ class DetailRow extends StatelessWidget {
           Expanded(
             child: Text(
               value ?? '-',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
                     color: t.textPrimary,
                     fontWeight: FontWeight.w600,
                   ),
@@ -99,7 +100,7 @@ class DetailHint extends StatelessWidget {
       padding: EdgeInsets.only(top: s.xs),
       child: Text(
         text,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+        style: Theme.of(context).textTheme.erpCaption.copyWith(
               color: t.textMuted,
               fontStyle: FontStyle.italic,
             ),

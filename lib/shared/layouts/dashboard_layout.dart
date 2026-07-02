@@ -9,6 +9,7 @@ import '../../app/providers/session_access_notifier.dart';
 import '../../app/router/routes.dart';
 import '../../core/theme/app_shadows.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../core/theme/extensions.dart';
 import '../../core/theme/pharma_surface.dart';
 import '../../core/theme/dimensions.dart';
 import '../../core/theme/spacing.dart';
@@ -282,19 +283,16 @@ class _EnterpriseTopBar extends ConsumerWidget {
                           section.toUpperCase(),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.labelSmall?.copyWith(
+                          style: theme.textTheme.erpOverline.copyWith(
                             color: t.brandGreen,
-                            letterSpacing: 1.2,
-                            fontWeight: FontWeight.w800,
                           ),
                         ),
                         Text(
                           title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.titleSmall?.copyWith(
+                          style: theme.textTheme.erpAppBarTitle.copyWith(
                             color: t.textPrimary,
-                            fontWeight: FontWeight.w800,
                           ),
                         ),
                       ],
@@ -338,9 +336,8 @@ class _EnterpriseTopBar extends ConsumerWidget {
                         Flexible(
                           child: Text(
                             title,
-                            style: theme.textTheme.titleSmall?.copyWith(
+                            style: theme.textTheme.erpAppBarTitle.copyWith(
                               color: t.textPrimary,
-                              fontWeight: FontWeight.w700,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -394,9 +391,8 @@ class _EnterpriseTopBar extends ConsumerWidget {
                           backgroundColor: t.brandGreen.withValues(alpha: 0.2),
                           child: Text(
                             _userInitials(userName),
-                            style: theme.textTheme.labelSmall?.copyWith(
+                            style: theme.textTheme.erpOverline.copyWith(
                               color: t.brandGreen,
-                              fontWeight: FontWeight.w900,
                             ),
                           ),
                         ),
@@ -529,12 +525,8 @@ class _Sidebar extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 'PharmaERP',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleSmall
-                                    ?.copyWith(
+                                style: Theme.of(context).textTheme.erpCardTitle.copyWith(
                                       color: t.textPrimary,
-                                      fontWeight: FontWeight.w800,
                                     ),
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
@@ -626,19 +618,15 @@ class _Sidebar extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 'Sessão activa',
-                                style: Theme.of(context).textTheme.labelMedium
-                                    ?.copyWith(
+                                style: Theme.of(context).textTheme.erpLabel.copyWith(
                                       color: t.textPrimary,
-                                      fontWeight: FontWeight.w700,
                                     ),
                               ),
                             ),
                             Text(
                               'ERP',
-                              style: Theme.of(context).textTheme.labelSmall
-                                  ?.copyWith(
+                              style: Theme.of(context).textTheme.erpOverline.copyWith(
                                     color: t.textMuted,
-                                    letterSpacing: 1.0,
                                   ),
                             ),
                           ],
@@ -773,13 +761,9 @@ class _NavList extends StatelessWidget {
                     Expanded(
                       child: Text(
                         item.label,
-                        style: Theme.of(context).textTheme.labelMedium
-                            ?.copyWith(
+                        style: Theme.of(context).textTheme.erpTabLabel.copyWith(
                               color: active ? t.textPrimary : t.textSecondary,
-                              fontWeight: active
-                                  ? FontWeight.w700
-                                  : FontWeight.w500,
-                              fontSize: 13,
+                              fontWeight: active ? FontWeight.w600 : FontWeight.w500,
                               height: 1.2,
                             ),
                         maxLines: 2,
@@ -850,11 +834,8 @@ class _ErpNavSectionHeader extends StatelessWidget {
           title.toUpperCase(),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          style: Theme.of(context).textTheme.erpOverline.copyWith(
             color: t.textMuted,
-            letterSpacing: 1.4,
-            fontWeight: FontWeight.w800,
-            fontSize: 10.5,
           ),
         ),
       ),
@@ -908,11 +889,10 @@ class _DrawerNav extends StatelessWidget {
               ),
               title: Text(
                 item.label,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: active ? FontWeight.w700 : FontWeight.w500,
-                  color: active ? t.textPrimary : t.textSecondary,
-                ),
+                style: Theme.of(context).textTheme.erpTabLabel.copyWith(
+                      color: active ? t.textPrimary : t.textSecondary,
+                      fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+                    ),
               ),
               selected: active,
               onTap: () => onSelect(item.path),
@@ -957,8 +937,7 @@ class _DrawerNav extends StatelessWidget {
                     Expanded(
                       child: Text(
                         'PharmaERP',
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.w800),
+                        style: Theme.of(context).textTheme.erpCardTitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -990,9 +969,8 @@ class _DrawerNav extends StatelessWidget {
                 icon: Icon(Icons.logout_rounded, color: t.posDanger, size: 18),
                 label: Text(
                   'Encerrar sessão',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  style: Theme.of(context).textTheme.erpLabel.copyWith(
                     color: t.posDanger,
-                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 style: pharmaInstantButtonStyle(OutlinedButton.styleFrom(

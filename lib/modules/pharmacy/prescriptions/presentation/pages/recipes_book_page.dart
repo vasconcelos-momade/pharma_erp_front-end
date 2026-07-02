@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../../app/router/routes.dart';
 import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
@@ -792,7 +793,10 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
         if (_receitasError != null)
           Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-            child: Text(_receitasError!, style: TextStyle(color: t.posDanger)),
+            child: Text(
+              _receitasError!,
+              style: Theme.of(context).textTheme.erpBody.copyWith(color: t.posDanger),
+            ),
           ),
         Expanded(
           child: _receitasItems.isEmpty && !_loadingReceitas
@@ -859,6 +863,8 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
           pageSize: _receitasPageSize,
           hasMore: _receitasHasMore,
           isBusy: _loadingReceitas,
+          totalCount: _receitasTotal,
+          itemsOnPage: _receitasItems.length,
           onPrev: _receitasPage > 1
               ? () {
                   setState(() => _receitasPage -= 1);
@@ -881,7 +887,7 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
         ),
         Text(
           'Total: $_receitasTotal receita(s)',
-          style: TextStyle(color: t.textMuted, fontSize: 12),
+          style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
         ),
       ],
     );
@@ -895,7 +901,10 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
         if (_livroError != null)
           Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-            child: Text(_livroError!, style: TextStyle(color: t.posDanger)),
+            child: Text(
+              _livroError!,
+              style: Theme.of(context).textTheme.erpBody.copyWith(color: t.posDanger),
+            ),
           ),
         Expanded(
           child: _livroItems.isEmpty && !_loadingLivro
@@ -945,6 +954,8 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
           pageSize: _livroPageSize,
           hasMore: _livroHasMore,
           isBusy: _loadingLivro,
+          totalCount: _livroTotal,
+          itemsOnPage: _livroItems.length,
           onPrev: _livroPage > 1
               ? () {
                   setState(() => _livroPage -= 1);
@@ -967,7 +978,7 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
         ),
         Text(
           'Total: $_livroTotal movimento(s)',
-          style: TextStyle(color: t.textMuted, fontSize: 12),
+          style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
         ),
       ],
     );
@@ -1033,11 +1044,11 @@ class _InfoTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: TextStyle(color: t.textMuted, fontSize: 12)),
+          Text(label, style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted)),
           const SizedBox(height: 4),
           Text(
             value,
-            style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w600),
+            style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
           ),
         ],
       ),
@@ -1068,7 +1079,7 @@ class _StatusBadge extends StatelessWidget {
       ),
       child: Text(
         value,
-        style: TextStyle(color: color, fontWeight: FontWeight.w600),
+        style: Theme.of(context).textTheme.erpLabel.copyWith(color: color),
       ),
     );
   }

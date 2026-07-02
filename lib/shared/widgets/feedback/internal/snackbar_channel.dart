@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/design_metrics.dart';
 import '../../../../core/theme/design_tokens.dart';
+import '../../../../core/theme/extensions.dart';
 
 /// Canal interno de notificações rápidas (SnackBar).
 abstract final class SnackbarChannel {
@@ -74,7 +75,7 @@ abstract final class SnackbarChannel {
             Expanded(
               child: Text(
                 message,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
                       color:
                           backgroundColor != null ? Colors.white : t.textPrimary,
                       fontWeight: FontWeight.w600,

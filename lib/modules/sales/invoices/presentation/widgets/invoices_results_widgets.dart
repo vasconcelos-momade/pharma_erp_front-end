@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/responsive/pharma_screen_layout.dart';
 import '../../domain/entities/invoice_summary.dart';
@@ -159,7 +160,7 @@ class InvoiceCardList extends StatelessWidget {
                           child: Text(
                             invoice.numero,
                             style:
-                                Theme.of(context).textTheme.titleMedium?.copyWith(
+                                Theme.of(context).textTheme.erpTabLabel.copyWith(
                                       color: t.textPrimary,
                                       fontWeight: FontWeight.w800,
                                     ),
@@ -171,7 +172,7 @@ class InvoiceCardList extends StatelessWidget {
                     SizedBox(height: s.xs),
                     Text(
                       invoice.cliente?.nome ?? 'Consumidor final',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
                             color: t.textSecondary,
                           ),
                     ),
@@ -281,7 +282,7 @@ class InvoiceDesktopTable extends StatelessWidget {
                         DataCell(
                           Text(
                             formatMoney(invoice.total),
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
                                   fontWeight: FontWeight.w800,
                                   color: t.brandGreen,
                                 ),

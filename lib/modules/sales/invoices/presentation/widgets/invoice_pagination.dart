@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/responsive/pharma_screen_layout.dart';
 
@@ -38,7 +39,7 @@ class InvoicePagination extends StatelessWidget {
             children: [
               Text(
                 'Página $page',
-                style: Theme.of(context).textTheme.labelLarge,
+                style: Theme.of(context).textTheme.erpLabel,
               ),
               const Spacer(),
               DropdownButton<int>(
@@ -87,12 +88,12 @@ class InvoicePagination extends StatelessWidget {
       children: [
         Text(
           'Página $page',
-          style: Theme.of(context).textTheme.labelLarge,
+          style: Theme.of(context).textTheme.erpLabel,
         ),
         SizedBox(width: s.lg),
         Text(
           hasMore ? 'Mais resultados disponíveis' : 'Fim da lista',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+          style: Theme.of(context).textTheme.erpCaption.copyWith(
                 color: context.pharmaTokens.textMuted,
               ),
         ),

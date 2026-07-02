@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../domain/entities/invoice_summary.dart';
@@ -61,7 +62,7 @@ class _CancelInvoiceDialogState extends State<CancelInvoiceDialog> {
       children: [
         Text(
           'Esta ação deve refletir a reversão no backend. Informe o motivo do cancelamento.',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
                 color: t.textMuted,
               ),
         ),
@@ -155,7 +156,7 @@ class _CancelInvoiceDialogState extends State<CancelInvoiceDialog> {
               children: [
                 Text(
                   'Cancelar ${widget.invoice.numero}',
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  style: Theme.of(context).textTheme.erpCardTitle.copyWith(
                         color: t.textPrimary,
                         fontWeight: FontWeight.w800,
                       ),

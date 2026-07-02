@@ -2,15 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/constants/report_paths.dart';
-import '../../../../core/theme/design_tokens.dart';
-import '../../../../core/theme/spacing.dart';
-import '../../../../shared/widgets/feedback/module_data_states.dart';
+import '../../../../shared/widgets/cards/enterprise_list_card.dart';
 import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
-import '../../../stock/presentation/widgets/movimentacoes_pagination.dart';
 import '../../domain/entities/audit_entities.dart';
 import '../providers/audit_providers.dart';
-import '../widgets/audit_report_exports.dart';
+import '../widgets/audit_adaptive_list_layout.dart';
 
 class AuditLogsPage extends ConsumerStatefulWidget {
   const AuditLogsPage({super.key});
@@ -21,6 +17,7 @@ class AuditLogsPage extends ConsumerStatefulWidget {
 
 class _AuditLogsPageState extends ConsumerState<AuditLogsPage> {
   late final TextEditingController _searchController;
+  final List<AuditLogEntry> _accumulatedItems = [];
   static final _dateTime = DateFormat('dd/MM/yyyy HH:mm');
 
   @override
@@ -39,9 +36,29 @@ class _AuditLogsPageState extends ConsumerState<AuditLogsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.spacing;
     final state = ref.watch(auditLogsProvider);
     final notifier = ref.read(auditLogsProvider.notifier);
+
+    ref.listen(auditLogsProvider, (previous, next) {
+      if (previous?.query.page != next.query.page ||
+          previous?.query.search != next.query.search ||
+          previous?.query.pageSize != next.query.pageSize) {
+        if (next.query.page == 1) {
+          _accumulatedItems
+            ..clear()
+            ..addAll(next.items);
+        } else {
+          final newItems = next.items
+              .where((e) => !_accumulatedItems.any((a) => a.id == e.id))
+              .toList();
+          _accumulatedItems.addAll(newItems);
+        }
+      } else if (previous?.items != next.items && next.query.page == 1) {
+        _accumulatedItems
+          ..clear()
+          ..addAll(next.items);
+      }
+    });
 
     if (_searchController.text != state.query.search) {
       _searchController.value = TextEditingValue(
@@ -54,115 +71,59 @@ class _AuditLogsPageState extends ConsumerState<AuditLogsPage> {
       title: 'Logs de auditoria',
       subtitle: 'Registo imutável de alterações com encadeamento criptográfico.',
       tag: 'Auditoria',
-      actions: [
-        OutlinedButton.icon(
-          onPressed: state.isBusy ? null : notifier.refresh,
-          icon: const Icon(Icons.refresh_rounded),
-          label: const Text('Atualizar'),
-        ),
-      ],
-      filters: Wrap(
-        spacing: s.sm,
-        runSpacing: s.sm,
-        children: [
-          SizedBox(
-            width: 280,
-            child: TextField(
-              controller: _searchController,
-              onChanged: notifier.onSearchChanged,
-              decoration: const InputDecoration(
-                hintText: 'Acção, entidade...',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ),
-          if (state.query.hasFilters)
-            TextButton.icon(
-              onPressed: state.isBusy ? null : notifier.clearFilters,
-              icon: const Icon(Icons.filter_alt_off_outlined),
-              label: const Text('Limpar'),
-            ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Expanded(child: _buildBody(context, state, notifier)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBody(
-    BuildContext context,
-    AuditListState<AuditLogEntry> state,
-    AuditLogsController notifier,
-  ) {
-    if (state.viewState == AuditViewState.loading) {
-      return const ModuleLoadingState();
-    }
-    if (state.viewState == AuditViewState.error) {
-      return ModuleErrorState(
-        title: 'Falha ao carregar logs',
-        message: state.errorMessage ?? 'Erro desconhecido',
-        onRetry: notifier.refresh,
-        icon: Icons.receipt_long,
-      );
-    }
-    if (state.viewState == AuditViewState.empty) {
-      return ModuleEmptyState(
-        title: 'Nenhum log encontrado',
-        subtitle: state.query.hasFilters
+      actions: null,
+      filters: null,
+      child: AuditAdaptiveListBody<AuditLogEntry>(
+        state: state,
+        searchController: _searchController,
+        searchHint: 'Acção, entidade...',
+        emptyTitle: 'Nenhum log encontrado',
+        emptySubtitle: state.query.hasFilters
             ? 'Tenta limpar os filtros.'
             : 'Ainda não existem registos de auditoria.',
-        onClearFilters: state.query.hasFilters ? notifier.clearFilters : null,
-      );
-    }
-
-    final t = context.pharmaTokens;
-    final s = context.spacing;
-
-    return Column(
-      children: [
-        Expanded(
-          child: ListView.separated(
-            itemCount: state.items.length,
-            separatorBuilder: (_, _) =>
-                Divider(color: t.border.withValues(alpha: 0.35)),
-            itemBuilder: (context, index) {
-              final log = state.items[index];
-              return ListTile(
-                leading: Icon(Icons.history, color: t.brandBlue),
-                title: Text(
-                  '${log.action} • ${log.entity}',
-                  style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w700),
-                ),
-                subtitle: Text(
-                  '${log.userName ?? 'Sistema'} • ${_dateTime.format(log.createdAt)}',
-                  style: TextStyle(color: t.textMuted, fontSize: 12),
-                ),
-                trailing: log.entityId != null
-                    ? Text('#${log.entityId}', style: TextStyle(color: t.textMuted, fontSize: 11))
-                    : null,
-              );
-            },
+        errorTitle: 'Falha ao carregar logs',
+        errorIcon: Icons.receipt_long,
+        accumulatedItems: _accumulatedItems,
+        onSearchChanged: notifier.onSearchChanged,
+        onClearFilters: notifier.clearFilters,
+        onRefresh: notifier.refresh,
+        onGoToPage: notifier.goToPage,
+        onPageSizeChanged: notifier.setPageSize,
+        headerActions: [
+          OutlinedButton.icon(
+            onPressed: state.isBusy ? null : notifier.refresh,
+            icon: const Icon(Icons.refresh_rounded),
+            label: const Text('Atualizar'),
           ),
+        ],
+        columns: const [
+          DataColumn(label: Text('ACÇÃO')),
+          DataColumn(label: Text('ENTIDADE')),
+          DataColumn(label: Text('UTILIZADOR')),
+          DataColumn(label: Text('DATA')),
+          DataColumn(label: Text('ID')),
+        ],
+        rowBuilder: (log) => DataRow(
+          cells: [
+            DataCell(Text(log.action)),
+            DataCell(Text(log.entity)),
+            DataCell(Text(log.userName ?? 'Sistema')),
+            DataCell(Text(_dateTime.format(log.createdAt))),
+            DataCell(Text(log.entityId ?? '—')),
+          ],
         ),
-        SizedBox(height: s.md),
-        MovimentacoesPagination(
-          page: state.query.page,
-          pageSize: state.query.pageSize,
-          hasMore: state.hasMore,
-          isBusy: state.isBusy,
-          onPrev: state.query.page > 1
-              ? () => notifier.goToPage(state.query.page - 1)
-              : null,
-          onNext: state.hasMore
-              ? () => notifier.goToPage(state.query.page + 1)
-              : null,
-          onPageSizeChanged: notifier.setPageSize,
+        mobileCardBuilder: (log) => EnterpriseListCard(
+          leading: Icons.history,
+          title: '${log.action} • ${log.entity}',
+          subtitle: log.entityId != null ? '#${log.entityId}' : null,
+          metadata: [
+            EnterpriseListCardMeta(
+              label: '${log.userName ?? 'Sistema'} • ${_dateTime.format(log.createdAt)}',
+            ),
+          ],
         ),
-      ],
+        itemId: (log) => log.id,
+      ),
     );
   }
 }

@@ -8,6 +8,7 @@ import '../../../../app/router/routes.dart';
 import '../../../../core/network/connectivity/connection_mode.dart';
 import '../../../../core/network/connectivity/connection_status.dart';
 import '../../../../core/theme/design_tokens.dart';
+import '../../../../core/theme/extensions.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../domain/entities/branch_access.dart';
 import '../../domain/entities/tenant_access.dart';
@@ -93,7 +94,7 @@ class _TenantSelectPageState extends ConsumerState<TenantSelectPage> {
           children: [
             Text(
               'Sem farmácias associadas a esta conta.',
-              style: Theme.of(context).textTheme.titleMedium,
+              style: Theme.of(context).textTheme.erpCardTitle,
             ),
             const SizedBox(height: AppSpacing.lg),
             TextButton(
@@ -115,14 +116,12 @@ class _TenantSelectPageState extends ConsumerState<TenantSelectPage> {
           children: [
             Text(
               'Seleccionar unidade',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+              style: Theme.of(context).textTheme.erpSectionTitle,
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
               'Olá, ${session.user.name}. Escolha a farmácia e a unidade.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: t.textMuted),
+              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
             ),
             const SizedBox(height: AppSpacing.md),
             Wrap(
@@ -158,7 +157,7 @@ class _TenantSelectPageState extends ConsumerState<TenantSelectPage> {
             const SizedBox(height: AppSpacing.xxl),
             Text(
               'Organização',
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(color: t.textMuted),
+              style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textMuted),
             ),
             const SizedBox(height: AppSpacing.sm),
             for (final tenant in session.tenants)
@@ -201,14 +200,11 @@ class _TenantSelectPageState extends ConsumerState<TenantSelectPage> {
                               children: [
                                 Text(
                                   tenant.companyName,
-                                  style: TextStyle(
-                                    color: t.textPrimary,
-                                    fontWeight: FontWeight.w700,
-                                  ),
+                                  style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
                                 ),
                                 Text(
                                   tenant.name,
-                                  style: TextStyle(color: t.textMuted, fontSize: 12),
+                                  style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
                                 ),
                               ],
                             ),
@@ -223,7 +219,7 @@ class _TenantSelectPageState extends ConsumerState<TenantSelectPage> {
               const SizedBox(height: AppSpacing.lg),
               Text(
                 'Unidade',
-                style: Theme.of(context).textTheme.labelLarge?.copyWith(color: t.textMuted),
+                style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textMuted),
               ),
               const SizedBox(height: AppSpacing.sm),
               for (final branch in _branches)
@@ -258,10 +254,7 @@ class _TenantSelectPageState extends ConsumerState<TenantSelectPage> {
                             Expanded(
                               child: Text(
                                 '${branch.code} — ${branch.name}',
-                                style: TextStyle(
-                                  color: t.textPrimary,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                                style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
                               ),
                             ),
                           ],
@@ -320,10 +313,7 @@ class _TenantStatusChip extends StatelessWidget {
           const SizedBox(width: AppSpacing.xs),
           Text(
             label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(context).textTheme.erpLabel.copyWith(color: color),
           ),
         ],
       ),

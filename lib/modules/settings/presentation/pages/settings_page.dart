@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/providers/auth_session_notifier.dart';
 import '../../../../app/router/routes.dart';
 import '../../../../core/theme/design_tokens.dart';
+import '../../../../core/theme/extensions.dart';
 import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
 
 class SettingsPage extends ConsumerWidget {
@@ -28,11 +29,11 @@ class SettingsPage extends ConsumerWidget {
             leading: Icon(Icons.person_outline, color: t.brandBlue),
             title: Text(
               'Utilizador',
-              style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w700),
+              style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
             ),
             subtitle: Text(
               user == null ? '—' : '${user.name} (${user.email})',
-              style: TextStyle(color: t.textMuted),
+              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
             ),
           ),
           Divider(color: t.border.withValues(alpha: 0.35)),
@@ -40,13 +41,13 @@ class SettingsPage extends ConsumerWidget {
             leading: Icon(Icons.business, color: t.brandBlue),
             title: Text(
               'Unidade activa',
-              style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w700),
+              style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
             ),
             subtitle: Text(
               tenant == null
                   ? 'Nenhuma entidade seleccionada'
                   : '${tenant.companyName} • ${branch?.name ?? '—'}',
-              style: TextStyle(color: t.textMuted),
+              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
             ),
             trailing: TextButton(
               onPressed: () => context.go(AppRoutePaths.authTenant),
@@ -58,11 +59,11 @@ class SettingsPage extends ConsumerWidget {
             leading: Icon(Icons.print_outlined, color: t.brandGreen),
             title: Text(
               'Impressoras',
-              style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w700),
+              style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
             ),
             subtitle: Text(
               'Configuração térmica ESC/POS',
-              style: TextStyle(color: t.textMuted),
+              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
             ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.go(AppRoutePaths.settingsPrinters),
@@ -71,11 +72,11 @@ class SettingsPage extends ConsumerWidget {
             leading: Icon(Icons.point_of_sale_outlined, color: t.brandGreen),
             title: Text(
               'Terminais & PDV',
-              style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w700),
+              style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
             ),
             subtitle: Text(
               'Caixas e terminais registados',
-              style: TextStyle(color: t.textMuted),
+              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
             ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.go(AppRoutePaths.settingsTerminals),
@@ -84,11 +85,11 @@ class SettingsPage extends ConsumerWidget {
             leading: Icon(Icons.sync, color: t.brandGreen),
             title: Text(
               'Sincronização',
-              style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w700),
+              style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
             ),
             subtitle: Text(
               'Política híbrida e fila offline',
-              style: TextStyle(color: t.textMuted),
+              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
             ),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => context.go(AppRoutePaths.settingsSync),

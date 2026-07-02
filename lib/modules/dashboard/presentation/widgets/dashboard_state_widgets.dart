@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/design_tokens.dart';
+import '../../../../core/theme/extensions.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../shared/widgets/loading/skeleton_loaders.dart';
 
@@ -60,16 +61,17 @@ class DashboardErrorState extends StatelessWidget {
             SizedBox(height: s.md),
             Text(
               'Não foi possível carregar o painel',
-              style: TextStyle(
-                color: t.textPrimary,
-                fontWeight: FontWeight.w800,
-              ),
+              style: Theme.of(context).textTheme.erpCardTitle.copyWith(
+                    color: t.textPrimary,
+                  ),
             ),
             SizedBox(height: s.xs),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(color: t.textMuted),
+              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
+                    color: t.textMuted,
+                  ),
             ),
             SizedBox(height: s.md),
             FilledButton.icon(
@@ -113,17 +115,18 @@ class DashboardEmptyState extends StatelessWidget {
             if (title != null && title!.isNotEmpty) ...[
               Text(
                 title!,
-                style: TextStyle(
-                  color: t.textPrimary,
-                  fontWeight: FontWeight.w800,
-                ),
+                style: Theme.of(context).textTheme.erpCardTitle.copyWith(
+                      color: t.textPrimary,
+                    ),
               ),
               SizedBox(height: s.xs),
             ],
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: TextStyle(color: t.textMuted),
+              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
+                    color: t.textMuted,
+                  ),
             ),
           ],
         ),

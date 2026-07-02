@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/theme/extensions.dart';
 import '../../../core/theme/spacing.dart';
 
 enum SyncVisualState { online, syncing, offline, conflict }
@@ -101,7 +102,7 @@ class SyncStatusStrip extends StatelessWidget {
                 children: [
                   Text(
                     title.toUpperCase(),
-                    style: TextStyle(
+                    style: Theme.of(context).textTheme.erpOverline.copyWith(
                       fontSize: 9,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 1.2,
@@ -110,7 +111,7 @@ class SyncStatusStrip extends StatelessWidget {
                   ),
                   Text(
                     subtitle,
-                    style: TextStyle(
+                    style: Theme.of(context).textTheme.erpOverline.copyWith(
                       fontSize: 8,
                       fontWeight: FontWeight.w700,
                       color: t.textMuted,

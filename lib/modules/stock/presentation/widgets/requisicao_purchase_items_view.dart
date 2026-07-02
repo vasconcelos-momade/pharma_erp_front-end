@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/design_tokens.dart';
+import '../../../../core/theme/extensions.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../shared/navigation/adaptive_navigator.dart';
 import '../../domain/entities/requisicao.dart';
@@ -337,7 +338,9 @@ class RequisicaoPurchaseItemCard extends StatelessWidget {
         children: [
           Text(
             item.produtoNome,
-            style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w800),
+            style: Theme.of(context).textTheme.erpCardTitle.copyWith(
+                  color: t.textPrimary,
+                ),
           ),
           SizedBox(height: s.sm),
           Wrap(
@@ -409,14 +412,15 @@ class RequisicaoPurchaseItemInfo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
+    final textTheme = Theme.of(context).textTheme;
 
     return RichText(
       text: TextSpan(
-        style: TextStyle(color: t.textMuted, fontSize: 12),
+        style: textTheme.erpCaption.copyWith(color: t.textMuted),
         children: [
           TextSpan(
             text: '$label: ',
-            style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w700),
+            style: textTheme.erpLabel.copyWith(color: t.textPrimary),
           ),
           TextSpan(text: value),
         ],
@@ -543,6 +547,7 @@ class RequisicaoDialogDetailRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
+    final textTheme = Theme.of(context).textTheme;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -551,13 +556,13 @@ class RequisicaoDialogDetailRow extends StatelessWidget {
           width: 120,
           child: Text(
             label,
-            style: TextStyle(color: t.textMuted, fontWeight: FontWeight.w600),
+            style: textTheme.erpBodySecondary.copyWith(color: t.textMuted),
           ),
         ),
         Expanded(
           child: Text(
             value,
-            style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w700),
+            style: textTheme.erpLabel.copyWith(color: t.textPrimary),
           ),
         ),
       ],

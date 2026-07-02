@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
@@ -146,7 +147,7 @@ class _AbrirCaixaDialogState extends ConsumerState<AbrirCaixaDialog> {
               padding: EdgeInsets.only(bottom: s.md),
               child: Text(
                 caixaState.errorMessage!,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
                       color: t.posDanger,
                     ),
               ),
@@ -221,7 +222,7 @@ class _AbrirCaixaDialogState extends ConsumerState<AbrirCaixaDialog> {
             SizedBox(height: s.md),
             Text(
               'Nenhum terminal disponivel para abertura de caixa.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              style: Theme.of(context).textTheme.erpCaption.copyWith(
                     color: t.textMuted,
                   ),
             ),
@@ -362,14 +363,14 @@ class _FecharCaixaDialogState extends ConsumerState<FecharCaixaDialog> {
               children: [
                 Text(
                   'Valor de sistema',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  style: Theme.of(context).textTheme.erpCaption.copyWith(
                         color: t.textMuted,
                       ),
                 ),
                 SizedBox(height: s.xs),
                 Text(
                   formatCaixaMoney(widget.sessao.sistema),
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  style: Theme.of(context).textTheme.erpTabLabel.copyWith(
                         color: t.textPrimary,
                         fontWeight: FontWeight.w800,
                       ),
@@ -481,9 +482,8 @@ class CaixaFechadoBanner extends StatelessWidget {
               child: Text(
                 'Abra o caixa para iniciar as operacoes.',
                 style: (compact
-                        ? Theme.of(context).textTheme.labelMedium
-                        : Theme.of(context).textTheme.bodyMedium)
-                    ?.copyWith(
+                        ? Theme.of(context).textTheme.erpCaption
+                        : Theme.of(context).textTheme.erpBodySecondary).copyWith(
                   color: compact ? t.posDanger : t.textPrimary,
                   fontWeight: FontWeight.w600,
                 ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/design_tokens.dart';
-import '../../../core/theme/spacing.dart';
+import '../../../core/theme/extensions.dart';
 
 class ModuleLoadingState extends StatelessWidget {
   const ModuleLoadingState({super.key, this.itemCount = 6});
@@ -57,15 +57,14 @@ class ModuleErrorState extends StatelessWidget {
             SizedBox(height: s.md),
             Text(
               title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              style: Theme.of(context).textTheme.erpCardTitle.copyWith(
                     color: t.textPrimary,
-                    fontWeight: FontWeight.w800,
                   ),
             ),
             SizedBox(height: s.sm),
             Text(
               message,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: t.textMuted),
+              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: s.lg),
@@ -105,16 +104,15 @@ class ModuleEmptyState extends StatelessWidget {
           SizedBox(height: s.md),
           Text(
             title,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            style: Theme.of(context).textTheme.erpCardTitle.copyWith(
                   color: t.textPrimary,
-                  fontWeight: FontWeight.w800,
                 ),
           ),
           if (subtitle != null) ...[
             SizedBox(height: s.sm),
             Text(
               subtitle!,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: t.textMuted),
+              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
               textAlign: TextAlign.center,
             ),
           ],

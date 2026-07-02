@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/widgets/feedback/module_data_states.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
@@ -134,24 +135,14 @@ class _RolePermissionsEditorDialogState
         DataColumn(
           label: Text(
             'MÓDULO',
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.2,
-              color: t.textMuted,
-            ),
+            style: Theme.of(context).textTheme.erpOverline.copyWith(color: t.textMuted),
           ),
         ),
         for (final action in permissionMatrixActions)
           DataColumn(
             label: Text(
               action,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.2,
-                color: t.textMuted,
-              ),
+              style: Theme.of(context).textTheme.erpOverline.copyWith(color: t.textMuted),
             ),
           ),
       ],
@@ -163,7 +154,7 @@ class _RolePermissionsEditorDialogState
           cells: [
             DataCell(Text(
               row.module,
-              style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w700),
+              style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
             )),
             for (final action in permissionMatrixActions)
               DataCell(

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../inventory/data/datasources/inventory_remote_datasource.dart';
 import 'lot_actions_helper.dart';
@@ -115,14 +116,14 @@ class LoteDetailsContentState extends ConsumerState<LoteDetailsContent>
                       children: [
                         Text(
                           'Lote ${detail?['numeroLote'] ?? widget.loteId}',
-                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                                fontWeight: FontWeight.w800,
-                              ),
+                          style: Theme.of(context).textTheme.erpPageTitle,
                         ),
                         Text(
                           detail?['produtoNome']?.toString() ??
                               'Detalhe operacional do lote',
-                          style: TextStyle(color: t.textMuted),
+                          style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
+                                color: t.textMuted,
+                              ),
                         ),
                       ],
                     ),
@@ -158,7 +159,10 @@ class LoteDetailsContentState extends ConsumerState<LoteDetailsContent>
           if (_error != null)
             Padding(
               padding: EdgeInsets.all(s.md),
-              child: Text(_error!, style: TextStyle(color: t.posDanger)),
+              child: Text(
+                _error!,
+                style: Theme.of(context).textTheme.erpBody.copyWith(color: t.posDanger),
+              ),
             ),
           Expanded(
             child: TabBarView(
@@ -333,7 +337,7 @@ class _ResumoTab extends StatelessWidget {
               width: 150,
               child: Text(
                 row.key,
-                style: const TextStyle(fontWeight: FontWeight.w700),
+                style: Theme.of(context).textTheme.erpLabel,
               ),
             ),
             Expanded(child: Text(row.value ?? '—')),
@@ -443,9 +447,7 @@ class _SanitarioTab extends StatelessWidget {
         SizedBox(height: s.md),
         Text(
           'Movimentos sanitários',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w800,
-              ),
+          style: Theme.of(context).textTheme.erpSectionTitle,
         ),
         SizedBox(height: s.sm),
         if (sanitarios.isEmpty)
@@ -565,15 +567,13 @@ class _StatusCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title),
+                Text(title, style: Theme.of(context).textTheme.erpLabel),
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: TextStyle(
-                    color: color,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 18,
-                  ),
+                  style: Theme.of(context).textTheme.erpSectionTitle.copyWith(
+                        color: color,
+                      ),
                 ),
               ],
             ),

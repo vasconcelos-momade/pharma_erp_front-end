@@ -5,6 +5,7 @@ import '../../../../../app/providers/session_access_notifier.dart';
 import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../../shared/widgets/feedback/module_data_states.dart';
@@ -77,11 +78,10 @@ class UserPermissionsPage extends ConsumerWidget {
           if (state.canEdit)
             Text(
               'Modo edição — alterações afectam o perfil ${state.selectedRole}',
-              style: TextStyle(
-                color: context.pharmaTokens.brandBlue,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
+              style: Theme.of(context).textTheme.erpCaption.copyWith(
+                    color: context.pharmaTokens.brandBlue,
+                    fontWeight: FontWeight.w600,
+                  ),
             ),
         ],
       ),
@@ -150,24 +150,14 @@ class UserPermissionsPage extends ConsumerWidget {
         DataColumn(
           label: Text(
             'MÓDULO',
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.2,
-              color: t.textMuted,
-            ),
+            style: Theme.of(context).textTheme.erpOverline.copyWith(color: t.textMuted),
           ),
         ),
         for (final action in permissionMatrixActions)
           DataColumn(
             label: Text(
               action,
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.2,
-                color: t.textMuted,
-              ),
+              style: Theme.of(context).textTheme.erpOverline.copyWith(color: t.textMuted),
             ),
           ),
       ],
@@ -179,7 +169,7 @@ class UserPermissionsPage extends ConsumerWidget {
           cells: [
             DataCell(Text(
               row.module,
-              style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w700),
+              style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
             )),
             for (final action in permissionMatrixActions)
               DataCell(_actionCell(
@@ -218,7 +208,7 @@ class UserPermissionsPage extends ConsumerWidget {
     if (enabled is List) {
       return Text(
         '${enabled.length} perfis',
-        style: TextStyle(color: t.brandBlue, fontSize: 12, fontWeight: FontWeight.w700),
+        style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.brandBlue),
       );
     }
 

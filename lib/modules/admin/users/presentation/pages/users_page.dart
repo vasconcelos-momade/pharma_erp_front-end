@@ -6,6 +6,7 @@ import '../../../../../app/providers/session_access_notifier.dart';
 import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/responsive/pharma_screen_layout.dart';
@@ -180,12 +181,7 @@ class _UsersPageState extends ConsumerState<UsersPage> {
                 DataColumn(
                   label: Text(
                     label.toUpperCase(),
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.2,
-                      color: t.textMuted,
-                    ),
+                    style: Theme.of(context).textTheme.erpOverline.copyWith(color: t.textMuted),
                   ),
                 ),
             ],
@@ -195,17 +191,28 @@ class _UsersPageState extends ConsumerState<UsersPage> {
               return DataRow(
                 onSelectChanged: (_) => _openDetails(context, u),
                 cells: [
-                DataCell(Text(u.name, style: TextStyle(color: t.textPrimary, fontWeight: FontWeight.w700))),
-                DataCell(Text(u.email ?? '—', style: TextStyle(color: t.textSecondary))),
-                DataCell(Text(_roleLabel(u.role), style: TextStyle(color: t.brandBlue, fontWeight: FontWeight.w700))),
+                DataCell(Text(
+                  u.name,
+                  style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
+                )),
+                DataCell(Text(
+                  u.email ?? '—',
+                  style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textSecondary),
+                )),
+                DataCell(Text(
+                  _roleLabel(u.role),
+                  style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.brandBlue),
+                )),
                 DataCell(Text(
                   u.active ? 'Activo' : 'Inactivo',
-                  style: TextStyle(
-                    color: u.active ? t.brandGreen : t.posDanger,
-                    fontWeight: FontWeight.w800,
-                  ),
+                  style: Theme.of(context).textTheme.erpTabLabel.copyWith(
+                        color: u.active ? t.brandGreen : t.posDanger,
+                      ),
                 )),
-                DataCell(Text(_dateFmt.format(u.createdAt), style: TextStyle(color: t.textMuted, fontSize: 12))),
+                DataCell(Text(
+                  _dateFmt.format(u.createdAt),
+                  style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
+                )),
                 ],
               );
             },
@@ -215,11 +222,7 @@ class _UsersPageState extends ConsumerState<UsersPage> {
           SizedBox(height: s.md),
           Text(
             'Últimos acessos',
-            style: TextStyle(
-              color: t.textPrimary,
-              fontWeight: FontWeight.w800,
-              fontSize: 13,
-            ),
+            style: Theme.of(context).textTheme.erpTabLabel.copyWith(color: t.textPrimary),
           ),
           SizedBox(height: s.sm),
           Expanded(
@@ -235,19 +238,16 @@ class _UsersPageState extends ConsumerState<UsersPage> {
                   leading: Icon(Icons.login, color: t.brandBlue, size: 20),
                   title: Text(
                     access.userName ?? 'Utilizador',
-                    style: TextStyle(
-                      color: t.textPrimary,
-                      fontWeight: FontWeight.w700,
-                    ),
+                    style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
                   ),
                   subtitle: Text(
                     '${access.action} • ${_dateTimeFmt.format(access.createdAt)}',
-                    style: TextStyle(color: t.textMuted, fontSize: 12),
+                    style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
                   ),
                   trailing: access.userEmail != null
                       ? Text(
                           access.userEmail!,
-                          style: TextStyle(color: t.textMuted, fontSize: 11),
+                          style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
                         )
                       : null,
                 );

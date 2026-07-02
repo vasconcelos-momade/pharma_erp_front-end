@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/responsive/pharma_screen_layout.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
@@ -154,7 +155,7 @@ class _InvoiceDetailScaffold extends StatelessWidget {
                   children: [
                     Text(
                       invoice.numero,
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      style: Theme.of(context).textTheme.erpCardTitle.copyWith(
                             color: t.textPrimary,
                             fontWeight: FontWeight.w800,
                           ),
@@ -162,7 +163,7 @@ class _InvoiceDetailScaffold extends StatelessWidget {
                     SizedBox(height: s.xs),
                     Text(
                       customerName,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
                             color: t.textMuted,
                           ),
                     ),
@@ -175,7 +176,7 @@ class _InvoiceDetailScaffold extends StatelessWidget {
         else
           Text(
             customerName,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
                   color: t.textMuted,
                 ),
           ),
@@ -336,7 +337,7 @@ class _DetailItemTile extends StatelessWidget {
         children: [
           Text(
             item.descricao,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            style: Theme.of(context).textTheme.erpBody.copyWith(
                   color: t.textPrimary,
                   fontWeight: FontWeight.w700,
                 ),
@@ -360,7 +361,7 @@ class _DetailItemTile extends StatelessWidget {
                 if (item.codigoRegraFiscal != null) 'Regra: ${item.codigoRegraFiscal}',
                 if (item.motivoIsencao != null) 'Motivo isenção: ${item.motivoIsencao}',
               ].join(' | '),
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              style: Theme.of(context).textTheme.erpCaption.copyWith(
                     color: t.textMuted,
                   ),
             ),
@@ -372,7 +373,7 @@ class _DetailItemTile extends StatelessWidget {
                 padding: EdgeInsets.only(bottom: s.xs),
                 child: Text(
                   'Lote ${lote.codigo} · ${lote.quantidade.toStringAsFixed(lote.quantidade % 1 == 0 ? 0 : 2)} un. · FEFO ${lote.ordemFefo}',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  style: Theme.of(context).textTheme.erpCaption.copyWith(
                         color: t.textSecondary,
                       ),
                 ),
@@ -409,7 +410,7 @@ class _DetailPaymentTile extends StatelessWidget {
         children: [
           Text(
             payment.metodo,
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            style: Theme.of(context).textTheme.erpBody.copyWith(
                   color: t.textPrimary,
                   fontWeight: FontWeight.w700,
                 ),
@@ -428,7 +429,7 @@ class _DetailPaymentTile extends StatelessWidget {
             SizedBox(height: s.xs),
             Text(
               'Referência: ${payment.referencia}',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              style: Theme.of(context).textTheme.erpCaption.copyWith(
                     color: t.textMuted,
                   ),
             ),
@@ -605,7 +606,7 @@ class _DetailErrorState extends StatelessWidget {
       children: [
         Text(
           message,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+          style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
                 color: t.textPrimary,
               ),
         ),
@@ -634,14 +635,14 @@ class _InlineMeta extends StatelessWidget {
     final t = context.pharmaTokens;
     return RichText(
       text: TextSpan(
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+        style: Theme.of(context).textTheme.erpCaption.copyWith(
               color: t.textMuted,
             ),
         children: [
           TextSpan(text: '$label: '),
           TextSpan(
             text: value,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+            style: Theme.of(context).textTheme.erpCaption.copyWith(
                   color: t.textPrimary,
                   fontWeight: FontWeight.w700,
                 ),

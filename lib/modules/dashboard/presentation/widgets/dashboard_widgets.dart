@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/design_tokens.dart';
+import '../../../../core/theme/extensions.dart';
 import '../../../../core/theme/pharma_surface.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../shared/widgets/tables/enterprise_data_table.dart';
@@ -202,7 +203,7 @@ Widget _dashboardChartEmptyState(
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
-            style: TextStyle(color: t.textMuted),
+            style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
           ),
         ),
       );
@@ -275,7 +276,7 @@ Widget _dashboardChartLegend({
                       label,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 11),
+                      style: Theme.of(context).textTheme.erpCaption,
                     ),
                   ),
                 ],
@@ -301,6 +302,7 @@ double _dashboardChartMinWidthForCount(int count, {double perItem = 52}) {
 }
 
 Widget _dashboardAxisLabel({
+  required BuildContext context,
   required TitleMeta meta,
   required String label,
   double angle = 0,
@@ -313,7 +315,7 @@ Widget _dashboardAxisLabel({
       label,
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
-      style: const TextStyle(fontSize: 10),
+      style: Theme.of(context).textTheme.erpOverline,
     ),
   );
 }
@@ -385,8 +387,9 @@ Widget dashboardLineChart({
                           return const SizedBox.shrink();
                         }
                         return DefaultTextStyle(
-                          style: TextStyle(color: t.textMuted),
+                          style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
                           child: _dashboardAxisLabel(
+                            context: context,
                             meta: meta,
                             label: dashLabel(points[i][labelKey], max: 10),
                           ),
@@ -432,10 +435,8 @@ Widget dashboardChartCard({
           title.toUpperCase(),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+          style: Theme.of(context).textTheme.erpOverline.copyWith(
                 color: t.textMuted,
-                letterSpacing: 1.6,
-                fontWeight: FontWeight.w800,
               ),
         ),
         SizedBox(height: t.density.md),
@@ -485,8 +486,9 @@ Widget dashboardBarChart({
                 final i = value.toInt();
                 if (i < 0 || i >= points.length) return const SizedBox.shrink();
                 return DefaultTextStyle(
-                  style: TextStyle(color: t.textMuted),
+                  style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
                   child: _dashboardAxisLabel(
+                    context: context,
                     meta: meta,
                     label: dashLabel(points[i][labelKey], max: 14),
                     angle: -0.5,
@@ -637,8 +639,9 @@ Widget dashboardIndexedBarChart({
                 final i = value.toInt();
                 if (i < 0 || i >= labels.length) return const SizedBox.shrink();
                 return DefaultTextStyle(
-                  style: TextStyle(color: t.textMuted),
+                  style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
                   child: _dashboardAxisLabel(
+                    context: context,
                     meta: meta,
                     label: labels[i],
                     angle: -0.45,
@@ -709,9 +712,7 @@ Widget dashboardPieChart({
                 color: t.brandGreen.withValues(alpha: 0.35),
                 title: emptyLabel,
                 radius: sectionRadius,
-                titleStyle: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
+                titleStyle: Theme.of(context).textTheme.erpOverline.copyWith(
                   color: t.textMuted,
                 ),
               ),
@@ -755,6 +756,7 @@ Widget dashboardPieChart({
 }
 
 Widget dashboardSimpleTable({
+  required BuildContext context,
   String? title,
   required List<String> headers,
   required List<List<String>> rows,
@@ -770,7 +772,7 @@ Widget dashboardSimpleTable({
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
       if (title != null) ...[
-        Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
+        Text(title, style: Theme.of(context).textTheme.erpSectionTitle),
         const SizedBox(height: AppSpacing.sm),
       ],
       if (rows.isEmpty)
@@ -916,7 +918,7 @@ class _DashboardPaginatedTableState extends State<DashboardPaginatedTable> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(widget.title, style: const TextStyle(fontWeight: FontWeight.w800)),
+          Text(widget.title, style: Theme.of(context).textTheme.erpSectionTitle),
           const SizedBox(height: AppSpacing.sm),
           const DashboardLoadingState(kpiCount: 0),
         ],
@@ -927,7 +929,7 @@ class _DashboardPaginatedTableState extends State<DashboardPaginatedTable> {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(widget.title, style: const TextStyle(fontWeight: FontWeight.w800)),
+          Text(widget.title, style: Theme.of(context).textTheme.erpSectionTitle),
           const SizedBox(height: AppSpacing.sm),
           Text('Não foi possível carregar a tabela: $_error'),
           const SizedBox(height: AppSpacing.sm),
@@ -954,7 +956,7 @@ class _DashboardPaginatedTableState extends State<DashboardPaginatedTable> {
             Expanded(
               child: Text(
                 widget.title,
-                style: const TextStyle(fontWeight: FontWeight.w800),
+                style: Theme.of(context).textTheme.erpSectionTitle,
               ),
             ),
             if (_sortBy != null)
@@ -981,6 +983,7 @@ class _DashboardPaginatedTableState extends State<DashboardPaginatedTable> {
         if (_loading && _result != null)
           const LinearProgressIndicator(minHeight: 2),
         dashboardSimpleTable(
+          context: context,
           headers: widget.headers,
           rows: rows,
           columns: tableColumns,

@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../reports/presentation/controllers/report_controller.dart';
 import '../../../../../shared/navigation/adaptive_navigator.dart';
@@ -227,7 +228,7 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
                 DataColumn(
                   label: Text(
                     label.toUpperCase(),
-                    style: TextStyle(
+                    style: Theme.of(context).textTheme.erpOverline.copyWith(
                       fontSize: 10,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 1.2,
@@ -245,38 +246,32 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
                   DataCell(
                     Text(
                       inv.numero,
-                      style: TextStyle(
-                        color: t.textPrimary,
-                        fontWeight: FontWeight.w800,
-                      ),
+                      style: Theme.of(context).textTheme.erpTabLabel.copyWith(color: t.textPrimary, fontWeight: FontWeight.w800),
                     ),
                   ),
                   DataCell(
                     Text(
                       inv.cliente?.nome ?? '—',
-                      style: TextStyle(color: t.textSecondary),
+                      style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textSecondary),
                     ),
                   ),
                   DataCell(
                     Text(
                       inv.terminal?.codigo ?? inv.terminal?.nome ?? '—',
-                      style: TextStyle(color: t.textMuted),
+                      style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
                     ),
                   ),
                   DataCell(
                     Text(
                       '${_currency.format(inv.total)} MT',
-                      style: TextStyle(
-                        color: t.brandGreen,
-                        fontWeight: FontWeight.w800,
-                      ),
+                      style: Theme.of(context).textTheme.erpTabLabel.copyWith(color: t.brandGreen, fontWeight: FontWeight.w800),
                     ),
                   ),
                   DataCell(InvoiceStatusBadge(status: inv.estado)),
                   DataCell(
                     Text(
                       _dateTime.format(inv.createdAt),
-                      style: TextStyle(color: t.textMuted, fontSize: 12),
+                      style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
                     ),
                   ),
                 ],

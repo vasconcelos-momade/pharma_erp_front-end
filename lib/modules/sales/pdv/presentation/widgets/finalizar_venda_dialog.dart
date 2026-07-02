@@ -6,6 +6,7 @@ import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/theme/app_radius.dart';
 import '../../../../../core/theme/design_metrics.dart';
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
@@ -327,7 +328,7 @@ class _FinalizarVendaDialogState
             SizedBox(height: s.lg),
             Text(
               'Dados do paciente',
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              style: Theme.of(context).textTheme.erpTabLabel.copyWith(
                     color: t.textPrimary,
                     fontWeight: FontWeight.w700,
                   ),
@@ -335,7 +336,7 @@ class _FinalizarVendaDialogState
             SizedBox(height: s.xs),
             Text(
               'O backend exigiu identificação do paciente e do prescritor para concluir esta venda.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              style: Theme.of(context).textTheme.erpCaption.copyWith(
                     color: t.textMuted,
                   ),
             ),
@@ -377,7 +378,7 @@ class _FinalizarVendaDialogState
           SizedBox(height: s.lg),
           Text(
             'Método de pagamento',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            style: Theme.of(context).textTheme.erpTabLabel.copyWith(
                   color: t.textPrimary,
                   fontWeight: FontWeight.w700,
                 ),
@@ -425,7 +426,7 @@ class _FinalizarVendaDialogState
             SizedBox(height: s.md),
             Text(
               'O valor recebido é enviado ao backend e qualquer validação ou troco vem apenas na resposta final da venda.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              style: Theme.of(context).textTheme.erpCaption.copyWith(
                     color: t.textMuted,
                   ),
             ),
@@ -445,7 +446,7 @@ class _FinalizarVendaDialogState
               ),
               child: Text(
                 checkoutState.errorMessage!,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                style: Theme.of(context).textTheme.erpCaption.copyWith(
                       color: t.posDanger,
                     ),
               ),
@@ -523,7 +524,7 @@ class _FinalizarVendaDialogState
     return PharmaResponsiveDialog(
       title: Text(
         'Finalizar Venda',
-        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+        style: Theme.of(context).textTheme.erpCardTitle.copyWith(
               color: t.textPrimary,
               fontWeight: FontWeight.w700,
             ),
@@ -558,14 +559,14 @@ class _CheckoutSummaryCard extends StatelessWidget {
         children: [
           Text(
             'Total a pagar',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+            style: Theme.of(context).textTheme.erpTabLabel.copyWith(
                   color: t.textPrimary,
                   fontWeight: FontWeight.w700,
                 ),
           ),
           Text(
             _formatCheckoutMoney(total),
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            style: Theme.of(context).textTheme.erpTabLabel.copyWith(
                   color: t.brandGreen,
                   fontWeight: FontWeight.w800,
                 ),
@@ -622,7 +623,7 @@ class _PaymentMethodCard extends StatelessWidget {
                   descriptor.label,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  style: Theme.of(context).textTheme.erpTabLabel.copyWith(
                         color: t.textPrimary,
                         fontWeight: FontWeight.w600,
                       ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../shared/widgets/layout/module_page_frame.dart';
 
 class ReportsPage extends StatelessWidget {
@@ -25,10 +26,17 @@ class ReportsPage extends StatelessWidget {
             Text(
               'CENTRO DE RELATÓRIOS',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 3, color: t.textSecondary),
+              style: Theme.of(context).textTheme.erpOverline.copyWith(
+                    color: t.textSecondary,
+                    letterSpacing: 3,
+                  ),
             ),
             const SizedBox(height: 8),
-            Text('BI • Analytics sanitário • Performance de vendas', textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: t.textMuted, fontWeight: FontWeight.w600)),
+            Text(
+              'BI • Analytics sanitário • Performance de vendas',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
+            ),
           ],
         ),
       ),

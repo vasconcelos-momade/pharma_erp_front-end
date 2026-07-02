@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/design_tokens.dart';
-import '../../../../core/theme/spacing.dart';
-import '../../../../shared/responsive/pharma_screen_layout.dart';
+import '../../../../shared/widgets/tables/enterprise_pagination.dart';
 
+/// Paginação unificada no padrão enterprise (delega para [EnterprisePagination]).
 class MovimentacoesPagination extends StatelessWidget {
   const MovimentacoesPagination({
     super.key,
@@ -11,123 +10,49 @@ class MovimentacoesPagination extends StatelessWidget {
     required this.pageSize,
     required this.hasMore,
     required this.isBusy,
+    this.totalCount,
+    this.itemsOnPage,
+    this.itemLabel = 'registros',
     this.onPrev,
     this.onNext,
     this.onPageSizeChanged,
+    this.onPageChanged,
   });
 
   final int page;
   final int pageSize;
   final bool hasMore;
   final bool isBusy;
+  final int? totalCount;
+  final int? itemsOnPage;
+  final String itemLabel;
   final VoidCallback? onPrev;
   final VoidCallback? onNext;
   final ValueChanged<int>? onPageSizeChanged;
+  final ValueChanged<int>? onPageChanged;
 
   @override
   Widget build(BuildContext context) {
-    final s = context.spacing;
-    final screen = context.pharmaScreen;
-    final pageSizeOptions = const [10, 20, 50, 100];
-
-    if (screen == PharmaScreenSize.mobile) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Text(
-                'Página $page',
-                style: Theme.of(context).textTheme.labelLarge,
-              ),
-              const Spacer(),
-              DropdownButton<int>(
-                value: pageSizeOptions.contains(pageSize)
-                    ? pageSize
-                    : pageSizeOptions.first,
-                items: pageSizeOptions
-                    .map(
-                      (value) => DropdownMenuItem<int>(
-                        value: value,
-                        child: Text('$value itens'),
-                      ),
-                    )
-                    .toList(growable: false),
-                onChanged: isBusy
-                    ? null
-                    : (value) =>
-                        value != null ? onPageSizeChanged?.call(value) : null,
-              ),
-            ],
-          ),
-          SizedBox(height: s.sm),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: isBusy ? null : onPrev,
-                  icon: const Icon(Icons.chevron_left_rounded),
-                  label: const Text('Anterior'),
-                ),
-              ),
-              SizedBox(width: s.sm),
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: isBusy || !hasMore ? null : onNext,
-                  icon: const Icon(Icons.chevron_right_rounded),
-                  label: const Text('Próxima'),
-                ),
-              ),
-            ],
-          ),
-        ],
-      );
-    }
-
-    return Row(
-      children: [
-        Text(
-          'Página $page',
-          style: Theme.of(context).textTheme.labelLarge,
-        ),
-        SizedBox(width: s.lg),
-        Text(
-          hasMore ? 'Mais resultados disponíveis' : 'Fim da lista',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: context.pharmaTokens.textMuted,
-              ),
-        ),
-        const Spacer(),
-        DropdownButton<int>(
-          value: pageSizeOptions.contains(pageSize)
-              ? pageSize
-              : pageSizeOptions.first,
-          items: pageSizeOptions
-              .map(
-                (value) => DropdownMenuItem<int>(
-                  value: value,
-                  child: Text('$value / página'),
-                ),
-              )
-              .toList(growable: false),
-          onChanged: isBusy
-              ? null
-              : (value) =>
-                  value != null ? onPageSizeChanged?.call(value) : null,
-        ),
-        SizedBox(width: s.md),
-        OutlinedButton.icon(
-          onPressed: isBusy ? null : onPrev,
-          icon: const Icon(Icons.chevron_left_rounded),
-          label: const Text('Anterior'),
-        ),
-        SizedBox(width: s.sm),
-        FilledButton.icon(
-          onPressed: isBusy || !hasMore ? null : onNext,
-          icon: const Icon(Icons.chevron_right_rounded),
-          label: const Text('Próxima'),
-        ),
-      ],
+    return EnterprisePagination(
+      page: page,
+      pageSize: pageSize,
+      totalCount: totalCount,
+      hasMore: hasMore,
+      itemsOnPage: itemsOnPage,
+      isBusy: isBusy,
+      itemLabel: itemLabel,
+      onPageChanged: (nextPage) {
+        if (onPageChanged != null) {
+          onPageChanged!(nextPage);
+          return;
+        }
+        if (nextPage < page) {
+          onPrev?.call();
+        } else if (nextPage > page) {
+          onNext?.call();
+        }
+      },
+      onPageSizeChanged: onPageSizeChanged ?? (_) {},
     );
   }
 }

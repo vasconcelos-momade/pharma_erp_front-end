@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../domain/entities/categoria_produto.dart';
 
 class ProdutoCategoriaChip extends StatelessWidget {
@@ -23,11 +24,7 @@ class ProdutoCategoriaChip extends StatelessWidget {
     return Chip(
       visualDensity: compact ? VisualDensity.compact : VisualDensity.standard,
       label: Text(label ?? categoria.label),
-      labelStyle: TextStyle(
-        color: color,
-        fontWeight: FontWeight.w600,
-        fontSize: compact ? 11 : 12,
-      ),
+      labelStyle: Theme.of(context).textTheme.erpCaption.copyWith(color: color),
       backgroundColor: color.withValues(alpha: 0.12),
       side: BorderSide(color: color.withValues(alpha: 0.25)),
     );

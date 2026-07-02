@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../reports/presentation/controllers/report_controller.dart';
 import '../../../../../shared/navigation/adaptive_navigator.dart';
@@ -218,7 +219,7 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
             padding: EdgeInsets.only(bottom: s.sm),
             child: Text(
               state.errorMessage!,
-              style: TextStyle(color: t.posWarning, fontSize: 12),
+              style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.posWarning),
             ),
           ),
         Expanded(
@@ -235,7 +236,7 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
                 DataColumn(
                   label: Text(
                     label.toUpperCase(),
-                    style: TextStyle(
+                    style: Theme.of(context).textTheme.erpOverline.copyWith(
                       fontSize: 10,
                       fontWeight: FontWeight.w800,
                       letterSpacing: 1.2,
@@ -253,40 +254,34 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
                   DataCell(
                     Text(
                       c.nome,
-                      style: TextStyle(
-                        color: t.textPrimary,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: Theme.of(context).textTheme.erpTabLabel.copyWith(color: t.textPrimary, fontWeight: FontWeight.w700),
                     ),
                   ),
                   DataCell(
                     Text(
                       _tipoLabel(c.tipo),
-                      style: TextStyle(color: t.textSecondary),
+                      style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textSecondary),
                     ),
                   ),
                   DataCell(
-                    Text(c.nuit ?? '—', style: TextStyle(color: t.textMuted)),
+                    Text(c.nuit ?? '—', style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted)),
                   ),
                   DataCell(
                     Text(
                       '${_currency.format(c.saldoAtual)} MT',
-                      style: TextStyle(
-                        color: c.saldoAtual > 0 ? t.posWarning : t.brandGreen,
-                        fontWeight: FontWeight.w700,
-                      ),
+                      style: Theme.of(context).textTheme.erpTabLabel.copyWith(color: c.saldoAtual > 0 ? t.posWarning : t.brandGreen, fontWeight: FontWeight.w700),
                     ),
                   ),
                   DataCell(
                     Text(
                       '${c.faturaCount}',
-                      style: TextStyle(color: t.brandBlue),
+                      style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.brandBlue),
                     ),
                   ),
                   DataCell(
                     Text(
                       dateFmt.format(c.createdAt),
-                      style: TextStyle(color: t.textMuted, fontSize: 12),
+                      style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
                     ),
                   ),
                 ],

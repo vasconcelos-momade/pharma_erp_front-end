@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../categories/domain/entities/category.dart';
 import 'produto_filters_content.dart';
@@ -53,8 +54,7 @@ class ProdutoFiltersBottomSheet extends StatelessWidget {
                   children: [
                     Text(
                       'Filtros',
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
+                      style: theme.textTheme.erpCardTitle.copyWith(
                         color: t.textPrimary,
                       ),
                     ),

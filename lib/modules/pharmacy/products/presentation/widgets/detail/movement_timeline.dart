@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../../core/theme/design_tokens.dart';
+import '../../../../../../core/theme/extensions.dart';
 import '../../../../../../core/theme/spacing.dart';
 
 /// Timeline de movimentos de stock.
@@ -20,7 +21,9 @@ class MovementTimeline extends StatelessWidget {
       return Center(
         child: Text(
           emptyMessage,
-          style: TextStyle(color: context.pharmaTokens.textMuted),
+          style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
+                color: context.pharmaTokens.textMuted,
+              ),
         ),
       );
     }
@@ -107,27 +110,31 @@ class _MovementTimelineEntry extends StatelessWidget {
                       children: [
                         Text(
                           tipo,
-                          style: TextStyle(
-                            color: t.textPrimary,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 14,
-                          ),
+                          style: Theme.of(context).textTheme.erpLabel.copyWith(
+                                color: t.textPrimary,
+                              ),
                         ),
                         Text(
                           data,
-                          style: TextStyle(color: t.textMuted, fontSize: 12),
+                          style: Theme.of(context).textTheme.erpCaption.copyWith(
+                                color: t.textMuted,
+                              ),
                         ),
                       ],
                     ),
                     SizedBox(height: s.xs),
                     Text(
                       'Quantidade: $quantidade',
-                      style: TextStyle(color: t.textPrimary, fontSize: 14),
+                      style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
+                            color: t.textPrimary,
+                          ),
                     ),
                     SizedBox(height: 2),
                     Text(
                       utilizador,
-                      style: TextStyle(color: t.textMuted, fontSize: 12),
+                      style: Theme.of(context).textTheme.erpCaption.copyWith(
+                            color: t.textMuted,
+                          ),
                     ),
                   ],
                 ),

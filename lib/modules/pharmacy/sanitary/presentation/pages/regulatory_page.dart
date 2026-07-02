@@ -3,14 +3,17 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/spacing.dart';
+import '../../../../../shared/responsive/responsive_builder.dart';
+import '../../../../../shared/widgets/cards/enterprise_list_card.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
+import '../../../../../shared/widgets/layout/enterprise_mobile_scroll_list.dart';
+import '../../../../../shared/widgets/layout/enterprise_mobile_toolbar.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../../../stock/presentation/widgets/movimentacoes_pagination.dart';
-import '../../../presentation/widgets/regulatory_report_exports.dart';
 import '../../../regulatory/data/datasources/regulatory_remote_datasource.dart';
 import '../../../lots/presentation/widgets/lot_actions_helper.dart';
 
@@ -33,6 +36,7 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
   String? _reportsError;
   Map<String, dynamic>? _dashboard;
   List<Map<String, dynamic>> _items = <Map<String, dynamic>>[];
+  List<Map<String, dynamic>> _accumulatedSanitario = <Map<String, dynamic>>[];
   List<Map<String, dynamic>> _reports = <Map<String, dynamic>>[];
   int _page = 1;
   int _pageSize = 20;
@@ -99,6 +103,17 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
       setState(() {
         _dashboard = results[0] as Map<String, dynamic>;
         _items = page.items.cast<Map<String, dynamic>>();
+        if (_page == 1) {
+          _accumulatedSanitario = List.of(_items);
+        } else {
+          _accumulatedSanitario.addAll(
+            _items.where(
+              (e) => !_accumulatedSanitario.any(
+                (a) => a['id']?.toString() == e['id']?.toString(),
+              ),
+            ),
+          );
+        }
         _page = page.page as int;
         _pageSize = page.pageSize as int;
         _hasMore = page.hasMore as bool;
@@ -145,14 +160,6 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
     }
   }
 
-  Map<String, dynamic> _sanitarioReportQuery() {
-    return {
-      if (_search.isNotEmpty) 'q': _search,
-      if (_estado != null) 'estado': _estado,
-      if (_alertaTipo != null) 'alertaTipo': _alertaTipo,
-    };
-  }
-
   Future<void> _openHistory(String loteId) async {
     await LotActionsHelper.showHistory(context, ref, loteId);
   }
@@ -160,77 +167,90 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
   @override
   Widget build(BuildContext context) {
     final dash = _dashboard?['kpis'] as Map<String, dynamic>?;
-    return EnterpriseModuleHub(
-      title: 'Sanitário / Alertas',
-      subtitle:
-          'Validade, recall, quarentena, incineração, stock crítico e relatórios oficiais integrados.',
-      tag: 'Regulatório',
-      actions: [
-        IconButton(
-          onPressed: () =>
-              _tabController.index == 0 ? _loadSanitario() : _loadReports(),
-          icon: const Icon(Icons.refresh),
-        ),
-      ],
-      kpis: dash == null || _tabController.index == 1
-          ? null
-          : [
-              EnterpriseStatCard(
-                title: 'Expirados',
-                value: '${dash['expirados'] ?? 0}',
-                icon: Icons.warning_amber_outlined,
-              ),
-              EnterpriseStatCard(
-                title: 'Próx. validade',
-                value: '${dash['proximosValidade'] ?? 0}',
-                icon: Icons.schedule_outlined,
-              ),
-              EnterpriseStatCard(
-                title: 'Recall',
-                value: '${dash['recall'] ?? 0}',
-                icon: Icons.report_problem_outlined,
-              ),
-              EnterpriseStatCard(
-                title: 'Quarentena',
-                value: '${dash['quarentena'] ?? 0}',
-                icon: Icons.health_and_safety_outlined,
-              ),
-              EnterpriseStatCard(
-                title: 'Incinerações',
-                value: '${dash['incineracoes'] ?? 0}',
-                icon: Icons.local_fire_department_outlined,
-              ),
-              EnterpriseStatCard(
-                title: 'Alertas',
-                value: '${dash['alertasSanitarios'] ?? 0}',
-                icon: Icons.notifications_active_outlined,
-              ),
-            ],
-      filters: _tabController.index == 0
-          ? _buildSanitarioFilters()
-          : _buildReportsFilters(),
-      child: Column(
-        children: [
-          TabBar(
-            controller: _tabController,
-            onTap: (_) => setState(() {}),
-            tabs: const [
-              Tab(text: 'Alertas & lotes'),
-              Tab(text: 'Relatórios'),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildSanitarioTab(context),
-                _buildReportsTab(context),
-              ],
+    final kpis = dash == null || _tabController.index == 1
+        ? null
+        : [
+            EnterpriseStatCard(
+              title: 'Expirados',
+              value: '${dash['expirados'] ?? 0}',
+              icon: Icons.warning_amber_outlined,
             ),
+            EnterpriseStatCard(
+              title: 'Próx. validade',
+              value: '${dash['proximosValidade'] ?? 0}',
+              icon: Icons.schedule_outlined,
+            ),
+            EnterpriseStatCard(
+              title: 'Recall',
+              value: '${dash['recall'] ?? 0}',
+              icon: Icons.report_problem_outlined,
+            ),
+            EnterpriseStatCard(
+              title: 'Quarentena',
+              value: '${dash['quarentena'] ?? 0}',
+              icon: Icons.health_and_safety_outlined,
+            ),
+            EnterpriseStatCard(
+              title: 'Incinerações',
+              value: '${dash['incineracoes'] ?? 0}',
+              icon: Icons.local_fire_department_outlined,
+            ),
+            EnterpriseStatCard(
+              title: 'Alertas',
+              value: '${dash['alertasSanitarios'] ?? 0}',
+              icon: Icons.notifications_active_outlined,
+            ),
+          ];
+
+    return ResponsiveBuilder(
+      builder: (context, constraints) {
+        final isMobile = !constraints.isTabletOrWider;
+
+        return EnterpriseModuleHub(
+          title: 'Sanitário / Alertas',
+          subtitle:
+              'Validade, recall, quarentena, incineração, stock crítico e relatórios oficiais integrados.',
+          tag: 'Regulatório',
+          mobileKpisHorizontalScroll: true,
+          actions: isMobile
+              ? null
+              : [
+                  IconButton(
+                    onPressed: () =>
+                        _tabController.index == 0 ? _loadSanitario() : _loadReports(),
+                    icon: const Icon(Icons.refresh),
+                  ),
+                ],
+          kpis: isMobile ? null : kpis,
+          filters: isMobile
+              ? null
+              : (_tabController.index == 0
+                  ? _buildSanitarioFilters()
+                  : _buildReportsFilters()),
+          child: Column(
+            children: [
+              TabBar(
+                controller: _tabController,
+                onTap: (_) => setState(() {}),
+                tabs: const [
+                  Tab(text: 'Alertas & lotes'),
+                  Tab(text: 'Relatórios'),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildSanitarioTab(context, isMobile: isMobile, kpis: kpis),
+                    _buildReportsTab(context, adaptive: !isMobile),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -367,15 +387,159 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
     );
   }
 
-  Widget _buildSanitarioTab(BuildContext context) {
+  void _openSanitarioFilters(BuildContext context) {
+    showEnterpriseFiltersSheet(
+      context: context,
+      child: StatefulBuilder(
+        builder: (context, setModalState) {
+          var estado = _estado;
+          var alertaTipo = _alertaTipo;
+          return Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md + MediaQuery.viewInsetsOf(context).bottom,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  'Filtros sanitários',
+                  style: Theme.of(context).textTheme.erpSectionTitle,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                DropdownButtonFormField<String?>(
+                  initialValue: estado,
+                  decoration: const InputDecoration(
+                    labelText: 'Estado',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: null, child: Text('Todos')),
+                    DropdownMenuItem(value: 'EXPIRADO', child: Text('Expirado')),
+                    DropdownMenuItem(value: 'RECALL', child: Text('Recall')),
+                    DropdownMenuItem(value: 'QUARENTENA', child: Text('Quarentena')),
+                    DropdownMenuItem(value: 'BLOQUEADO', child: Text('Bloqueado')),
+                    DropdownMenuItem(value: 'CRITICO', child: Text('Crítico')),
+                  ],
+                  onChanged: (value) => setModalState(() => estado = value),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                DropdownButtonFormField<String?>(
+                  initialValue: alertaTipo,
+                  decoration: const InputDecoration(
+                    labelText: 'Tipo de alerta',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: null, child: Text('Todos')),
+                    DropdownMenuItem(value: 'LOTE_EXPIRADO', child: Text('Lote expirado')),
+                    DropdownMenuItem(value: 'LOTE_A_EXPIRAR', child: Text('Lote a expirar')),
+                    DropdownMenuItem(value: 'ESTOQUE_BAIXO', child: Text('Stock baixo')),
+                    DropdownMenuItem(value: 'PRODUTO_ESGOTADO', child: Text('Esgotado')),
+                  ],
+                  onChanged: (value) => setModalState(() => alertaTipo = value),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                FilledButton(
+                  onPressed: () {
+                    setState(() {
+                      _estado = estado;
+                      _alertaTipo = alertaTipo;
+                      _page = 1;
+                    });
+                    Navigator.of(context).pop();
+                    _loadSanitario();
+                  },
+                  child: const Text('Aplicar'),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildSanitarioTab(
+    BuildContext context, {
+    bool isMobile = false,
+    List<EnterpriseStatCard>? kpis,
+  }) {
     final t = context.pharmaTokens;
+
+    if (isMobile) {
+      return EnterpriseMobileScrollList(
+        kpis: kpis,
+        stickyHeader: EnterpriseMobileToolbar(
+          searchController: _searchController,
+          searchHint: 'Produto, lote, barcode...',
+          enabled: !_loadingSanitario,
+          isLoading: _loadingSanitario,
+          hasFilters: _estado != null || _alertaTipo != null,
+          onSearchSubmitted: (value) {
+            setState(() {
+              _search = value.trim();
+              _page = 1;
+            });
+            _loadSanitario();
+          },
+          onOpenFilters: () => _openSanitarioFilters(context),
+          onClearFilters: () async {
+            setState(() {
+              _estado = null;
+              _alertaTipo = null;
+              _page = 1;
+            });
+            await _loadSanitario();
+          },
+          onRefresh: _loadSanitario,
+        ),
+        itemCount: _accumulatedSanitario.length,
+        itemBuilder: (context, index) {
+          final item = _accumulatedSanitario[index];
+          return EnterpriseListCard(
+            leading: Icons.health_and_safety_outlined,
+            title: item['produto']?['nome']?.toString() ?? '—',
+            subtitle: 'Lote: ${item['numeroLote']?.toString() ?? '—'}',
+            chip: _SanitaryBadge(label: item['status']?.toString()),
+            metadata: [
+              EnterpriseListCardMeta(
+                label:
+                    'Validade: ${item['dataValidade']?.toString().substring(0, 10) ?? '—'}',
+              ),
+              EnterpriseListCardMeta(
+                label:
+                    '${item['latestAlert']?['tipo']?.toString() ?? '—'} · Stock: ${item['quantidadeAtual'] ?? 0}',
+              ),
+            ],
+            onTap: () => _openHistory(item['id'].toString()),
+          );
+        },
+        hasMore: _hasMore,
+        isLoading: _loadingSanitario,
+        onLoadMore: () {
+          setState(() => _page += 1);
+          _loadSanitario();
+        },
+        emptyMessage: 'Sem resultados para os filtros selecionados.',
+        totalCount: _total,
+        totalCountLabel: 'Total: $_total lote(s)',
+      );
+    }
+
     return Column(
       children: [
         if (_loadingSanitario) const LinearProgressIndicator(),
         if (_sanitarioError != null)
           Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-            child: Text(_sanitarioError!, style: TextStyle(color: t.posDanger)),
+            child: Text(
+              _sanitarioError!,
+              style: Theme.of(context).textTheme.erpBody.copyWith(color: t.posDanger),
+            ),
           ),
         Expanded(
           child: _items.isEmpty && !_loadingSanitario
@@ -383,6 +547,8 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
                   child: Text('Sem resultados para os filtros selecionados.'),
                 )
               : EnterpriseDataTable(
+                  adaptive: false,
+                  showCheckboxColumn: false,
                   columns: const [
                     DataColumn(label: Text('PRODUTO')),
                     DataColumn(label: Text('LOTE')),
@@ -426,6 +592,9 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
           pageSize: _pageSize,
           hasMore: _hasMore,
           isBusy: _loadingSanitario,
+          totalCount: _total,
+          itemsOnPage: _items.length,
+          itemLabel: 'lotes',
           onPrev: _page > 1
               ? () {
                   setState(() => _page -= 1);
@@ -448,13 +617,13 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
         ),
         Text(
           'Total: $_total lote(s)',
-          style: TextStyle(color: t.textMuted, fontSize: 12),
+          style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
         ),
       ],
     );
   }
 
-  Widget _buildReportsTab(BuildContext context) {
+  Widget _buildReportsTab(BuildContext context, {bool adaptive = true}) {
     final t = context.pharmaTokens;
     return Column(
       children: [
@@ -462,7 +631,10 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
         if (_reportsError != null)
           Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-            child: Text(_reportsError!, style: TextStyle(color: t.posDanger)),
+            child: Text(
+              _reportsError!,
+              style: Theme.of(context).textTheme.erpBody.copyWith(color: t.posDanger),
+            ),
           ),
         Expanded(
           child: _reports.isEmpty && !_loadingReports
@@ -470,6 +642,8 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
                   child: Text('Sem resultados para os filtros selecionados.'),
                 )
               : EnterpriseDataTable(
+                  adaptive: adaptive,
+                  showCheckboxColumn: false,
                   columns: const [
                     DataColumn(label: Text('TIPO')),
                     DataColumn(label: Text('PERÍODO')),
@@ -501,6 +675,9 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
           pageSize: _reportsPageSize,
           hasMore: _reportsHasMore,
           isBusy: _loadingReports,
+          totalCount: _reportsTotal,
+          itemsOnPage: _reports.length,
+          itemLabel: 'relatórios',
           onPrev: _reportsPage > 1
               ? () {
                   setState(() => _reportsPage -= 1);
@@ -523,7 +700,7 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
         ),
         Text(
           'Total: $_reportsTotal relatório(s)',
-          style: TextStyle(color: t.textMuted, fontSize: 12),
+          style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
         ),
       ],
     );
@@ -555,7 +732,7 @@ class _SanitaryBadge extends StatelessWidget {
       ),
       child: Text(
         value,
-        style: TextStyle(color: color, fontWeight: FontWeight.w600),
+        style: Theme.of(context).textTheme.erpLabel.copyWith(color: color),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/design_tokens.dart';
+import '../../../../core/theme/extensions.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../shared/responsive/pharma_screen_layout.dart';
 
@@ -62,16 +63,17 @@ class MovimentacoesErrorState extends StatelessWidget {
             SizedBox(height: s.md),
             Text(
               'Não foi possível carregar movimentos',
-              style: TextStyle(
-                color: t.textPrimary,
-                fontWeight: FontWeight.w800,
-              ),
+              style: Theme.of(context).textTheme.erpCardTitle.copyWith(
+                    color: t.textPrimary,
+                  ),
             ),
             SizedBox(height: s.xs),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: TextStyle(color: t.textMuted),
+              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
+                    color: t.textMuted,
+                  ),
             ),
             SizedBox(height: s.md),
             FilledButton.icon(
@@ -108,16 +110,17 @@ class MovimentacoesEmptyState extends StatelessWidget {
             SizedBox(height: s.md),
             Text(
               'Nenhum movimento encontrado',
-              style: TextStyle(
-                color: t.textPrimary,
-                fontWeight: FontWeight.w800,
-              ),
+              style: Theme.of(context).textTheme.erpCardTitle.copyWith(
+                    color: t.textPrimary,
+                  ),
             ),
             SizedBox(height: s.xs),
             Text(
               'Ajuste os filtros ou o período para ver entradas, saídas e ajustes.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: t.textMuted),
+              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
+                    color: t.textMuted,
+                  ),
             ),
             if (onClearFilters != null) ...[
               SizedBox(height: s.md),
@@ -158,7 +161,7 @@ class MovimentacoesInfoBanner extends StatelessWidget {
           Expanded(
             child: Text(
               message,
-              style: Theme.of(context).textTheme.bodySmall,
+              style: Theme.of(context).textTheme.erpCaption,
             ),
           ),
         ],

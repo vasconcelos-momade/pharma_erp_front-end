@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../app/router/routes.dart';
 import '../../../../core/errors/api_failure.dart';
 import '../../../../core/theme/design_tokens.dart';
+import '../../../../core/theme/extensions.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../shared/layouts/auth_layout.dart';
 import '../../../../shared/widgets/feedback/pharma_feedback.dart';
@@ -76,14 +77,12 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
             children: [
               Text(
                 'Recuperar acesso',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                    ),
+                style: Theme.of(context).textTheme.erpSectionTitle,
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
                 'Enviaremos instruções para o e-mail corporativo registado.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: t.textMuted),
+                style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
               ),
               const SizedBox(height: AppSpacing.xxl),
               TextFormField(

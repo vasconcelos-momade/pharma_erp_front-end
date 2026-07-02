@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../domain/entities/product.dart';
 import 'produto_card.dart';
@@ -78,7 +79,9 @@ class _ProdutoListState extends State<ProdutoList> {
               child: Center(
                 child: Text(
                   'Fim da lista',
-                  style: TextStyle(color: t.textMuted, fontSize: 12),
+                  style: Theme.of(context).textTheme.erpCaption.copyWith(
+                        color: t.textMuted,
+                      ),
                 ),
               ),
             );

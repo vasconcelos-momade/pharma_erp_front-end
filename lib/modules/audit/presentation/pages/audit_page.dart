@@ -6,10 +6,15 @@ import 'package:intl/intl.dart';
 import '../../../../app/router/routes.dart';
 import '../../../../core/constants/report_paths.dart';
 import '../../../../core/theme/design_tokens.dart';
+import '../../../../core/theme/extensions.dart';
 import '../../../../core/theme/spacing.dart';
+import '../../../../shared/responsive/responsive_builder.dart';
+import '../../../../shared/widgets/cards/enterprise_list_card.dart';
 import '../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../shared/widgets/feedback/module_data_states.dart';
+import '../../../../shared/widgets/layout/enterprise_mobile_scroll_list.dart';
 import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
+import '../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../providers/audit_providers.dart';
 import '../widgets/audit_report_exports.dart';
 
@@ -72,13 +77,12 @@ class AuditPage extends ConsumerWidget {
           accent: StatCardAccent.warning,
         ),
       ],
-      child: _buildBody(context, ref, state, notifier),
+      child: _buildBody(context, state, notifier),
     );
   }
 
   Widget _buildBody(
     BuildContext context,
-    WidgetRef ref,
     AuditDashboardState state,
     AuditDashboardController notifier,
   ) {
@@ -94,10 +98,7 @@ class AuditPage extends ConsumerWidget {
       );
     }
 
-    final t = context.pharmaTokens;
-    final s = context.spacing;
     final events = state.dashboard.recentEvents;
-
     if (events.isEmpty) {
       return const ModuleEmptyState(
         title: 'Sem eventos recentes',
@@ -105,45 +106,81 @@ class AuditPage extends ConsumerWidget {
       );
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Eventos recentes',
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                color: t.textPrimary,
-                fontWeight: FontWeight.w800,
-              ),
-        ),
-        SizedBox(height: s.sm),
-        Expanded(
-          child: ListView.separated(
+    final s = context.spacing;
+
+    return ResponsiveBuilder(
+      builder: (context, constraints) {
+        final isMobile = !constraints.isTabletOrWider;
+
+        if (isMobile) {
+          return EnterpriseMobileScrollList(
             itemCount: events.length,
-            separatorBuilder: (_, _) =>
-                Divider(color: t.border.withValues(alpha: 0.35)),
             itemBuilder: (context, index) {
               final e = events[index];
-              return ListTile(
-                leading: Icon(Icons.bolt, color: t.brandBlue),
-                title: Text(
-                  '${e.type} • ${e.entity}',
-                  style: TextStyle(
-                    color: t.textPrimary,
-                    fontWeight: FontWeight.w700,
+              return EnterpriseListCard(
+                leading: Icons.bolt,
+                title: '${e.type} • ${e.entity}',
+                subtitle: e.entityId != null ? '#${e.entityId}' : null,
+                metadata: [
+                  EnterpriseListCardMeta(
+                    label: '${e.userName ?? 'Sistema'} • ${_dateTime.format(e.createdAt)}',
                   ),
-                ),
-                subtitle: Text(
-                  '${e.userName ?? 'Sistema'} • ${_dateTime.format(e.createdAt)}',
-                  style: TextStyle(color: t.textMuted, fontSize: 12),
-                ),
-                trailing: e.entityId != null
-                    ? Text('#${e.entityId}', style: TextStyle(color: t.textMuted, fontSize: 11))
-                    : null,
+                ],
               );
             },
-          ),
-        ),
-      ],
+            stickyHeader: Padding(
+              padding: EdgeInsets.fromLTRB(s.md, s.sm, s.md, s.sm),
+              child: Text(
+                'Eventos recentes',
+                style: Theme.of(context).textTheme.erpSectionTitle.copyWith(
+                      color: context.pharmaTokens.textPrimary,
+                    ),
+              ),
+            ),
+            hasMore: false,
+            isLoading: false,
+          );
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Eventos recentes',
+              style: Theme.of(context).textTheme.erpSectionTitle.copyWith(
+                    color: context.pharmaTokens.textPrimary,
+                  ),
+            ),
+            SizedBox(height: s.sm),
+            Expanded(
+              child: EnterpriseDataTable(
+                adaptive: false,
+                showCheckboxColumn: false,
+                columns: const [
+                  DataColumn(label: Text('TIPO')),
+                  DataColumn(label: Text('ENTIDADE')),
+                  DataColumn(label: Text('UTILIZADOR')),
+                  DataColumn(label: Text('DATA')),
+                  DataColumn(label: Text('ID')),
+                ],
+                rowCount: events.length,
+                rowBuilder: (context, index) {
+                  final e = events[index];
+                  return DataRow(
+                    cells: [
+                      DataCell(Text(e.type)),
+                      DataCell(Text(e.entity)),
+                      DataCell(Text(e.userName ?? 'Sistema')),
+                      DataCell(Text(_dateTime.format(e.createdAt))),
+                      DataCell(Text(e.entityId ?? '—')),
+                    ],
+                  );
+                },
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

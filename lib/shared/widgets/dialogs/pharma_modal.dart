@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/design_tokens.dart';
-import '../../../core/theme/spacing.dart';
+import '../../../core/theme/extensions.dart';
 
 Future<T?> showPharmaModalSheet<T>({
   required BuildContext context,
@@ -47,11 +47,14 @@ Future<T?> showPharmaModalSheet<T>({
                         children: [
                           Text(
                             title,
-                            style: Theme.of(ctx).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                            style: Theme.of(ctx).textTheme.erpCardTitle,
                           ),
                           if (subtitle != null) ...[
                             const SizedBox(height: AppSpacing.xs),
-                            Text(subtitle, style: Theme.of(ctx).textTheme.bodySmall?.copyWith(color: t.textMuted)),
+                            Text(
+                              subtitle,
+                              style: Theme.of(ctx).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
+                            ),
                           ],
                         ],
                       ),

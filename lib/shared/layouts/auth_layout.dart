@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/design_tokens.dart';
+import '../../core/theme/extensions.dart';
 import '../../core/theme/spacing.dart';
 import '../widgets/sync/offline_mode_banner.dart';
 
@@ -64,7 +65,7 @@ class AuthLayout extends StatelessWidget {
                               const SizedBox(width: AppSpacing.md),
                               Text(
                                 'Pharma ERP',
-                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                style: Theme.of(context).textTheme.erpCardTitle.copyWith(
                                       fontWeight: FontWeight.w700,
                                       letterSpacing: -0.5,
                                     ),

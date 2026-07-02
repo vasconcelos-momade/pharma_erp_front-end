@@ -15,8 +15,9 @@ class InventoryCatalogState {
     this.items = const <InventarioItem>[],
     this.query = '',
     this.page = 1,
-    this.pageSize = 50,
+    this.pageSize = 20,
     this.hasMore = false,
+    this.totalCount,
     this.isLoading = false,
     this.isInitialized = false,
     this.errorMessage,
@@ -28,9 +29,21 @@ class InventoryCatalogState {
   final int page;
   final int pageSize;
   final bool hasMore;
+  final int? totalCount;
   final bool isLoading;
   final bool isInitialized;
   final String? errorMessage;
+
+  int? get resolvedTotalCount {
+    if (totalCount != null) return totalCount;
+    if (!hasMore && items.isNotEmpty) {
+      return ((page - 1) * pageSize) + items.length;
+    }
+    if (hasMore) {
+      return (page * pageSize) + 1;
+    }
+    return items.isEmpty ? 0 : null;
+  }
 
   InventoryCatalogState copyWith({
     String? inventoryId,
@@ -39,10 +52,12 @@ class InventoryCatalogState {
     int? page,
     int? pageSize,
     bool? hasMore,
+    int? totalCount,
     bool? isLoading,
     bool? isInitialized,
     String? errorMessage,
     bool clearError = false,
+    bool clearTotalCount = false,
   }) {
     return InventoryCatalogState(
       inventoryId: inventoryId ?? this.inventoryId,
@@ -51,6 +66,7 @@ class InventoryCatalogState {
       page: page ?? this.page,
       pageSize: pageSize ?? this.pageSize,
       hasMore: hasMore ?? this.hasMore,
+      totalCount: clearTotalCount ? null : (totalCount ?? this.totalCount),
       isLoading: isLoading ?? this.isLoading,
       isInitialized: isInitialized ?? this.isInitialized,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
@@ -101,6 +117,19 @@ class InventoryCatalogController extends Notifier<InventoryCatalogState> {
     await fetchCurrentPage();
   }
 
+  Future<void> setPageSize(int pageSize) async {
+    final normalized = pageSize.clamp(5, 100);
+    if (normalized == state.pageSize) return;
+    state = state.copyWith(
+      page: 1,
+      pageSize: normalized,
+      isLoading: true,
+      clearError: true,
+      clearTotalCount: true,
+    );
+    await fetchCurrentPage();
+  }
+
   Future<void> refreshCurrentPage() async {
     await fetchCurrentPage(force: true);
   }
@@ -131,6 +160,7 @@ class InventoryCatalogController extends Notifier<InventoryCatalogState> {
           page: cached.page,
           pageSize: cached.pageSize,
           hasMore: cached.hasMore,
+          totalCount: cached.totalCount,
           isLoading: false,
           isInitialized: true,
           clearError: true,
@@ -159,6 +189,7 @@ class InventoryCatalogController extends Notifier<InventoryCatalogState> {
         page: response.page,
         pageSize: response.pageSize,
         hasMore: response.hasMore,
+        totalCount: response.totalCount,
         isLoading: false,
         isInitialized: true,
         clearError: true,

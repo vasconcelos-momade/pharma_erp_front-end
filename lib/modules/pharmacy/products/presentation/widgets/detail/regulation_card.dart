@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../../core/theme/design_tokens.dart';
+import '../../../../../../core/theme/extensions.dart';
 import '../../../../../../core/theme/spacing.dart';
 
 /// Secção de regulação com ícones de confirmação (✓ / ✗).
@@ -27,9 +28,7 @@ class RegulationCard extends StatelessWidget {
         children: [
           Text(
             title,
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
+            style: theme.textTheme.erpSectionTitle.copyWith(
               color: t.textPrimary,
             ),
           ),
@@ -83,11 +82,9 @@ class _RegulationRow extends StatelessWidget {
           Expanded(
             child: Text(
               item.label,
-              style: TextStyle(
-                color: t.textPrimary,
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-              ),
+              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
+                    color: t.textPrimary,
+                  ),
             ),
           ),
         ],

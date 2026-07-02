@@ -4,9 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/errors/api_failure.dart';
 import '../../../../core/security/secure_storage_service.dart';
 import '../../../../core/theme/design_tokens.dart';
+import '../../../../core/theme/extensions.dart';
+import '../../../../core/theme/spacing.dart';
 import '../../../../platform/printing/thermal/printer_connection.dart';
 import '../../../../platform/printing/thermal/printer_discovery.dart';
+import '../../../../shared/responsive/responsive_builder.dart';
+import '../../../../shared/widgets/cards/enterprise_list_card.dart';
 import '../../../../shared/widgets/feedback/module_data_states.dart';
+import '../../../../shared/widgets/layout/enterprise_mobile_scroll_list.dart';
 import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../../shared/widgets/tables/enterprise_data_table.dart';
 
@@ -64,10 +69,13 @@ class _PrintersPageState extends ConsumerState<PrintersPage> {
     }
   }
 
+  List<PrinterConnection> get _rows => [
+        ...?_defaultPrinter == null ? null : [_defaultPrinter!],
+        ..._discovered.where((printer) => printer.id != _defaultPrinter?.id),
+      ];
+
   @override
   Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
-
     return EnterpriseModuleHub(
       title: 'Impressoras térmicas',
       subtitle: 'ESC/POS, largura 58/80mm, cópias e vias.',
@@ -79,11 +87,14 @@ class _PrintersPageState extends ConsumerState<PrintersPage> {
           label: const Text('Atualizar'),
         ),
       ],
-      child: _buildBody(t),
+      child: ResponsiveBuilder(
+        builder: (context, constraints) =>
+            _buildBody(context, context.pharmaTokens, !constraints.isTabletOrWider),
+      ),
     );
   }
 
-  Widget _buildBody(PharmaTokens t) {
+  Widget _buildBody(BuildContext context, PharmaTokens t, bool isMobile) {
     if (_loading) return const ModuleLoadingState();
     if (_error != null) {
       return ModuleErrorState(
@@ -94,58 +105,86 @@ class _PrintersPageState extends ConsumerState<PrintersPage> {
       );
     }
 
-    final rows = <PrinterConnection>[
-      ...?_defaultPrinter == null ? null : [_defaultPrinter!],
-      ..._discovered.where(
-        (printer) => printer.id != _defaultPrinter?.id,
-      ),
-    ];
-
-    if (rows.isEmpty) {
+    if (_rows.isEmpty) {
       return const ModuleEmptyState(
         title: 'Nenhuma impressora configurada',
         subtitle: 'Configure uma impressora térmica no fluxo de impressão de faturas.',
       );
     }
 
+    if (isMobile) {
+      final s = context.spacing;
+      return EnterpriseMobileScrollList(
+        stickyHeader: ColoredBox(
+          color: t.bgPrimary,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(s.md, s.sm, s.md, s.sm),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Impressoras disponíveis',
+                    style: Theme.of(context).textTheme.erpSectionTitle.copyWith(
+                          color: t.textPrimary,
+                        ),
+                  ),
+                ),
+                IconButton(onPressed: _load, icon: const Icon(Icons.refresh_rounded)),
+              ],
+            ),
+          ),
+        ),
+        itemCount: _rows.length,
+        itemBuilder: (context, index) {
+          final printer = _rows[index];
+          final isDefault = printer.id == _defaultPrinter?.id;
+          return EnterpriseListCard(
+            leading: Icons.print_outlined,
+            title: printer.label,
+            subtitle: printer.summary,
+            chip: EnterpriseStatusChip(
+              label: isDefault ? 'Predefinida' : 'Disponível',
+              color: isDefault ? t.brandGreen : t.textMuted,
+            ),
+          );
+        },
+        hasMore: false,
+        isLoading: false,
+        emptyMessage: 'Nenhuma impressora configurada',
+      );
+    }
+
     return EnterpriseDataTable(
+      adaptive: false,
+      showCheckboxColumn: false,
       columns: [
         for (final label in ['Nome', 'Ligação', 'Estado'])
           DataColumn(
             label: Text(
               label.toUpperCase(),
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-                letterSpacing: 1.2,
-                color: t.textMuted,
-              ),
+              style: Theme.of(context).textTheme.erpOverline.copyWith(color: t.textMuted),
             ),
           ),
       ],
-      rowCount: rows.length,
+      rowCount: _rows.length,
       rowBuilder: (context, index) {
-        final printer = rows[index];
+        final printer = _rows[index];
         final isDefault = printer.id == _defaultPrinter?.id;
         return DataRow(
           cells: [
             DataCell(Text(
               printer.label,
-              style: TextStyle(
-                color: t.textPrimary,
-                fontWeight: FontWeight.w800,
-              ),
+              style: Theme.of(context).textTheme.erpCardTitle.copyWith(color: t.textPrimary),
             )),
             DataCell(Text(
               printer.summary,
-              style: TextStyle(color: t.textSecondary),
+              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textSecondary),
             )),
             DataCell(Text(
               isDefault ? 'Predefinida' : 'Disponível',
-              style: TextStyle(
-                color: isDefault ? t.brandGreen : t.textMuted,
-                fontWeight: FontWeight.w800,
-              ),
+              style: Theme.of(context).textTheme.erpLabel.copyWith(
+                    color: isDefault ? t.brandGreen : t.textMuted,
+                  ),
             )),
           ],
         );

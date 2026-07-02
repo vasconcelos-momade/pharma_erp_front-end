@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/design_tokens.dart';
+import '../../../../core/theme/extensions.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../pharmacy/products/presentation/providers/product_provider.dart';
 import '../../domain/entities/requisicao.dart';
@@ -44,15 +45,16 @@ class RequisicaoMobilePurchaseSummaryBar extends StatelessWidget {
                   children: [
                     Text(
                       '${requisicao.totalItens} item${requisicao.totalItens == 1 ? '' : 's'}',
-                      style: TextStyle(
-                        color: t.textPrimary,
-                        fontWeight: FontWeight.w800,
-                      ),
+                      style: Theme.of(context).textTheme.erpCardTitle.copyWith(
+                            color: t.textPrimary,
+                          ),
                     ),
                     SizedBox(height: s.xxs),
                     Text(
                       'Total: ${requisicaoFormatMoney(total)}',
-                      style: TextStyle(color: t.textMuted),
+                      style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
+                            color: t.textMuted,
+                          ),
                     ),
                   ],
                 ),

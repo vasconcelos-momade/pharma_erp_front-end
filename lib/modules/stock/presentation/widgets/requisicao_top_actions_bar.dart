@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/design_tokens.dart';
+import '../../../../core/theme/extensions.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../shared/widgets/buttons/pharma_button_loader.dart';
 
@@ -56,7 +57,7 @@ class RequisicaoTipoSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
-    final theme = Theme.of(context);
+    final textTheme = Theme.of(context).textTheme;
 
     return SegmentedButton<String>(
       showSelectedIcon: false,
@@ -77,9 +78,7 @@ class RequisicaoTipoSelector extends StatelessWidget {
               ? t.textPrimary
               : t.textMuted;
         }),
-        textStyle: WidgetStateProperty.all(
-          theme.textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
-        ),
+        textStyle: WidgetStateProperty.all(textTheme.erpLabel),
         shape: WidgetStateProperty.all(
           RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(t.radiusMd),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/theme/extensions.dart';
 import '../../../core/theme/pharma_surface.dart';
 
 /// Densidade visual do KPI (balcão / tablet compacto / desktop).
@@ -39,6 +40,7 @@ class EnterpriseStatCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
+    final textTheme = context.typography;
     final compact = density == StatCardDensity.compact;
     final (Color fg, Color bg) = switch (accent) {
       StatCardAccent.positive => (t.brandGreen, t.brandGreen.withValues(alpha: 0.1)),
@@ -49,12 +51,22 @@ class EnterpriseStatCard extends StatelessWidget {
     };
 
     final pad = compact ? const EdgeInsets.fromLTRB(10, 8, 10, 8) : const EdgeInsets.all(16);
-    final titleSize = compact ? 9.0 : 10.0;
-    final valueSize = compact ? 16.0 : 26.0;
     final iconBox = compact ? 5.0 : 8.0;
     final iconSize = compact ? 15.0 : 18.0;
     final gapAfterHeader = compact ? 4.0 : 10.0;
     final gapBeforeSubtitle = compact ? 2.0 : 8.0;
+    final titleStyle = AppTypography.kpiLabel(textTheme, compact: compact).copyWith(
+      color: t.textMuted,
+    );
+    final valueStyle = AppTypography.kpiValue(textTheme, compact: compact).copyWith(
+      letterSpacing: -0.3,
+      height: 1.0,
+      color: accent == StatCardAccent.danger
+          ? t.posDanger
+          : accent == StatCardAccent.info
+              ? t.brandBlue
+              : t.textPrimary,
+    );
 
     final content = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -67,13 +79,7 @@ class EnterpriseStatCard extends StatelessWidget {
                 title.toUpperCase(),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: titleSize,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: compact ? 1.2 : 1.8,
-                  color: t.textMuted,
-                  height: 1.1,
-                ),
+                style: titleStyle,
               ),
             ),
             if (badge != null)
@@ -87,12 +93,7 @@ class EnterpriseStatCard extends StatelessWidget {
                   ),
                   child: Text(
                     badge!,
-                    style: TextStyle(
-                      fontSize: 7.5,
-                      fontWeight: FontWeight.w900,
-                      color: fg,
-                      letterSpacing: 0.5,
-                    ),
+                    style: textTheme.erpOverline.copyWith(color: fg),
                   ),
                 ),
               ),
@@ -111,17 +112,7 @@ class EnterpriseStatCard extends StatelessWidget {
           value,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: valueSize,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -0.3,
-            height: 1.0,
-            color: accent == StatCardAccent.danger
-                ? t.posDanger
-                : accent == StatCardAccent.info
-                    ? t.brandBlue
-                    : t.textPrimary,
-          ),
+          style: valueStyle,
         ),
         if (subtitle != null && subtitle!.isNotEmpty) ...[
           SizedBox(height: gapBeforeSubtitle),
@@ -129,12 +120,7 @@ class EnterpriseStatCard extends StatelessWidget {
             subtitle!,
             maxLines: compact ? 1 : 2,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: compact ? 9.5 : 11,
-              fontWeight: FontWeight.w600,
-              color: t.textMuted,
-              height: 1.1,
-            ),
+            style: textTheme.erpCaption.copyWith(color: t.textMuted, height: 1.1),
           ),
         ],
       ],

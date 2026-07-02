@@ -5,10 +5,11 @@ import 'pharma_color_tokens.dart';
 import 'elevation.dart';
 import 'shadows.dart';
 import 'motion.dart';
+import 'typography.dart';
 import 'breakpoints.dart';
-
 import 'pharma_radius_tokens.dart';
 
+export 'typography.dart' show EnterpriseTextTheme, AppTypography;
 export 'spacing.dart';
 export 'radius.dart';
 export 'elevation.dart';
@@ -67,11 +68,11 @@ extension ThemeContextExtension on BuildContext {
         scheme: Theme.of(this).colorScheme,
       );
 
-  /// Espaçamentos do design system
-  DensityTokens get spacing => tokens.density;
-
-  /// Typography (TextTheme)
+  /// Typography (TextTheme + papéis ERP)
   TextTheme get typography => Theme.of(this).textTheme;
+
+  /// Título de página no conteúdo (responsivo).
+  TextStyle get erpPageTitle => AppTypography.pageTitle(this);
 
   /// Radius
   PharmaRadiusTokens get radius =>

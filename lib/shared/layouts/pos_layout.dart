@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../app/router/routes.dart';
 import '../../core/theme/design_tokens.dart';
+import '../../core/theme/extensions.dart';
 import '../../core/theme/dimensions.dart';
 import '../../core/theme/spacing.dart';
 import '../../modules/sales/pdv/presentation/providers/caixa_sessao_provider.dart';
@@ -93,10 +94,7 @@ class PosLayout extends ConsumerWidget {
                             'Pharma ERP — PDV',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleSmall
-                                ?.copyWith(
+                            style: Theme.of(context).textTheme.erpTabLabel.copyWith(
                                   fontWeight: FontWeight.w800,
                                   fontSize: narrow ? 13 : null,
                                 ),
@@ -106,10 +104,7 @@ class PosLayout extends ConsumerWidget {
                               subtitle,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .labelSmall
-                                  ?.copyWith(color: t.textMuted),
+                              style: Theme.of(context).textTheme.erpOverline.copyWith(color: t.textMuted),
                             ),
                         ],
                       ),
@@ -145,7 +140,7 @@ class PosLayout extends ConsumerWidget {
                                   : Icon(caixaIcon, color: caixaColor),
                               label: Text(
                                 caixaLabel,
-                                style: TextStyle(color: caixaColor),
+                                style: Theme.of(context).textTheme.erpTabLabel.copyWith(color: caixaColor),
                               ),
                               style: OutlinedButton.styleFrom(
                                 side: BorderSide(
@@ -180,10 +175,7 @@ class PosLayout extends ConsumerWidget {
                         ),
                         label: Text(
                           'Sair do PDV',
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelMedium
-                              ?.copyWith(color: t.textSecondary),
+                          style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textSecondary),
                         ),
                       ),
                   ],
@@ -218,10 +210,7 @@ class PosLayout extends ConsumerWidget {
                   const Spacer(),
                   Text(
                     'Multi-caixa • Impressão térmica',
-                    style: Theme.of(context)
-                        .textTheme
-                        .labelSmall
-                        ?.copyWith(color: t.textMuted),
+                    style: Theme.of(context).textTheme.erpOverline.copyWith(color: t.textMuted),
                   ),
                 ],
               ),
@@ -254,7 +243,7 @@ class _ShortcutChip extends StatelessWidget {
           const SizedBox(width: AppSpacing.xs),
           Text(
             label,
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(color: t.textSecondary),
+            style: Theme.of(context).textTheme.erpOverline.copyWith(color: t.textSecondary),
           ),
         ],
       ),

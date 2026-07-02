@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/design_tokens.dart';
-import '../../../core/theme/spacing.dart';
+import '../../../core/theme/extensions.dart';
 import '../../responsive/pharma_screen_layout.dart';
 import '../cards/enterprise_kpi_grid.dart';
 
@@ -37,11 +37,8 @@ class EnterpriseModuleHub extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
     final size = context.pharmaScreen;
-    final titleStyle = switch (size) {
-      PharmaScreenSize.mobile => Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
-      PharmaScreenSize.tablet => Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
-      PharmaScreenSize.desktop => Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800),
-    };
+    final textTheme = context.typography;
+    final titleStyle = context.erpPageTitle.copyWith(color: t.textPrimary);
 
     final hasHeaderTexts = (title != null && title!.isNotEmpty) || (subtitle != null && subtitle!.isNotEmpty) || (tag != null && tag!.isNotEmpty);
 
@@ -60,11 +57,7 @@ class EnterpriseModuleHub extends StatelessWidget {
                   if (tag != null && tag!.isNotEmpty) ...[
                   Text(
                     tag!.toUpperCase(),
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: t.brandBlue,
-                          letterSpacing: size == PharmaScreenSize.mobile ? 1.4 : 2.2,
-                          fontSize: size == PharmaScreenSize.mobile ? 9 : null,
-                        ),
+                    style: textTheme.erpOverline.copyWith(color: t.brandBlue),
                   ),
                   SizedBox(height: size == PharmaScreenSize.mobile ? 2 : AppSpacing.xs),
                   ],
@@ -73,7 +66,7 @@ class EnterpriseModuleHub extends StatelessWidget {
                     title!,
                     maxLines: size == PharmaScreenSize.mobile ? 2 : 3,
                     overflow: TextOverflow.ellipsis,
-                    style: titleStyle?.copyWith(color: t.textPrimary),
+                    style: titleStyle,
                   ),
                   SizedBox(height: size == PharmaScreenSize.mobile ? 4 : AppSpacing.sm),
                   ],
@@ -82,9 +75,8 @@ class EnterpriseModuleHub extends StatelessWidget {
                     subtitle!,
                     maxLines: size == PharmaScreenSize.mobile ? 2 : 3,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    style: textTheme.erpBodySecondary.copyWith(
                           color: t.textMuted,
-                          fontSize: size == PharmaScreenSize.mobile ? 12 : null,
                           height: 1.3,
                         ),
                   ),

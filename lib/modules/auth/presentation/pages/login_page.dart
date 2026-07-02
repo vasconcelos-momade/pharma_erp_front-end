@@ -9,6 +9,7 @@ import '../../../../core/config/api_host_resolver.dart';
 import '../../../../core/network/connectivity/connection_mode.dart';
 import '../../../../core/network/connectivity/connection_status.dart';
 import '../../../../core/theme/design_tokens.dart';
+import '../../../../core/theme/extensions.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../shared/layouts/auth_layout.dart';
 import '../../../../shared/responsive/pharma_screen_layout.dart';
@@ -116,7 +117,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               Text(
                 '© 2026 Pharma ERP — Operação crítica com auditoria e rastreio ANARME.',
                 textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(color: t.textMuted),
+                style: Theme.of(context).textTheme.erpOverline.copyWith(color: t.textMuted),
               ),
             ],
           ),
@@ -159,9 +160,7 @@ class _LoginFormPanel extends StatelessWidget {
       children: [
         Text(
           'Iniciar sessão',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: t.textMuted,
-              ),
+          style: Theme.of(context).textTheme.erpCardTitle.copyWith(color: t.textMuted),
         ),
         SizedBox(height: s.sm),
         Wrap(
@@ -303,10 +302,7 @@ class _StatusChip extends StatelessWidget {
           const SizedBox(width: AppSpacing.xs),
           Text(
             label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: color,
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(context).textTheme.erpLabel.copyWith(color: color),
           ),
         ],
       ),

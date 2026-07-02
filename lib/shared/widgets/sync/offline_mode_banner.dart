@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/theme/extensions.dart';
 import '../../../core/theme/spacing.dart';
 
 class OfflineModeBanner extends StatelessWidget {
@@ -30,7 +31,7 @@ class OfflineModeBanner extends StatelessWidget {
               Expanded(
                 child: Text(
                   message,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  style: Theme.of(context).textTheme.erpCaption.copyWith(
                         color: t.textPrimary,
                         fontWeight: FontWeight.w600,
                       ),

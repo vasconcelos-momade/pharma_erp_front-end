@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/responsive/pharma_screen_layout.dart';
 import '../providers/invoice_list_provider.dart';
@@ -77,7 +78,7 @@ class InvoicesInfoBanner extends StatelessWidget {
               state.errorMessage != null
                   ? 'A mostrar cache em memória. ${state.errorMessage}'
                   : 'A mostrar cache instantânea enquanto a API sincroniza.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              style: Theme.of(context).textTheme.erpCaption.copyWith(
                     color: t.textPrimary,
                     fontWeight: FontWeight.w600,
                   ),
@@ -113,7 +114,7 @@ class InvoicesErrorState extends StatelessWidget {
             SizedBox(height: s.md),
             Text(
               'Falha ao carregar faturas',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              style: Theme.of(context).textTheme.erpTabLabel.copyWith(
                     color: t.textPrimary,
                     fontWeight: FontWeight.w800,
                   ),
@@ -121,7 +122,7 @@ class InvoicesErrorState extends StatelessWidget {
             SizedBox(height: s.sm),
             Text(
               message,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
                     color: t.textMuted,
                   ),
               textAlign: TextAlign.center,
@@ -156,7 +157,7 @@ class InvoicesEmptyState extends StatelessWidget {
           SizedBox(height: s.md),
           Text(
             'Nenhuma fatura encontrada',
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            style: Theme.of(context).textTheme.erpTabLabel.copyWith(
                   color: t.textPrimary,
                   fontWeight: FontWeight.w800,
                 ),
@@ -166,7 +167,7 @@ class InvoicesEmptyState extends StatelessWidget {
             onClearFilters != null
                 ? 'Tenta limpar os filtros para ver mais resultados.'
                 : 'Ainda não existem faturas disponíveis para esta unidade.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
                   color: t.textMuted,
                 ),
           ),

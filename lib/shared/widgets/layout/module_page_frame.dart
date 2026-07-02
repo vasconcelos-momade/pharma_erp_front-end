@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/design_tokens.dart';
-import '../../../core/theme/spacing.dart';
+import '../../../core/theme/extensions.dart';
 
 /// Moldura comum para páginas de módulo (título opcional + conteúdo scrollável).
 class ModulePageFrame extends StatelessWidget {
@@ -25,7 +25,6 @@ class ModulePageFrame extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
     final s = context.spacing;
-    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -37,11 +36,7 @@ class ModulePageFrame extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title!,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      color: t.textPrimary,
-                      fontWeight: FontWeight.w900,
-                      fontStyle: FontStyle.italic,
-                    ),
+                    style: context.erpPageTitle.copyWith(color: t.textPrimary),
                   ),
                 )
               else

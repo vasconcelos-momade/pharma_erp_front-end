@@ -6,6 +6,7 @@ import '../../../../../core/constants/api_constants.dart';
 import '../../../../../core/contracts/api_envelope.dart';
 import '../../../../../core/network/dio/dio_provider.dart';
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../data/datasources/product_remote_datasource.dart';
@@ -353,9 +354,7 @@ class _GeneralTab extends StatelessWidget {
             children: [
               Text(
                 'Situação do produto',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
+                style: Theme.of(context).textTheme.erpCaption.copyWith(
                       color: context.pharmaTokens.textMuted,
                     ),
               ),
@@ -463,7 +462,9 @@ class _LotesTab extends StatelessWidget {
       return Center(
         child: Text(
           'Sem lotes',
-          style: TextStyle(color: context.pharmaTokens.textMuted),
+          style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
+                color: context.pharmaTokens.textMuted,
+              ),
         ),
       );
     }
@@ -489,7 +490,14 @@ class _SimpleListTab extends StatelessWidget {
     final s = context.spacing;
 
     if (items.isEmpty) {
-      return Center(child: Text(empty, style: TextStyle(color: t.textMuted)));
+      return Center(
+        child: Text(
+          empty,
+          style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
+                color: t.textMuted,
+              ),
+        ),
+      );
     }
 
     return ListView.separated(
@@ -500,7 +508,9 @@ class _SimpleListTab extends StatelessWidget {
         padding: EdgeInsets.symmetric(vertical: s.sm),
         child: Text(
           items[index],
-          style: TextStyle(color: t.textPrimary, fontSize: 14),
+          style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
+                color: t.textPrimary,
+              ),
         ),
       ),
     );

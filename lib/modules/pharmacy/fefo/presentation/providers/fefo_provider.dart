@@ -16,6 +16,8 @@ class FefoViewState {
     this.pageSize = 20,
     this.hasMoreOverview = false,
     this.hasMoreAudit = false,
+    this.totalCountOverview,
+    this.totalCountAudit,
     this.lastUpdated,
   });
 
@@ -29,6 +31,8 @@ class FefoViewState {
   final int pageSize;
   final bool hasMoreOverview;
   final bool hasMoreAudit;
+  final int? totalCountOverview;
+  final int? totalCountAudit;
   final DateTime? lastUpdated;
 
   FefoViewState copyWith({
@@ -43,6 +47,8 @@ class FefoViewState {
     int? pageSize,
     bool? hasMoreOverview,
     bool? hasMoreAudit,
+    int? totalCountOverview,
+    int? totalCountAudit,
     DateTime? lastUpdated,
   }) {
     return FefoViewState(
@@ -56,6 +62,8 @@ class FefoViewState {
       pageSize: pageSize ?? this.pageSize,
       hasMoreOverview: hasMoreOverview ?? this.hasMoreOverview,
       hasMoreAudit: hasMoreAudit ?? this.hasMoreAudit,
+      totalCountOverview: totalCountOverview ?? this.totalCountOverview,
+      totalCountAudit: totalCountAudit ?? this.totalCountAudit,
       lastUpdated: lastUpdated ?? this.lastUpdated,
     );
   }
@@ -169,6 +177,8 @@ class FefoViewController extends AsyncNotifier<FefoViewState> {
       pageAudit: auditResponse.page,
       hasMoreOverview: overviewResponse.hasMore,
       hasMoreAudit: auditResponse.hasMore,
+      totalCountOverview: overviewResponse.totalCount,
+      totalCountAudit: auditResponse.totalCount,
       lastUpdated: now,
     );
     _cache = next;

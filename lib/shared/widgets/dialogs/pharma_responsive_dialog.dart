@@ -4,6 +4,7 @@ import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_shadows.dart';
 import '../../../core/theme/design_metrics.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/theme/extensions.dart';
 
 enum PharmaDialogBreakpoint {
   mobile,
@@ -133,9 +134,8 @@ class PharmaResponsiveDialog extends StatelessWidget {
                 Padding(
                   padding: titlePadding,
                   child: DefaultTextStyle.merge(
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    style: Theme.of(context).textTheme.erpCardTitle.copyWith(
                           color: t.textPrimary,
-                          fontWeight: FontWeight.w700,
                         ),
                     child: title,
                   ),

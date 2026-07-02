@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/report_paths.dart';
 import '../../../../core/extensions/async_value_extensions.dart';
-import '../../../../core/theme/spacing.dart';
 import '../../../../shared/widgets/cards/enterprise_kpi_grid.dart';
 import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../../shared/widgets/navigation/app_nav_config.dart';
@@ -37,6 +36,7 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
       subtitle: 'Movimentos de despesa, compras e reembolsos.',
       tag: AppNavSections.finance,
       scrollable: true,
+      mobileKpisHorizontalScroll: true,
       actions: [
         ...financeReportActions(
           ref: ref,

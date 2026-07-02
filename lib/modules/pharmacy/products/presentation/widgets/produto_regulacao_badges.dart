@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../domain/entities/product.dart';
 
 class ProdutoRegulacaoBadges extends StatelessWidget {
@@ -33,10 +34,9 @@ class ProdutoRegulacaoBadges extends StatelessWidget {
     if (badges.isEmpty) {
       return Text(
         _dispensacaoLabel(product.tipoDispensacao),
-        style: TextStyle(
-          color: context.pharmaTokens.textMuted,
-          fontSize: 12,
-        ),
+        style: Theme.of(context).textTheme.erpCaption.copyWith(
+              color: context.pharmaTokens.textMuted,
+            ),
       );
     }
 
@@ -86,7 +86,7 @@ class _Badge extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.w600),
+        style: Theme.of(context).textTheme.erpCaption.copyWith(color: color),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/theme/extensions.dart';
 import '../../../core/theme/spacing.dart';
 import '../../navigation/adaptive_navigator.dart';
 
@@ -44,7 +45,7 @@ class _SearchableDropdownFieldState<T> extends State<SearchableDropdownField<T>>
       children: [
         Text(
           widget.label,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(color: t.textMuted),
+          style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
         ),
         const SizedBox(height: AppSpacing.sm),
         InkWell(
@@ -57,7 +58,7 @@ class _SearchableDropdownFieldState<T> extends State<SearchableDropdownField<T>>
                   backgroundColor: t.card,
                   title: Text(
                     'Seleccionar',
-                    style: TextStyle(color: t.textPrimary),
+                    style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textPrimary),
                   ),
                   content: SizedBox(
                     width: 420,
@@ -92,7 +93,7 @@ class _SearchableDropdownFieldState<T> extends State<SearchableDropdownField<T>>
                                   return ListTile(
                                     title: Text(
                                       widget.display(item),
-                                      style: TextStyle(color: t.textPrimary),
+                                      style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textPrimary),
                                     ),
                                     onTap: () => AdaptiveNavigator.complete(
                                       panelContext,
@@ -122,7 +123,7 @@ class _SearchableDropdownFieldState<T> extends State<SearchableDropdownField<T>>
             ),
             child: Text(
               _selected == null ? 'Toque para escolher' : widget.display(_selected as T),
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
                     color: _selected == null ? t.textMuted : t.textPrimary,
                     fontWeight: FontWeight.w600,
                   ),

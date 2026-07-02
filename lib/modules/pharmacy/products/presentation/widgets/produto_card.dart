@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../domain/entities/product.dart';
 import 'detail/status_badge.dart';
@@ -53,9 +54,8 @@ class ProdutoCard extends StatelessWidget {
                       children: [
                         Text(
                           product.nome,
-                          style: theme.textTheme.titleSmall?.copyWith(
+                          style: theme.textTheme.erpLabel.copyWith(
                             color: t.textPrimary,
-                            fontWeight: FontWeight.w700,
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -64,7 +64,7 @@ class ProdutoCard extends StatelessWidget {
                           SizedBox(height: s.xxs),
                           Text(
                             'Substância activa: $substancia',
-                            style: theme.textTheme.bodySmall?.copyWith(
+                            style: theme.textTheme.erpCaption.copyWith(
                               color: t.textSecondary,
                             ),
                             maxLines: 1,
@@ -104,7 +104,7 @@ class ProdutoCard extends StatelessWidget {
               SizedBox(height: s.xs),
               Text(
                 product.dosagem ?? '—',
-                style: theme.textTheme.bodySmall?.copyWith(color: t.textMuted),
+                style: theme.textTheme.erpCaption.copyWith(color: t.textMuted),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -115,16 +115,15 @@ class ProdutoCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       product.forma ?? '—',
-                      style: theme.textTheme.bodySmall?.copyWith(color: t.textMuted),
+                      style: theme.textTheme.erpCaption.copyWith(color: t.textMuted),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   Text(
                     'Stock: ${_formatNumber(product.estoqueAtual)}',
-                    style: theme.textTheme.bodySmall?.copyWith(
+                    style: theme.textTheme.erpLabel.copyWith(
                       color: lowStock ? t.posDanger : t.textMuted,
-                      fontWeight: FontWeight.w600,
                     ),
                   ),
                 ],

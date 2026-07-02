@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../domain/entities/product.dart';
 import 'detail/status_badge.dart';
@@ -94,15 +95,14 @@ class ProdutoTable extends StatelessWidget {
                 children: [
                   Text(
                     _formatNumber(product.estoqueAtual),
-                    style: theme.textTheme.bodyMedium?.copyWith(
+                    style: theme.textTheme.erpLabel.copyWith(
                       color: lowStock ? t.posDanger : t.textPrimary,
-                      fontWeight: lowStock ? FontWeight.w700 : FontWeight.w600,
                     ),
                   ),
                   if (product.estoqueMinimo > 0)
                     Text(
                       'Mín. ${_formatNumber(product.estoqueMinimo)}',
-                      style: theme.textTheme.labelSmall?.copyWith(
+                      style: theme.textTheme.erpCaption.copyWith(
                         color: t.textMuted,
                       ),
                     ),
@@ -140,12 +140,9 @@ class ProdutoTable extends StatelessWidget {
       numeric: numeric,
       label: Text(
         label.toUpperCase(),
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 1.2,
-          color: t.textMuted,
-        ),
+        style: Theme.of(context).textTheme.erpOverline.copyWith(
+              color: t.textMuted,
+            ),
       ),
       onSort: onSort == null ? null : (_, _) => onSort(),
     );
@@ -162,9 +159,8 @@ class ProdutoTable extends StatelessWidget {
       children: [
         Text(
           product.nome,
-          style: theme.textTheme.titleSmall?.copyWith(
+          style: theme.textTheme.erpLabel.copyWith(
             color: t.textPrimary,
-            fontWeight: FontWeight.w700,
           ),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
@@ -173,7 +169,7 @@ class ProdutoTable extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             'Substância activa: $substancia',
-            style: theme.textTheme.bodySmall?.copyWith(
+            style: theme.textTheme.erpCaption.copyWith(
               color: t.textSecondary,
             ),
             maxLines: 1,
@@ -188,7 +184,7 @@ class ProdutoTable extends StatelessWidget {
     final t = context.pharmaTokens;
     return Text(
       _orDash(value),
-      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+      style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
             color: t.textSecondary,
           ),
     );
