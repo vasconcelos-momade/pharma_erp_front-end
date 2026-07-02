@@ -55,12 +55,6 @@ class _AuditTimelinePageState extends ConsumerState<AuditTimelinePage> {
       subtitle: 'Imutável, assinado e correlacionado a utilizador/terminal.',
       tag: 'Auditoria',
       actions: [
-        ...auditReportActions(
-          ref: ref,
-          enabled: state.isInitialized && !state.isBusy,
-          path: ReportPaths.auditTimeline,
-          queryParameters: auditReportQueryFromAuditQuery(state.query, useType: true),
-        ),
         OutlinedButton.icon(
           onPressed: state.isBusy ? null : notifier.refresh,
           icon: const Icon(Icons.refresh_rounded),
@@ -93,11 +87,6 @@ class _AuditTimelinePageState extends ConsumerState<AuditTimelinePage> {
       ),
       child: Column(
         children: [
-          if (auditReportError(ref) != null)
-            Padding(
-              padding: EdgeInsets.only(bottom: s.sm),
-              child: auditReportError(ref),
-            ),
           Expanded(child: _buildBody(context, state, notifier)),
         ],
       ),

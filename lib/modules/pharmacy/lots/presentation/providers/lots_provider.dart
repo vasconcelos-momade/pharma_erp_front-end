@@ -16,6 +16,7 @@ class LotsViewState {
     this.hasMore = false,
     this.totalCount,
     this.lastUpdated,
+    this.actionLoteId,
   });
 
   final Map<String, dynamic>? dashboard;
@@ -29,6 +30,7 @@ class LotsViewState {
   final bool hasMore;
   final int? totalCount;
   final DateTime? lastUpdated;
+  final String? actionLoteId;
 
   LotsViewState copyWith({
     Map<String, dynamic>? dashboard,
@@ -45,6 +47,8 @@ class LotsViewState {
     bool? hasMore,
     int? totalCount,
     DateTime? lastUpdated,
+    String? actionLoteId,
+    bool clearActionLoteId = false,
   }) {
     return LotsViewState(
       dashboard: dashboard ?? this.dashboard,
@@ -62,6 +66,8 @@ class LotsViewState {
       hasMore: hasMore ?? this.hasMore,
       totalCount: totalCount ?? this.totalCount,
       lastUpdated: lastUpdated ?? this.lastUpdated,
+      actionLoteId:
+          clearActionLoteId ? null : (actionLoteId ?? this.actionLoteId),
     );
   }
 }
@@ -149,6 +155,56 @@ class LotsViewController extends AsyncNotifier<LotsViewState> {
     state = await AsyncValue.guard(
       () => _load(current.copyWith(pageSize: pageSize, page: 1), force: true),
     );
+  }
+
+  Future<void> moveToQuarentena({
+    required String loteId,
+    required num quantidade,
+    required String motivo,
+    String? documentoReferencia,
+  }) async {
+    final current = state.valueOrNull ?? _cache ?? const LotsViewState();
+    state = AsyncData(current.copyWith(actionLoteId: loteId));
+    try {
+      final ds = ref.read(inventoryRemoteDataSourceProvider);
+      await ds.moveLoteToQuarentena(
+        loteId,
+        quantidade: quantidade,
+        motivo: motivo,
+        documentoReferencia: documentoReferencia,
+      );
+      await refresh(force: true);
+    } finally {
+      final latest = state.valueOrNull ?? current;
+      if (latest.actionLoteId == loteId) {
+        state = AsyncData(latest.copyWith(clearActionLoteId: true));
+      }
+    }
+  }
+
+  Future<void> revertQuarentena({
+    required String loteId,
+    required String motivo,
+    num? quantidade,
+    String? documentoReferencia,
+  }) async {
+    final current = state.valueOrNull ?? _cache ?? const LotsViewState();
+    state = AsyncData(current.copyWith(actionLoteId: loteId));
+    try {
+      final ds = ref.read(inventoryRemoteDataSourceProvider);
+      await ds.revertLoteQuarentena(
+        loteId,
+        quantidade: quantidade,
+        motivo: motivo,
+        documentoReferencia: documentoReferencia,
+      );
+      await refresh(force: true);
+    } finally {
+      final latest = state.valueOrNull ?? current;
+      if (latest.actionLoteId == loteId) {
+        state = AsyncData(latest.copyWith(clearActionLoteId: true));
+      }
+    }
   }
 
   Future<LotsViewState> _load(LotsViewState current, {required bool force}) async {

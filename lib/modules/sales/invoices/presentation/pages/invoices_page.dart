@@ -5,6 +5,7 @@ import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../reports/presentation/controllers/report_controller.dart';
+import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/responsive/pharma_screen_layout.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
@@ -77,35 +78,31 @@ class _SalesInvoicesPageState extends ConsumerState<SalesInvoicesPage> {
           'Histórico operacional do POS com pesquisa, filtros rápidos, cache em memória e cancelamento seguro.',
       tag: 'Terminal',
       actions: [
-        OutlinedButton.icon(
-          onPressed: listState.items.isEmpty || reportState.isSubmitting
-              ? null
-              : () => reportController.exportCsv(
-                    path: ReportPaths.invoices,
-                    queryParameters: reportQuery,
-                  ),
-          icon: const Icon(Icons.download_outlined),
-          label: const Text('Exportar CSV'),
-        ),
-        OutlinedButton.icon(
-          onPressed: listState.items.isEmpty || reportState.isSubmitting
-              ? null
-              : () => reportController.exportExcel(
-                    path: ReportPaths.invoices,
-                    queryParameters: reportQuery,
-                  ),
-          icon: const Icon(Icons.table_view_outlined),
-          label: const Text('Exportar Excel'),
-        ),
-        OutlinedButton.icon(
-          onPressed: listState.items.isEmpty || reportState.isSubmitting
-              ? null
-              : () => reportController.downloadPdf(
-                    path: ReportPaths.invoices,
-                    queryParameters: reportQuery,
-                  ),
-          icon: const Icon(Icons.picture_as_pdf_outlined),
-          label: const Text('Exportar PDF'),
+        PopupMenuButton<String>(
+          enabled: listState.items.isNotEmpty && !reportState.isSubmitting,
+          tooltip: 'Exportar',
+          onSelected: (value) {
+            if (value == 'pdf') {
+              reportController.downloadPdf(
+                path: ReportPaths.invoices,
+                queryParameters: reportQuery,
+              );
+              return;
+            }
+            reportController.exportCsv(
+              path: ReportPaths.invoices,
+              queryParameters: reportQuery,
+            );
+          },
+          itemBuilder: (context) => const [
+            PopupMenuItem<String>(value: 'pdf', child: Text('Exportar PDF')),
+            PopupMenuItem<String>(value: 'csv', child: Text('Exportar CSV')),
+          ],
+          child: OutlinedButton.icon(
+            onPressed: null,
+            icon: Icon(Icons.download_outlined),
+            label: Text('Exportar'),
+          ),
         ),
         OutlinedButton.icon(
           onPressed: listState.isBusy
@@ -128,57 +125,35 @@ class _SalesInvoicesPageState extends ConsumerState<SalesInvoicesPage> {
 
   Future<void> _openDetails(InvoiceSummary invoice) async {
     ref.read(invoiceDetailProvider.notifier).open(invoice);
-    final isMobile = PharmaScreenLayout.isMobile(context);
 
-    if (isMobile) {
-      await Navigator.of(context).push<void>(
-        MaterialPageRoute(
-          builder: (screenContext) => InvoiceDetailScreen(
+    await AdaptiveNavigator.openPanel<void>(
+      context: context,
+      routeSettings: RouteSettings(name: '/faturas/${invoice.id}'),
+      builder: (detailContext) {
+        if (AdaptiveNavigator.isMobile(detailContext)) {
+          return InvoiceDetailScreen(
             invoice: invoice,
             onCancel: invoice.isCancelled
                 ? null
                 : () {
-                    Navigator.of(screenContext).pop();
+                    AdaptiveNavigator.close(detailContext);
                     _confirmCancelInvoice(invoice);
                   },
-          ),
-        ),
-      );
-      ref.read(invoiceDetailProvider.notifier).close();
-      return;
-    }
-
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: true,
-      builder: (dialogContext) {
-        final t = context.pharmaTokens;
-        final s = context.spacing;
-        return Dialog(
-          alignment: Alignment.centerRight,
-          insetPadding: EdgeInsets.symmetric(horizontal: 16, vertical: s.md),
-          backgroundColor: Colors.transparent,
-          child: Container(
-            width: 520,
-            decoration: BoxDecoration(
-              color: t.bgPrimary,
-              borderRadius: BorderRadius.circular(t.radiusXl),
-              border: Border.all(color: t.border.withValues(alpha: 0.55)),
-            ),
-            child: InvoiceDetailPanel(
-              invoice: invoice,
-              onClose: () => Navigator.of(dialogContext).pop(),
-              onCancel: invoice.isCancelled
-                  ? null
-                  : () {
-                      Navigator.of(dialogContext).pop();
-                      _confirmCancelInvoice(invoice);
-                    },
-            ),
-          ),
+          );
+        }
+        return InvoiceDetailPanel(
+          invoice: invoice,
+          onClose: () => AdaptiveNavigator.close(detailContext),
+          onCancel: invoice.isCancelled
+              ? null
+              : () {
+                  AdaptiveNavigator.close(detailContext);
+                  _confirmCancelInvoice(invoice);
+                },
         );
       },
     );
+
     ref.read(invoiceDetailProvider.notifier).close();
   }
 
@@ -206,10 +181,7 @@ class _SalesInvoicesPageState extends ConsumerState<SalesInvoicesPage> {
       return;
     }
 
-    final result = await showDialog<CancelInvoicePayload>(
-      context: context,
-      builder: (dialogContext) => CancelInvoiceDialog(invoice: invoice),
-    );
+    final result = await showCancelInvoiceDialog(context, invoice: invoice);
 
     if (!mounted || result == null) {
       return;

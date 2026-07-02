@@ -9,7 +9,7 @@ import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../../../stock/presentation/widgets/movimentacoes_pagination.dart';
-import '../../../lots/presentation/widgets/lot_detail_drawer.dart';
+import '../../../lots/presentation/widgets/open_lote_details.dart';
 import '../providers/fefo_provider.dart';
 import '../../../presentation/widgets/pharmacy_report_exports.dart';
 
@@ -79,13 +79,10 @@ class _FefoPageState extends ConsumerState<FefoPage> with SingleTickerProviderSt
     };
 
     return EnterpriseModuleHub(
-      title: 'FEFO',
-      subtitle: 'First Expire, First Out — conformidade e auditoria de lotes.',
-      tag: 'Farmácia',
       actions: [
         ...pharmacyReportActions(
           ref: ref,
-          enabled: state != null && !asyncState.isLoading,
+          enabled: !asyncState.isLoading,
           path: reportPath,
           queryParameters: reportQuery,
         ),
@@ -184,11 +181,6 @@ class _FefoPageState extends ConsumerState<FefoPage> with SingleTickerProviderSt
                 style: TextStyle(color: t.posDanger),
               ),
             ),
-          if (pharmacyReportError(ref) != null)
-            Padding(
-              padding: EdgeInsets.only(bottom: s.sm),
-              child: pharmacyReportError(ref),
-            ),
           Expanded(
             child: TabBarView(
               controller: _tabs,
@@ -286,23 +278,7 @@ class _FefoPageState extends ConsumerState<FefoPage> with SingleTickerProviderSt
     );
   }
 
-  Future<void> _openLotDrawer(String loteId) async {
-    if (loteId.isEmpty) return;
-    final padding = context.spacing.md;
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: true,
-      builder: (dialogContext) => Dialog(
-        alignment: Alignment.centerRight,
-        insetPadding: EdgeInsets.symmetric(horizontal: 16, vertical: padding),
-        backgroundColor: Colors.transparent,
-        child: LotDetailDrawer(
-          loteId: loteId,
-          onClose: () => Navigator.of(dialogContext).pop(),
-        ),
-      ),
-    );
-  }
+  Future<void> _openLotDrawer(String loteId) => openLoteDetails(context, loteId);
 
   String _alertLabel(String? situacao) {
     switch (situacao) {

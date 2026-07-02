@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/spacing.dart';
+import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
 import '../../domain/entities/user_entities.dart';
 
@@ -32,16 +33,23 @@ Future<UserFormResult?> showUserFormDialog(
   BuildContext context, {
   TenantUserDetail? user,
 }) {
-  return showDialog<UserFormResult>(
+  final title = Text(user != null ? 'Editar utilizador' : 'Novo utilizador');
+  return AdaptiveNavigator.openEmbeddedForm<UserFormResult>(
     context: context,
-    builder: (_) => UserFormDialog(user: user),
+    title: title,
+    routeSettings: RouteSettings(
+      name: user == null ? '/utilizadores/novo' : '/utilizadores/${user.id}/editar',
+    ),
+    formBuilder: (ctx, {required embedded}) =>
+        UserFormDialog(user: user, embedded: embedded),
   );
 }
 
 class UserFormDialog extends StatefulWidget {
-  const UserFormDialog({super.key, this.user});
+  const UserFormDialog({super.key, this.user, this.embedded = false});
 
   final TenantUserDetail? user;
+  final bool embedded;
 
   bool get isEditing => user != null;
 
@@ -83,7 +91,8 @@ class _UserFormDialogState extends State<UserFormDialog> {
 
   void _submit() {
     if (!_formKey.currentState!.validate()) return;
-    Navigator.of(context).pop(
+    AdaptiveNavigator.complete(
+      context,
       UserFormResult(
         name: _nameController.text.trim(),
         email: _emailController.text.trim(),
@@ -94,74 +103,96 @@ class _UserFormDialogState extends State<UserFormDialog> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildFormBody(BuildContext context) {
     final s = context.spacing;
 
-    return PharmaResponsiveDialog(
-      title: Text(widget.isEditing ? 'Editar utilizador' : 'Novo utilizador'),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              controller: _nameController,
-              decoration: const InputDecoration(
-                labelText: 'Nome *',
-                border: OutlineInputBorder(),
-              ),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Nome obrigatório' : null,
+    return Form(
+      key: _formKey,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextFormField(
+            controller: _nameController,
+            decoration: const InputDecoration(
+              labelText: 'Nome *',
+              border: OutlineInputBorder(),
             ),
-            SizedBox(height: s.md),
-            TextFormField(
-              controller: _emailController,
-              decoration: const InputDecoration(
-                labelText: 'Email *',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.emailAddress,
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Email obrigatório';
-                if (!v.contains('@')) return 'Email inválido';
-                return null;
-              },
+            validator: (v) =>
+                (v == null || v.trim().isEmpty) ? 'Nome obrigatório' : null,
+          ),
+          SizedBox(height: s.md),
+          TextFormField(
+            controller: _emailController,
+            decoration: const InputDecoration(
+              labelText: 'Email *',
+              border: OutlineInputBorder(),
             ),
-            SizedBox(height: s.md),
-            DropdownButtonFormField<String>(
-              initialValue: _role,
-              decoration: const InputDecoration(
-                labelText: 'Perfil',
-                border: OutlineInputBorder(),
-              ),
-              items: _roles
-                  .map(
-                    (r) => DropdownMenuItem(value: r.$1, child: Text(r.$2)),
-                  )
-                  .toList(),
-              onChanged: (v) => setState(() => _role = v ?? 'GERENTE'),
+            keyboardType: TextInputType.emailAddress,
+            validator: (v) {
+              if (v == null || v.trim().isEmpty) return 'Email obrigatório';
+              if (!v.contains('@')) return 'Email inválido';
+              return null;
+            },
+          ),
+          SizedBox(height: s.md),
+          DropdownButtonFormField<String>(
+            initialValue: _role,
+            decoration: const InputDecoration(
+              labelText: 'Perfil',
+              border: OutlineInputBorder(),
             ),
-            SizedBox(height: s.sm),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Utilizador activo'),
-              value: _active,
-              onChanged: (v) => setState(() => _active = v),
-            ),
-          ],
-        ),
+            items: _roles
+                .map(
+                  (r) => DropdownMenuItem(value: r.$1, child: Text(r.$2)),
+                )
+                .toList(),
+            onChanged: (v) => setState(() => _role = v ?? 'GERENTE'),
+          ),
+          SizedBox(height: s.sm),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Utilizador activo'),
+            value: _active,
+            onChanged: (v) => setState(() => _active = v),
+          ),
+        ],
       ),
-      actions: [
+    );
+  }
+
+  List<Widget> _buildActions() => [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => AdaptiveNavigator.cancel(context),
           child: const Text('Cancelar'),
         ),
         FilledButton(
           onPressed: _submit,
           child: Text(widget.isEditing ? 'Guardar' : 'Criar'),
         ),
-      ],
+      ];
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.embedded) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildFormBody(context),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: _buildActions(),
+          ),
+        ],
+      );
+    }
+
+    return PharmaResponsiveDialog(
+      title: Text(widget.isEditing ? 'Editar utilizador' : 'Novo utilizador'),
+      content: _buildFormBody(context),
+      actions: _buildActions(),
     );
   }
 }

@@ -77,21 +77,9 @@ class _MovimentacoesHubPageState extends ConsumerState<MovimentacoesHubPage> {
       title: 'Movimentos de stock',
       subtitle: 'Entradas, saídas, ajustes e trilho de auditoria.',
       tag: 'Stock',
-      actions: [
-        ...stockReportActions(
-          ref: ref,
-          enabled: listState.isInitialized && !listState.isBusy,
-          path: _reportPath(listState.query),
-          queryParameters: reportQuery,
-        ),
-      ],
+      actions: [],
       child: Column(
         children: [
-          if (stockReportError(ref) != null)
-            Padding(
-              padding: EdgeInsets.only(bottom: s.sm),
-              child: stockReportError(ref),
-            ),
           Expanded(
             child: MovimentacoesBody(
               searchController: _searchController,

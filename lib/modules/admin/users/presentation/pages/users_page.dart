@@ -7,6 +7,7 @@ import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
+import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/responsive/pharma_screen_layout.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../../shared/widgets/feedback/module_data_states.dart';
@@ -54,6 +55,11 @@ class _UsersPageState extends ConsumerState<UsersPage> {
     final state = ref.watch(userListProvider);
     final notifier = ref.read(userListProvider.notifier);
     final dash = state.dashboard;
+    final reportQuery = adminUserReportQuery(
+      search: state.query.search,
+      role: state.query.role,
+      active: state.query.active,
+    );
 
     if (_searchController.text != state.query.search) {
       _searchController.value = TextEditingValue(
@@ -69,13 +75,9 @@ class _UsersPageState extends ConsumerState<UsersPage> {
       actions: [
         ...adminReportActions(
           ref: ref,
-          enabled: state.isInitialized && !state.isBusy,
+          enabled: !state.isBusy,
           path: ReportPaths.adminUsers,
-          queryParameters: adminUserReportQuery(
-            search: state.query.search,
-            role: state.query.role,
-            active: state.query.active,
-          ),
+          queryParameters: reportQuery,
         ),
         OutlinedButton.icon(
           onPressed: state.isBusy ? null : notifier.refresh,
@@ -104,30 +106,6 @@ class _UsersPageState extends ConsumerState<UsersPage> {
               ),
             ),
           ),
-          FilterChip(
-            label: const Text('Activos'),
-            selected: state.query.active == true,
-            onSelected: state.isBusy
-                ? null
-                : (_) => notifier.setActiveFilter(
-                      state.query.active == true ? null : true,
-                    ),
-          ),
-          FilterChip(
-            label: const Text('Inactivos'),
-            selected: state.query.active == false,
-            onSelected: state.isBusy
-                ? null
-                : (_) => notifier.setActiveFilter(
-                      state.query.active == false ? null : false,
-                    ),
-          ),
-          if (state.query.hasFilters)
-            TextButton.icon(
-              onPressed: state.isBusy ? null : notifier.clearFilters,
-              icon: const Icon(Icons.filter_alt_off_outlined),
-              label: const Text('Limpar'),
-            ),
         ],
       ),
       kpis: [
@@ -183,10 +161,7 @@ class _UsersPageState extends ConsumerState<UsersPage> {
     if (state.viewState == UserViewState.empty) {
       return ModuleEmptyState(
         title: 'Nenhum utilizador encontrado',
-        subtitle: state.query.hasFilters
-            ? 'Tenta limpar os filtros.'
-            : 'Ainda não existem utilizadores.',
-        onClearFilters: state.query.hasFilters ? notifier.clearFilters : null,
+        subtitle: 'Ainda não existem utilizadores.',
       );
     }
 
@@ -197,12 +172,6 @@ class _UsersPageState extends ConsumerState<UsersPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (adminReportError(ref) != null) ...[
-          Padding(
-            padding: EdgeInsets.only(bottom: s.sm),
-            child: adminReportError(ref),
-          ),
-        ],
         Expanded(
           flex: recentAccess.isEmpty ? 1 : 3,
           child: EnterpriseDataTable(
@@ -314,8 +283,6 @@ class _UsersPageState extends ConsumerState<UsersPage> {
       };
 
   Future<void> _openDetails(BuildContext context, TenantUserSummary user) async {
-    final isMobile = PharmaScreenLayout.isMobile(context);
-
     Future<void> onEdit() async {
       final detail = await ref.read(userRepositoryProvider).getUser(user.id);
       if (!context.mounted) return;
@@ -348,7 +315,7 @@ class _UsersPageState extends ConsumerState<UsersPage> {
             context,
             detail.active ? 'Utilizador desactivado' : 'Utilizador activado',
           );
-          Navigator.of(context).pop();
+          AdaptiveNavigator.close(context);
         }
       } on ApiFailure catch (e) {
         if (context.mounted) PharmaFeedback.error(context, e.message);
@@ -367,58 +334,24 @@ class _UsersPageState extends ConsumerState<UsersPage> {
         await ref.read(userListProvider.notifier).deleteUser(user.id);
         if (context.mounted) {
           PharmaFeedback.success(context, 'Utilizador excluído');
-          Navigator.of(context).pop();
+          AdaptiveNavigator.close(context);
         }
       } on ApiFailure catch (e) {
         if (context.mounted) PharmaFeedback.error(context, e.message);
       }
     }
 
-    if (isMobile) {
-      await Navigator.of(context).push<void>(
-        MaterialPageRoute(
-          builder: (screenContext) => Scaffold(
-            appBar: AppBar(title: Text(user.name)),
-            body: UserDetailPanel(
-              userId: user.id,
-              onClose: () => Navigator.of(screenContext).pop(),
-              onEdit: onEdit,
-              onDelete: onDelete,
-              onToggleActive: onToggleActive,
-            ),
-          ),
-        ),
-      );
-      return;
-    }
-
-    await showDialog<void>(
+    await AdaptiveNavigator.openDetail(
       context: context,
-      builder: (dialogContext) {
-        final t = context.pharmaTokens;
-        final s = context.spacing;
-        return Dialog(
-          alignment: Alignment.centerRight,
-          insetPadding: EdgeInsets.symmetric(horizontal: 16, vertical: s.md),
-          backgroundColor: Colors.transparent,
-          child: Container(
-            width: 520,
-            height: MediaQuery.sizeOf(context).height * 0.85,
-            decoration: BoxDecoration(
-              color: t.bgPrimary,
-              borderRadius: BorderRadius.circular(t.radiusXl),
-              border: Border.all(color: t.border.withValues(alpha: 0.55)),
-            ),
-            child: UserDetailPanel(
-              userId: user.id,
-              onClose: () => Navigator.of(dialogContext).pop(),
-              onEdit: onEdit,
-              onDelete: onDelete,
-              onToggleActive: onToggleActive,
-            ),
-          ),
-        );
-      },
+      title: user.name,
+      routeSettings: RouteSettings(name: '/utilizadores/${user.id}'),
+      builder: (_, onClose) => UserDetailPanel(
+        userId: user.id,
+        onClose: onClose,
+        onEdit: onEdit,
+        onDelete: onDelete,
+        onToggleActive: onToggleActive,
+      ),
     );
   }
 

@@ -6,7 +6,9 @@ import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
+import '../../../../../shared/responsive/responsive_builder.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
+import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
@@ -25,6 +27,7 @@ class CategoriesPage extends ConsumerStatefulWidget {
 
 class _CategoriesPageState extends ConsumerState<CategoriesPage> {
   late final TextEditingController _searchController;
+  List<Category> _accumulatedItems = [];
 
   @override
   void initState() {
@@ -45,138 +48,197 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
     final statsAsync = ref.watch(categoryStatsProvider);
     final t = context.pharmaTokens;
     final s = context.spacing;
-    final reportQuery = <String, dynamic>{
-      if (state.query.isNotEmpty) 'q': state.query,
-      if (state.includeInactive) 'includeInactive': true,
-    };
+    final reportQuery = pharmacyReportQuery({
+      if (_searchController.text.trim().isNotEmpty) 'q': _searchController.text.trim(),
+    });
 
-    return EnterpriseModuleHub(
-      title: 'Categorias',
-      subtitle: 'Gestão de categorias de produtos com contagem vinculada.',
-      tag: 'Farmácia',
-      kpis: statsAsync.valueOrNull == null
-          ? null
-          : [
-              EnterpriseStatCard(
-                title: 'Categorias',
-                value: '${statsAsync.valueOrNull?['totalCategorias'] ?? 0}',
-                icon: Icons.category_outlined,
-              ),
-              EnterpriseStatCard(
-                title: 'Produtos',
-                value: '${statsAsync.valueOrNull?['totalProdutos'] ?? 0}',
-                icon: Icons.inventory_2_outlined,
-              ),
-              EnterpriseStatCard(
-                title: 'Activas/Inactivas',
-                value:
-                    '${statsAsync.valueOrNull?['categoriasActivas'] ?? 0}/${statsAsync.valueOrNull?['categoriasInactivas'] ?? 0}',
-                icon: Icons.toggle_on_outlined,
-              ),
-              EnterpriseStatCard(
-                title: 'Stock',
-                value: '${statsAsync.valueOrNull?['stockDisponivel'] ?? 0}',
-                icon: Icons.stacked_bar_chart_outlined,
-              ),
-            ],
-      actions: [
-        ...pharmacyReportActions(
-          ref: ref,
-          enabled: !state.isLoading,
-          path: ReportPaths.pharmacyCategories,
-          queryParameters: reportQuery,
-        ),
-        FilledButton.icon(
-          onPressed: state.isLoading ? null : () => _openForm(context),
-          icon: const Icon(Icons.add),
-          label: const Text('Nova categoria'),
-        ),
-      ],
-      filters: Wrap(
-        spacing: s.sm,
-        runSpacing: s.sm,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          SizedBox(
-            width: 280,
-            child: TextField(
-              controller: _searchController,
-              onChanged: controller.onSearchChanged,
-              decoration: const InputDecoration(
-                hintText: 'Pesquisar por nome...',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ),
-          FilterChip(
-            label: const Text('Incluir inactivas'),
-            selected: state.includeInactive,
-            onSelected: controller.setIncludeInactive,
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          if (state.isLoading) const LinearProgressIndicator(),
-          if (state.errorMessage != null)
-            Padding(
-              padding: EdgeInsets.only(bottom: s.sm),
-              child: Text(state.errorMessage!, style: TextStyle(color: t.posDanger)),
-            ),
-          if (pharmacyReportError(ref) != null)
-            Padding(
-              padding: EdgeInsets.only(bottom: s.sm),
-              child: pharmacyReportError(ref),
-            ),
-          Expanded(
-            child: EnterpriseDataTable(
-              columns: const [
-                DataColumn(label: Text('NOME')),
-                DataColumn(label: Text('DESCRIÇÃO')),
-                DataColumn(label: Text('PRODUTOS')),
-                DataColumn(label: Text('ESTADO')),
-                DataColumn(label: Text('AÇÕES')),
-              ],
-              rowCount: state.items.length,
-              rowBuilder: (context, index) {
-                final item = state.items[index];
-                return DataRow(
-                  cells: [
-                    DataCell(Text(item.nome)),
-                    DataCell(Text(item.descricao ?? '—')),
-                    DataCell(Text('${item.productCount}')),
-                    DataCell(_StatusChip(ativo: item.ativo)),
-                    DataCell(Row(
-                      children: [
-                        IconButton(
-                          tooltip: 'Editar',
-                          onPressed: () => _openForm(context, category: item),
-                          icon: const Icon(Icons.edit_outlined),
-                        ),
-                        IconButton(
-                          tooltip: 'Excluir',
-                          onPressed: () => _confirmDelete(context, item),
-                          icon: Icon(Icons.delete_outline, color: t.posDanger),
-                        ),
-                      ],
-                    )),
+    ref.listen(categoryListProvider, (prev, next) {
+      if (prev?.page != next.page ||
+          prev?.query != next.query ||
+          prev?.includeInactive != next.includeInactive) {
+        if (next.page == 1) {
+          _accumulatedItems = List.of(next.items);
+        } else {
+          final newItems = next.items
+              .where((e) => !_accumulatedItems.any((a) => a.id == e.id))
+              .toList();
+          _accumulatedItems.addAll(newItems);
+        }
+      } else if (prev?.items != next.items && next.page == 1) {
+        _accumulatedItems = List.of(next.items);
+      }
+    });
+
+    return ResponsiveBuilder(
+      builder: (context, constraints) {
+        final isMobile = !constraints.isTabletOrWider;
+
+        return Scaffold(
+          backgroundColor: t.bgPrimary,
+          floatingActionButton: isMobile
+              ? FloatingActionButton(
+                  onPressed: state.isLoading ? null : () => _openForm(context),
+                  child: const Icon(Icons.add),
+                )
+              : null,
+          body: EnterpriseModuleHub(
+            mobileKpisHorizontalScroll: true,
+            kpis: statsAsync.valueOrNull == null
+                ? null
+                : [
+                    EnterpriseStatCard(
+                      title: 'Categorias',
+                      value: '${statsAsync.valueOrNull?['totalCategorias'] ?? 0}',
+                      icon: Icons.category_outlined,
+                    ),
+                    EnterpriseStatCard(
+                      title: 'Produtos',
+                      value: '${statsAsync.valueOrNull?['totalProdutos'] ?? 0}',
+                      icon: Icons.inventory_2_outlined,
+                    ),
+                    EnterpriseStatCard(
+                      title: 'Activas/Inactivas',
+                      value:
+                          '${statsAsync.valueOrNull?['categoriasActivas'] ?? 0}/${statsAsync.valueOrNull?['categoriasInactivas'] ?? 0}',
+                      icon: Icons.toggle_on_outlined,
+                    ),
+                    EnterpriseStatCard(
+                      title: 'Stock',
+                      value: '${statsAsync.valueOrNull?['stockDisponivel'] ?? 0}',
+                      icon: Icons.stacked_bar_chart_outlined,
+                    ),
                   ],
-                );
-              },
+            actions: [
+              if (!isMobile)
+                FilledButton.icon(
+                  onPressed: state.isLoading ? null : () => _openForm(context),
+                  icon: const Icon(Icons.add),
+                  label: const Text('Nova categoria'),
+                ),
+            ],
+            filters: Wrap(
+              spacing: s.sm,
+              runSpacing: s.sm,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                SizedBox(
+                  width: isMobile ? double.infinity : 280,
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: controller.onSearchChanged,
+                    decoration: InputDecoration(
+                      hintText: 'Pesquisar por nome...',
+                      prefixIcon: const Icon(Icons.search),
+                      suffixIcon: pharmacyReportActions(
+                        ref: ref,
+                        enabled: !state.isLoading,
+                        path: ReportPaths.pharmacyCategories,
+                        queryParameters: reportQuery,
+                        isIconButton: true,
+                      ).single,
+                      border: const OutlineInputBorder(),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                if (state.isLoading) const LinearProgressIndicator(),
+                if (state.errorMessage != null)
+                  Padding(
+                    padding: EdgeInsets.only(bottom: s.sm),
+                    child: Text(state.errorMessage!, style: TextStyle(color: t.posDanger)),
+                  ),
+                Expanded(
+                  child: isMobile
+                      ? _CategoryMobileList(
+                          items: _accumulatedItems,
+                          hasMore: state.hasMore,
+                          isLoading: state.isLoading,
+                          onLoadMore: () => controller.goToPage(state.page + 1),
+                          onEdit: (category) => _openForm(context, category: category),
+                          onDelete: (category) => _confirmDelete(context, category),
+                        )
+                      : EnterpriseDataTable(
+                          columns: const [
+                            DataColumn(label: Text('NOME')),
+                            DataColumn(label: Text('DESCRIÇÃO')),
+                            DataColumn(label: Text('PRODUTOS')),
+                            DataColumn(label: Text('ESTADO')),
+                            DataColumn(label: Text('AÇÕES')),
+                          ],
+                          rowCount: state.items.length,
+                          rowBuilder: (context, index) {
+                            final item = state.items[index];
+                            return DataRow(
+                              cells: [
+                                DataCell(Text(item.nome)),
+                                DataCell(Text(item.descricao ?? '—')),
+                                DataCell(Text('${item.productCount}')),
+                                DataCell(_StatusChip(ativo: item.ativo)),
+                                DataCell(Row(
+                                  children: [
+                                    IconButton(
+                                      tooltip: 'Editar',
+                                      onPressed: () => _openForm(context, category: item),
+                                      icon: const Icon(Icons.edit_outlined),
+                                    ),
+                                    IconButton(
+                                      tooltip: 'Excluir',
+                                      onPressed: () => _confirmDelete(context, item),
+                                      icon: Icon(Icons.delete_outline, color: t.posDanger),
+                                    ),
+                                  ],
+                                )),
+                              ],
+                            );
+                          },
+                        ),
+                ),
+                if (!isMobile) _PaginationBar(state: state, onPage: controller.goToPage),
+              ],
             ),
           ),
-          _PaginationBar(state: state, onPage: controller.goToPage),
-        ],
-      ),
+        );
+      },
     );
   }
 
   Future<void> _openForm(BuildContext context, {Category? category}) async {
-    final result = await showPharmaResponsiveDialog<Map<String, dynamic>>(
-      context: context,
-      builder: (ctx) => _CategoryFormDialog(category: category),
+    final title = Text(
+      category == null ? 'Nova categoria' : 'Editar categoria',
     );
+    final routeSettings = RouteSettings(
+      name: category == null
+          ? '/categorias/nova'
+          : '/categorias/${category.id}/editar',
+    );
+    final result = AdaptiveNavigator.isMobile(context)
+        ? await AdaptiveNavigator.open<Map<String, dynamic>>(
+            context: context,
+            routeSettings: routeSettings,
+            builder: (pageContext) => Scaffold(
+              appBar: AppBar(title: title),
+              body: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: _CategoryFormDialog(
+                    category: category,
+                    embedded: true,
+                    pinnedFooter: true,
+                  ),
+                ),
+              ),
+            ),
+          )
+        : await AdaptiveNavigator.openEmbeddedForm<Map<String, dynamic>>(
+            context: context,
+            title: title,
+            routeSettings: routeSettings,
+            formBuilder: (ctx, {required embedded}) =>
+                _CategoryFormDialog(category: category, embedded: embedded),
+          );
     if (result == null || !context.mounted) return;
     final notifier = ref.read(categoryListProvider.notifier);
     try {
@@ -218,8 +280,14 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
 }
 
 class _CategoryFormDialog extends StatefulWidget {
-  const _CategoryFormDialog({this.category});
+  const _CategoryFormDialog({
+    this.category,
+    this.embedded = false,
+    this.pinnedFooter = false,
+  });
   final Category? category;
+  final bool embedded;
+  final bool pinnedFooter;
 
   @override
   State<_CategoryFormDialog> createState() => _CategoryFormDialogState();
@@ -248,51 +316,91 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
 
   @override
   Widget build(BuildContext context) {
-    return PharmaResponsiveDialog(
-      title: Text(widget.category == null ? 'Nova categoria' : 'Editar categoria'),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              controller: _nome,
-              decoration: const InputDecoration(labelText: 'Nome *'),
-              validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'Nome obrigatório' : null,
-            ),
-            TextFormField(
-              controller: _descricao,
-              decoration: const InputDecoration(labelText: 'Descrição'),
-              maxLines: 2,
-            ),
-            SwitchListTile(
-              title: const Text('Activa'),
-              value: _ativo,
-              onChanged: (v) => setState(() => _ativo = v),
-            ),
-          ],
+    final formFields = Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextFormField(
+          controller: _nome,
+          decoration: const InputDecoration(labelText: 'Nome *'),
+          validator: (v) =>
+              v == null || v.trim().isEmpty ? 'Nome obrigatório' : null,
         ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar'),
+        TextFormField(
+          controller: _descricao,
+          decoration: const InputDecoration(labelText: 'Descrição'),
+          maxLines: 2,
         ),
-        FilledButton(
-          onPressed: () {
-            if (!_formKey.currentState!.validate()) return;
-            Navigator.pop(context, {
-              'nome': _nome.text.trim(),
-              'descricao': _descricao.text.trim().isEmpty
-                  ? null
-                  : _descricao.text.trim(),
-              'ativo': _ativo,
-            });
-          },
-          child: const Text('Guardar'),
+        SwitchListTile(
+          title: const Text('Activa'),
+          value: _ativo,
+          onChanged: (v) => setState(() => _ativo = v),
         ),
       ],
+    );
+
+    final actions = [
+      TextButton(
+        onPressed: () => AdaptiveNavigator.cancel(context),
+        child: const Text('Cancelar'),
+      ),
+      FilledButton(
+        onPressed: () {
+          if (!_formKey.currentState!.validate()) return;
+          AdaptiveNavigator.complete(context, {
+            'nome': _nome.text.trim(),
+            'descricao': _descricao.text.trim().isEmpty
+                ? null
+                : _descricao.text.trim(),
+            'ativo': _ativo,
+          });
+        },
+        child: const Text('Guardar'),
+      ),
+    ];
+
+    final form = Form(
+      key: _formKey,
+      child: widget.pinnedFooter
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: formFields,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: actions,
+                ),
+              ],
+            )
+          : formFields,
+    );
+
+    if (widget.embedded) {
+      if (widget.pinnedFooter) {
+        return form;
+      }
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          form,
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: actions,
+          ),
+        ],
+      );
+    }
+
+    return PharmaResponsiveDialog(
+      title: Text(widget.category == null ? 'Nova categoria' : 'Editar categoria'),
+      content: form,
+      actions: actions,
     );
   }
 }
@@ -314,6 +422,236 @@ class _StatusChip extends StatelessWidget {
       child: Text(
         ativo ? 'Activa' : 'Inactiva',
         style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+}
+
+class _CategoryMobileList extends StatefulWidget {
+  const _CategoryMobileList({
+    required this.items,
+    required this.hasMore,
+    required this.isLoading,
+    required this.onLoadMore,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final List<Category> items;
+  final bool hasMore;
+  final bool isLoading;
+  final VoidCallback onLoadMore;
+  final ValueChanged<Category> onEdit;
+  final ValueChanged<Category> onDelete;
+
+  @override
+  State<_CategoryMobileList> createState() => _CategoryMobileListState();
+}
+
+class _CategoryMobileListState extends State<_CategoryMobileList> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!widget.hasMore || widget.isLoading) return;
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent * 0.8) {
+      widget.onLoadMore();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+    final s = context.spacing;
+
+    if (widget.items.isEmpty && !widget.isLoading) {
+      return Center(
+        child: Text(
+          'Nenhuma categoria encontrada',
+          style: TextStyle(color: t.textMuted),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      controller: _scrollController,
+      padding: EdgeInsets.all(s.md),
+      itemCount: widget.items.length + 1,
+      separatorBuilder: (_, _) => SizedBox(height: s.sm),
+      itemBuilder: (context, index) {
+        if (index == widget.items.length) {
+          if (widget.isLoading) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(
+                child: SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            );
+          }
+          if (!widget.hasMore && widget.items.isNotEmpty) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              child: Center(
+                child: Text(
+                  'Fim da lista',
+                  style: TextStyle(color: t.textMuted, fontSize: 12),
+                ),
+              ),
+            );
+          }
+          return const SizedBox.shrink();
+        }
+
+        final category = widget.items[index];
+        return _CategoryMobileCard(
+          category: category,
+          onTap: () => widget.onEdit(category),
+          onEdit: () => widget.onEdit(category),
+          onDelete: () => widget.onDelete(category),
+        );
+      },
+    );
+  }
+}
+
+class _CategoryMobileCard extends StatelessWidget {
+  const _CategoryMobileCard({
+    required this.category,
+    required this.onTap,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final Category category;
+  final VoidCallback onTap;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+    final s = context.spacing;
+    final theme = Theme.of(context);
+
+    return Material(
+      color: theme.colorScheme.surfaceContainer,
+      borderRadius: BorderRadius.circular(t.radiusMd),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: s.md, vertical: s.sm),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(
+                    Icons.category_outlined,
+                    size: t.iconSm,
+                    color: t.textPrimary,
+                  ),
+                  SizedBox(width: s.xs),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          category.nome,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            color: t.textPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if ((category.descricao ?? '').trim().isNotEmpty) ...[
+                          SizedBox(height: s.xxs),
+                          Text(
+                            category.descricao!.trim(),
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: t.textSecondary,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  SizedBox(width: s.xs),
+                  _StatusChip(ativo: category.ativo),
+                  PopupMenuButton<String>(
+                    padding: EdgeInsets.zero,
+                    constraints: BoxConstraints(
+                      minWidth: t.minTouchTarget * 0.6,
+                      minHeight: t.minTouchTarget * 0.6,
+                    ),
+                    icon: Icon(Icons.more_vert, size: t.iconSm, color: t.textMuted),
+                    onSelected: (action) {
+                      switch (action) {
+                        case 'editar':
+                          onEdit();
+                          break;
+                        case 'excluir':
+                          onDelete();
+                          break;
+                      }
+                    },
+                    itemBuilder: (context) => const [
+                      PopupMenuItem(
+                        value: 'editar',
+                        child: Text('Editar'),
+                      ),
+                      PopupMenuItem(
+                        value: 'excluir',
+                        child: Text('Excluir'),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              SizedBox(height: s.xs),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      (category.descricao ?? 'Sem descrição'),
+                      style: theme.textTheme.bodySmall?.copyWith(color: t.textMuted),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  SizedBox(width: s.sm),
+                  Text(
+                    'Produtos: ${category.productCount}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: t.textMuted,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/spacing.dart';
+import '../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../shared/widgets/buttons/pharma_button_loader.dart';
 import '../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
@@ -184,12 +185,10 @@ class _RequisicaoStockFlowViewState
       return;
     }
 
-    final draft = await showDialog<RequisicaoItemDraft>(
-      context: context,
-      builder: (_) => _RequisicaoLoteDialog(
-        product: product,
-        tipo: requisicaoState.activeRequisicao!.tipo,
-      ),
+    final draft = await showRequisicaoLoteDialog(
+      context,
+      product: product,
+      tipo: requisicaoState.activeRequisicao!.tipo,
     );
 
     if (!mounted || draft == null) {
@@ -211,9 +210,9 @@ class _RequisicaoStockFlowViewState
       return;
     }
 
-    final quantidade = await showDialog<double>(
-      context: context,
-      builder: (_) => _EditStockFlowItemDialog(item: item),
+    final quantidade = await showEditStockFlowItemDialog(
+      context,
+      item: item,
     );
 
     if (!mounted || quantidade == null) {
@@ -238,9 +237,9 @@ class _RequisicaoStockFlowViewState
       return;
     }
 
-    final result = await showDialog<EditarRequisicaoDialogResult>(
-      context: context,
-      builder: (_) => EditarRequisicaoDialog(requisicao: requisicao),
+    final result = await showEditarRequisicaoDialog(
+      context,
+      requisicao: requisicao,
     );
 
     if (!mounted || result == null) {
@@ -341,17 +340,16 @@ class _RequisicaoStockFlowViewState
   }
 
   Future<void> _showMobileStockFlowPane() {
-    return Navigator.of(context, rootNavigator: true).push<void>(
-      MaterialPageRoute(
-        fullscreenDialog: true,
-        builder: (_) => _MobileStockFlowPaneScreen(
-          onApprove: _approveRequisition,
-          onReject: _rejectRequisition,
-          onCancel: _cancelRequisition,
-          onEditHeader: _handleEditHeader,
-          onEditItem: _handleEditItem,
-          onRemoveItem: _confirmRemoveItem,
-        ),
+    return AdaptiveNavigator.open<void>(
+      context: context,
+      fullscreenDialog: true,
+      builder: (_) => _MobileStockFlowPaneScreen(
+        onApprove: _approveRequisition,
+        onReject: _rejectRequisition,
+        onCancel: _cancelRequisition,
+        onEditHeader: _handleEditHeader,
+        onEditItem: _handleEditItem,
+        onRemoveItem: _confirmRemoveItem,
       ),
     );
   }
@@ -1586,44 +1584,70 @@ Future<void> _showStockFlowItemDetails(
   BuildContext context,
   RequisicaoItem item,
 ) {
-  return showDialog<void>(
+  return AdaptiveNavigator.openDetail(
     context: context,
-    builder: (dialogContext) {
-      final s = dialogContext.spacing;
-
-      return AlertDialog(
-        title: Text(item.produtoNome),
-        content: SizedBox(
-          width: 420,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _DialogDetailRow(
-                label: 'Lote',
-                value: stockFlowItemLoteNumero(item),
+    title: item.produtoNome,
+    builder: (detailContext, onClose) {
+      final s = detailContext.spacing;
+      return Padding(
+        padding: EdgeInsets.all(s.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _DialogDetailRow(
+              label: 'Lote',
+              value: stockFlowItemLoteNumero(item),
+            ),
+            SizedBox(height: s.sm),
+            _DialogDetailRow(
+              label: 'Validade',
+              value: stockFlowItemLoteValidade(item),
+            ),
+            SizedBox(height: s.sm),
+            _DialogDetailRow(
+              label: 'Quantidade',
+              value: stockFlowFormatQuantity(item.quantidade),
+            ),
+            const Spacer(),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: onClose,
+                child: const Text('Fechar'),
               ),
-              SizedBox(height: s.sm),
-              _DialogDetailRow(
-                label: 'Validade',
-                value: stockFlowItemLoteValidade(item),
-              ),
-              SizedBox(height: s.sm),
-              _DialogDetailRow(
-                label: 'Quantidade',
-                value: stockFlowFormatQuantity(item.quantidade),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Fechar'),
-          ),
-        ],
       );
     },
+  );
+}
+
+Future<double?> showEditStockFlowItemDialog(
+  BuildContext context, {
+  required RequisicaoItem item,
+}) {
+  return AdaptiveNavigator.openEmbeddedForm<double>(
+    context: context,
+    title: const Text('Editar Item'),
+    formBuilder: (ctx, {required embedded}) =>
+        _EditStockFlowItemDialog(item: item, embedded: embedded),
+  );
+}
+
+Future<RequisicaoItemDraft?> showRequisicaoLoteDialog(
+  BuildContext context, {
+  required Product product,
+  required RequisicaoTipo tipo,
+}) {
+  return AdaptiveNavigator.openEmbeddedForm<RequisicaoItemDraft>(
+    context: context,
+    title: const Text('Adicionar Item'),
+    formBuilder: (ctx, {required embedded}) => _RequisicaoLoteDialog(
+      product: product,
+      tipo: tipo,
+      embedded: embedded,
+    ),
   );
 }
 
@@ -1728,9 +1752,10 @@ class _EmptyPane extends StatelessWidget {
 }
 
 class _EditStockFlowItemDialog extends StatefulWidget {
-  const _EditStockFlowItemDialog({required this.item});
+  const _EditStockFlowItemDialog({required this.item, this.embedded = false});
 
   final RequisicaoItem item;
+  final bool embedded;
 
   @override
   State<_EditStockFlowItemDialog> createState() =>
@@ -1763,72 +1788,95 @@ class _EditStockFlowItemDialogState extends State<_EditStockFlowItemDialog> {
     final quantidade = double.parse(
       _quantidadeController.text.trim().replaceAll(',', '.'),
     );
-    Navigator.of(context).pop(quantidade);
+    AdaptiveNavigator.complete(context, quantidade);
   }
 
   @override
   Widget build(BuildContext context) {
     final s = context.spacing;
 
+    final form = Form(
+      key: _formKey,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _ItemDialogProductHeader(
+            productName: widget.item.produtoNome,
+            description:
+                'Revise a quantidade deste item mantendo os dados do lote associados a esta requisição.',
+            metadata: [
+              'Lote ${stockFlowItemLoteNumero(widget.item)}',
+              'Validade ${stockFlowItemLoteValidade(widget.item)}',
+            ],
+          ),
+          SizedBox(height: s.lg),
+          TextFormField(
+            controller: _quantidadeController,
+            decoration: const InputDecoration(
+              labelText: 'Quantidade *',
+              border: OutlineInputBorder(),
+            ),
+            keyboardType: const TextInputType.numberWithOptions(
+              decimal: true,
+            ),
+            validator: (value) {
+              final normalized = value?.trim().replaceAll(',', '.') ?? '';
+              final parsed = double.tryParse(normalized);
+              if (parsed == null || parsed <= 0) {
+                return 'Informe uma quantidade válida';
+              }
+              return null;
+            },
+          ),
+        ],
+      ),
+    );
+
+    final actions = [
+      TextButton(
+        onPressed: () => AdaptiveNavigator.cancel(context),
+        child: const Text('Cancelar'),
+      ),
+      FilledButton.icon(
+        onPressed: _submit,
+        icon: const Icon(Icons.save_outlined),
+        label: const Text('Guardar'),
+      ),
+    ];
+
+    if (widget.embedded) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          form,
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: actions,
+          ),
+        ],
+      );
+    }
+
     return PharmaResponsiveDialog(
       title: const Text('Editar Item'),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _ItemDialogProductHeader(
-              productName: widget.item.produtoNome,
-              description:
-                  'Revise a quantidade deste item mantendo os dados do lote associados a esta requisição.',
-              metadata: [
-                'Lote ${stockFlowItemLoteNumero(widget.item)}',
-                'Validade ${stockFlowItemLoteValidade(widget.item)}',
-              ],
-            ),
-            SizedBox(height: s.lg),
-            TextFormField(
-              controller: _quantidadeController,
-              decoration: const InputDecoration(
-                labelText: 'Quantidade *',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              validator: (value) {
-                final normalized = value?.trim().replaceAll(',', '.') ?? '';
-                final parsed = double.tryParse(normalized);
-                if (parsed == null || parsed <= 0) {
-                  return 'Informe uma quantidade válida';
-                }
-                return null;
-              },
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
-        ),
-        FilledButton.icon(
-          onPressed: _submit,
-          icon: const Icon(Icons.save_outlined),
-          label: const Text('Guardar'),
-        ),
-      ],
+      content: form,
+      actions: actions,
     );
   }
 }
 
 class _RequisicaoLoteDialog extends ConsumerStatefulWidget {
-  const _RequisicaoLoteDialog({required this.product, required this.tipo});
+  const _RequisicaoLoteDialog({
+    required this.product,
+    required this.tipo,
+    this.embedded = false,
+  });
 
   final Product product;
   final RequisicaoTipo tipo;
+  final bool embedded;
 
   @override
   ConsumerState<_RequisicaoLoteDialog> createState() =>
@@ -2002,7 +2050,8 @@ class _RequisicaoLoteDialogState extends ConsumerState<_RequisicaoLoteDialog> {
         return;
       }
 
-      Navigator.of(context).pop(
+      AdaptiveNavigator.complete(
+        context,
         RequisicaoItemDraft(
           produtoId: widget.product.id,
           produtoNome: widget.product.nome,
@@ -2023,116 +2072,134 @@ class _RequisicaoLoteDialogState extends ConsumerState<_RequisicaoLoteDialog> {
     final s = context.spacing;
     final isBusy = _loadingLotes || _submitting;
 
+    final form = Form(
+      key: _formKey,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _ItemDialogProductHeader(
+            productName: widget.product.nome,
+            description: widget.tipo == RequisicaoTipo.entrada
+                ? 'Informe os dados do lote para entrada do produto e registo documental da movimentação.'
+                : 'Selecione o lote e a quantidade do produto para movimentar com segurança.',
+            metadata: [
+              if ((widget.product.lote ?? '').trim().isNotEmpty)
+                'Lote sugerido ${widget.product.lote!.trim()}',
+              if (widget.product.dataValidade != null)
+                'Validade ${stockFlowFormatDate(widget.product.dataValidade!)}',
+            ],
+          ),
+          SizedBox(height: s.lg),
+          if (_loadingLotes)
+            Padding(
+              padding: EdgeInsets.only(bottom: s.md),
+              child: const LinearProgressIndicator(),
+            ),
+          if (_error != null) ...[
+            Text(_error!, style: TextStyle(color: t.posDanger)),
+            SizedBox(height: s.sm),
+          ],
+          TextFormField(
+            controller: _loteController,
+            decoration: const InputDecoration(
+              labelText: 'Lote',
+              hintText: 'Ex.: LOTE-2026-001',
+              border: OutlineInputBorder(),
+            ),
+            validator: (value) => value == null || value.trim().isEmpty
+                ? 'Informe o número do lote'
+                : null,
+          ),
+          SizedBox(height: s.md),
+          TextFormField(
+            controller: _dataValidadeController,
+            keyboardType: TextInputType.datetime,
+            inputFormatters: [_StockFlowDateTextInputFormatter()],
+            decoration: InputDecoration(
+              labelText: 'Prazo de validade',
+              hintText: 'DD/MM/AAAA',
+              border: const OutlineInputBorder(),
+              suffixIcon: IconButton(
+                onPressed: isBusy ? null : _pickExpiryDate,
+                icon: const Icon(Icons.calendar_today_outlined),
+                tooltip: 'Selecionar data',
+              ),
+            ),
+            onEditingComplete: () {
+              _dataValidadeController.text = stockFlowNormalizeDateInput(
+                _dataValidadeController.text,
+              );
+            },
+            validator: (value) {
+              final normalized = value?.trim() ?? '';
+              if (normalized.isEmpty) {
+                return 'Informe o prazo de validade';
+              }
+              if (stockFlowParseDateInput(normalized) == null) {
+                return 'Use o formato DD/MM/AAAA';
+              }
+              return null;
+            },
+          ),
+          SizedBox(height: s.md),
+          TextFormField(
+            controller: _quantidadeController,
+            keyboardType: const TextInputType.numberWithOptions(
+              decimal: true,
+            ),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+            ],
+            decoration: const InputDecoration(
+              labelText: 'Quantidade',
+              border: OutlineInputBorder(),
+            ),
+            validator: (value) {
+              final parsed = double.tryParse(
+                (value ?? '').replaceAll(',', '.'),
+              );
+              if (parsed == null || parsed <= 0) {
+                return 'Informe uma quantidade válida';
+              }
+              return null;
+            },
+          ),
+        ],
+      ),
+    );
+
+    final actions = [
+      TextButton(
+        onPressed: isBusy ? null : () => AdaptiveNavigator.cancel(context),
+        child: const Text('Cancelar'),
+      ),
+      FilledButton(
+        onPressed: isBusy ? null : _submit,
+        child: _submitting
+            ? const PharmaButtonLoader()
+            : const Text('Adicionar'),
+      ),
+    ];
+
+    if (widget.embedded) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          form,
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: actions,
+          ),
+        ],
+      );
+    }
+
     return PharmaResponsiveDialog(
       title: const Text('Adicionar Item'),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _ItemDialogProductHeader(
-              productName: widget.product.nome,
-              description: widget.tipo == RequisicaoTipo.entrada
-                  ? 'Informe os dados do lote para entrada do produto e registo documental da movimentação.'
-                  : 'Selecione o lote e a quantidade do produto para movimentar com segurança.',
-              metadata: [
-                if ((widget.product.lote ?? '').trim().isNotEmpty)
-                  'Lote sugerido ${widget.product.lote!.trim()}',
-                if (widget.product.dataValidade != null)
-                  'Validade ${stockFlowFormatDate(widget.product.dataValidade!)}',
-              ],
-            ),
-            SizedBox(height: s.lg),
-            if (_loadingLotes)
-              Padding(
-                padding: EdgeInsets.only(bottom: s.md),
-                child: const LinearProgressIndicator(),
-              ),
-            if (_error != null) ...[
-              Text(_error!, style: TextStyle(color: t.posDanger)),
-              SizedBox(height: s.sm),
-            ],
-            TextFormField(
-              controller: _loteController,
-              decoration: const InputDecoration(
-                labelText: 'Lote',
-                hintText: 'Ex.: LOTE-2026-001',
-                border: OutlineInputBorder(),
-              ),
-              validator: (value) => value == null || value.trim().isEmpty
-                  ? 'Informe o número do lote'
-                  : null,
-            ),
-            SizedBox(height: s.md),
-            TextFormField(
-              controller: _dataValidadeController,
-              keyboardType: TextInputType.datetime,
-              inputFormatters: [_StockFlowDateTextInputFormatter()],
-              decoration: InputDecoration(
-                labelText: 'Prazo de validade',
-                hintText: 'DD/MM/AAAA',
-                border: const OutlineInputBorder(),
-                suffixIcon: IconButton(
-                  onPressed: isBusy ? null : _pickExpiryDate,
-                  icon: const Icon(Icons.calendar_today_outlined),
-                  tooltip: 'Selecionar data',
-                ),
-              ),
-              onEditingComplete: () {
-                _dataValidadeController.text = stockFlowNormalizeDateInput(
-                  _dataValidadeController.text,
-                );
-              },
-              validator: (value) {
-                final normalized = value?.trim() ?? '';
-                if (normalized.isEmpty) {
-                  return 'Informe o prazo de validade';
-                }
-                if (stockFlowParseDateInput(normalized) == null) {
-                  return 'Use o formato DD/MM/AAAA';
-                }
-                return null;
-              },
-            ),
-            SizedBox(height: s.md),
-            TextFormField(
-              controller: _quantidadeController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-              ],
-              decoration: const InputDecoration(
-                labelText: 'Quantidade',
-                border: OutlineInputBorder(),
-              ),
-              validator: (value) {
-                final parsed = double.tryParse(
-                  (value ?? '').replaceAll(',', '.'),
-                );
-                if (parsed == null || parsed <= 0) {
-                  return 'Informe uma quantidade válida';
-                }
-                return null;
-              },
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: isBusy ? null : () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
-        ),
-        FilledButton(
-          onPressed: isBusy ? null : _submit,
-          child: _submitting
-              ? const PharmaButtonLoader()
-              : const Text('Adicionar'),
-        ),
-      ],
+      content: form,
+      actions: actions,
     );
   }
 }

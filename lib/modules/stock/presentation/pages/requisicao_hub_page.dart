@@ -5,6 +5,7 @@ import '../../../../core/constants/report_paths.dart';
 import '../../../../core/theme/dimensions.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../shared/responsive/breakpoints.dart';
+import '../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../shared/widgets/layout/module_page_frame.dart';
 import '../../../pharmacy/products/domain/entities/product.dart';
@@ -86,9 +87,9 @@ class _RequisicaoHubPageState extends ConsumerState<RequisicaoHubPage> {
       'saida' => CriarRequisicaoModalTipo.saida,
       _ => CriarRequisicaoModalTipo.compra,
     };
-    final result = await showDialog<CriarRequisicaoDialogResult>(
-      context: context,
-      builder: (_) => CriarRequisicaoDialog(initialTipo: initialTab),
+    final result = await showCriarRequisicaoDialog(
+      context,
+      initialTipo: initialTab,
     );
     if (!mounted || result == null) {
       return;
@@ -145,9 +146,9 @@ class _RequisicaoHubPageState extends ConsumerState<RequisicaoHubPage> {
       return;
     }
 
-    final draft = await showDialog<RequisicaoCompraItemDraft>(
-      context: context,
-      builder: (_) => RequisicaoCompraItemDialog(product: product),
+    final draft = await showRequisicaoCompraItemDialog(
+      context,
+      product: product,
     );
 
     if (!mounted || draft == null) {
@@ -169,9 +170,9 @@ class _RequisicaoHubPageState extends ConsumerState<RequisicaoHubPage> {
       return;
     }
 
-    final draft = await showDialog<RequisicaoCompraItemDraft>(
-      context: context,
-      builder: (_) => RequisicaoCompraItemDialog(item: item),
+    final draft = await showRequisicaoCompraItemDialog(
+      context,
+      item: item,
     );
 
     if (!mounted || draft == null) {
@@ -194,9 +195,9 @@ class _RequisicaoHubPageState extends ConsumerState<RequisicaoHubPage> {
       return;
     }
 
-    final result = await showDialog<EditarRequisicaoDialogResult>(
-      context: context,
-      builder: (_) => EditarRequisicaoDialog(requisicao: requisicao),
+    final result = await showEditarRequisicaoDialog(
+      context,
+      requisicao: requisicao,
     );
 
     if (!mounted || result == null) {
@@ -229,12 +230,6 @@ class _RequisicaoHubPageState extends ConsumerState<RequisicaoHubPage> {
 
   List<Widget> _buildTopActions({required bool isCreating}) {
     return [
-      ...stockReportActions(
-        ref: ref,
-        enabled: !isCreating,
-        path: _requisitionListReportPath(),
-        queryParameters: const {},
-      ),
       RequisicaoTopActionsBar(
         selectedTipo: _selectedTipo,
         isCreating: isCreating,
@@ -267,17 +262,16 @@ class _RequisicaoHubPageState extends ConsumerState<RequisicaoHubPage> {
   }
 
   Future<void> _showMobilePurchasePane() {
-    return Navigator.of(context, rootNavigator: true).push<void>(
-      MaterialPageRoute(
-        fullscreenDialog: true,
-        builder: (_) => RequisicaoMobilePurchasePaneScreen(
-          onConfirm: ref
-              .read(requisicaoCompraProvider.notifier)
-              .approveActiveRequisition,
-          onEditHeader: _handleEditCompraHeader,
-          onEditItem: _handleEditCompraItem,
-          onRemoveItem: _confirmRemoveCompraItem,
-        ),
+    return AdaptiveNavigator.open<void>(
+      context: context,
+      fullscreenDialog: true,
+      builder: (_) => RequisicaoMobilePurchasePaneScreen(
+        onConfirm: ref
+            .read(requisicaoCompraProvider.notifier)
+            .approveActiveRequisition,
+        onEditHeader: _handleEditCompraHeader,
+        onEditItem: _handleEditCompraItem,
+        onRemoveItem: _confirmRemoveCompraItem,
       ),
     );
   }

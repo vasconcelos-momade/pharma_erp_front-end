@@ -55,12 +55,6 @@ class _AuditLogsPageState extends ConsumerState<AuditLogsPage> {
       subtitle: 'Registo imutável de alterações com encadeamento criptográfico.',
       tag: 'Auditoria',
       actions: [
-        ...auditReportActions(
-          ref: ref,
-          enabled: state.isInitialized && !state.isBusy,
-          path: ReportPaths.auditLogs,
-          queryParameters: auditReportQueryFromAuditQuery(state.query),
-        ),
         OutlinedButton.icon(
           onPressed: state.isBusy ? null : notifier.refresh,
           icon: const Icon(Icons.refresh_rounded),
@@ -93,11 +87,6 @@ class _AuditLogsPageState extends ConsumerState<AuditLogsPage> {
       ),
       child: Column(
         children: [
-          if (auditReportError(ref) != null)
-            Padding(
-              padding: EdgeInsets.only(bottom: s.sm),
-              child: auditReportError(ref),
-            ),
           Expanded(child: _buildBody(context, state, notifier)),
         ],
       ),

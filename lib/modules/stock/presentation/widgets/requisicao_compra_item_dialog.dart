@@ -3,18 +3,46 @@ import 'package:flutter/services.dart';
 
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/spacing.dart';
+import '../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
 import '../../../pharmacy/products/domain/entities/product.dart';
 import '../../domain/entities/requisicao.dart';
 import '../providers/requisicao_provider.dart';
 import 'requisicao_hub_formatters.dart';
 
+Future<RequisicaoCompraItemDraft?> showRequisicaoCompraItemDialog(
+  BuildContext context, {
+  Product? product,
+  RequisicaoItem? item,
+}) {
+  final isEditing = item != null;
+  return AdaptiveNavigator.openEmbeddedForm<RequisicaoCompraItemDraft>(
+    context: context,
+    title: Text(isEditing ? 'Editar Item' : 'Adicionar Item'),
+    routeSettings: RouteSettings(
+      name: isEditing
+          ? '/requisicoes/compra/itens/${item.id}/editar'
+          : '/requisicoes/compra/itens/novo',
+    ),
+    formBuilder: (ctx, {required embedded}) => RequisicaoCompraItemDialog(
+      product: product,
+      item: item,
+      embedded: embedded,
+    ),
+  );
+}
+
 class RequisicaoCompraItemDialog extends StatefulWidget {
-  const RequisicaoCompraItemDialog({super.key, this.product, this.item})
-    : assert(product != null || item != null);
+  const RequisicaoCompraItemDialog({
+    super.key,
+    this.product,
+    this.item,
+    this.embedded = false,
+  }) : assert(product != null || item != null);
 
   final Product? product;
   final RequisicaoItem? item;
+  final bool embedded;
 
   bool get isEditing => item != null;
   String get productName => item?.produtoNome ?? product!.nome;
@@ -77,7 +105,8 @@ class _RequisicaoCompraItemDialogState extends State<RequisicaoCompraItemDialog>
     if (_formKey.currentState?.validate() != true) {
       return;
     }
-    Navigator.of(context).pop(
+    AdaptiveNavigator.complete(
+      context,
       RequisicaoCompraItemDraft(
         produtoId: widget.productId,
         produtoNome: widget.productName,
@@ -115,100 +144,119 @@ class _RequisicaoCompraItemDialogState extends State<RequisicaoCompraItemDialog>
   @override
   Widget build(BuildContext context) {
     final s = context.spacing;
-    return PharmaResponsiveDialog(
-      title: Text(widget.isEditing ? 'Editar Item' : 'Adicionar Item'),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            RequisicaoItemDialogProductHeader(
-              productName: widget.productName,
-              description: widget.isEditing
-                  ? 'Atualize os dados do item selecionado mantendo o padrão visual e documental da requisição.'
-                  : 'Preencha os dados do lote e os preços para adicionar este produto à requisição.',
-              metadata: [
-                if (_loteController.text.trim().isNotEmpty)
-                  'Lote ${_loteController.text.trim()}',
-                if (_dataValidadeController.text.trim().isNotEmpty)
-                  'Validade ${_dataValidadeController.text.trim()}',
-              ],
+
+    final form = Form(
+      key: _formKey,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          RequisicaoItemDialogProductHeader(
+            productName: widget.productName,
+            description: widget.isEditing
+                ? 'Atualize os dados do item selecionado mantendo o padrão visual e documental da requisição.'
+                : 'Preencha os dados do lote e os preços para adicionar este produto à requisição.',
+            metadata: [
+              if (_loteController.text.trim().isNotEmpty)
+                'Lote ${_loteController.text.trim()}',
+              if (_dataValidadeController.text.trim().isNotEmpty)
+                'Validade ${_dataValidadeController.text.trim()}',
+            ],
+          ),
+          SizedBox(height: s.lg),
+          RequisicaoItemDialogField(
+            controller: _loteController,
+            label: 'Lote',
+            hint: 'Ex.: LOTE-2026-001',
+            validator: _requiredValidator,
+          ),
+          SizedBox(height: s.md),
+          RequisicaoItemDialogField(
+            controller: _dataValidadeController,
+            label: 'Data de validade',
+            hint: 'DD/MM/AAAA',
+            validator: _dateValidator,
+            keyboardType: TextInputType.datetime,
+            inputFormatters: [RequisicaoDateTextInputFormatter()],
+            onEditingComplete: () {
+              _dataValidadeController.text = requisicaoNormalizeDateInputValue(
+                _dataValidadeController.text,
+              );
+            },
+            suffixIcon: IconButton(
+              onPressed: _pickExpiryDate,
+              icon: const Icon(Icons.calendar_today_outlined),
+              tooltip: 'Selecionar data',
             ),
-            SizedBox(height: s.lg),
-            RequisicaoItemDialogField(
-              controller: _loteController,
-              label: 'Lote',
-              hint: 'Ex.: LOTE-2026-001',
-              validator: _requiredValidator,
+          ),
+          SizedBox(height: s.md),
+          RequisicaoItemDialogField(
+            controller: _precoCompraController,
+            label: 'Preço de compra',
+            hint: 'Ex.: 44.10',
+            validator: _positiveNumberValidator,
+            keyboardType: const TextInputType.numberWithOptions(
+              decimal: true,
             ),
-            SizedBox(height: s.md),
-            RequisicaoItemDialogField(
-              controller: _dataValidadeController,
-              label: 'Data de validade',
-              hint: 'DD/MM/AAAA',
-              validator: _dateValidator,
-              keyboardType: TextInputType.datetime,
-              inputFormatters: [RequisicaoDateTextInputFormatter()],
-              onEditingComplete: () {
-                _dataValidadeController.text = requisicaoNormalizeDateInputValue(
-                  _dataValidadeController.text,
-                );
-              },
-              suffixIcon: IconButton(
-                onPressed: _pickExpiryDate,
-                icon: const Icon(Icons.calendar_today_outlined),
-                tooltip: 'Selecionar data',
-              ),
+          ),
+          SizedBox(height: s.md),
+          RequisicaoItemDialogField(
+            controller: _precoVendaController,
+            label: 'Preço de venda',
+            hint: 'Opcional',
+            validator: _optionalPositiveNumberValidator,
+            keyboardType: const TextInputType.numberWithOptions(
+              decimal: true,
             ),
-            SizedBox(height: s.md),
-            RequisicaoItemDialogField(
-              controller: _precoCompraController,
-              label: 'Preço de compra',
-              hint: 'Ex.: 44.10',
-              validator: _positiveNumberValidator,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
+          ),
+          SizedBox(height: s.md),
+          RequisicaoItemDialogField(
+            controller: _quantidadeController,
+            label: 'Quantidade',
+            hint: 'Ex.: 10',
+            validator: _positiveNumberValidator,
+            keyboardType: const TextInputType.numberWithOptions(
+              decimal: true,
             ),
-            SizedBox(height: s.md),
-            RequisicaoItemDialogField(
-              controller: _precoVendaController,
-              label: 'Preço de venda',
-              hint: 'Opcional',
-              validator: _optionalPositiveNumberValidator,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-            ),
-            SizedBox(height: s.md),
-            RequisicaoItemDialogField(
-              controller: _quantidadeController,
-              label: 'Quantidade',
-              hint: 'Ex.: 10',
-              validator: _positiveNumberValidator,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-            ),
-          ],
+          ),
+        ],
+      ),
+    );
+
+    final actions = [
+      TextButton(
+        onPressed: () => AdaptiveNavigator.cancel(context),
+        child: const Text('Cancelar'),
+      ),
+      FilledButton.icon(
+        onPressed: _submit,
+        icon: Icon(
+          widget.isEditing ? Icons.save_outlined : Icons.add_task_rounded,
+        ),
+        label: Text(
+          widget.isEditing ? 'Guardar alterações' : 'Adicionar item',
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
-        ),
-        FilledButton.icon(
-          onPressed: _submit,
-          icon: Icon(
-            widget.isEditing ? Icons.save_outlined : Icons.add_task_rounded,
+    ];
+
+    if (widget.embedded) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          form,
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: actions,
           ),
-          label: Text(
-            widget.isEditing ? 'Guardar alterações' : 'Adicionar item',
-          ),
-        ),
-      ],
+        ],
+      );
+    }
+
+    return PharmaResponsiveDialog(
+      title: Text(widget.isEditing ? 'Editar Item' : 'Adicionar Item'),
+      content: form,
+      actions: actions,
     );
   }
 

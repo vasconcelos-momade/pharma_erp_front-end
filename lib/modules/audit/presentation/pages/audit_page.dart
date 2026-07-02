@@ -108,11 +108,6 @@ class AuditPage extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (auditReportError(ref) != null)
-          Padding(
-            padding: EdgeInsets.only(bottom: s.sm),
-            child: auditReportError(ref),
-          ),
         Text(
           'Eventos recentes',
           style: Theme.of(context).textTheme.titleSmall?.copyWith(

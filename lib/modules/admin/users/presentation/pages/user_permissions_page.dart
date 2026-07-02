@@ -30,14 +30,6 @@ class UserPermissionsPage extends ConsumerWidget {
       subtitle: 'Granularidade por módulo e acção.',
       tag: 'Administração',
       actions: [
-        ...adminReportActions(
-          ref: ref,
-          enabled: state.viewState == PermissionMatrixViewState.loaded && !state.isBusy,
-          path: ReportPaths.adminPermissionsMatrix,
-          queryParameters: adminPermissionsReportQuery(
-            role: state.selectedRole,
-          ),
-        ),
         if (state.canEdit && state.hasChanges) ...[
           OutlinedButton(
             onPressed: state.isBusy ? null : notifier.discardChanges,

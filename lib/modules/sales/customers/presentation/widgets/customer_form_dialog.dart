@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/spacing.dart';
+import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
 import '../../domain/entities/customer.dart';
 
@@ -47,16 +48,23 @@ Future<CustomerFormResult?> showCustomerFormDialog(
   BuildContext context, {
   CustomerDetail? customer,
 }) {
-  return showDialog<CustomerFormResult>(
+  final title = Text(customer != null ? 'Editar cliente' : 'Novo cliente');
+  return AdaptiveNavigator.openEmbeddedForm<CustomerFormResult>(
     context: context,
-    builder: (_) => CustomerFormDialog(customer: customer),
+    title: title,
+    routeSettings: RouteSettings(
+      name: customer == null ? '/clientes/novo' : '/clientes/${customer.id}/editar',
+    ),
+    formBuilder: (ctx, {required embedded}) =>
+        CustomerFormDialog(customer: customer, embedded: embedded),
   );
 }
 
 class CustomerFormDialog extends StatefulWidget {
-  const CustomerFormDialog({super.key, this.customer});
+  const CustomerFormDialog({super.key, this.customer, this.embedded = false});
 
   final CustomerDetail? customer;
+  final bool embedded;
 
   bool get isEditing => customer != null;
 
@@ -113,7 +121,8 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
         ? null
         : double.tryParse(limiteText.replaceAll(',', '.'));
 
-    Navigator.of(context).pop(
+    AdaptiveNavigator.complete(
+      context,
       CustomerFormResult(
         nome: _nomeController.text.trim(),
         tipo: _tipo,
@@ -129,118 +138,140 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _buildFormBody(BuildContext context) {
     final s = context.spacing;
 
-    return PharmaResponsiveDialog(
-      title: Text(widget.isEditing ? 'Editar cliente' : 'Novo cliente'),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextFormField(
-              controller: _nomeController,
-              decoration: const InputDecoration(
-                labelText: 'Nome *',
-                border: OutlineInputBorder(),
-              ),
-              validator: (v) =>
-                  (v == null || v.trim().isEmpty) ? 'Nome obrigatório' : null,
+    return Form(
+      key: _formKey,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextFormField(
+            controller: _nomeController,
+            decoration: const InputDecoration(
+              labelText: 'Nome *',
+              border: OutlineInputBorder(),
             ),
-            SizedBox(height: s.md),
-            DropdownButtonFormField<String>(
-              initialValue: _tipo,
-              decoration: const InputDecoration(
-                labelText: 'Tipo',
-                border: OutlineInputBorder(),
-              ),
-              items: const [
-                DropdownMenuItem(value: 'PACIENTE', child: Text('Paciente')),
-                DropdownMenuItem(value: 'EMPRESA', child: Text('Empresa')),
-                DropdownMenuItem(value: 'CONVENIO', child: Text('Convénio')),
-              ],
-              onChanged: (v) => setState(() => _tipo = v ?? 'PACIENTE'),
+            validator: (v) =>
+                (v == null || v.trim().isEmpty) ? 'Nome obrigatório' : null,
+          ),
+          SizedBox(height: s.md),
+          DropdownButtonFormField<String>(
+            initialValue: _tipo,
+            decoration: const InputDecoration(
+              labelText: 'Tipo',
+              border: OutlineInputBorder(),
             ),
-            SizedBox(height: s.md),
-            Row(
-              children: [
-                Expanded(
-                  child: TextFormField(
-                    controller: _telefoneController,
-                    decoration: const InputDecoration(
-                      labelText: 'Telefone',
-                      border: OutlineInputBorder(),
-                    ),
+            items: const [
+              DropdownMenuItem(value: 'PACIENTE', child: Text('Paciente')),
+              DropdownMenuItem(value: 'EMPRESA', child: Text('Empresa')),
+              DropdownMenuItem(value: 'CONVENIO', child: Text('Convénio')),
+            ],
+            onChanged: (v) => setState(() => _tipo = v ?? 'PACIENTE'),
+          ),
+          SizedBox(height: s.md),
+          Row(
+            children: [
+              Expanded(
+                child: TextFormField(
+                  controller: _telefoneController,
+                  decoration: const InputDecoration(
+                    labelText: 'Telefone',
+                    border: OutlineInputBorder(),
                   ),
                 ),
-                SizedBox(width: s.sm),
-                Expanded(
-                  child: TextFormField(
-                    controller: _nuitController,
-                    decoration: const InputDecoration(
-                      labelText: 'NUIT',
-                      border: OutlineInputBorder(),
-                    ),
+              ),
+              SizedBox(width: s.sm),
+              Expanded(
+                child: TextFormField(
+                  controller: _nuitController,
+                  decoration: const InputDecoration(
+                    labelText: 'NUIT',
+                    border: OutlineInputBorder(),
                   ),
                 ),
-              ],
-            ),
-            SizedBox(height: s.md),
-            TextFormField(
-              controller: _emailController,
-              decoration: const InputDecoration(
-                labelText: 'Email',
-                border: OutlineInputBorder(),
               ),
-              keyboardType: TextInputType.emailAddress,
+            ],
+          ),
+          SizedBox(height: s.md),
+          TextFormField(
+            controller: _emailController,
+            decoration: const InputDecoration(
+              labelText: 'Email',
+              border: OutlineInputBorder(),
             ),
-            SizedBox(height: s.md),
-            TextFormField(
-              controller: _documentoController,
-              decoration: const InputDecoration(
-                labelText: 'Documento',
-                border: OutlineInputBorder(),
-              ),
+            keyboardType: TextInputType.emailAddress,
+          ),
+          SizedBox(height: s.md),
+          TextFormField(
+            controller: _documentoController,
+            decoration: const InputDecoration(
+              labelText: 'Documento',
+              border: OutlineInputBorder(),
             ),
-            SizedBox(height: s.md),
-            TextFormField(
-              controller: _enderecoController,
-              decoration: const InputDecoration(
-                labelText: 'Endereço',
-                border: OutlineInputBorder(),
-              ),
+          ),
+          SizedBox(height: s.md),
+          TextFormField(
+            controller: _enderecoController,
+            decoration: const InputDecoration(
+              labelText: 'Endereço',
+              border: OutlineInputBorder(),
             ),
-            SizedBox(height: s.md),
-            TextFormField(
-              controller: _limiteController,
-              decoration: const InputDecoration(
-                labelText: 'Limite de crédito (MT)',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          ),
+          SizedBox(height: s.md),
+          TextFormField(
+            controller: _limiteController,
+            decoration: const InputDecoration(
+              labelText: 'Limite de crédito (MT)',
+              border: OutlineInputBorder(),
             ),
-            SizedBox(height: s.sm),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Tem prescrição'),
-              value: _temPrescricao,
-              onChanged: (v) => setState(() => _temPrescricao = v),
-            ),
-          ],
-        ),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          ),
+          SizedBox(height: s.sm),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Tem prescrição'),
+            value: _temPrescricao,
+            onChanged: (v) => setState(() => _temPrescricao = v),
+          ),
+        ],
       ),
-      actions: [
+    );
+  }
+
+  List<Widget> _buildActions() => [
         TextButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () => AdaptiveNavigator.cancel(context),
           child: const Text('Cancelar'),
         ),
         FilledButton(
           onPressed: _submit,
           child: Text(widget.isEditing ? 'Guardar' : 'Criar'),
         ),
-      ],
+      ];
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.embedded) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildFormBody(context),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: _buildActions(),
+          ),
+        ],
+      );
+    }
+
+    return PharmaResponsiveDialog(
+      title: Text(widget.isEditing ? 'Editar cliente' : 'Novo cliente'),
+      content: _buildFormBody(context),
+      actions: _buildActions(),
     );
   }
 }

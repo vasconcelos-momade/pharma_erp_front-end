@@ -25,40 +25,25 @@ List<Widget> stockReportActions({
   final query = stockReportQuery(queryParameters);
 
   return [
-    OutlinedButton.icon(
-      onPressed: isBusy
-          ? null
-          : () => reportController.previewPdf(path: path, queryParameters: query),
-      icon: const Icon(Icons.picture_as_pdf_outlined),
-      label: const Text('Visualizar PDF'),
-    ),
-    OutlinedButton.icon(
-      onPressed: isBusy
-          ? null
-          : () => reportController.downloadPdf(path: path, queryParameters: query),
-      icon: const Icon(Icons.download_outlined),
-      label: const Text('Download PDF'),
-    ),
-    OutlinedButton.icon(
-      onPressed: isBusy
-          ? null
-          : () => reportController.printPdf(path: path, queryParameters: query),
-      icon: const Icon(Icons.print_outlined),
-      label: const Text('Imprimir'),
-    ),
-    OutlinedButton.icon(
-      onPressed: isBusy
-          ? null
-          : () => reportController.exportCsv(path: path, queryParameters: query),
-      icon: const Icon(Icons.table_rows_outlined),
-      label: const Text('Exportar CSV'),
-    ),
-    OutlinedButton.icon(
-      onPressed: isBusy
-          ? null
-          : () => reportController.exportExcel(path: path, queryParameters: query),
-      icon: const Icon(Icons.table_view_outlined),
-      label: const Text('Exportar Excel'),
+    PopupMenuButton<String>(
+      enabled: !isBusy,
+      tooltip: 'Exportar',
+      onSelected: (value) {
+        if (value == 'pdf') {
+          reportController.downloadPdf(path: path, queryParameters: query);
+          return;
+        }
+        reportController.exportCsv(path: path, queryParameters: query);
+      },
+      itemBuilder: (context) => const [
+        PopupMenuItem<String>(value: 'pdf', child: Text('Exportar PDF')),
+        PopupMenuItem<String>(value: 'csv', child: Text('Exportar CSV')),
+      ],
+      child: OutlinedButton.icon(
+        onPressed: null,
+        icon: Icon(Icons.download_outlined),
+        label: Text('Exportar'),
+      ),
     ),
   ];
 }

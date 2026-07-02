@@ -42,9 +42,9 @@ class ProdutoCategoriaChip extends StatelessWidget {
       case CategoriaProduto.equipamento:
         return t.textSecondary;
       case CategoriaProduto.higiene:
-        return const Color(0xFF0EA5E9);
+        return t.posInfo;
       case CategoriaProduto.suplemento:
-        return const Color(0xFFF59E0B);
+        return t.posWarning;
       case CategoriaProduto.outro:
         return t.textMuted;
     }

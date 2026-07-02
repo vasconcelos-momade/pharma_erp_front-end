@@ -420,6 +420,10 @@ class MasterProductListState {
   final bool isInitialized;
   final String? errorMessage;
 
+  bool get hasFilters =>
+      ativoFilter != null ||
+      categoriaId != null;
+
   MasterProductListState copyWith({
     List<Product>? items,
     String? query,
@@ -554,6 +558,19 @@ class MasterProductListController extends Notifier<MasterProductListState> {
     state = state.copyWith(
       sortBy: sortBy,
       sortOrder: sortOrder,
+      page: 1,
+      isLoading: true,
+      clearError: true,
+    );
+    unawaited(load());
+  }
+
+  void clearFilters() {
+    if (!state.hasFilters) return;
+    _debounce?.cancel();
+    state = state.copyWith(
+      clearAtivoFilter: true,
+      clearCategoriaId: true,
       page: 1,
       isLoading: true,
       clearError: true,

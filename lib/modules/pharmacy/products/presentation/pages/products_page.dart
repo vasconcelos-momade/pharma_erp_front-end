@@ -5,22 +5,26 @@ import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
-import '../../../../../shared/responsive/pharma_screen_layout.dart';
+import '../../../../../shared/navigation/adaptive_navigator.dart';
+import '../../../../../shared/responsive/responsive_builder.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
-import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
+import '../../../categories/domain/entities/category.dart';
 import '../../../categories/presentation/providers/category_provider.dart';
-import '../../../../stock/presentation/providers/fornecedor_provider.dart';
 import '../../domain/entities/product.dart';
 import '../providers/product_provider.dart';
-import '../widgets/produto_categoria_chip.dart';
 import '../widgets/produto_detail_panel.dart';
 import '../widgets/produto_form_dialog.dart';
-import '../widgets/produto_regulacao_badges.dart';
-import '../../../../stock/presentation/widgets/movimentacoes_pagination.dart';
+import '../widgets/produto_filters_bottom_sheet.dart';
+import '../widgets/produto_list.dart';
+import '../widgets/produto_table.dart';
+import '../widgets/produto_pagination.dart';
+import '../widgets/produto_empty_state.dart';
+import '../widgets/produto_loading.dart';
+import '../widgets/produto_toolbar.dart';
 import '../../../presentation/widgets/pharmacy_report_exports.dart';
 
-/// Catálogo master de produtos com filtros API, ordenação e painel de detalhe.
+/// Catálogo master de produtos refatorado para mobile, tablet e desktop.
 class ProductsPage extends ConsumerStatefulWidget {
   const ProductsPage({super.key});
 
@@ -29,44 +33,9 @@ class ProductsPage extends ConsumerStatefulWidget {
 }
 
 class _ProductsPageState extends ConsumerState<ProductsPage> {
-  late final TextEditingController _searchController;
-  String _reportPath = ReportPaths.pharmacyProductsCatalog;
-
-  static const _reportOptions = <(String, String)>[
-    (ReportPaths.pharmacyProductsCatalog, 'Catálogo'),
-    (ReportPaths.pharmacyProductsByCategory, 'Por categoria'),
-    (ReportPaths.pharmacyProductsBySupplier, 'Por fornecedor'),
-    (ReportPaths.pharmacyProductsBySubstancia, 'Por substância'),
-    (ReportPaths.pharmacyProductsNoStock, 'Sem stock'),
-    (ReportPaths.pharmacyProductsBelowMinStock, 'Abaixo do mínimo'),
-    (ReportPaths.pharmacyProductsNearExpiry, 'Próximos da validade'),
-    (ReportPaths.pharmacyProductsExpired, 'Expirados'),
-    (ReportPaths.pharmacyProductsControlled, 'Controlados'),
-  ];
-
-  static const _tipoDispensacaoOptions = <MapEntry<String?, String>>[
-    MapEntry(null, 'Todas as regulações'),
-    MapEntry('VENDA_LIVRE', 'Venda livre'),
-    MapEntry('RECEITA_SIMPLES', 'Receita simples'),
-    MapEntry('RECEITA_CONTROLADA', 'Receita controlada'),
-    MapEntry('RECEITA_OBRIGATORIA', 'Receita obrigatória'),
-    MapEntry('PSICOTROPICO', 'Psicotrópico'),
-    MapEntry('NARCOTICO', 'Narcótico'),
-  ];
-
-  static const _sortOptions = <MapEntry<String, String>>[
-    MapEntry('nome', 'Nome'),
-    MapEntry('estoqueAtual', 'Stock'),
-    MapEntry('createdAt', 'Data de criação'),
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _searchController = TextEditingController(
-      text: ref.read(masterProductListProvider).query,
-    );
-  }
+  final Set<String> _selectedIds = {};
+  final TextEditingController _searchController = TextEditingController();
+  List<Product> _accumulatedItems = [];
 
   @override
   void dispose() {
@@ -76,21 +45,12 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
     final s = context.spacing;
+    final t = context.pharmaTokens;
     final state = ref.watch(masterProductListProvider);
     final controller = ref.read(masterProductListProvider.notifier);
     final categoriesAsync = ref.watch(activeCategoriesProvider);
-    final suppliersAsync = ref.watch(supplierListProvider);
-    final reportQuery = <String, dynamic>{
-      if (state.query.isNotEmpty) 'q': state.query,
-      if (state.categoriaId != null) 'categoriaId': state.categoriaId,
-      if (state.fornecedorId != null) 'fornecedorId': state.fornecedorId,
-      if (state.tipoDispensacao != null) 'tipoDispensacao': state.tipoDispensacao,
-      if (state.includeInactive) 'includeInactive': true,
-      'sortBy': state.sortBy,
-      'sortOrder': state.sortOrder,
-    };
+    final categories = categoriesAsync.asData?.value ?? const <Category>[];
 
     if (_searchController.text != state.query) {
       _searchController.value = TextEditingValue(
@@ -99,486 +59,279 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
       );
     }
 
-    return EnterpriseModuleHub(
-      title: 'Produtos',
-      subtitle:
-          'Catálogo master com stock, lotes, validades e regras de dispensação.',
-      tag: 'Farmácia',
-      actions: [
-        SizedBox(
-          width: 220,
-          child: DropdownButtonFormField<String>(
-            key: ValueKey('report-$_reportPath'),
-            isExpanded: true,
-            initialValue: _reportPath,
-            decoration: const InputDecoration(
-              labelText: 'Relatório',
-              border: OutlineInputBorder(),
-              isDense: true,
-            ),
-            items: _reportOptions
-                .map(
-                  (option) => DropdownMenuItem(
-                    value: option.$1,
-                    child: Text(option.$2),
-                  ),
+    ref.listen(masterProductListProvider, (prev, next) {
+      if (prev?.page != next.page ||
+          prev?.query != next.query ||
+          prev?.categoriaId != next.categoriaId ||
+          prev?.ativoFilter != next.ativoFilter ||
+          prev?.sortBy != next.sortBy ||
+          prev?.sortOrder != next.sortOrder) {
+        if (next.page == 1) {
+          _accumulatedItems = List.of(next.items);
+        } else {
+          final newItems = next.items
+              .where((e) => !_accumulatedItems.any((a) => a.id == e.id))
+              .toList();
+          _accumulatedItems.addAll(newItems);
+        }
+      } else if (prev?.items != next.items && next.page == 1) {
+        _accumulatedItems = List.of(next.items);
+      }
+    });
+
+    final reportQuery = <String, dynamic>{
+      if (state.query.isNotEmpty) 'q': state.query,
+      if (state.categoriaId != null) 'categoriaId': state.categoriaId,
+      if (state.fornecedorId != null) 'fornecedorId': state.fornecedorId,
+      if (state.tipoDispensacao != null) 'tipoDispensacao': state.tipoDispensacao,
+    };
+
+    return ResponsiveBuilder(
+      builder: (context, constraints) {
+        final isDesktop = constraints.isDesktopOrWider;
+        final isMobile = !constraints.isTabletOrWider;
+
+        return Scaffold(
+          backgroundColor: t.bgPrimary,
+          floatingActionButton: isMobile
+              ? FloatingActionButton(
+                  onPressed: state.isLoading ? null : () => _openCreateDialog(context, ref),
+                  child: const Icon(Icons.add),
                 )
-                .toList(growable: false),
-            onChanged: state.isLoading
+              : null,
+          body: EnterpriseModuleHub(
+            filters: isMobile
                 ? null
-                : (value) {
-                    if (value == null) return;
-                    setState(() => _reportPath = value);
-                  },
-          ),
-        ),
-        ...pharmacyReportActions(
-          ref: ref,
-          enabled: !state.isLoading,
-          path: _reportPath,
-          queryParameters: reportQuery,
-        ),
-        OutlinedButton.icon(
-          onPressed: state.isLoading
-              ? null
-              : () => controller.refreshCurrentPage(),
-          icon: const Icon(Icons.refresh_rounded),
-          label: const Text('Atualizar'),
-        ),
-        FilledButton.icon(
-          onPressed: state.isLoading
-              ? null
-              : () => _openCreateDialog(context, ref),
-          icon: const Icon(Icons.add),
-          label: const Text('Novo produto'),
-        ),
-      ],
-      filters: Wrap(
-        spacing: s.sm,
-        runSpacing: s.sm,
-        crossAxisAlignment: WrapCrossAlignment.center,
-        children: [
-          SizedBox(
-            width: 280,
-            child: TextField(
-              controller: _searchController,
-              onChanged: controller.onSearchChanged,
-              decoration: const InputDecoration(
-                hintText: 'Nome, substância ou código de barras...',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
-              ),
-            ),
-          ),
-          SizedBox(
-            width: 200,
-            child: categoriesAsync.when(
-              data: (categories) => DropdownButtonFormField<String?>(
-                key: ValueKey('categoria-${state.categoriaId}'),
-                isExpanded: true,
-                initialValue: state.categoriaId,
-                decoration: const InputDecoration(
-                  labelText: 'Categoria',
-                  border: OutlineInputBorder(),
-                  isDense: true,
-                ),
-                items: [
-                  const DropdownMenuItem<String?>(
-                    value: null,
-                    child: Text('Todas'),
+                : ProdutoToolbar(
+                    searchController: _searchController,
+                    state: state,
+                    controller: controller,
+                    categories: categories,
+                    onSearchChanged: controller.onSearchChanged,
+                    onOpenMobileFilters: () =>
+                        _openFilters(context, controller, state, categories),
                   ),
-                  ...categories.map(
-                    (c) => DropdownMenuItem(
-                      value: c.id,
-                      child: Text(c.nome),
+            actions: isMobile
+                ? null
+                : [
+                    OutlinedButton.icon(
+                      onPressed:
+                          state.isLoading ? null : () => controller.refreshCurrentPage(),
+                      icon: const Icon(Icons.refresh_rounded),
+                      label: const Text('Atualizar'),
                     ),
+                    ...pharmacyReportActions(
+                      ref: ref,
+                      enabled: !state.isLoading,
+                      path: ReportPaths.pharmacyProductsCatalog,
+                      queryParameters: reportQuery,
+                      isIconButton: false,
+                    ),
+                    FilledButton.icon(
+                      onPressed: state.isLoading ? null : () => _openCreateDialog(context, ref),
+                      icon: const Icon(Icons.add),
+                      label: const Text('Novo produto'),
+                    ),
+                  ],
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (isMobile) ...[
+                  ProdutoToolbar(
+                    searchController: _searchController,
+                    state: state,
+                    controller: controller,
+                    categories: categories,
+                    onSearchChanged: controller.onSearchChanged,
+                    onOpenMobileFilters: () =>
+                        _openFilters(context, controller, state, categories),
                   ),
-                ],
-                onChanged: controller.setCategoriaIdFilter,
-              ),
-              loading: () => const InputDecorator(
-                decoration: InputDecoration(
-                  labelText: 'Categoria',
-                  border: OutlineInputBorder(),
-                ),
-                child: SizedBox(
-                  height: 20,
-                  child: LinearProgressIndicator(),
-                ),
-              ),
-              error: (_, _) => const InputDecorator(
-                decoration: InputDecoration(
-                  labelText: 'Categoria',
-                  border: OutlineInputBorder(),
-                ),
-                child: Text('Erro ao carregar'),
-              ),
-            ),
-          ),
-          SizedBox(
-            width: 200,
-            child: suppliersAsync.when(
-              data: (suppliers) => DropdownButtonFormField<String?>(
-                key: ValueKey('fornecedor-${state.fornecedorId}'),
-                isExpanded: true,
-                initialValue: state.fornecedorId,
-                decoration: const InputDecoration(
-                  labelText: 'Fornecedor',
-                  border: OutlineInputBorder(),
-                  isDense: true,
-                ),
-                items: [
-                  const DropdownMenuItem<String?>(
-                    value: null,
-                    child: Text('Todos'),
-                  ),
-                  ...suppliers.map(
-                    (f) => DropdownMenuItem(
-                      value: f.id,
-                      child: Text(f.nome),
-                    ),
-                  ),
-                ],
-                onChanged: controller.setFornecedorIdFilter,
-              ),
-              loading: () => const InputDecorator(
-                decoration: InputDecoration(
-                  labelText: 'Fornecedor',
-                  border: OutlineInputBorder(),
-                ),
-                child: SizedBox(
-                  height: 20,
-                  child: LinearProgressIndicator(),
-                ),
-              ),
-              error: (_, _) => const SizedBox.shrink(),
-            ),
-          ),
-          SizedBox(
-            width: 200,
-            child: DropdownButtonFormField<String?>(
-              key: ValueKey('tipo-${state.tipoDispensacao}'),
-              isExpanded: true,
-              initialValue: state.tipoDispensacao,
-              decoration: const InputDecoration(
-                labelText: 'Regulação',
-                border: OutlineInputBorder(),
-                isDense: true,
-              ),
-              items: _tipoDispensacaoOptions
-                  .map(
-                    (e) => DropdownMenuItem<String?>(
-                      value: e.key,
-                      child: Text(e.value),
-                    ),
-                  )
-                  .toList(growable: false),
-              onChanged: controller.setTipoDispensacaoFilter,
-            ),
-          ),
-          SizedBox(
-            width: 160,
-            child: DropdownButtonFormField<bool?>(
-              key: ValueKey('ativo-${state.ativoFilter}'),
-              isExpanded: true,
-              initialValue: state.ativoFilter,
-              decoration: const InputDecoration(
-                labelText: 'Estado',
-                border: OutlineInputBorder(),
-                isDense: true,
-              ),
-              items: const [
-                DropdownMenuItem<bool?>(value: null, child: Text('Todos')),
-                DropdownMenuItem<bool?>(value: true, child: Text('Activos')),
-                DropdownMenuItem<bool?>(value: false, child: Text('Inactivos')),
-              ],
-              onChanged: controller.setAtivoFilter,
-            ),
-          ),
-          SizedBox(
-            width: 180,
-            child: DropdownButtonFormField<String>(
-              key: ValueKey('sort-${state.sortBy}'),
-              isExpanded: true,
-              initialValue: _sortOptions.any((o) => o.key == state.sortBy)
-                  ? state.sortBy
-                  : 'nome',
-              decoration: const InputDecoration(
-                labelText: 'Ordenar por',
-                border: OutlineInputBorder(),
-                isDense: true,
-              ),
-              items: _sortOptions
-                  .map(
-                    (e) => DropdownMenuItem(
-                      value: e.key,
-                      child: Text(e.value),
-                    ),
-                  )
-                  .toList(growable: false),
-              onChanged: (value) {
-                if (value != null) {
-                  controller.setSort(value, state.sortOrder);
-                }
-              },
-            ),
-          ),
-          IconButton(
-            tooltip: state.sortOrder == 'asc'
-                ? 'Ordem ascendente'
-                : 'Ordem descendente',
-            onPressed: () => controller.setSort(
-              state.sortBy,
-              state.sortOrder == 'asc' ? 'desc' : 'asc',
-            ),
-            icon: Icon(
-              state.sortOrder == 'asc'
-                  ? Icons.arrow_upward_rounded
-                  : Icons.arrow_downward_rounded,
-            ),
-          ),
-          FilterChip(
-            label: const Text('Incluir inactivos'),
-            selected: state.includeInactive,
-            onSelected: controller.setIncludeInactive,
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (state.isLoading) const LinearProgressIndicator(),
-          if (state.errorMessage != null)
-            Padding(
-              padding: EdgeInsets.only(bottom: s.sm),
-              child: Text(
-                state.errorMessage!,
-                style: TextStyle(color: t.posDanger),
-              ),
-            ),
-          if (pharmacyReportError(ref) != null)
-            Padding(
-              padding: EdgeInsets.only(bottom: s.sm),
-              child: pharmacyReportError(ref),
-            ),
-          Expanded(
-            child: !state.isInitialized && state.isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : state.items.isEmpty
-                    ? const _ProductsEmptyState()
-                    : EnterpriseDataTable(
-                        showCheckboxColumn: false,
-                        columns: const [
-                          DataColumn(label: Text('PRODUTO')),
-                          DataColumn(label: Text('CATEGORIA')),
-                          DataColumn(label: Text('STOCK')),
-                          DataColumn(label: Text('LOTES')),
-                          DataColumn(label: Text('PRÓX. VALIDADE')),
-                          DataColumn(label: Text('REGULAÇÃO')),
-                          DataColumn(label: Text('ESTADO')),
-                          DataColumn(label: Text('AÇÕES')),
-                        ],
-                        rowCount: state.items.length,
-                        rowBuilder: (context, index) {
-                          final product = state.items[index];
-                          final isDeleting =
-                              state.deletingProductIds.contains(product.id);
-                          return DataRow(
-                            onSelectChanged: (_) =>
-                                _openDetails(context, product),
-                            cells: [
-                              DataCell(
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      product.nome,
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w700,
-                                        color: product.ativo
-                                            ? t.textPrimary
-                                            : t.textMuted,
-                                      ),
-                                    ),
-                                    if ((product.substanciaActiva ?? '')
-                                        .isNotEmpty)
-                                      Text(
-                                        product.substanciaActiva!,
-                                        style: TextStyle(
-                                          color: t.textMuted,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                  ],
-                                ),
-                              ),
-                              DataCell(
-                                ProdutoCategoriaChip(
-                                  categoria: product.categoria,
-                                  label: product.categoriaNome,
-                                ),
-                              ),
-                              DataCell(
-                                Text(
-                                  _formatStock(product.estoqueAtual),
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    color: product.estoqueAtual <=
-                                            product.estoqueMinimo
-                                        ? t.posDanger
-                                        : t.textPrimary,
-                                  ),
-                                ),
-                              ),
-                              DataCell(Text('${product.numLotes}')),
-                              DataCell(
-                                Text(_formatDate(product.proximaValidade)),
-                              ),
-                              DataCell(
-                                ProdutoRegulacaoBadges(product: product),
-                              ),
-                              DataCell(
-                                _ProductStatusChip(isActive: product.ativo),
-                              ),
-                              DataCell(
-                                Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      tooltip: 'Detalhes',
-                                      onPressed: () =>
-                                          _openDetails(context, product),
-                                      icon: const Icon(Icons.visibility_outlined),
-                                    ),
-                                    IconButton(
-                                      tooltip: 'Editar',
-                                      onPressed: isDeleting
-                                          ? null
-                                          : () => _openEditDialog(
-                                                context,
-                                                ref,
-                                                product,
-                                              ),
-                                      icon: const Icon(Icons.edit_outlined),
-                                    ),
-                                    IconButton(
-                                      tooltip: 'Excluir',
-                                      onPressed: isDeleting
-                                          ? null
-                                          : () => _confirmDeleteProduct(
-                                                context,
-                                                ref,
-                                                product,
-                                              ),
-                                      icon: isDeleting
-                                          ? SizedBox(
-                                              width: 18,
-                                              height: 18,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                color: t.posDanger,
-                                              ),
-                                            )
-                                          : const Icon(
-                                              Icons.delete_outline_rounded,
-                                            ),
-                                      color: t.posDanger,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          );
-                        },
+                  SizedBox(height: s.sm),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: state.isLoading
+                              ? null
+                              : () => _openFilters(context, controller, state, categories),
+                          icon: const Icon(Icons.tune_rounded),
+                          label: Text(state.hasFilters ? 'Filtros *' : 'Filtros'),
+                        ),
                       ),
-          ),
-          if (state.isInitialized) ...[
-            SizedBox(height: s.sm),
-            MovimentacoesPagination(
-              page: state.page,
-              pageSize: state.pageSize,
-              hasMore: state.hasMore,
-              isBusy: state.isLoading,
-              onPrev: state.page > 1
-                  ? () => controller.goToPage(state.page - 1)
-                  : null,
-              onNext: state.hasMore
-                  ? () => controller.goToPage(state.page + 1)
-                  : null,
-              onPageSizeChanged: controller.setPageSize,
-            ),
-            if (state.totalCount != null)
-              Padding(
-                padding: EdgeInsets.only(top: s.xs),
-                child: Text(
-                  'Total: ${state.totalCount} produto(s)',
-                  style: TextStyle(color: t.textMuted, fontSize: 12),
+                      SizedBox(width: s.sm),
+                      Expanded(
+                        child: pharmacyReportActions(
+                          ref: ref,
+                          enabled: !state.isLoading,
+                          path: ReportPaths.pharmacyProductsCatalog,
+                          queryParameters: reportQuery,
+                          expandChild: true,
+                          buttonLabel: 'Exportar..',
+                        ).single,
+                      ),
+                      SizedBox(width: s.sm),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: state.isLoading
+                              ? null
+                              : () => controller.refreshCurrentPage(),
+                          icon: const Icon(Icons.refresh_rounded),
+                          label: const Text(
+                            'Atualizar..',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            softWrap: false,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (state.hasFilters) ...[
+                    SizedBox(height: s.xs),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        onPressed: state.isLoading ? null : controller.clearFilters,
+                        icon: const Icon(Icons.filter_alt_off_outlined),
+                        label: const Text('Limpar filtros'),
+                      ),
+                    ),
+                  ],
+                  SizedBox(height: s.sm),
+                ],
+                if (pharmacyReportError(ref) != null)
+                  Padding(
+                    padding: EdgeInsets.only(bottom: s.sm),
+                    child: pharmacyReportError(ref),
+                  ),
+                if (state.errorMessage != null)
+                  Padding(
+                    padding: EdgeInsets.only(bottom: s.sm),
+                    child: Text(
+                      state.errorMessage!,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: t.posDanger,
+                          ),
+                    ),
+                  ),
+                Expanded(
+                  child: !state.isInitialized && state.isLoading
+                      ? ProdutoLoading(isDesktop: isDesktop)
+                      : (isDesktop ? state.items.isEmpty : _accumulatedItems.isEmpty)
+                          ? const ProdutoEmptyState()
+                          : isDesktop
+                              ? ProdutoTable(
+                                  items: state.items,
+                                  sortBy: state.sortBy,
+                                  sortOrder: state.sortOrder,
+                                  onSort: controller.setSort,
+                                  onSelect: (p) => _openDetails(context, p),
+                                  onAction: (p, action) =>
+                                      _handleAction(context, ref, p, action),
+                                  selectedIds: _selectedIds,
+                                  onToggleSelect: (id, selected) {
+                                    setState(() {
+                                      if (selected) {
+                                        _selectedIds.add(id);
+                                      } else {
+                                        _selectedIds.remove(id);
+                                      }
+                                    });
+                                  },
+                                  onToggleSelectAll: (selected) {
+                                    setState(() {
+                                      if (selected) {
+                                        _selectedIds.addAll(state.items.map((e) => e.id));
+                                      } else {
+                                        _selectedIds.clear();
+                                      }
+                                    });
+                                  },
+                                )
+                              : ProdutoList(
+                                  items: _accumulatedItems,
+                                  hasMore: state.hasMore,
+                                  isLoading: state.isLoading,
+                                  onLoadMore: () => controller.goToPage(state.page + 1),
+                                  onItemTap: (p) => _openDetails(context, p),
+                                  onItemAction: (p, action) =>
+                                      _handleAction(context, ref, p, action),
+                                ),
                 ),
-              ),
-          ],
-        ],
-      ),
-    );
-  }
-
-  String _formatStock(double value) {
-    if (value == value.roundToDouble()) {
-      return value.toInt().toString();
-    }
-    return value.toStringAsFixed(2);
-  }
-
-  String _formatDate(DateTime? date) {
-    if (date == null) return '—';
-    final y = date.year.toString().padLeft(4, '0');
-    final m = date.month.toString().padLeft(2, '0');
-    final d = date.day.toString().padLeft(2, '0');
-    return '$d/$m/$y';
-  }
-
-  Future<void> _openDetails(BuildContext context, Product product) async {
-    final isMobile = PharmaScreenLayout.isMobile(context);
-
-    if (isMobile) {
-      await Navigator.of(context).push<void>(
-        MaterialPageRoute(
-          builder: (screenContext) => Scaffold(
-            appBar: AppBar(title: Text(product.nome)),
-            body: ProdutoDetailPanel(
-              product: product,
-              onClose: () => Navigator.of(screenContext).pop(),
-            ),
-          ),
-        ),
-      );
-      return;
-    }
-
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: true,
-      builder: (dialogContext) {
-        final t = context.pharmaTokens;
-        final s = context.spacing;
-        return Dialog(
-          alignment: Alignment.centerRight,
-          insetPadding: EdgeInsets.symmetric(horizontal: 16, vertical: s.md),
-          backgroundColor: Colors.transparent,
-          child: Container(
-            width: 560,
-            decoration: BoxDecoration(
-              color: t.bgPrimary,
-              borderRadius: BorderRadius.circular(t.radiusXl),
-              border: Border.all(color: t.border.withValues(alpha: 0.55)),
-            ),
-            child: ProdutoDetailPanel(
-              product: product,
-              onClose: () => Navigator.of(dialogContext).pop(),
+                if (isDesktop && state.isInitialized && state.totalCount != null)
+                  ProdutoPagination(
+                    page: state.page,
+                    pageSize: state.pageSize,
+                    totalCount: state.totalCount!,
+                    onPageChanged: controller.goToPage,
+                    onPageSizeChanged: controller.setPageSize,
+                  ),
+              ],
             ),
           ),
         );
       },
+    );
+  }
+
+  void _openFilters(
+    BuildContext context,
+    MasterProductListController controller,
+    MasterProductListState state,
+    List<Category> categories,
+  ) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      barrierColor: Colors.transparent,
+      backgroundColor: Colors.transparent,
+      builder: (_) => ProdutoFiltersBottomSheet(
+        initialAtivo: state.ativoFilter,
+        initialCategoriaId: state.categoriaId,
+        categories: categories,
+        onApply: (ativo, categoriaId) {
+          controller.setAtivoFilter(ativo);
+          controller.setCategoriaIdFilter(categoriaId);
+        },
+      ),
+    );
+  }
+
+  void _handleAction(BuildContext context, WidgetRef ref, Product product, String action) {
+    switch (action) {
+      case 'detalhes':
+        _openDetails(context, product);
+        break;
+      case 'editar':
+        _openEditDialog(context, ref, product);
+        break;
+      case 'historico':
+        break;
+      case 'duplicar':
+        break;
+      case 'excluir':
+        _confirmDeleteProduct(context, ref, product);
+        break;
+    }
+  }
+
+  Future<void> _openDetails(BuildContext context, Product product) async {
+    await AdaptiveNavigator.openPanel<void>(
+      context: context,
+      sideSheetWidth: 720,
+      routeSettings: RouteSettings(name: '/produtos/${product.id}'),
+      builder: (detailContext) => ProdutoDetailPanel(
+        product: product,
+        onClose: () => AdaptiveNavigator.close(detailContext),
+        onEdit: () {
+          AdaptiveNavigator.close(detailContext);
+          _openEditDialog(context, ref, product);
+        },
+        onDelete: () {
+          AdaptiveNavigator.close(detailContext);
+          _confirmDeleteProduct(context, ref, product);
+        },
+      ),
     );
   }
 
@@ -587,9 +340,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
     if (result == null || !context.mounted) return;
 
     try {
-      await ref
-          .read(masterProductListProvider.notifier)
-          .createProduct(result.toPayload());
+      await ref.read(masterProductListProvider.notifier).createProduct(result.toPayload());
       if (context.mounted) {
         PharmaFeedback.success(context, 'Produto criado com sucesso');
       }
@@ -600,11 +351,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
     }
   }
 
-  Future<void> _openEditDialog(
-    BuildContext context,
-    WidgetRef ref,
-    Product product,
-  ) async {
+  Future<void> _openEditDialog(BuildContext context, WidgetRef ref, Product product) async {
     final result = await showProdutoFormDialog(context, product: product);
     if (result == null || !context.mounted) return;
 
@@ -648,70 +395,5 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
     } catch (e) {
       if (context.mounted) PharmaFeedback.error(context, e.toString());
     }
-  }
-}
-
-class _ProductsEmptyState extends StatelessWidget {
-  const _ProductsEmptyState();
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
-    final s = context.spacing;
-
-    return Card(
-      child: Center(
-        child: Padding(
-          padding: EdgeInsets.all(s.lg),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.inventory_2_outlined, size: 48, color: t.textMuted),
-              SizedBox(height: s.md),
-              Text(
-                'Nenhum produto encontrado',
-                style: TextStyle(
-                  color: t.textPrimary,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              SizedBox(height: s.xs),
-              Text(
-                'Ajuste os filtros ou crie um novo produto.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: t.textMuted),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ProductStatusChip extends StatelessWidget {
-  const _ProductStatusChip({required this.isActive});
-
-  final bool isActive;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
-    final color = isActive ? t.brandGreen : t.posDanger;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Text(
-        isActive ? 'Activo' : 'Inactivo',
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.w700,
-          fontSize: 12,
-        ),
-      ),
-    );
   }
 }

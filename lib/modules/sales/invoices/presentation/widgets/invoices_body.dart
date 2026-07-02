@@ -19,6 +19,7 @@ class InvoicesBody extends ConsumerWidget {
     required this.detailState,
     required this.onView,
     required this.onCancel,
+    required this.onPrint,
   });
 
   final TextEditingController searchController;
@@ -26,6 +27,7 @@ class InvoicesBody extends ConsumerWidget {
   final InvoiceDetailState detailState;
   final ValueChanged<InvoiceSummary> onView;
   final ValueChanged<InvoiceSummary> onCancel;
+  final ValueChanged<InvoiceSummary> onPrint;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -48,6 +50,7 @@ class InvoicesBody extends ConsumerWidget {
         cancelled: cancelled,
         onView: onView,
         onCancel: onCancel,
+        onPrint: onPrint,
       );
     }
 
@@ -83,6 +86,7 @@ class InvoicesBody extends ConsumerWidget {
                       invoices: listState.items,
                       onView: onView,
                       onCancel: onCancel,
+                      onPrint: onPrint,
                     ),
                     Positioned(
                       left: 0,
@@ -105,6 +109,7 @@ class InvoicesBody extends ConsumerWidget {
                   invoices: listState.items,
                   onView: onView,
                   onCancel: onCancel,
+                  onPrint: onPrint,
                 ),
             },
           ),
@@ -142,6 +147,7 @@ class InvoicesMobileContent extends ConsumerWidget {
     required this.cancelled,
     required this.onView,
     required this.onCancel,
+    required this.onPrint,
   });
 
   final TextEditingController searchController;
@@ -153,6 +159,7 @@ class InvoicesMobileContent extends ConsumerWidget {
   final int cancelled;
   final ValueChanged<InvoiceSummary> onView;
   final ValueChanged<InvoiceSummary> onCancel;
+  final ValueChanged<InvoiceSummary> onPrint;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -195,6 +202,7 @@ class InvoicesMobileContent extends ConsumerWidget {
                       invoices: listState.items,
                       onView: onView,
                       onCancel: onCancel,
+                      onPrint: onPrint,
                       searchController: searchController,
                       embedded: true,
                     ),
@@ -223,6 +231,7 @@ class InvoicesMobileContent extends ConsumerWidget {
                       invoices: listState.items,
                       onView: onView,
                       onCancel: onCancel,
+                      onPrint: onPrint,
                       searchController: searchController,
                       embedded: true,
                     ),

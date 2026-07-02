@@ -5,7 +5,7 @@ import '../../../reports/presentation/controllers/report_controller.dart';
 import '../../domain/dashboard_query.dart';
 import 'dashboard_widgets.dart';
 
-/// Menu único de exportação (PDF, CSV, Excel) para painéis do dashboard.
+/// Menu único de exportação (PDF e CSV) para painéis do dashboard.
 class DashboardExportMenu extends ConsumerWidget {
   const DashboardExportMenu({
     super.key,
@@ -64,19 +64,6 @@ class DashboardExportMenu extends ConsumerWidget {
               ),
               const SizedBox(width: 12),
               const Text('CSV'),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 'excel',
-          child: Row(
-            children: [
-              Icon(
-                Icons.table_view_outlined,
-                color: Theme.of(context).colorScheme.onSurface,
-              ),
-              const SizedBox(width: 12),
-              const Text('Excel'),
             ],
           ),
         ),

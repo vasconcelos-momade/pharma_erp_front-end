@@ -7,20 +7,31 @@ import '../../../../../core/contracts/api_envelope.dart';
 import '../../../../../core/network/dio/dio_provider.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
+import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../data/datasources/product_remote_datasource.dart';
-import '../../domain/entities/categoria_produto.dart';
+import '../../data/models/product_model.dart';
 import '../../domain/entities/product.dart';
-import 'produto_regulacao_badges.dart';
+import 'detail/lot_card.dart';
+import 'detail/movement_timeline.dart';
+import 'detail/product_header.dart';
+import 'detail/property_tile.dart';
+import 'detail/regulation_card.dart';
+import 'detail/section_card.dart';
+import 'detail/status_badge.dart';
 
 class ProdutoDetailPanel extends ConsumerStatefulWidget {
   const ProdutoDetailPanel({
     super.key,
     required this.product,
     required this.onClose,
+    this.onEdit,
+    this.onDelete,
   });
 
   final Product product;
   final VoidCallback onClose;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
 
   @override
   ConsumerState<ProdutoDetailPanel> createState() => _ProdutoDetailPanelState();
@@ -37,6 +48,7 @@ class _ProdutoDetailPanelState extends ConsumerState<ProdutoDetailPanel>
   List<Map<String, dynamic>> _historico = [];
   List<Map<String, dynamic>> _fornecedores = [];
   List<Map<String, dynamic>> _auditoria = [];
+
 
   @override
   void initState() {
@@ -71,43 +83,11 @@ class _ProdutoDetailPanelState extends ConsumerState<ProdutoDetailPanel>
       final fornecedoresRes = await productsDs.listSuppliers(widget.product.id);
       final auditoriaRes = await productsDs.listAudit(id: widget.product.id);
 
+      if (!mounted) return;
       setState(() {
-        _detail = Product(
-          id: productResponse.id,
-          nome: productResponse.nome,
-          substanciaActiva: productResponse.substanciaActiva,
-          dosagem: productResponse.dosagem,
-          forma: productResponse.forma,
-          apresentacao: productResponse.apresentacao,
-          ativo: productResponse.ativo,
-          barcode: productResponse.barcode,
-          categoriaId: productResponse.categoriaId,
-          categoriaNome: productResponse.categoriaNome,
-          categoria: productResponse.categoria,
-          tipoDispensacao: productResponse.tipoDispensacao,
-          requiresPrescription: productResponse.requiresPrescription,
-          requiresDoubleCheck: productResponse.requiresDoubleCheck,
-          requiresPsychotropicBook: productResponse.requiresPsychotropicBook,
-          antimicrobiano: productResponse.antimicrobiano,
-          requiresManualReview: productResponse.requiresManualReview,
-          precoVenda: productResponse.precoVenda,
-          estoqueAtual: productResponse.estoqueAtual,
-          estoqueMinimo: productResponse.estoqueMinimo,
-          numLotes: productResponse.numLotes,
-          lote: productResponse.lote,
-          dataValidade: productResponse.dataValidade,
-          proximaValidade: productResponse.proximaValidade,
-          createdAt: productResponse.createdAt,
-          taxRule: productResponse.taxRule,
-        );
-        final lotesPayload = lotesRes.data;
-        if (lotesPayload is List) {
-          _lotes = lotesPayload.cast<Map<String, dynamic>>();
-        } else if (lotesPayload is Map) {
-          _lotes = ApiEnvelope.unwrapList(lotesPayload).cast<Map<String, dynamic>>();
-        }
-        _movimentos = ApiEnvelope.unwrapMap(movRes.data!)
-            .letItems();
+        _detail = _mapProduct(productResponse);
+        _lotes = _unwrapList(lotesRes.data);
+        _movimentos = ApiEnvelope.unwrapMap(movRes.data!).letItems();
         _precos = ApiEnvelope.unwrapMap(precosRes.data!).letItems();
         _historico = historicoRes.items;
         _fornecedores = fornecedoresRes;
@@ -115,99 +95,139 @@ class _ProdutoDetailPanelState extends ConsumerState<ProdutoDetailPanel>
         _loading = false;
       });
     } on DioException {
-      setState(() => _loading = false);
+      if (mounted) setState(() => _loading = false);
     }
+  }
+
+  Product _mapProduct(ProductModel model) {
+    return Product(
+      id: model.id,
+      nome: model.nome,
+      substanciaActiva: model.substanciaActiva,
+      dosagem: model.dosagem,
+      forma: model.forma,
+      apresentacao: model.apresentacao,
+      ativo: model.ativo,
+      barcode: model.barcode,
+      categoriaId: model.categoriaId,
+      categoriaNome: model.categoriaNome,
+      categoria: model.categoria,
+      tipoDispensacao: model.tipoDispensacao,
+      requiresPrescription: model.requiresPrescription,
+      requiresDoubleCheck: model.requiresDoubleCheck,
+      requiresPsychotropicBook: model.requiresPsychotropicBook,
+      antimicrobiano: model.antimicrobiano,
+      requiresManualReview: model.requiresManualReview,
+      precoVenda: model.precoVenda,
+      estoqueAtual: model.estoqueAtual,
+      estoqueMinimo: model.estoqueMinimo,
+      numLotes: model.numLotes,
+      lote: model.lote,
+      dataValidade: model.dataValidade,
+      proximaValidade: model.proximaValidade,
+      createdAt: model.createdAt,
+      taxRule: model.taxRule,
+    );
+  }
+
+  List<Map<String, dynamic>> _unwrapList(dynamic payload) {
+    if (payload is List) {
+      return payload.cast<Map<String, dynamic>>();
+    }
+    if (payload is Map) {
+      return ApiEnvelope.unwrapList(payload).cast<Map<String, dynamic>>();
+    }
+    return const [];
   }
 
   @override
   Widget build(BuildContext context) {
+    final product = _detail ?? widget.product;
+    final isMobile = AdaptiveNavigator.isMobile(context);
+    final body = _buildBody(context, product);
+
+    if (isMobile) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(shortProductName(product.nome)),
+          actions: [_buildActionsMenu(context)],
+        ),
+        body: body,
+      );
+    }
+
+    return body;
+  }
+
+  Widget _buildBody(BuildContext context, Product product) {
     final t = context.pharmaTokens;
     final s = context.spacing;
-    final product = _detail ?? widget.product;
+    final theme = Theme.of(context);
 
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: EdgeInsets.all(s.md),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      product.nome,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
-                    ),
-                    if (product.barcode != null)
-                      Text('Código: ${product.barcode}', style: TextStyle(color: t.textMuted)),
-                  ],
-                ),
-              ),
-              IconButton(onPressed: widget.onClose, icon: const Icon(Icons.close)),
+        ProductHeader(
+          product: product,
+          showClose: !AdaptiveNavigator.isMobile(context),
+          onClose: widget.onClose,
+        ),
+        Material(
+          color: theme.colorScheme.surface,
+          child: TabBar(
+            controller: _tabs,
+            isScrollable: true,
+            tabAlignment: TabAlignment.start,
+            indicatorWeight: 2,
+            dividerHeight: 1,
+            dividerColor: t.border.withValues(alpha: 0.35),
+            labelColor: t.textPrimary,
+            unselectedLabelColor: t.textMuted,
+            tabs: [
+              const Tab(text: 'Geral'),
+              const Tab(text: 'Regulação'),
+              Tab(text: _tabWithCount('Lotes', _lotes.length)),
+              Tab(text: _tabWithCount('Movimentos', _movimentos.length)),
+              Tab(text: _tabWithCount('Preços', _precos.length)),
+              Tab(text: _tabWithCount('Histórico', _historico.length)),
+              Tab(text: _tabWithCount('Fornecedor', _fornecedores.length)),
+              Tab(text: _tabWithCount('Auditoria', _auditoria.length)),
             ],
           ),
         ),
-        TabBar(
-          controller: _tabs,
-          isScrollable: true,
-          tabs: const [
-            Tab(text: 'Geral'),
-            Tab(text: 'Regulação'),
-            Tab(text: 'Lotes'),
-            Tab(text: 'Movimentos'),
-            Tab(text: 'Preços'),
-            Tab(text: 'Histórico'),
-            Tab(text: 'Fornecedor'),
-            Tab(text: 'Auditoria'),
-          ],
-        ),
-        if (_loading) const LinearProgressIndicator(),
+        if (_loading)
+          LinearProgressIndicator(
+            minHeight: 2,
+            color: t.brandBlue,
+            backgroundColor: t.border.withValues(alpha: 0.2),
+          ),
         Expanded(
           child: TabBarView(
             controller: _tabs,
             children: [
-              _InfoTab(product: product),
-              Padding(
-                padding: EdgeInsets.all(s.md),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ProdutoRegulacaoBadges(product: product),
-                    SizedBox(height: s.md),
-                    Text('Tipo: ${product.tipoDispensacao}'),
-                    Text('Receita: ${product.requiresPrescription ? 'Sim' : 'Não'}'),
-                    Text('Dupla verificação: ${product.requiresDoubleCheck ? 'Sim' : 'Não'}'),
-                    Text('Livro psicotrópicos: ${product.requiresPsychotropicBook ? 'Sim' : 'Não'}'),
-                    Text('Revisão manual: ${product.requiresManualReview ? 'Sim' : 'Não'}'),
-                    Text('Antimicrobiano: ${product.antimicrobiano ? 'Sim' : 'Não'}'),
-                  ],
-                ),
+              _GeneralTab(product: product),
+              _RegulationTab(product: product),
+              _LotesTab(lotes: _lotes, loading: _loading),
+              MovementTimeline(movimentos: _movimentos),
+              _SimpleListTab(
+                empty: 'Sem histórico de preços',
+                items: _precos
+                    .map(
+                      (p) =>
+                          '${p['precoAnterior']} → ${p['precoNovo']} (${_formatDate(p['data'])})',
+                    )
+                    .toList(),
               ),
-              _ListTab(
-                empty: 'Sem lotes',
-                items: _lotes.map((l) => '${l['numeroLote']} — val. ${l['dataValidade']?.toString().substring(0, 10) ?? '—'} — stock ${l['quantidadeAtual']}').toList(),
-              ),
-              _ListTab(
-                empty: 'Sem movimentos',
-                items: _movimentos.map((m) => '${m['tipoLabel'] ?? m['tipo']} ${m['quantidade']} (${m['createdAt']?.toString().substring(0, 10) ?? ''})').toList(),
-              ),
-              _ListTab(
-                empty: 'Sem histórico',
-                items: _precos.map((p) => '${p['precoAnterior']} → ${p['precoNovo']} (${p['data']?.toString().substring(0, 10) ?? ''})').toList(),
-              ),
-              _ListTab(
+              _SimpleListTab(
                 empty: 'Sem histórico regulatório',
                 items: _historico
                     .map(
                       (item) =>
-                          '${item['rule'] ?? 'Regra'} • ${item['source'] ?? 'manual'} (${item['createdAt']?.toString().substring(0, 10) ?? ''})',
+                          '${item['rule'] ?? 'Regra'} • ${item['source'] ?? 'manual'} (${_formatDate(item['createdAt'])})',
                     )
                     .toList(),
               ),
-              _ListTab(
+              _SimpleListTab(
                 empty: 'Sem fornecedores vinculados',
                 items: _fornecedores
                     .map(
@@ -216,74 +236,273 @@ class _ProdutoDetailPanelState extends ConsumerState<ProdutoDetailPanel>
                     )
                     .toList(),
               ),
-              _ListTab(
+              _SimpleListTab(
                 empty: 'Sem auditoria',
                 items: _auditoria
                     .map(
                       (item) =>
-                          '${item['action'] ?? 'Evento'} • ${item['user']?['nome'] ?? 'Sistema'} (${item['createdAt']?.toString().substring(0, 10) ?? ''})',
+                          '${item['action'] ?? 'Evento'} • ${item['user']?['nome'] ?? 'Sistema'} (${_formatDate(item['createdAt'])})',
                     )
                     .toList(),
               ),
             ],
           ),
         ),
+        if (!AdaptiveNavigator.isMobile(context))
+          Padding(
+            padding: EdgeInsets.all(s.sm),
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(onPressed: widget.onClose, child: const Text('Fechar')),
+            ),
+          ),
       ],
     );
   }
+
+  Widget _buildActionsMenu(BuildContext context) {
+    return PopupMenuButton<String>(
+      icon: const Icon(Icons.more_vert),
+      onSelected: (action) {
+        switch (action) {
+          case 'editar':
+            widget.onEdit?.call();
+          case 'excluir':
+            widget.onDelete?.call();
+        }
+      },
+      itemBuilder: (context) => [
+        if (widget.onEdit != null)
+          const PopupMenuItem(value: 'editar', child: Text('Editar')),
+        if (widget.onDelete != null)
+          const PopupMenuItem(value: 'excluir', child: Text('Eliminar')),
+      ],
+    );
+  }
+
+  String _tabWithCount(String label, int count) {
+    if (count <= 0) return label;
+    return '$label ($count)';
+  }
+
+  static String _formatDate(dynamic value) {
+    if (value == null) return '—';
+    final text = value.toString();
+    if (text.length >= 10) return text.substring(0, 10);
+    return text;
+  }
 }
 
-class _InfoTab extends StatelessWidget {
-  const _InfoTab({required this.product});
+class _GeneralTab extends StatelessWidget {
+  const _GeneralTab({required this.product});
+
   final Product product;
 
   @override
   Widget build(BuildContext context) {
     final s = context.spacing;
+
     return ListView(
       padding: EdgeInsets.all(s.md),
       children: [
-        _row('Substância activa', product.substanciaActiva),
-        _row('Dosagem', product.dosagem),
-        _row('Forma', product.forma),
-        _row('Apresentação', product.apresentacao),
-        _row('Categoria', product.categoriaNome ?? product.categoria.label),
-        _row('Stock disponível', product.estoqueAtual.toString()),
-        _row('Nº lotes', product.numLotes.toString()),
-        _row('Próxima validade', product.proximaValidade?.toString().substring(0, 10)),
-        _row('Estado', product.ativo ? 'Activo' : 'Inactivo'),
+        SectionCard(
+          title: 'Identificação',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              PropertyTile(label: 'Substância activa', value: product.substanciaActiva),
+              PropertyTile(label: 'Dosagem', value: product.dosagem),
+              PropertyTile(label: 'Forma', value: product.forma),
+              PropertyTile(label: 'Apresentação', value: product.apresentacao),
+              PropertyTile(label: 'Código de barras', value: product.barcode),
+            ],
+          ),
+        ),
+        SectionCard(
+          title: 'Stock',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              PropertyTile(
+                label: 'Stock disponível',
+                value: _formatNumber(product.estoqueAtual),
+                expandable: false,
+              ),
+              PropertyTile(
+                label: 'Estoque mínimo',
+                value: _formatNumber(product.estoqueMinimo),
+                expandable: false,
+              ),
+              PropertyTile(
+                label: 'Nº lotes',
+                value: product.numLotes.toString(),
+                expandable: false,
+              ),
+              PropertyTile(
+                label: 'Próxima validade',
+                value: product.proximaValidade?.toString().substring(0, 10),
+                expandable: false,
+              ),
+            ],
+          ),
+        ),
+        SectionCard(
+          title: 'Estado',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Situação do produto',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: context.pharmaTokens.textMuted,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              StatusBadge(active: product.ativo),
+            ],
+          ),
+        ),
       ],
     );
   }
 
-  Widget _row(String label, String? value) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(width: 140, child: Text(label, style: const TextStyle(fontWeight: FontWeight.w600))),
-          Expanded(child: Text(value ?? '—')),
-        ],
-      ),
+  String _formatNumber(double value) {
+    if (value == value.roundToDouble()) return value.toInt().toString();
+    return value.toStringAsFixed(2);
+  }
+}
+
+class _RegulationTab extends StatelessWidget {
+  const _RegulationTab({required this.product});
+
+  final Product product;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.spacing;
+
+    return ListView(
+      padding: EdgeInsets.all(s.md),
+      children: [
+        RegulationCard(
+          title: 'Receita',
+          items: [
+            RegulationItem(
+              label: 'Receita obrigatória',
+              enabled: product.requiresPrescription,
+            ),
+            RegulationItem(
+              label: _dispensacaoLabel(product.tipoDispensacao),
+              enabled: product.tipoDispensacao != 'VENDA_LIVRE',
+            ),
+          ],
+        ),
+        RegulationCard(
+          title: 'Segurança',
+          items: [
+            RegulationItem(
+              label: 'Dupla verificação',
+              enabled: product.requiresDoubleCheck,
+            ),
+            RegulationItem(
+              label: 'Revisão manual',
+              enabled: product.requiresManualReview,
+            ),
+          ],
+        ),
+        RegulationCard(
+          title: 'Controlo',
+          items: [
+            RegulationItem(
+              label: 'Livro psicotrópicos',
+              enabled: product.requiresPsychotropicBook,
+            ),
+            RegulationItem(
+              label: 'Antimicrobiano',
+              enabled: product.antimicrobiano,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  String _dispensacaoLabel(String tipo) {
+    switch (tipo) {
+      case 'VENDA_LIVRE':
+        return 'Venda livre';
+      case 'RECEITA_SIMPLES':
+        return 'Receita simples';
+      case 'RECEITA_CONTROLADA':
+        return 'Receita controlada';
+      case 'RECEITA_OBRIGATORIA':
+        return 'Receita obrigatória';
+      case 'PSICOTROPICO':
+        return 'Psicotrópico';
+      case 'NARCOTICO':
+        return 'Narcótico';
+      default:
+        return tipo;
+    }
+  }
+}
+
+class _LotesTab extends StatelessWidget {
+  const _LotesTab({required this.lotes, required this.loading});
+
+  final List<Map<String, dynamic>> lotes;
+  final bool loading;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.spacing;
+
+    if (!loading && lotes.isEmpty) {
+      return Center(
+        child: Text(
+          'Sem lotes',
+          style: TextStyle(color: context.pharmaTokens.textMuted),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: EdgeInsets.all(s.md),
+      itemCount: lotes.length,
+      separatorBuilder: (_, _) => SizedBox(height: s.sm),
+      itemBuilder: (_, index) => LotCard(lote: lotes[index]),
     );
   }
 }
 
-class _ListTab extends StatelessWidget {
-  const _ListTab({required this.empty, required this.items});
+class _SimpleListTab extends StatelessWidget {
+  const _SimpleListTab({required this.empty, required this.items});
+
   final String empty;
   final List<String> items;
 
   @override
   Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
+    final s = context.spacing;
+
     if (items.isEmpty) {
-      return Center(child: Text(empty));
+      return Center(child: Text(empty, style: TextStyle(color: t.textMuted)));
     }
+
     return ListView.separated(
+      padding: EdgeInsets.all(s.md),
       itemCount: items.length,
-      separatorBuilder: (_, _) => const Divider(height: 1),
-      itemBuilder: (_, i) => ListTile(title: Text(items[i])),
+      separatorBuilder: (_, _) => Divider(height: 1, color: t.border.withValues(alpha: 0.35)),
+      itemBuilder: (_, index) => Padding(
+        padding: EdgeInsets.symmetric(vertical: s.sm),
+        child: Text(
+          items[index],
+          style: TextStyle(color: t.textPrimary, fontSize: 14),
+        ),
+      ),
     );
   }
 }

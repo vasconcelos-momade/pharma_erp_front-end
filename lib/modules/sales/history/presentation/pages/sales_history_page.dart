@@ -6,6 +6,7 @@ import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../reports/presentation/controllers/report_controller.dart';
+import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/responsive/pharma_screen_layout.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../../shared/widgets/feedback/module_data_states.dart';
@@ -67,35 +68,31 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
       subtitle: 'Drill-down por terminal, operador e linha de receita.',
       tag: 'Terminal',
       actions: [
-        OutlinedButton.icon(
-          onPressed: state.items.isEmpty || reportState.isSubmitting
-              ? null
-              : () => reportController.exportCsv(
-                    path: ReportPaths.salesHistory,
-                    queryParameters: reportQuery,
-                  ),
-          icon: const Icon(Icons.download_outlined),
-          label: const Text('Exportar CSV'),
-        ),
-        OutlinedButton.icon(
-          onPressed: state.items.isEmpty || reportState.isSubmitting
-              ? null
-              : () => reportController.exportExcel(
-                    path: ReportPaths.salesHistory,
-                    queryParameters: reportQuery,
-                  ),
-          icon: const Icon(Icons.table_view_outlined),
-          label: const Text('Exportar Excel'),
-        ),
-        OutlinedButton.icon(
-          onPressed: state.items.isEmpty || reportState.isSubmitting
-              ? null
-              : () => reportController.downloadPdf(
-                    path: ReportPaths.salesHistory,
-                    queryParameters: reportQuery,
-                  ),
-          icon: const Icon(Icons.picture_as_pdf_outlined),
-          label: const Text('Exportar PDF'),
+        PopupMenuButton<String>(
+          enabled: state.items.isNotEmpty && !reportState.isSubmitting,
+          tooltip: 'Exportar',
+          onSelected: (value) {
+            if (value == 'pdf') {
+              reportController.downloadPdf(
+                path: ReportPaths.salesHistory,
+                queryParameters: reportQuery,
+              );
+              return;
+            }
+            reportController.exportCsv(
+              path: ReportPaths.salesHistory,
+              queryParameters: reportQuery,
+            );
+          },
+          itemBuilder: (context) => const [
+            PopupMenuItem<String>(value: 'pdf', child: Text('Exportar PDF')),
+            PopupMenuItem<String>(value: 'csv', child: Text('Exportar CSV')),
+          ],
+          child: OutlinedButton.icon(
+            onPressed: null,
+            icon: Icon(Icons.download_outlined),
+            label: Text('Exportar'),
+          ),
         ),
         OutlinedButton.icon(
           onPressed: state.isBusy ? null : notifier.refresh,
@@ -317,42 +314,21 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
 
   Future<void> _openInvoiceDetail(InvoiceSummary invoice) async {
     ref.read(invoiceDetailProvider.notifier).open(invoice);
-    final isMobile = PharmaScreenLayout.isMobile(context);
 
-    if (isMobile) {
-      await Navigator.of(context).push<void>(
-        MaterialPageRoute(
-          builder: (_) => InvoiceDetailScreen(invoice: invoice),
-        ),
-      );
-      ref.read(invoiceDetailProvider.notifier).close();
-      return;
-    }
-
-    await showDialog<void>(
+    await AdaptiveNavigator.openPanel<void>(
       context: context,
-      builder: (dialogContext) {
-        final t = context.pharmaTokens;
-        final s = context.spacing;
-        return Dialog(
-          alignment: Alignment.centerRight,
-          insetPadding: EdgeInsets.symmetric(horizontal: 16, vertical: s.md),
-          backgroundColor: Colors.transparent,
-          child: Container(
-            width: 520,
-            decoration: BoxDecoration(
-              color: t.bgPrimary,
-              borderRadius: BorderRadius.circular(t.radiusXl),
-              border: Border.all(color: t.border.withValues(alpha: 0.55)),
-            ),
-            child: InvoiceDetailPanel(
-              invoice: invoice,
-              onClose: () => Navigator.of(dialogContext).pop(),
-            ),
-          ),
+      routeSettings: RouteSettings(name: '/faturas/${invoice.id}'),
+      builder: (detailContext) {
+        if (AdaptiveNavigator.isMobile(detailContext)) {
+          return InvoiceDetailScreen(invoice: invoice);
+        }
+        return InvoiceDetailPanel(
+          invoice: invoice,
+          onClose: () => AdaptiveNavigator.close(detailContext),
         );
       },
     );
+
     ref.read(invoiceDetailProvider.notifier).close();
   }
 

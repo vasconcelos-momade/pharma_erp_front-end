@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
+import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/buttons/pharma_button_loader.dart';
@@ -30,9 +31,12 @@ String formatCaixaMoney(num value) {
 }
 
 Future<void> showAbrirCaixaDialog(BuildContext context) {
-  return showPharmaResponsiveDialog<void>(
+  return AdaptiveNavigator.openEmbeddedForm<void>(
     context: context,
-    builder: (_) => const AbrirCaixaDialog(),
+    title: const Text('Abrir Caixa'),
+    routeSettings: const RouteSettings(name: '/pdv/caixa/abrir'),
+    formBuilder: (ctx, {required embedded}) =>
+        AbrirCaixaDialog(embedded: embedded),
   );
 }
 
@@ -40,14 +44,19 @@ Future<void> showFecharCaixaDialog(
   BuildContext context, {
   required CaixaSessao sessao,
 }) {
-  return showPharmaResponsiveDialog<void>(
+  return AdaptiveNavigator.openEmbeddedForm<void>(
     context: context,
-    builder: (_) => FecharCaixaDialog(sessao: sessao),
+    title: const Text('Fechar Caixa'),
+    routeSettings: RouteSettings(name: '/pdv/caixa/${sessao.id}/fechar'),
+    formBuilder: (ctx, {required embedded}) =>
+        FecharCaixaDialog(sessao: sessao, embedded: embedded),
   );
 }
 
 class AbrirCaixaDialog extends ConsumerStatefulWidget {
-  const AbrirCaixaDialog({super.key});
+  const AbrirCaixaDialog({super.key, this.embedded = false});
+
+  final bool embedded;
 
   @override
   ConsumerState<AbrirCaixaDialog> createState() => _AbrirCaixaDialogState();
@@ -104,7 +113,7 @@ class _AbrirCaixaDialogState extends ConsumerState<AbrirCaixaDialog> {
             valorAbertura: valorAbertura,
           );
       if (!mounted) return;
-      Navigator.of(context).pop();
+      AdaptiveNavigator.complete(context);
       PharmaFeedback.success(context, 'Caixa aberto com sucesso.');
     } catch (_) {
       if (!mounted) return;
@@ -126,124 +135,147 @@ class _AbrirCaixaDialogState extends ConsumerState<AbrirCaixaDialog> {
     final caixas = caixaState.caixasDisponiveis;
     final selectedValue = caixas.contains(_selectedCaixa) ? _selectedCaixa : null;
 
+    final form = Form(
+      key: _formKey,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (caixaState.errorMessage != null)
+            Padding(
+              padding: EdgeInsets.only(bottom: s.md),
+              child: Text(
+                caixaState.errorMessage!,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: t.posDanger,
+                    ),
+              ),
+            ),
+          DropdownButtonFormField<CaixaDisponivel>(
+            initialValue: selectedValue,
+            isExpanded: true,
+            items: caixas
+                .map(
+                  (caixa) => DropdownMenuItem<CaixaDisponivel>(
+                    value: caixa,
+                    child: Text(
+                      caixa.displayName,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ),
+                )
+                .toList(),
+            onChanged: caixaState.isSubmitting
+                ? null
+                : (value) {
+                    setState(() {
+                      _selectedCaixa = value;
+                    });
+                  },
+            decoration: const InputDecoration(
+              labelText: 'Selecionar Terminal',
+              prefixIcon: Icon(Icons.devices_other_outlined),
+            ),
+            validator: (value) {
+              if (value == null) {
+                return 'Selecione um terminal.';
+              }
+              return null;
+            },
+          ),
+          SizedBox(height: s.md),
+          TextFormField(
+            controller: _valorController,
+            keyboardType: const TextInputType.numberWithOptions(
+              decimal: true,
+            ),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+            ],
+            decoration: const InputDecoration(
+              labelText: 'Valor de abertura',
+              prefixIcon: Icon(Icons.payments_outlined),
+              suffixText: 'MT',
+            ),
+            validator: (value) {
+              final text = value?.trim() ?? '';
+              if (text.isEmpty) {
+                return null;
+              }
+              final parsed = parseCaixaMoneyInput(text);
+              if (parsed == null) {
+                return 'Valor invalido.';
+              }
+              if (parsed < 0) {
+                return 'O valor nao pode ser negativo.';
+              }
+              return null;
+            },
+          ),
+          if (caixaState.isLoading) ...[
+            SizedBox(height: s.md),
+            LinearProgressIndicator(minHeight: s.xxs),
+          ],
+          if (!caixaState.isLoading && caixas.isEmpty) ...[
+            SizedBox(height: s.md),
+            Text(
+              'Nenhum terminal disponivel para abertura de caixa.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: t.textMuted,
+                  ),
+            ),
+          ],
+        ],
+      ),
+    );
+
+    final actions = [
+      TextButton(
+        onPressed:
+            caixaState.isSubmitting ? null : () => AdaptiveNavigator.cancel(context),
+        child: const Text('Cancelar'),
+      ),
+      FilledButton.icon(
+        onPressed: caixaState.isSubmitting || caixas.isEmpty ? null : _submit,
+        icon: caixaState.isSubmitting
+            ? const PharmaButtonLoader()
+            : const Icon(Icons.lock_open_rounded),
+        label: const Text('Abrir Caixa'),
+      ),
+    ];
+
+    if (widget.embedded) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          form,
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: actions,
+          ),
+        ],
+      );
+    }
+
     return PharmaResponsiveDialog(
       title: const Text('Abrir Caixa'),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (caixaState.errorMessage != null)
-              Padding(
-                padding: EdgeInsets.only(bottom: s.md),
-                child: Text(
-                  caixaState.errorMessage!,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: t.posDanger,
-                      ),
-                ),
-              ),
-            DropdownButtonFormField<CaixaDisponivel>(
-              initialValue: selectedValue,
-              isExpanded: true,
-              items: caixas
-                  .map(
-                    (caixa) => DropdownMenuItem<CaixaDisponivel>(
-                      value: caixa,
-                      child: Text(
-                        caixa.displayName,
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                    ),
-                  )
-                  .toList(),
-              onChanged: caixaState.isSubmitting
-                  ? null
-                  : (value) {
-                      setState(() {
-                        _selectedCaixa = value;
-                      });
-                    },
-              decoration: const InputDecoration(
-                labelText: 'Selecionar Terminal',
-                prefixIcon: Icon(Icons.devices_other_outlined),
-              ),
-              validator: (value) {
-                if (value == null) {
-                  return 'Selecione um terminal.';
-                }
-                return null;
-              },
-            ),
-            SizedBox(height: s.md),
-            TextFormField(
-              controller: _valorController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-              ],
-              decoration: const InputDecoration(
-                labelText: 'Valor de abertura',
-                prefixIcon: Icon(Icons.payments_outlined),
-                suffixText: 'MT',
-              ),
-              validator: (value) {
-                final text = value?.trim() ?? '';
-                if (text.isEmpty) {
-                  return null;
-                }
-                final parsed = parseCaixaMoneyInput(text);
-                if (parsed == null) {
-                  return 'Valor invalido.';
-                }
-                if (parsed < 0) {
-                  return 'O valor nao pode ser negativo.';
-                }
-                return null;
-              },
-            ),
-            if (caixaState.isLoading) ...[
-              SizedBox(height: s.md),
-              LinearProgressIndicator(minHeight: s.xxs),
-            ],
-            if (!caixaState.isLoading && caixas.isEmpty) ...[
-              SizedBox(height: s.md),
-              Text(
-                'Nenhum terminal disponivel para abertura de caixa.',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: t.textMuted,
-                    ),
-              ),
-            ],
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed:
-              caixaState.isSubmitting ? null : () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
-        ),
-        FilledButton.icon(
-          onPressed: caixaState.isSubmitting || caixas.isEmpty ? null : _submit,
-          icon: caixaState.isSubmitting
-              ? const PharmaButtonLoader()
-              : const Icon(Icons.lock_open_rounded),
-          label: const Text('Abrir Caixa'),
-        ),
-      ],
+      content: form,
+      actions: actions,
     );
   }
 }
 
 class FecharCaixaDialog extends ConsumerStatefulWidget {
-  const FecharCaixaDialog({required this.sessao, super.key});
+  const FecharCaixaDialog({
+    required this.sessao,
+    super.key,
+    this.embedded = false,
+  });
 
   final CaixaSessao sessao;
+  final bool embedded;
 
   @override
   ConsumerState<FecharCaixaDialog> createState() => _FecharCaixaDialogState();
@@ -292,7 +324,7 @@ class _FecharCaixaDialogState extends ConsumerState<FecharCaixaDialog> {
                 : _observacoesController.text.trim(),
           );
       if (!mounted) return;
-      Navigator.of(context).pop();
+      AdaptiveNavigator.complete(context);
       PharmaFeedback.success(context, 'Caixa fechado com sucesso.');
     } catch (_) {
       if (!mounted) return;
@@ -312,89 +344,107 @@ class _FecharCaixaDialogState extends ConsumerState<FecharCaixaDialog> {
     final s = context.spacing;
     final caixaState = ref.watch(caixaSessaoProvider);
 
+    final form = Form(
+      key: _formKey,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: EdgeInsets.all(s.md),
+            decoration: BoxDecoration(
+              color: t.bgSecondary,
+              borderRadius: BorderRadius.circular(t.radiusMd),
+              border: Border.all(color: t.border.withValues(alpha: 0.5)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Valor de sistema',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                        color: t.textMuted,
+                      ),
+                ),
+                SizedBox(height: s.xs),
+                Text(
+                  formatCaixaMoney(widget.sessao.sistema),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: t.textPrimary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: s.md),
+          TextFormField(
+            controller: _valorContadoController,
+            keyboardType: const TextInputType.numberWithOptions(
+              decimal: true,
+            ),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+            ],
+            decoration: const InputDecoration(
+              labelText: 'Valor contado',
+              prefixIcon: Icon(Icons.account_balance_wallet_outlined),
+              suffixText: 'MT',
+            ),
+            validator: (value) {
+              final parsed = parseCaixaMoneyInput(value ?? '');
+              if (parsed == null || parsed < 0) {
+                return 'Informe um valor valido.';
+              }
+              return null;
+            },
+          ),
+          SizedBox(height: s.md),
+          TextFormField(
+            controller: _observacoesController,
+            maxLines: 3,
+            decoration: const InputDecoration(
+              labelText: 'Observacoes do fecho',
+              prefixIcon: Icon(Icons.notes_rounded),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    final actions = [
+      TextButton(
+        onPressed:
+            caixaState.isSubmitting ? null : () => AdaptiveNavigator.cancel(context),
+        child: const Text('Cancelar'),
+      ),
+      FilledButton.icon(
+        onPressed: caixaState.isSubmitting ? null : _submit,
+        icon: caixaState.isSubmitting
+            ? const PharmaButtonLoader()
+            : const Icon(Icons.lock_outline_rounded),
+        label: const Text('Fechar Caixa'),
+      ),
+    ];
+
+    if (widget.embedded) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          form,
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: actions,
+          ),
+        ],
+      );
+    }
+
     return PharmaResponsiveDialog(
       title: const Text('Fechar Caixa'),
-      content: Form(
-        key: _formKey,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(
-              padding: EdgeInsets.all(s.md),
-              decoration: BoxDecoration(
-                color: t.bgSecondary,
-                borderRadius: BorderRadius.circular(t.radiusMd),
-                border: Border.all(color: t.border.withValues(alpha: 0.5)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Valor de sistema',
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: t.textMuted,
-                        ),
-                  ),
-                  SizedBox(height: s.xs),
-                  Text(
-                    formatCaixaMoney(widget.sessao.sistema),
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: t.textPrimary,
-                          fontWeight: FontWeight.w800,
-                        ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: s.md),
-            TextFormField(
-              controller: _valorContadoController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              inputFormatters: [
-                FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-              ],
-              decoration: const InputDecoration(
-                labelText: 'Valor contado',
-                prefixIcon: Icon(Icons.account_balance_wallet_outlined),
-                suffixText: 'MT',
-              ),
-              validator: (value) {
-                final parsed = parseCaixaMoneyInput(value ?? '');
-                if (parsed == null || parsed < 0) {
-                  return 'Informe um valor valido.';
-                }
-                return null;
-              },
-            ),
-            SizedBox(height: s.md),
-            TextFormField(
-              controller: _observacoesController,
-              maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Observacoes do fecho',
-                prefixIcon: Icon(Icons.notes_rounded),
-              ),
-            ),
-          ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed:
-              caixaState.isSubmitting ? null : () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
-        ),
-        FilledButton.icon(
-          onPressed: caixaState.isSubmitting ? null : _submit,
-          icon: caixaState.isSubmitting
-              ? const PharmaButtonLoader()
-              : const Icon(Icons.lock_outline_rounded),
-          label: const Text('Fechar Caixa'),
-        ),
-      ],
+      content: form,
+      actions: actions,
     );
   }
 }

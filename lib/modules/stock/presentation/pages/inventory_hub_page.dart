@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/report_paths.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/spacing.dart';
+import '../../../../shared/navigation/adaptive_navigator.dart';
+import '../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
 import '../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../shared/widgets/buttons/pharma_button_loader.dart';
 import '../../../../shared/widgets/layout/module_page_frame.dart';
@@ -54,10 +56,7 @@ class _InventoryHubPageState extends ConsumerState<InventoryHubPage> {
   }
 
   Future<void> _startInventory() async {
-    final result = await showDialog<NovoInventarioDialogResult>(
-      context: context,
-      builder: (_) => const _NovoInventarioDialog(),
-    );
+    final result = await showNovoInventarioDialog(context);
     if (!mounted || result == null) {
       return;
     }
@@ -78,10 +77,7 @@ class _InventoryHubPageState extends ConsumerState<InventoryHubPage> {
       return;
     }
 
-    final estoqueContado = await showDialog<double>(
-      context: context,
-      builder: (_) => _InventarioCountDialog(item: item),
-    );
+    final estoqueContado = await showInventarioCountDialog(context, item: item);
 
     if (!mounted || estoqueContado == null) {
       return;
@@ -175,20 +171,6 @@ class _InventoryHubPageState extends ConsumerState<InventoryHubPage> {
 
     return ModulePageFrame(
       actions: [
-        if (activeInventory != null)
-          ...stockReportActions(
-            ref: ref,
-            enabled: !catalogState.isLoading,
-            path: ReportPaths.stockInventory(activeInventory.id),
-            queryParameters: reportQuery,
-          )
-        else
-          ...stockReportActions(
-            ref: ref,
-            enabled: !inventoryState.isLoadingLists,
-            path: ReportPaths.stockInventories,
-            queryParameters: const {},
-          ),
         OutlinedButton.icon(
           onPressed: _refreshPage,
           icon: const Icon(Icons.refresh_rounded),
@@ -1728,8 +1710,40 @@ class NovoInventarioDialogResult {
   final String observacao;
 }
 
+Future<NovoInventarioDialogResult?> showNovoInventarioDialog(
+  BuildContext context,
+) {
+  return AdaptiveNavigator.openEmbeddedForm<NovoInventarioDialogResult>(
+    context: context,
+    title: const Text('Novo Inventario'),
+    routeSettings: const RouteSettings(name: '/inventario/novo'),
+    formBuilder: (ctx, {required embedded}) =>
+        _NovoInventarioDialog(embedded: embedded),
+  );
+}
+
+Future<double?> showInventarioCountDialog(
+  BuildContext context, {
+  required InventarioItem item,
+}) {
+  final title = Text(
+    item.estoqueContado != 0 || item.divergencia != 0
+        ? 'Actualizar ${item.produtoNome}'
+        : 'Adicionar ao Inventario',
+  );
+  return AdaptiveNavigator.openEmbeddedForm<double>(
+    context: context,
+    title: title,
+    routeSettings: RouteSettings(name: '/inventario/itens/${item.id}/contagem'),
+    formBuilder: (ctx, {required embedded}) =>
+        _InventarioCountDialog(item: item, embedded: embedded),
+  );
+}
+
 class _NovoInventarioDialog extends StatefulWidget {
-  const _NovoInventarioDialog();
+  const _NovoInventarioDialog({this.embedded = false});
+
+  final bool embedded;
 
   @override
   State<_NovoInventarioDialog> createState() => _NovoInventarioDialogState();
@@ -1750,7 +1764,8 @@ class _NovoInventarioDialogState extends State<_NovoInventarioDialog> {
       return;
     }
 
-    Navigator.of(context).pop(
+    AdaptiveNavigator.complete(
+      context,
       NovoInventarioDialogResult(
         observacao: _observacaoController.text.trim(),
       ),
@@ -1761,54 +1776,70 @@ class _NovoInventarioDialogState extends State<_NovoInventarioDialog> {
   Widget build(BuildContext context) {
     final s = context.spacing;
 
-    return AlertDialog(
-      title: const Text('Novo Inventario'),
-      content: SizedBox(
-        width: 420,
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: _observacaoController,
-                maxLines: 4,
-                decoration: const InputDecoration(
-                  labelText: 'Observacao',
-                  hintText: 'Ex.: Contagem ciclica da seccao A',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              SizedBox(height: s.sm),
-              const Align(
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  'Os lotes serao carregados automaticamente no inventario activo.',
-                ),
-              ),
-            ],
+    final form = Form(
+      key: _formKey,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          TextFormField(
+            controller: _observacaoController,
+            maxLines: 4,
+            decoration: const InputDecoration(
+              labelText: 'Observacao',
+              hintText: 'Ex.: Contagem ciclica da seccao A',
+              border: OutlineInputBorder(),
+            ),
           ),
-        ),
+          SizedBox(height: s.sm),
+          const Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'Os lotes serao carregados automaticamente no inventario activo.',
+            ),
+          ),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
-        ),
-        FilledButton.icon(
-          onPressed: _submit,
-          icon: const Icon(Icons.play_arrow_rounded),
-          label: const Text('Iniciar'),
-        ),
-      ],
+    );
+
+    final actions = [
+      TextButton(
+        onPressed: () => AdaptiveNavigator.cancel(context),
+        child: const Text('Cancelar'),
+      ),
+      FilledButton.icon(
+        onPressed: _submit,
+        icon: const Icon(Icons.play_arrow_rounded),
+        label: const Text('Iniciar'),
+      ),
+    ];
+
+    if (widget.embedded) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          form,
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: actions,
+          ),
+        ],
+      );
+    }
+
+    return PharmaResponsiveDialog(
+      title: const Text('Novo Inventario'),
+      content: form,
+      actions: actions,
     );
   }
 }
 
 class _InventarioCountDialog extends StatefulWidget {
-  const _InventarioCountDialog({required this.item});
+  const _InventarioCountDialog({required this.item, this.embedded = false});
 
   final InventarioItem item;
+  final bool embedded;
 
   bool get hasExistingCount => item.estoqueContado != 0 || item.divergencia != 0;
 
@@ -1857,7 +1888,8 @@ class _InventarioCountDialogState extends State<_InventarioCountDialog> {
     if (_formKey.currentState?.validate() != true) {
       return;
     }
-    Navigator.of(context).pop(
+    AdaptiveNavigator.complete(
+      context,
       double.parse(_estoqueContadoController.text.trim().replaceAll(',', '.')),
     );
   }
@@ -1865,78 +1897,93 @@ class _InventarioCountDialogState extends State<_InventarioCountDialog> {
   @override
   Widget build(BuildContext context) {
     final s = context.spacing;
-    return AlertDialog(
+
+    final form = Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _DialogField(
+            controller: _produtoController,
+            label: 'Produto',
+            hint: '-',
+            readOnly: true,
+          ),
+          SizedBox(height: s.md),
+          _DialogField(
+            controller: _loteController,
+            label: 'Lote',
+            hint: '-',
+            readOnly: true,
+          ),
+          SizedBox(height: s.md),
+          _DialogField(
+            controller: _estoqueSistemaController,
+            label: 'Estoque Sistema',
+            hint: '-',
+            readOnly: true,
+          ),
+          SizedBox(height: s.md),
+          _DialogField(
+            controller: _estoqueContadoController,
+            label: 'Estoque Contado',
+            hint: 'Ex.: 12',
+            validator: _quantityValidator,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9,\.]')),
+            ],
+          ),
+          SizedBox(height: s.md),
+          _DialogField(
+            controller: _divergenciaController,
+            label: 'Divergencia',
+            hint: 'Calculada pelo backend',
+            readOnly: true,
+          ),
+          SizedBox(height: s.sm),
+          const Text(
+            'A divergencia nao e calculada no frontend. O backend recalcula e actualiza a lista apos guardar.',
+          ),
+        ],
+      ),
+    );
+
+    final actions = [
+      TextButton(
+        onPressed: () => AdaptiveNavigator.cancel(context),
+        child: const Text('Cancelar'),
+      ),
+      FilledButton.icon(
+        onPressed: _submit,
+        icon: const Icon(Icons.save_outlined),
+        label: const Text('Guardar'),
+      ),
+    ];
+
+    if (widget.embedded) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          form,
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: actions,
+          ),
+        ],
+      );
+    }
+
+    return PharmaResponsiveDialog(
       title: Text(
         widget.hasExistingCount
             ? 'Actualizar ${widget.item.produtoNome}'
             : 'Adicionar ao Inventario',
       ),
-      content: SizedBox(
-        width: 540,
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _DialogField(
-                  controller: _produtoController,
-                  label: 'Produto',
-                  hint: '-',
-                  readOnly: true,
-                ),
-                SizedBox(height: s.md),
-                _DialogField(
-                  controller: _loteController,
-                  label: 'Lote',
-                  hint: '-',
-                  readOnly: true,
-                ),
-                SizedBox(height: s.md),
-                _DialogField(
-                  controller: _estoqueSistemaController,
-                  label: 'Estoque Sistema',
-                  hint: '-',
-                  readOnly: true,
-                ),
-                SizedBox(height: s.md),
-                _DialogField(
-                  controller: _estoqueContadoController,
-                  label: 'Estoque Contado',
-                  hint: 'Ex.: 12',
-                  validator: _quantityValidator,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[0-9,\.]')),
-                  ],
-                ),
-                SizedBox(height: s.md),
-                _DialogField(
-                  controller: _divergenciaController,
-                  label: 'Divergencia',
-                  hint: 'Calculada pelo backend',
-                  readOnly: true,
-                ),
-                SizedBox(height: s.sm),
-                const Text(
-                  'A divergencia nao e calculada no frontend. O backend recalcula e actualiza a lista apos guardar.',
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
-        ),
-        FilledButton.icon(
-          onPressed: _submit,
-          icon: const Icon(Icons.save_outlined),
-          label: const Text('Guardar'),
-        ),
-      ],
+      content: form,
+      actions: actions,
     );
   }
 

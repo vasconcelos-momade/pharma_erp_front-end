@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/spacing.dart';
+import '../../../../shared/navigation/adaptive_navigator.dart';
 import '../../domain/entities/requisicao.dart';
 import 'requisicao_hub_formatters.dart';
 
@@ -473,59 +474,57 @@ Future<void> showRequisicaoPurchaseItemDetails(
   BuildContext context,
   RequisicaoItem item,
 ) {
-  return showDialog<void>(
+  return AdaptiveNavigator.openDetail(
     context: context,
-    builder: (dialogContext) {
-      final s = dialogContext.spacing;
-
-      return AlertDialog(
-        title: Text(item.produtoNome),
-        content: SizedBox(
-          width: 420,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              RequisicaoDialogDetailRow(
-                label: 'Lote',
-                value: item.numeroLote ?? '-',
+    title: item.produtoNome,
+    builder: (detailContext, onClose) {
+      final s = detailContext.spacing;
+      return Padding(
+        padding: EdgeInsets.all(s.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            RequisicaoDialogDetailRow(
+              label: 'Lote',
+              value: item.numeroLote ?? '-',
+            ),
+            SizedBox(height: s.sm),
+            RequisicaoDialogDetailRow(
+              label: 'Validade',
+              value: requisicaoFormatDisplayDate(item.dataValidade),
+            ),
+            SizedBox(height: s.sm),
+            RequisicaoDialogDetailRow(
+              label: 'Preço compra',
+              value: requisicaoFormatMoney(item.precoCompra ?? 0),
+            ),
+            SizedBox(height: s.sm),
+            RequisicaoDialogDetailRow(
+              label: 'Preço venda',
+              value: item.precoVenda != null
+                  ? requisicaoFormatMoney(item.precoVenda!)
+                  : '-',
+            ),
+            SizedBox(height: s.sm),
+            RequisicaoDialogDetailRow(
+              label: 'Quantidade',
+              value: requisicaoFormatQuantity(item.quantidade),
+            ),
+            SizedBox(height: s.sm),
+            RequisicaoDialogDetailRow(
+              label: 'Subtotal',
+              value: requisicaoFormatMoney(item.subtotal ?? 0),
+            ),
+            const Spacer(),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: onClose,
+                child: const Text('Fechar'),
               ),
-              SizedBox(height: s.sm),
-              RequisicaoDialogDetailRow(
-                label: 'Validade',
-                value: requisicaoFormatDisplayDate(item.dataValidade),
-              ),
-              SizedBox(height: s.sm),
-              RequisicaoDialogDetailRow(
-                label: 'Preço compra',
-                value: requisicaoFormatMoney(item.precoCompra ?? 0),
-              ),
-              SizedBox(height: s.sm),
-              RequisicaoDialogDetailRow(
-                label: 'Preço venda',
-                value: item.precoVenda != null
-                    ? requisicaoFormatMoney(item.precoVenda!)
-                    : '-',
-              ),
-              SizedBox(height: s.sm),
-              RequisicaoDialogDetailRow(
-                label: 'Quantidade',
-                value: requisicaoFormatQuantity(item.quantidade),
-              ),
-              SizedBox(height: s.sm),
-              RequisicaoDialogDetailRow(
-                label: 'Subtotal',
-                value: requisicaoFormatMoney(item.subtotal ?? 0),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(),
-            child: const Text('Fechar'),
-          ),
-        ],
       );
     },
   );

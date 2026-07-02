@@ -102,6 +102,12 @@ abstract final class ApiConstants {
       '/tenant/lotes/$loteId/dispensacoes';
   static String tenantLoteIncineracoes(String loteId) =>
       '/tenant/lotes/$loteId/incineracoes';
+  static String tenantLoteQuarentena(String loteId) =>
+      '/tenant/lotes/$loteId/quarentena';
+  static String tenantLoteLiberarQuarentena(String loteId) =>
+      '/tenant/lotes/$loteId/liberar-quarentena';
+  static String tenantLoteSanitarioHistorico(String loteId) =>
+      '/tenant/regulatory/sanitario/lotes/$loteId/historico';
   static const tenantValidadesDashboard = '/tenant/validades/dashboard';
   static const tenantValidades = '/tenant/validades';
   static const tenantFefoDashboard = '/tenant/fefo/dashboard';

@@ -5,12 +5,12 @@ import '../../../../../core/extensions/async_value_extensions.dart';
 import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
-import '../../../../reports/presentation/controllers/report_controller.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../../../stock/presentation/widgets/movimentacoes_pagination.dart';
-import '../../../lots/presentation/widgets/lot_detail_drawer.dart';
+import '../../../lots/presentation/widgets/open_lote_details.dart';
+import '../../../presentation/widgets/pharmacy_report_exports.dart';
 import '../providers/expiry_provider.dart';
 
 class ExpiryPage extends ConsumerStatefulWidget {
@@ -65,8 +65,6 @@ class _ExpiryPageState extends ConsumerState<ExpiryPage> {
   Widget build(BuildContext context) {
     final asyncState = ref.watch(expiryViewProvider);
     final controller = ref.read(expiryViewProvider.notifier);
-    final reportState = ref.watch(reportControllerProvider);
-    final reportController = ref.read(reportControllerProvider.notifier);
     final state = asyncState.valueOrNull;
     final dash = state?.dashboard;
     final s = context.spacing;
@@ -76,59 +74,12 @@ class _ExpiryPageState extends ConsumerState<ExpiryPage> {
     };
 
     return EnterpriseModuleHub(
-      title: 'Validades',
-      subtitle: 'Monitorização de lotes por prazo de validade e valor em risco.',
-      tag: 'Farmácia',
       actions: [
-        OutlinedButton.icon(
-          onPressed: state == null || reportState.isSubmitting
-              ? null
-              : () => reportController.previewPdf(
-                    path: ReportPaths.expiry,
-                    queryParameters: reportQuery,
-                  ),
-          icon: const Icon(Icons.picture_as_pdf_outlined),
-          label: const Text('Visualizar PDF'),
-        ),
-        OutlinedButton.icon(
-          onPressed: state == null || reportState.isSubmitting
-              ? null
-              : () => reportController.downloadPdf(
-                    path: ReportPaths.expiry,
-                    queryParameters: reportQuery,
-                  ),
-          icon: const Icon(Icons.download_outlined),
-          label: const Text('Download PDF'),
-        ),
-        OutlinedButton.icon(
-          onPressed: state == null || reportState.isSubmitting
-              ? null
-              : () => reportController.printPdf(
-                    path: ReportPaths.expiry,
-                    queryParameters: reportQuery,
-                  ),
-          icon: const Icon(Icons.print_outlined),
-          label: const Text('Imprimir'),
-        ),
-        OutlinedButton.icon(
-          onPressed: state == null || reportState.isSubmitting
-              ? null
-              : () => reportController.exportCsv(
-                    path: ReportPaths.expiry,
-                    queryParameters: reportQuery,
-                  ),
-          icon: const Icon(Icons.table_rows_outlined),
-          label: const Text('Exportar CSV'),
-        ),
-        OutlinedButton.icon(
-          onPressed: state == null || reportState.isSubmitting
-              ? null
-              : () => reportController.exportExcel(
-                    path: ReportPaths.expiry,
-                    queryParameters: reportQuery,
-                  ),
-          icon: const Icon(Icons.table_view_outlined),
-          label: const Text('Exportar Excel'),
+        ...pharmacyReportActions(
+          ref: ref,
+          enabled: !asyncState.isLoading,
+          path: ReportPaths.expiry,
+          queryParameters: reportQuery,
         ),
         IconButton(
           onPressed: () => controller.refresh(force: true),
@@ -196,38 +147,6 @@ class _ExpiryPageState extends ConsumerState<ExpiryPage> {
                 style: TextStyle(color: context.pharmaTokens.posDanger),
               ),
             ),
-          if (reportState.errorMessage != null)
-            Padding(
-              padding: EdgeInsets.only(bottom: s.sm),
-              child: Text(
-                reportState.errorMessage!,
-                style: TextStyle(color: context.pharmaTokens.posDanger),
-              ),
-            ),
-          Wrap(
-            spacing: s.sm,
-            runSpacing: s.sm,
-            children: [
-              _SortChip(
-                label: 'Validade',
-                selected: state?.sortBy == 'dataValidade',
-                descending: state?.sortDescending == true,
-                onTap: () => controller.setSort('dataValidade'),
-              ),
-              _SortChip(
-                label: 'Dias',
-                selected: state?.sortBy == 'diasRestantes',
-                descending: state?.sortDescending == true,
-                onTap: () => controller.setSort('diasRestantes'),
-              ),
-              _SortChip(
-                label: 'Valor',
-                selected: state?.sortBy == 'valorEmStock',
-                descending: state?.sortDescending == true,
-                onTap: () => controller.setSort('valorEmStock'),
-              ),
-            ],
-          ),
           SizedBox(height: s.sm),
           Expanded(
             child: _buildTableContent(
@@ -321,55 +240,6 @@ class _ExpiryPageState extends ConsumerState<ExpiryPage> {
     return raw.length >= 10 ? raw.substring(0, 10) : raw;
   }
 
-  Future<void> _openLotDrawer(String loteId) async {
-    if (loteId.isEmpty) return;
-    await showDialog<void>(
-      context: context,
-      barrierDismissible: true,
-      builder: (dialogContext) => Dialog(
-        alignment: Alignment.centerRight,
-        insetPadding: EdgeInsets.symmetric(horizontal: 16, vertical: context.spacing.md),
-        backgroundColor: Colors.transparent,
-        child: LotDetailDrawer(
-          loteId: loteId,
-          onClose: () => Navigator.of(dialogContext).pop(),
-        ),
-      ),
-    );
-  }
+  Future<void> _openLotDrawer(String loteId) => openLoteDetails(context, loteId);
 }
 
-class _SortChip extends StatelessWidget {
-  const _SortChip({
-    required this.label,
-    required this.selected,
-    required this.descending,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool selected;
-  final bool descending;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return FilterChip(
-      label: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(label),
-          if (selected) ...[
-            const SizedBox(width: 6),
-            Icon(
-              descending ? Icons.arrow_downward_rounded : Icons.arrow_upward_rounded,
-              size: 16,
-            ),
-          ],
-        ],
-      ),
-      selected: selected,
-      onSelected: (_) => onTap(),
-    );
-  }
-}

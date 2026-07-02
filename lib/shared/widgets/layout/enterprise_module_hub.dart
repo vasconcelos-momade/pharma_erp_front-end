@@ -17,6 +17,7 @@ class EnterpriseModuleHub extends StatelessWidget {
     required this.child,
     this.filters,
     this.scrollable = false,
+    this.mobileKpisHorizontalScroll = false,
   });
 
   final String? title;
@@ -29,6 +30,8 @@ class EnterpriseModuleHub extends StatelessWidget {
   final Widget? filters;
   /// Corpo inteiro com scroll (painéis com muitos KPIs e gráficos).
   final bool scrollable;
+  /// Em mobile, renderiza KPIs numa linha com scroll horizontal.
+  final bool mobileKpisHorizontalScroll;
 
   @override
   Widget build(BuildContext context) {
@@ -45,7 +48,7 @@ class EnterpriseModuleHub extends StatelessWidget {
     final body = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (hasHeaderTexts || (actions != null && actions!.isNotEmpty))
+        if (hasHeaderTexts || ((filters == null) && (actions != null && actions!.isNotEmpty)))
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -90,33 +93,32 @@ class EnterpriseModuleHub extends StatelessWidget {
             )
             else
             const Spacer(),
-            if (actions != null && actions!.isNotEmpty)
-              size == PharmaScreenSize.mobile
-                  ? IconButton(
-                      onPressed: () => _showQuickActions(context, actions!),
-                      icon: const Icon(Icons.more_horiz_rounded),
-                      tooltip: 'Acções',
-                    )
-                  : Flexible(
-                      child: Align(
-                        alignment: Alignment.topRight,
-                        child: Wrap(
-                          spacing: AppSpacing.sm,
-                          runSpacing: AppSpacing.sm,
-                          alignment: WrapAlignment.end,
-                          children: actions!,
-                        ),
-                      ),
-                    ),
+            if (filters == null && actions != null && actions!.isNotEmpty)
+              Flexible(
+                child: Align(
+                  alignment: Alignment.topRight,
+                  child: Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
+                    alignment: WrapAlignment.end,
+                    children: actions!,
+                  ),
+                ),
+              ),
           ],
         ),
         if (filters != null) ...[
           SizedBox(height: size == PharmaScreenSize.mobile ? AppSpacing.sm : AppSpacing.md),
-          filters!,
+          _buildFiltersAndActionsRow(
+            context: context,
+            size: size,
+            filters: filters!,
+            actions: actions,
+          ),
         ],
         if (kpis != null && kpis!.isNotEmpty) ...[
           SizedBox(height: size == PharmaScreenSize.mobile ? AppSpacing.md : AppSpacing.lg),
-          EnterpriseKpiGrid(cards: kpis!),
+          _buildKpis(context, size),
         ],
         SizedBox(height: size == PharmaScreenSize.mobile ? AppSpacing.md : AppSpacing.lg),
         if (scrollable) child else Expanded(child: child),
@@ -130,6 +132,32 @@ class EnterpriseModuleHub extends StatelessWidget {
     }
 
     return SafeArea(child: body);
+  }
+
+  Widget _buildKpis(BuildContext context, PharmaScreenSize size) {
+    if (kpis == null || kpis!.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    if (mobileKpisHorizontalScroll && size == PharmaScreenSize.mobile) {
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            for (var i = 0; i < kpis!.length; i++) ...[
+              SizedBox(
+                width: 220,
+                height: PharmaScreenLayout.kpiCardHeight(size),
+                child: kpis![i],
+              ),
+              if (i < kpis!.length - 1) const SizedBox(width: AppSpacing.sm),
+            ],
+          ],
+        ),
+      );
+    }
+
+    return EnterpriseKpiGrid(cards: kpis!);
   }
 
   static void _showQuickActions(BuildContext context, List<Widget> actions) {
@@ -146,6 +174,44 @@ class EnterpriseModuleHub extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  static Widget _buildFiltersAndActionsRow({
+    required BuildContext context,
+    required PharmaScreenSize size,
+    required Widget filters,
+    List<Widget>? actions,
+  }) {
+    final hasActions = actions != null && actions.isNotEmpty;
+    if (!hasActions) return filters;
+
+    if (size == PharmaScreenSize.mobile) {
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            filters,
+            const SizedBox(width: AppSpacing.sm),
+            ...actions,
+          ],
+        ),
+      );
+    }
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(child: filters),
+        const SizedBox(width: AppSpacing.sm),
+        Wrap(
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.sm,
+          alignment: WrapAlignment.end,
+          children: actions,
+        ),
+      ],
     );
   }
 }

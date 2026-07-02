@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/theme/design_metrics.dart';
+import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
 import '../../../categories/presentation/providers/category_provider.dart';
 import '../../domain/entities/product.dart';
@@ -53,9 +54,16 @@ class ProdutoFormDialogResult {
 }
 
 class ProdutoFormDialog extends ConsumerStatefulWidget {
-  const ProdutoFormDialog({super.key, this.product});
+  const ProdutoFormDialog({
+    super.key,
+    this.product,
+    this.embedded = false,
+    this.pinnedFooter = false,
+  });
 
   final Product? product;
+  final bool embedded;
+  final bool pinnedFooter;
 
   bool get isEditing => product != null;
 
@@ -129,7 +137,8 @@ class _ProdutoFormDialogState extends ConsumerState<ProdutoFormDialog> {
       return;
     }
 
-    Navigator.of(context).pop(
+    AdaptiveNavigator.complete(
+      context,
       ProdutoFormDialogResult(
         nome: _nomeController.text.trim(),
         categoriaId: _categoriaId!,
@@ -186,201 +195,242 @@ class _ProdutoFormDialogState extends ConsumerState<ProdutoFormDialog> {
     );
     final effectiveTaxRuleId = _resolveSelectedTaxRuleId(taxRules);
 
-    return PharmaResponsiveDialog(
-      title: Text(widget.isEditing ? 'Editar produto' : 'Novo produto'),
-      content: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxHeight: MediaQuery.sizeOf(context).height *
-              DesignMetrics.dialogBodyMaxHeightFraction,
+    final formFields = Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        TextFormField(
+          controller: _nomeController,
+          decoration: const InputDecoration(
+            labelText: 'Nome *',
+            border: OutlineInputBorder(),
+          ),
+          validator: (value) {
+            if (value == null || value.trim().isEmpty) {
+              return 'Nome é obrigatório';
+            }
+            return null;
+          },
         ),
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TextFormField(
-                  controller: _nomeController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nome *',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'Nome é obrigatório';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: s.md),
-                categoriesAsync.when(
-                  data: (categories) {
-                    final resolvedId = _categoriaId != null &&
-                            categories.any((c) => c.id == _categoriaId)
-                        ? _categoriaId
-                        : (categories.isNotEmpty ? categories.first.id : null);
-                    if (_categoriaId == null && resolvedId != null) {
-                      _categoriaId = resolvedId;
-                    }
-                    return DropdownButtonFormField<String>(
-                      key: ValueKey('form-categoria-$resolvedId'),
-                      initialValue: resolvedId,
-                      decoration: const InputDecoration(
-                        labelText: 'Categoria *',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: categories
-                          .map(
-                            (c) => DropdownMenuItem(
-                              value: c.id,
-                              child: Text(c.nome),
-                            ),
-                          )
-                          .toList(growable: false),
-                      onChanged: categories.isEmpty
-                          ? null
-                          : (value) => setState(() => _categoriaId = value),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Categoria é obrigatória';
-                        }
-                        return null;
-                      },
-                    );
-                  },
-                  loading: () => const InputDecorator(
-                    decoration: InputDecoration(
-                      labelText: 'Categoria *',
-                      border: OutlineInputBorder(),
+        SizedBox(height: s.md),
+        categoriesAsync.when(
+          data: (categories) {
+            final resolvedId = _categoriaId != null &&
+                    categories.any((c) => c.id == _categoriaId)
+                ? _categoriaId
+                : (categories.isNotEmpty ? categories.first.id : null);
+            if (_categoriaId == null && resolvedId != null) {
+              _categoriaId = resolvedId;
+            }
+            return DropdownButtonFormField<String>(
+              key: ValueKey('form-categoria-$resolvedId'),
+              initialValue: resolvedId,
+              decoration: const InputDecoration(
+                labelText: 'Categoria *',
+                border: OutlineInputBorder(),
+              ),
+              items: categories
+                  .map(
+                    (c) => DropdownMenuItem(
+                      value: c.id,
+                      child: Text(c.nome),
                     ),
-                    child: LinearProgressIndicator(),
-                  ),
-                  error: (_, _) => const InputDecorator(
-                    decoration: InputDecoration(
-                      labelText: 'Categoria *',
-                      border: OutlineInputBorder(),
-                    ),
-                    child: Text('Não foi possível carregar categorias'),
-                  ),
-                ),
-                SizedBox(height: s.md),
-                SwitchListTile.adaptive(
-                  value: _activo,
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Activo'),
-                  subtitle: const Text(
-                    'Produtos inactivos deixam de aparecer no catálogo operacional.',
-                  ),
-                  onChanged: (value) {
-                    setState(() => _activo = value);
-                  },
-                ),
-                SizedBox(height: s.md),
-                DropdownButtonFormField<String?>(
-                  key: ValueKey(
-                    'tax-rule-${effectiveTaxRuleId ?? 'none'}-${taxRules.length}-${taxRulesAsync.isLoading}',
-                  ),
-                  initialValue: effectiveTaxRuleId,
-                  decoration: const InputDecoration(
-                    labelText: 'Taxa de IVA',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: [
-                    const DropdownMenuItem<String?>(
-                      value: null,
-                      child: Text('Sem regra fiscal'),
-                    ),
-                    ...taxRules
-                        .where((rule) => rule.id != null && rule.ativo)
-                        .map(
-                          (rule) => DropdownMenuItem<String?>(
-                            value: rule.id,
-                            child: Text(rule.displayLabel),
-                          ),
-                        ),
-                  ],
-                  onChanged: taxRulesAsync.isLoading
-                      ? null
-                      : (value) {
-                          setState(() => _selectedTaxRuleId = value);
-                        },
-                  hint: taxRulesAsync.isLoading
-                      ? const Text('A carregar taxas de IVA...')
-                      : const Text('Seleccione a taxa de IVA'),
-                ),
-                if (taxRulesAsync.hasError) ...[
-                  SizedBox(height: s.xs),
-                  Text(
-                    'Não foi possível carregar as taxas de IVA.',
-                    style: TextStyle(color: Theme.of(context).colorScheme.error),
-                  ),
-                ],
-                SizedBox(height: s.md),
-                TextFormField(
-                  controller: _barcodeController,
-                  decoration: const InputDecoration(
-                    labelText: 'Código de barras',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: s.md),
-                TextFormField(
-                  controller: _substanciaController,
-                  decoration: const InputDecoration(
-                    labelText: 'Substância activa',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: s.md),
-                TextFormField(
-                  controller: _dosagemController,
-                  decoration: const InputDecoration(
-                    labelText: 'Dosagem',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: s.md),
-                TextFormField(
-                  controller: _formaController,
-                  decoration: const InputDecoration(
-                    labelText: 'Forma',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: s.md),
-                TextFormField(
-                  controller: _apresentacaoController,
-                  decoration: const InputDecoration(
-                    labelText: 'Apresentação',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: s.md),
-                TextFormField(
-                  controller: _estoqueMinimoController,
-                  decoration: const InputDecoration(
-                    labelText: 'Estoque mínimo',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                ),
-              ],
+                  )
+                  .toList(growable: false),
+              onChanged: categories.isEmpty
+                  ? null
+                  : (value) => setState(() => _categoriaId = value),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Categoria é obrigatória';
+                }
+                return null;
+              },
+            );
+          },
+          loading: () => const InputDecorator(
+            decoration: InputDecoration(
+              labelText: 'Categoria *',
+              border: OutlineInputBorder(),
             ),
+            child: LinearProgressIndicator(),
+          ),
+          error: (_, _) => const InputDecorator(
+            decoration: InputDecoration(
+              labelText: 'Categoria *',
+              border: OutlineInputBorder(),
+            ),
+            child: Text('Não foi possível carregar categorias'),
           ),
         ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
+        SizedBox(height: s.md),
+        SwitchListTile.adaptive(
+          value: _activo,
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Activo'),
+          subtitle: const Text(
+            'Produtos inactivos deixam de aparecer no catálogo operacional.',
+          ),
+          onChanged: (value) {
+            setState(() => _activo = value);
+          },
         ),
-        FilledButton.icon(
-          onPressed: _submit,
-          icon: const Icon(Icons.save_outlined),
-          label: Text(widget.isEditing ? 'Guardar' : 'Criar'),
+        SizedBox(height: s.md),
+        DropdownButtonFormField<String?>(
+          key: ValueKey(
+            'tax-rule-${effectiveTaxRuleId ?? 'none'}-${taxRules.length}-${taxRulesAsync.isLoading}',
+          ),
+          initialValue: effectiveTaxRuleId,
+          decoration: const InputDecoration(
+            labelText: 'Taxa de IVA',
+            border: OutlineInputBorder(),
+          ),
+          items: [
+            const DropdownMenuItem<String?>(
+              value: null,
+              child: Text('Sem regra fiscal'),
+            ),
+            ...taxRules
+                .where((rule) => rule.id != null && rule.ativo)
+                .map(
+                  (rule) => DropdownMenuItem<String?>(
+                    value: rule.id,
+                    child: Text(rule.displayLabel),
+                  ),
+                ),
+          ],
+          onChanged: taxRulesAsync.isLoading
+              ? null
+              : (value) {
+                  setState(() => _selectedTaxRuleId = value);
+                },
+          hint: taxRulesAsync.isLoading
+              ? const Text('A carregar taxas de IVA...')
+              : const Text('Seleccione a taxa de IVA'),
+        ),
+        if (taxRulesAsync.hasError) ...[
+          SizedBox(height: s.xs),
+          Text(
+            'Não foi possível carregar as taxas de IVA.',
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+        ],
+        SizedBox(height: s.md),
+        TextFormField(
+          controller: _barcodeController,
+          decoration: const InputDecoration(
+            labelText: 'Código de barras',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        SizedBox(height: s.md),
+        TextFormField(
+          controller: _substanciaController,
+          decoration: const InputDecoration(
+            labelText: 'Substância activa',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        SizedBox(height: s.md),
+        TextFormField(
+          controller: _dosagemController,
+          decoration: const InputDecoration(
+            labelText: 'Dosagem',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        SizedBox(height: s.md),
+        TextFormField(
+          controller: _formaController,
+          decoration: const InputDecoration(
+            labelText: 'Forma',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        SizedBox(height: s.md),
+        TextFormField(
+          controller: _apresentacaoController,
+          decoration: const InputDecoration(
+            labelText: 'Apresentação',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        SizedBox(height: s.md),
+        TextFormField(
+          controller: _estoqueMinimoController,
+          decoration: const InputDecoration(
+            labelText: 'Estoque mínimo',
+            border: OutlineInputBorder(),
+          ),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
         ),
       ],
+    );
+
+    final actions = [
+      TextButton(
+        onPressed: () => AdaptiveNavigator.cancel(context),
+        child: const Text('Cancelar'),
+      ),
+      FilledButton.icon(
+        onPressed: _submit,
+        icon: const Icon(Icons.save_outlined),
+        label: Text(widget.isEditing ? 'Guardar' : 'Criar'),
+      ),
+    ];
+
+    final formBody = Form(
+      key: _formKey,
+      child: widget.pinnedFooter
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: formFields,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: actions,
+                ),
+              ],
+            )
+          : ConstrainedBox(
+              constraints: BoxConstraints(
+                maxHeight: widget.embedded
+                    ? double.infinity
+                    : MediaQuery.sizeOf(context).height *
+                        DesignMetrics.dialogBodyMaxHeightFraction,
+              ),
+              child: SingleChildScrollView(
+                child: formFields,
+              ),
+            ),
+    );
+
+    if (widget.embedded) {
+      if (widget.pinnedFooter) {
+        return formBody;
+      }
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          formBody,
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: actions,
+          ),
+        ],
+      );
+    }
+
+    return PharmaResponsiveDialog(
+      title: Text(widget.isEditing ? 'Editar produto' : 'Novo produto'),
+      content: formBody,
+      actions: actions,
     );
   }
 }
@@ -389,8 +439,79 @@ Future<ProdutoFormDialogResult?> showProdutoFormDialog(
   BuildContext context, {
   Product? product,
 }) {
-  return showPharmaResponsiveDialog<ProdutoFormDialogResult>(
+  final titleText = product != null ? 'Editar produto' : 'Novo produto';
+  final title = Text(titleText);
+  return AdaptiveNavigator.open<ProdutoFormDialogResult>(
     context: context,
-    builder: (context) => ProdutoFormDialog(product: product),
+    sideSheetWidth: AdaptiveNavigator.isDesktop(context) ? 640 : 520,
+    routeSettings: RouteSettings(
+      name: product == null ? '/produtos/novo' : '/produtos/${product.id}/editar',
+    ),
+    builder: (formContext) {
+      if (AdaptiveNavigator.isMobile(formContext)) {
+        return Scaffold(
+          appBar: AppBar(title: title),
+          body: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: ProdutoFormDialog(product: product, embedded: true),
+          ),
+        );
+      }
+
+      return _ProdutoFormSideSheet(
+        title: titleText,
+        child: ProdutoFormDialog(
+          product: product,
+          embedded: true,
+          pinnedFooter: true,
+        ),
+      );
+    },
   );
+}
+
+class _ProdutoFormSideSheet extends StatelessWidget {
+  const _ProdutoFormSideSheet({
+    required this.title,
+    required this.child,
+  });
+
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 8, 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ),
+              IconButton(
+                tooltip: 'Fechar',
+                onPressed: () => AdaptiveNavigator.close(context),
+                icon: const Icon(Icons.close),
+              ),
+            ],
+          ),
+        ),
+        const Divider(height: 1),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: child,
+          ),
+        ),
+      ],
+    );
+  }
 }

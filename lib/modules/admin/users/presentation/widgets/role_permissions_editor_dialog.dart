@@ -3,15 +3,35 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/widgets/feedback/module_data_states.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../providers/permission_matrix_provider.dart';
 
+Future<bool?> showRolePermissionsEditorDialog(
+  BuildContext context, {
+  required String role,
+}) {
+  return AdaptiveNavigator.openEmbeddedForm<bool>(
+    context: context,
+    title: Text('Permissões — $role'),
+    routeSettings: RouteSettings(name: '/perfis/$role/permissoes'),
+    sideSheetWidth: 720,
+    formBuilder: (ctx, {required embedded}) =>
+        RolePermissionsEditorDialog(role: role, embedded: embedded),
+  );
+}
+
 class RolePermissionsEditorDialog extends ConsumerStatefulWidget {
-  const RolePermissionsEditorDialog({super.key, required this.role});
+  const RolePermissionsEditorDialog({
+    super.key,
+    required this.role,
+    this.embedded = false,
+  });
 
   final String role;
+  final bool embedded;
 
   @override
   ConsumerState<RolePermissionsEditorDialog> createState() =>
@@ -33,36 +53,54 @@ class _RolePermissionsEditorDialogState
     final state = ref.watch(permissionMatrixProvider);
     final notifier = ref.read(permissionMatrixProvider.notifier);
 
+    final content = SizedBox(
+      height: widget.embedded ? 480 : 480,
+      child: _buildContent(context, state, notifier),
+    );
+
+    final actions = [
+      TextButton(
+        onPressed: state.isBusy ? null : () => AdaptiveNavigator.cancel(context),
+        child: const Text('Fechar'),
+      ),
+      if (state.canEdit && state.hasChanges)
+        TextButton(
+          onPressed: state.isBusy ? null : notifier.discardChanges,
+          child: const Text('Descartar'),
+        ),
+      FilledButton(
+        onPressed: !state.canEdit || state.isBusy || !state.hasChanges
+            ? null
+            : () => _save(context, notifier),
+        child: state.viewState == PermissionMatrixViewState.saving
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Text('Guardar'),
+      ),
+    ];
+
+    if (widget.embedded) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          content,
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: actions,
+          ),
+        ],
+      );
+    }
+
     return AlertDialog(
       title: Text('Permissões — ${widget.role}'),
-      content: SizedBox(
-        width: 720,
-        height: 480,
-        child: _buildContent(context, state, notifier),
-      ),
-      actions: [
-        TextButton(
-          onPressed: state.isBusy ? null : () => Navigator.of(context).pop(),
-          child: const Text('Fechar'),
-        ),
-        if (state.canEdit && state.hasChanges)
-          TextButton(
-            onPressed: state.isBusy ? null : notifier.discardChanges,
-            child: const Text('Descartar'),
-          ),
-        FilledButton(
-          onPressed: !state.canEdit || state.isBusy || !state.hasChanges
-              ? null
-              : () => _save(context, notifier),
-          child: state.viewState == PermissionMatrixViewState.saving
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : const Text('Guardar'),
-        ),
-      ],
+      content: content,
+      actions: actions,
     );
   }
 
@@ -150,7 +188,7 @@ class _RolePermissionsEditorDialogState
       await notifier.saveRolePermissions();
       if (context.mounted) {
         PharmaFeedback.success(context, 'Permissões actualizadas');
-        Navigator.of(context).pop(true);
+        AdaptiveNavigator.complete(context, true);
       }
     } on ApiFailure catch (e) {
       if (context.mounted) PharmaFeedback.error(context, e.message);

@@ -10,23 +10,24 @@ class ProdutoRegulacaoBadges extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final t = context.pharmaTokens;
     final badges = <Widget>[];
 
     if (_isMedicamento(product)) {
       badges.add(_Badge(label: 'Medicamento', color: context.pharmaTokens.brandBlue));
     }
     if (product.antimicrobiano) {
-      badges.add(_Badge(label: 'Antimicrobiano', color: Colors.deepPurple));
+      badges.add(_Badge(label: 'Antimicrobiano', color: t.posWarning));
     }
     if (product.requiresPsychotropicBook ||
         product.tipoDispensacao == 'PSICOTROPICO' ||
         product.tipoDispensacao == 'NARCOTICO') {
-      badges.add(_Badge(label: 'Psicotrópico', color: Colors.indigo));
+      badges.add(_Badge(label: 'Psicotrópico', color: t.brandBlue));
     }
     if (product.requiresPrescription ||
         product.tipoDispensacao == 'RECEITA_OBRIGATORIA' ||
         product.tipoDispensacao == 'RECEITA_CONTROLADA') {
-      badges.add(_Badge(label: 'Receita Obrigatória', color: Colors.orange));
+      badges.add(_Badge(label: 'Receita Obrigatória', color: t.posWarning));
     }
 
     if (badges.isEmpty) {

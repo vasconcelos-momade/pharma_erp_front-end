@@ -130,6 +130,48 @@ class InventoryRemoteDataSource {
     return _getList(ApiConstants.tenantLoteIncineracoes(loteId));
   }
 
+  Future<Map<String, dynamic>> moveLoteToQuarentena(
+    String loteId, {
+    required num quantidade,
+    required String motivo,
+    String? documentoReferencia,
+  }) async {
+    return _postMap(
+      ApiConstants.tenantLoteQuarentena(loteId),
+      <String, dynamic>{
+        'quantidade': quantidade,
+        'motivo': motivo,
+        'documentoReferencia': ?(documentoReferencia != null &&
+                documentoReferencia.isNotEmpty
+            ? documentoReferencia
+            : null),
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> revertLoteQuarentena(
+    String loteId, {
+    num? quantidade,
+    required String motivo,
+    String? documentoReferencia,
+  }) async {
+    return _postMap(
+      ApiConstants.tenantLoteLiberarQuarentena(loteId),
+      <String, dynamic>{
+        if (quantidade != null) 'quantidade': quantidade,
+        'motivo': motivo,
+        'documentoReferencia': ?(documentoReferencia != null &&
+                documentoReferencia.isNotEmpty
+            ? documentoReferencia
+            : null),
+      },
+    );
+  }
+
+  Future<Map<String, dynamic>> getLoteSanitarioHistory(String loteId) async {
+    return _getMap(ApiConstants.tenantLoteSanitarioHistorico(loteId));
+  }
+
   Future<PaginationResponse<Map<String, dynamic>>> _getPage(
     String path,
     Map<String, dynamic> params,
@@ -173,6 +215,18 @@ class InventoryRemoteDataSource {
       final response = await _dio.get<dynamic>(path);
       return ApiEnvelope.unwrapList(response.data)
           .cast<Map<String, dynamic>>();
+    } on DioException catch (e) {
+      throw ApiFailure.fromDio(e);
+    }
+  }
+
+  Future<Map<String, dynamic>> _postMap(
+    String path,
+    Map<String, dynamic> body,
+  ) async {
+    try {
+      final response = await _dio.post<Map<String, dynamic>>(path, data: body);
+      return ApiEnvelope.unwrapMap(response.data!);
     } on DioException catch (e) {
       throw ApiFailure.fromDio(e);
     }

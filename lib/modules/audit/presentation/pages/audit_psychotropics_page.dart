@@ -106,12 +106,6 @@ class _AuditPsychotropicsPageState extends ConsumerState<AuditPsychotropicsPage>
       subtitle: 'Livro B, receitas, retenção e cruzamento regulatório.',
       tag: 'Auditoria',
       actions: [
-        ...auditReportActions(
-          ref: ref,
-          enabled: !_loading,
-          path: ReportPaths.auditPsychotropics,
-          queryParameters: _reportQuery(),
-        ),
         OutlinedButton.icon(
           onPressed: _loading ? null : () => _load(),
           icon: const Icon(Icons.refresh_rounded),
@@ -185,12 +179,6 @@ class _AuditPsychotropicsPageState extends ConsumerState<AuditPsychotropicsPage>
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (auditReportError(ref) != null) ...[
-          Padding(
-            padding: EdgeInsets.only(bottom: context.spacing.sm),
-            child: auditReportError(ref),
-          ),
-        ],
         Expanded(
           child: EnterpriseDataTable(
             columns: [

@@ -6,6 +6,7 @@ import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/theme/app_radius.dart';
 import '../../../../../core/theme/design_metrics.dart';
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/buttons/pharma_button_loader.dart';
@@ -17,25 +18,14 @@ Future<PdvCheckoutResult?> showFinalizarVendaDialog(
   required double total,
   required bool requiresPatientDetails,
 }) {
-  final breakpoint = pharmaDialogBreakpointForWidth(MediaQuery.sizeOf(context).width);
-  if (breakpoint == PharmaDialogBreakpoint.mobile) {
-    return Navigator.of(context).push<PdvCheckoutResult>(
-      MaterialPageRoute(
-        builder: (_) => FinalizarVendaDialog(
-          total: total,
-          requiresPatientDetails: requiresPatientDetails,
-          presentation: FinalizarVendaPresentation.screen,
-        ),
-      ),
-    );
-  }
-
-  return showPharmaResponsiveDialog<PdvCheckoutResult>(
+  return AdaptiveNavigator.openEmbeddedForm<PdvCheckoutResult>(
     context: context,
-    builder: (_) => FinalizarVendaDialog(
+    title: const Text('Finalizar Venda'),
+    routeSettings: const RouteSettings(name: '/pdv/checkout'),
+    formBuilder: (ctx, {required embedded}) => FinalizarVendaDialog(
       total: total,
       requiresPatientDetails: requiresPatientDetails,
-      presentation: FinalizarVendaPresentation.dialog,
+      embedded: embedded,
     ),
   );
 }
@@ -51,11 +41,13 @@ class FinalizarVendaDialog extends ConsumerStatefulWidget {
     required this.total,
     required this.requiresPatientDetails,
     this.presentation = FinalizarVendaPresentation.dialog,
+    this.embedded = false,
   });
 
   final double total;
   final bool requiresPatientDetails;
   final FinalizarVendaPresentation presentation;
+  final bool embedded;
 
   @override
   ConsumerState<FinalizarVendaDialog> createState() =>
@@ -130,7 +122,7 @@ class _FinalizarVendaDialogState
       if (!mounted) {
         return;
       }
-      Navigator.of(context).pop(result);
+      AdaptiveNavigator.complete(context, result);
     } on ApiFailure catch (e) {
       if (!mounted) {
         return;
@@ -288,6 +280,15 @@ class _FinalizarVendaDialogState
       label: const Text('Confirmar Pagamento'),
     );
 
+    if (widget.embedded) {
+      return [
+        SizedBox(
+          width: double.infinity,
+          child: confirmButton,
+        ),
+      ];
+    }
+
     if (presentation == FinalizarVendaPresentation.screen) {
       return [
         SizedBox(
@@ -301,7 +302,7 @@ class _FinalizarVendaDialogState
       TextButton(
         onPressed: checkoutState.isSubmitting
             ? null
-            : () => Navigator.of(context).pop(),
+            : () => AdaptiveNavigator.cancel(context),
         child: const Text('Cancelar'),
       ),
       confirmButton,
@@ -463,6 +464,18 @@ class _FinalizarVendaDialogState
     final actions = _buildActions(context, checkoutState, widget.presentation);
     final content = _buildFormContent(context, checkoutState);
 
+    if (widget.embedded) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          content,
+          SizedBox(height: s.lg),
+          ...actions,
+        ],
+      );
+    }
+
     if (widget.presentation == FinalizarVendaPresentation.screen) {
       return PopScope(
         canPop: !checkoutState.isSubmitting,
@@ -472,7 +485,7 @@ class _FinalizarVendaDialogState
             leading: BackButton(
               onPressed: checkoutState.isSubmitting
                   ? null
-                  : () => Navigator.of(context).pop(),
+                  : () => AdaptiveNavigator.cancel(context),
             ),
             title: const Text('Finalizar Venda'),
           ),

@@ -7,6 +7,7 @@ import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../reports/presentation/controllers/report_controller.dart';
+import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/responsive/pharma_screen_layout.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../../shared/widgets/feedback/module_data_states.dart';
@@ -67,35 +68,31 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
       subtitle: 'CRM operacional, limites de crédito e convénios hospitalares.',
       tag: 'Terminal',
       actions: [
-        OutlinedButton.icon(
-          onPressed: state.items.isEmpty || reportState.isSubmitting
-              ? null
-              : () => reportController.exportCsv(
-                    path: ReportPaths.customers,
-                    queryParameters: reportQuery,
-                  ),
-          icon: const Icon(Icons.download_outlined),
-          label: const Text('Exportar CSV'),
-        ),
-        OutlinedButton.icon(
-          onPressed: state.items.isEmpty || reportState.isSubmitting
-              ? null
-              : () => reportController.exportExcel(
-                    path: ReportPaths.customers,
-                    queryParameters: reportQuery,
-                  ),
-          icon: const Icon(Icons.table_view_outlined),
-          label: const Text('Exportar Excel'),
-        ),
-        OutlinedButton.icon(
-          onPressed: state.items.isEmpty || reportState.isSubmitting
-              ? null
-              : () => reportController.downloadPdf(
-                    path: ReportPaths.customers,
-                    queryParameters: reportQuery,
-                  ),
-          icon: const Icon(Icons.picture_as_pdf_outlined),
-          label: const Text('Exportar PDF'),
+        PopupMenuButton<String>(
+          enabled: !state.isBusy && !reportState.isSubmitting,
+          tooltip: 'Exportar',
+          onSelected: (value) {
+            if (value == 'pdf') {
+              reportController.downloadPdf(
+                path: ReportPaths.customers,
+                queryParameters: reportQuery,
+              );
+              return;
+            }
+            reportController.exportCsv(
+              path: ReportPaths.customers,
+              queryParameters: reportQuery,
+            );
+          },
+          itemBuilder: (context) => const [
+            PopupMenuItem<String>(value: 'pdf', child: Text('Exportar PDF')),
+            PopupMenuItem<String>(value: 'csv', child: Text('Exportar CSV')),
+          ],
+          child: OutlinedButton.icon(
+            onPressed: null,
+            icon: Icon(Icons.download_outlined),
+            label: Text('Exportar'),
+          ),
         ),
         OutlinedButton.icon(
           onPressed: state.isBusy ? null : notifier.refresh,
@@ -325,8 +322,6 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
     BuildContext context,
     CustomerSummary customer,
   ) async {
-    final isMobile = PharmaScreenLayout.isMobile(context);
-
     Future<void> onEdit() async {
       final detail = await ref
           .read(customerRepositoryProvider)
@@ -360,56 +355,23 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
             .deleteCustomer(customer.id);
         if (context.mounted) {
           PharmaFeedback.success(context, 'Cliente excluído');
-          Navigator.of(context).pop();
+          AdaptiveNavigator.close(context);
         }
       } on ApiFailure catch (e) {
         if (context.mounted) PharmaFeedback.error(context, e.message);
       }
     }
 
-    if (isMobile) {
-      await Navigator.of(context).push<void>(
-        MaterialPageRoute(
-          builder: (screenContext) => Scaffold(
-            appBar: AppBar(title: Text(customer.nome)),
-            body: CustomerDetailPanel(
-              customerId: customer.id,
-              onClose: () => Navigator.of(screenContext).pop(),
-              onEdit: onEdit,
-              onDelete: onDelete,
-            ),
-          ),
-        ),
-      );
-      return;
-    }
-
-    await showDialog<void>(
+    await AdaptiveNavigator.openDetail(
       context: context,
-      builder: (dialogContext) {
-        final t = context.pharmaTokens;
-        final s = context.spacing;
-        return Dialog(
-          alignment: Alignment.centerRight,
-          insetPadding: EdgeInsets.symmetric(horizontal: 16, vertical: s.md),
-          backgroundColor: Colors.transparent,
-          child: Container(
-            width: 520,
-            height: MediaQuery.sizeOf(context).height * 0.85,
-            decoration: BoxDecoration(
-              color: t.bgPrimary,
-              borderRadius: BorderRadius.circular(t.radiusXl),
-              border: Border.all(color: t.border.withValues(alpha: 0.55)),
-            ),
-            child: CustomerDetailPanel(
-              customerId: customer.id,
-              onClose: () => Navigator.of(dialogContext).pop(),
-              onEdit: onEdit,
-              onDelete: onDelete,
-            ),
-          ),
-        );
-      },
+      title: customer.nome,
+      routeSettings: RouteSettings(name: '/clientes/${customer.id}'),
+      builder: (detailContext, onClose) => CustomerDetailPanel(
+        customerId: customer.id,
+        onClose: onClose,
+        onEdit: onEdit,
+        onDelete: onDelete,
+      ),
     );
   }
 

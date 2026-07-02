@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
+import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
@@ -113,92 +114,90 @@ class _PsychotropicsBookPageState
   }
 
   Future<void> _openDetail(String id) async {
-    await showDialog<void>(
+    await AdaptiveNavigator.openPanel<void>(
       context: context,
-      builder: (context) => Dialog(
-        child: SizedBox(
-          width: 860,
-          height: 640,
-          child: FutureBuilder<Map<String, dynamic>>(
-            future: _ds.getLivroPsicotropico(id),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState != ConnectionState.done) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (snapshot.hasError) {
-                return Center(child: Text(snapshot.error.toString()));
-              }
-              final data = snapshot.data ?? const <String, dynamic>{};
-              return Column(
-                children: [
-                  Padding(
+      sideSheetWidth: 860,
+      builder: (panelContext) => SizedBox(
+        width: 860,
+        height: 640,
+        child: FutureBuilder<Map<String, dynamic>>(
+          future: _ds.getLivroPsicotropico(id),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return Center(child: Text(snapshot.error.toString()));
+            }
+            final data = snapshot.data ?? const <String, dynamic>{};
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Movimento ${data['numeroDocumento'] ?? data['id']}',
+                          style: Theme.of(context).textTheme.titleLarge,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => AdaptiveNavigator.close(panelContext),
+                        icon: const Icon(Icons.close),
+                      ),
+                    ],
+                  ),
+                ),
+                const Divider(height: 1),
+                Expanded(
+                  child: ListView(
                     padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'Movimento ${data['numeroDocumento'] ?? data['id']}',
-                            style: Theme.of(context).textTheme.titleLarge,
+                    children: [
+                      Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: [
+                          _PsychInfo(
+                            label: 'Produto',
+                            value: data['produto']?['nome']?.toString() ?? '—',
                           ),
-                        ),
-                        IconButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          icon: const Icon(Icons.close),
-                        ),
-                      ],
-                    ),
+                          _PsychInfo(
+                            label: 'Movimento',
+                            value: data['tipoMovimento']?.toString() ?? '—',
+                          ),
+                          _PsychInfo(
+                            label: 'Quantidade',
+                            value: '${data['quantidade'] ?? 0}',
+                          ),
+                          _PsychInfo(
+                            label: 'Saldo',
+                            value: '${data['saldoAtual'] ?? 0}',
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Auditoria',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 8),
+                      ...(data['auditLogs'] as List<dynamic>? ?? const [])
+                          .map(
+                            (item) => ListTile(
+                              dense: true,
+                              contentPadding: EdgeInsets.zero,
+                              title: Text(item['action']?.toString() ?? '—'),
+                              subtitle:
+                                  Text(item['createdAt']?.toString() ?? '—'),
+                            ),
+                          ),
+                    ],
                   ),
-                  const Divider(height: 1),
-                  Expanded(
-                    child: ListView(
-                      padding: const EdgeInsets.all(16),
-                      children: [
-                        Wrap(
-                          spacing: 12,
-                          runSpacing: 12,
-                          children: [
-                            _PsychInfo(
-                              label: 'Produto',
-                              value: data['produto']?['nome']?.toString() ?? '—',
-                            ),
-                            _PsychInfo(
-                              label: 'Movimento',
-                              value: data['tipoMovimento']?.toString() ?? '—',
-                            ),
-                            _PsychInfo(
-                              label: 'Quantidade',
-                              value: '${data['quantidade'] ?? 0}',
-                            ),
-                            _PsychInfo(
-                              label: 'Saldo',
-                              value: '${data['saldoAtual'] ?? 0}',
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Auditoria',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        ...(data['auditLogs'] as List<dynamic>? ?? const [])
-                            .map(
-                              (item) => ListTile(
-                                dense: true,
-                                contentPadding: EdgeInsets.zero,
-                                title:
-                                    Text(item['action']?.toString() ?? '—'),
-                                subtitle:
-                                    Text(item['createdAt']?.toString() ?? '—'),
-                              ),
-                            ),
-                      ],
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -217,12 +216,6 @@ class _PsychotropicsBookPageState
         IconButton(
           onPressed: _load,
           icon: const Icon(Icons.refresh),
-        ),
-        ...regulatoryReportActions(
-          ref: ref,
-          enabled: !_loading && _error == null,
-          path: ReportPaths.regulatoryLivroPsicotropicos,
-          queryParameters: _reportQuery(),
         ),
       ],
       kpis: dash == null
@@ -298,11 +291,6 @@ class _PsychotropicsBookPageState
       ),
       child: Column(
         children: [
-          if (regulatoryReportError(ref) != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: regulatoryReportError(ref),
-            ),
           if (_loading) const LinearProgressIndicator(),
           if (_error != null)
             Padding(

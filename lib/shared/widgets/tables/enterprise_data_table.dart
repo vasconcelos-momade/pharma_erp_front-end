@@ -46,6 +46,7 @@ class EnterpriseDataTable extends StatelessWidget {
     this.showCheckboxColumn = true,
     this.sortColumnIndex,
     this.sortAscending = true,
+    this.onSelectAll,
   });
 
   final List<DataColumn> columns;
@@ -55,6 +56,7 @@ class EnterpriseDataTable extends StatelessWidget {
   final bool showCheckboxColumn;
   final int? sortColumnIndex;
   final bool sortAscending;
+  final ValueChanged<bool?>? onSelectAll;
 
   @override
   Widget build(BuildContext context) {
@@ -146,6 +148,7 @@ class EnterpriseDataTable extends StatelessWidget {
                   showCheckboxColumn: showCheckboxColumn,
                   sortColumnIndex: sortColumnIndex,
                   sortAscending: sortAscending,
+                  onSelectAll: onSelectAll,
                   headingRowColor: WidgetStatePropertyAll(
                     t.bgSecondary.withValues(alpha: 0.92),
                   ),

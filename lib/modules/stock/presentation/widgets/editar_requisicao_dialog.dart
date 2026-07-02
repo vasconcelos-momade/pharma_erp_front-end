@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/design_metrics.dart';
+import '../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
 import '../../domain/entities/fornecedor.dart';
 import '../../domain/entities/requisicao.dart';
@@ -33,13 +34,28 @@ class EditarRequisicaoDialogResult {
   }
 }
 
+Future<EditarRequisicaoDialogResult?> showEditarRequisicaoDialog(
+  BuildContext context, {
+  required RequisicaoDetalhe requisicao,
+}) {
+  return AdaptiveNavigator.openEmbeddedForm<EditarRequisicaoDialogResult>(
+    context: context,
+    title: Text('Editar requisição (${requisicao.tipo.label})'),
+    routeSettings: RouteSettings(name: '/requisicoes/${requisicao.id}/editar'),
+    formBuilder: (ctx, {required embedded}) =>
+        EditarRequisicaoDialog(requisicao: requisicao, embedded: embedded),
+  );
+}
+
 class EditarRequisicaoDialog extends ConsumerStatefulWidget {
   const EditarRequisicaoDialog({
     super.key,
     required this.requisicao,
+    this.embedded = false,
   });
 
   final RequisicaoDetalhe requisicao;
+  final bool embedded;
 
   @override
   ConsumerState<EditarRequisicaoDialog> createState() =>
@@ -115,7 +131,8 @@ class _EditarRequisicaoDialogState extends ConsumerState<EditarRequisicaoDialog>
         _selectedFornecedorDropdown?.id ?? _selectedFornecedorId,
     };
 
-    Navigator.of(context).pop(
+    AdaptiveNavigator.complete(
+      context,
       EditarRequisicaoDialogResult(
         numeroDocumento: _numeroDocumentoController.text.trim(),
         fornecedorId: fornecedorId,
@@ -374,6 +391,54 @@ class _EditarRequisicaoDialogState extends ConsumerState<EditarRequisicaoDialog>
   Widget build(BuildContext context) {
     final suppliersAsync = ref.watch(supplierListProvider);
 
+    final formContent = suppliersAsync.when(
+      loading: () => const SizedBox(
+        height: DesignMetrics.minTouchTarget * 5,
+        child: Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, _) => SizedBox(
+        height: DesignMetrics.minTouchTarget * 2.5,
+        child: Center(child: Text(error.toString())),
+      ),
+      data: (fornecedores) => Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          child: switch (_tipo) {
+            RequisicaoTipo.compra => _buildCompraFields(fornecedores),
+            RequisicaoTipo.entrada => _buildEntradaFields(fornecedores),
+            RequisicaoTipo.saida => _buildSaidaFields(fornecedores),
+          },
+        ),
+      ),
+    );
+
+    final actions = [
+      TextButton(
+        onPressed: () => AdaptiveNavigator.cancel(context),
+        child: const Text('Cancelar'),
+      ),
+      FilledButton.icon(
+        onPressed: _canSubmit ? _submit : null,
+        icon: const Icon(Icons.save_outlined),
+        label: const Text('Guardar'),
+      ),
+    ];
+
+    if (widget.embedded) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          formContent,
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: actions,
+          ),
+        ],
+      );
+    }
+
     return PharmaResponsiveDialog(
       title: Text('Editar requisição (${widget.requisicao.tipo.label})'),
       content: ConstrainedBox(
@@ -381,38 +446,9 @@ class _EditarRequisicaoDialogState extends ConsumerState<EditarRequisicaoDialog>
           maxHeight: MediaQuery.sizeOf(context).height *
               DesignMetrics.dialogBodyMaxHeightFraction,
         ),
-        child: suppliersAsync.when(
-          loading: () => const SizedBox(
-            height: DesignMetrics.minTouchTarget * 5,
-            child: Center(child: CircularProgressIndicator()),
-          ),
-          error: (error, _) => SizedBox(
-            height: DesignMetrics.minTouchTarget * 2.5,
-            child: Center(child: Text(error.toString())),
-          ),
-          data: (fornecedores) => Form(
-            key: _formKey,
-            child: SingleChildScrollView(
-              child: switch (_tipo) {
-                RequisicaoTipo.compra => _buildCompraFields(fornecedores),
-                RequisicaoTipo.entrada => _buildEntradaFields(fornecedores),
-                RequisicaoTipo.saida => _buildSaidaFields(fornecedores),
-              },
-            ),
-          ),
-        ),
+        child: formContent,
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
-        ),
-        FilledButton.icon(
-          onPressed: _canSubmit ? _submit : null,
-          icon: const Icon(Icons.save_outlined),
-          label: const Text('Guardar'),
-        ),
-      ],
+      actions: actions,
     );
   }
 }

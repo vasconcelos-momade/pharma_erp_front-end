@@ -40,7 +40,7 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
       actions: [
         ...financeReportActions(
           ref: ref,
-          enabled: async.valueOrNull != null && !reportState.isSubmitting,
+          enabled: !reportState.isSubmitting,
           path: ReportPaths.financeExpenses,
           queryParameters: _query.toParams(),
         ),
@@ -87,11 +87,6 @@ class _ExpensesPageState extends ConsumerState<ExpensesPage> {
         builder: (_) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (financeReportError(ref) != null)
-              Padding(
-                padding: EdgeInsets.only(bottom: context.spacing.sm),
-                child: financeReportError(ref),
-              ),
             DashboardPaginatedTable(
               title: 'Despesas',
               headers: const ['Data', 'Tipo', 'Referência', 'Valor (MZN)'],

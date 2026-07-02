@@ -12,6 +12,7 @@ import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../../../stock/presentation/widgets/movimentacoes_pagination.dart';
 import '../../../presentation/widgets/regulatory_report_exports.dart';
 import '../../../regulatory/data/datasources/regulatory_remote_datasource.dart';
+import '../../../lots/presentation/widgets/lot_actions_helper.dart';
 
 class RegulatoryPage extends ConsumerStatefulWidget {
   const RegulatoryPage({super.key});
@@ -153,94 +154,7 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
   }
 
   Future<void> _openHistory(String loteId) async {
-    await showDialog<void>(
-      context: context,
-      builder: (context) => Dialog(
-        child: SizedBox(
-          width: 920,
-          height: 680,
-          child: FutureBuilder<Map<String, dynamic>>(
-            future: _ds.getLoteSanitarioHistory(loteId),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState != ConnectionState.done) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (snapshot.hasError) {
-                return Center(child: Text(snapshot.error.toString()));
-              }
-              final data = snapshot.data ?? const <String, dynamic>{};
-              final lote = data['lote'] as Map<String, dynamic>? ?? const {};
-              return Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'Histórico sanitário • ${lote['numeroLote'] ?? lote['id']}',
-                            style: Theme.of(context).textTheme.titleLarge,
-                          ),
-                        ),
-                        IconButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          icon: const Icon(Icons.close),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const Divider(height: 1),
-                  Expanded(
-                    child: ListView(
-                      padding: const EdgeInsets.all(16),
-                      children: [
-                        Text(
-                          'Movimentos sanitários',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        ...(data['movimentos'] as List<dynamic>? ?? const [])
-                            .map(
-                              (item) => ListTile(
-                                dense: true,
-                                contentPadding: EdgeInsets.zero,
-                                title: Text(
-                                  '${item['tipo']} • ${item['quantidade']}',
-                                ),
-                                subtitle: Text(
-                                  item['motivo']?.toString() ?? '—',
-                                ),
-                              ),
-                            ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Incinerações',
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        ...(data['incineracoes'] as List<dynamic>? ?? const []).map(
-                          (item) => ListTile(
-                            dense: true,
-                            contentPadding: EdgeInsets.zero,
-                            title: Text(
-                              item['incineracao']?['numeroAuto']?.toString() ??
-                                  '—',
-                            ),
-                            subtitle: Text(
-                              'Qtd: ${item['quantidade']} • ${item['incineracao']?['dataIncineracao'] ?? '—'}',
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
-      ),
-    );
+    await LotActionsHelper.showHistory(context, ref, loteId);
   }
 
   @override
@@ -257,13 +171,6 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
               _tabController.index == 0 ? _loadSanitario() : _loadReports(),
           icon: const Icon(Icons.refresh),
         ),
-        if (_tabController.index == 0)
-          ...regulatoryReportActions(
-            ref: ref,
-            enabled: !_loadingSanitario && _sanitarioError == null,
-            path: ReportPaths.regulatorySanitario,
-            queryParameters: _sanitarioReportQuery(),
-          ),
       ],
       kpis: dash == null || _tabController.index == 1
           ? null
@@ -304,11 +211,6 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
           : _buildReportsFilters(),
       child: Column(
         children: [
-          if (_tabController.index == 0 && regulatoryReportError(ref) != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: regulatoryReportError(ref),
-            ),
           TabBar(
             controller: _tabController,
             onTap: (_) => setState(() {}),

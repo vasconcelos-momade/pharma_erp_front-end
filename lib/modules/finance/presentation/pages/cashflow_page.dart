@@ -41,7 +41,7 @@ class _CashflowPageState extends ConsumerState<CashflowPage> {
       actions: [
         ...financeReportActions(
           ref: ref,
-          enabled: async.valueOrNull != null && !reportState.isSubmitting,
+          enabled: !reportState.isSubmitting,
           path: ReportPaths.financeCashflow,
           queryParameters: _query.toParams(),
         ),
@@ -91,11 +91,6 @@ class _CashflowPageState extends ConsumerState<CashflowPage> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              if (financeReportError(ref) != null)
-                Padding(
-                  padding: EdgeInsets.only(bottom: context.spacing.sm),
-                  child: financeReportError(ref),
-                ),
               DashboardChartsSection(
                 charts: [
                   DashboardChartSlot(

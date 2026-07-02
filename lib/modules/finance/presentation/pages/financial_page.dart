@@ -41,8 +41,8 @@ class _FinancialPageState extends ConsumerState<FinancialPage> {
       actions: [
         ...financeReportActions(
           ref: ref,
-          enabled: async.valueOrNull != null && !reportState.isSubmitting,
-          path: ReportPaths.dashboardFinance,
+          enabled: !reportState.isSubmitting,
+          path: ReportPaths.financeAccountsReceivable,
           queryParameters: _query.toParams(),
         ),
         OutlinedButton.icon(
@@ -97,11 +97,6 @@ class _FinancialPageState extends ConsumerState<FinancialPage> {
               ),
               const SizedBox(height: AppSpacing.lg),
             ],
-            if (financeReportError(ref) != null)
-              Padding(
-                padding: EdgeInsets.only(bottom: context.spacing.sm),
-                child: financeReportError(ref),
-              ),
             DashboardPaginatedTable(
               title: 'Contas vencidas',
               headers: const ['Cliente', 'Saldo', 'Vencimento'],

@@ -29,12 +29,6 @@ class UserProfilesPage extends ConsumerWidget {
       subtitle: 'Conjuntos de permissões reutilizáveis por unidade.',
       tag: 'Administração',
       actions: [
-        ...adminReportActions(
-          ref: ref,
-          enabled: state.viewState == RoleListViewState.loaded,
-          path: ReportPaths.adminRoles,
-          queryParameters: const {},
-        ),
         OutlinedButton.icon(
           onPressed: state.isBusy ? null : notifier.load,
           icon: const Icon(Icons.refresh_rounded),
@@ -179,9 +173,9 @@ class _RoleDetailPanel extends StatelessWidget {
   final VoidCallback? onPermissionsUpdated;
 
   Future<void> _openPermissionsEditor(BuildContext context) async {
-    final updated = await showDialog<bool>(
-      context: context,
-      builder: (_) => RolePermissionsEditorDialog(role: detail.role),
+    final updated = await showRolePermissionsEditorDialog(
+      context,
+      role: detail.role,
     );
     if (updated == true && context.mounted) {
       onPermissionsUpdated?.call();

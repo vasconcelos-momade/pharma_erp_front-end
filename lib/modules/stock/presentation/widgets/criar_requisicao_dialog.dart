@@ -3,11 +3,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/design_metrics.dart';
 import '../../../../core/theme/design_tokens.dart';
+import '../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
 import '../../domain/entities/fornecedor.dart';
 import '../providers/fornecedor_provider.dart';
 
 enum CriarRequisicaoModalTipo { compra, entrada, saida }
+
+Future<CriarRequisicaoDialogResult?> showCriarRequisicaoDialog(
+  BuildContext context, {
+  CriarRequisicaoModalTipo initialTipo = CriarRequisicaoModalTipo.compra,
+}) {
+  return AdaptiveNavigator.openEmbeddedForm<CriarRequisicaoDialogResult>(
+    context: context,
+    title: const Text('Criar Requisição'),
+    routeSettings: const RouteSettings(name: '/requisicoes/nova'),
+    formBuilder: (ctx, {required embedded}) =>
+        CriarRequisicaoDialog(initialTipo: initialTipo, embedded: embedded),
+  );
+}
 
 class CriarRequisicaoDialogResult {
   const CriarRequisicaoDialogResult({
@@ -33,9 +47,11 @@ class CriarRequisicaoDialog extends ConsumerStatefulWidget {
   const CriarRequisicaoDialog({
     super.key,
     this.initialTipo = CriarRequisicaoModalTipo.compra,
+    this.embedded = false,
   });
 
   final CriarRequisicaoModalTipo initialTipo;
+  final bool embedded;
 
   @override
   ConsumerState<CriarRequisicaoDialog> createState() =>
@@ -111,7 +127,8 @@ class _CriarRequisicaoDialogState extends ConsumerState<CriarRequisicaoDialog>
 
     switch (_activeTipo) {
       case CriarRequisicaoModalTipo.compra:
-        Navigator.of(context).pop(
+        AdaptiveNavigator.complete(
+          context,
           CriarRequisicaoDialogResult(
             tipo: CriarRequisicaoModalTipo.compra,
             fornecedorId: _selectedFornecedorId,
@@ -120,7 +137,8 @@ class _CriarRequisicaoDialogState extends ConsumerState<CriarRequisicaoDialog>
           ),
         );
       case CriarRequisicaoModalTipo.entrada:
-        Navigator.of(context).pop(
+        AdaptiveNavigator.complete(
+          context,
           CriarRequisicaoDialogResult(
             tipo: CriarRequisicaoModalTipo.entrada,
             fornecedorId: _selectedFornecedorDropdown?.id,
@@ -132,7 +150,8 @@ class _CriarRequisicaoDialogState extends ConsumerState<CriarRequisicaoDialog>
           ),
         );
       case CriarRequisicaoModalTipo.saida:
-        Navigator.of(context).pop(
+        AdaptiveNavigator.complete(
+          context,
           CriarRequisicaoDialogResult(
             tipo: CriarRequisicaoModalTipo.saida,
             fornecedorId: _selectedFornecedorDropdown?.id,
@@ -348,6 +367,78 @@ class _CriarRequisicaoDialogState extends ConsumerState<CriarRequisicaoDialog>
     final s = context.spacing;
     final suppliersAsync = ref.watch(supplierListProvider);
 
+    final tabBar = Material(
+      color: t.card,
+      borderRadius: BorderRadius.circular(t.radiusMd),
+      child: TabBar(
+        controller: _tabController,
+        onTap: (_) => setState(() {}),
+        labelColor: t.textPrimary,
+        unselectedLabelColor: t.textMuted,
+        indicatorColor: t.brandBlue,
+        dividerColor: Colors.transparent,
+        labelPadding: EdgeInsets.symmetric(horizontal: s.sm),
+        tabs: [
+          Tab(height: t.minTouchTarget, text: 'Compra'),
+          Tab(height: t.minTouchTarget, text: 'Entrada'),
+          Tab(height: t.minTouchTarget, text: 'Saída'),
+        ],
+      ),
+    );
+
+    Widget tabContent(List<FornecedorResumo> fornecedores) {
+      return SingleChildScrollView(
+        child: switch (_activeTipo) {
+          CriarRequisicaoModalTipo.compra => _buildCompraTab(fornecedores),
+          CriarRequisicaoModalTipo.entrada => _buildEntradaTab(fornecedores),
+          CriarRequisicaoModalTipo.saida => _buildSaidaTab(fornecedores),
+        },
+      );
+    }
+
+    final suppliersSection = suppliersAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (err, _) => Center(child: Text('Erro: $err')),
+      data: tabContent,
+    );
+
+    final actions = [
+      TextButton(
+        onPressed: () => AdaptiveNavigator.cancel(context),
+        child: const Text('Cancelar'),
+      ),
+      FilledButton.icon(
+        onPressed: _canSubmit ? _submit : null,
+        icon: const Icon(Icons.check_rounded),
+        label: const Text('Iniciar requisição'),
+      ),
+    ];
+
+    if (widget.embedded) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                tabBar,
+                SizedBox(height: s.md),
+                suppliersSection,
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: actions,
+          ),
+        ],
+      );
+    }
+
     return PharmaResponsiveDialog(
       title: const Text('Criar Requisição'),
       scrollable: false,
@@ -361,56 +452,14 @@ class _CriarRequisicaoDialogState extends ConsumerState<CriarRequisicaoDialog>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Material(
-                color: t.card,
-                borderRadius: BorderRadius.circular(t.radiusMd),
-                child: TabBar(
-                  controller: _tabController,
-                  onTap: (_) => setState(() {}),
-                  labelColor: t.textPrimary,
-                  unselectedLabelColor: t.textMuted,
-                  indicatorColor: t.brandBlue,
-                  dividerColor: Colors.transparent,
-                  labelPadding: EdgeInsets.symmetric(horizontal: s.sm),
-                  tabs: [
-                    Tab(height: t.minTouchTarget, text: 'Compra'),
-                    Tab(height: t.minTouchTarget, text: 'Entrada'),
-                    Tab(height: t.minTouchTarget, text: 'Saída'),
-                  ],
-                ),
-              ),
+              tabBar,
               SizedBox(height: s.md),
-              Expanded(
-                child: suppliersAsync.when(
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (err, _) => Center(child: Text('Erro: $err')),
-                  data: (fornecedores) => SingleChildScrollView(
-                    child: switch (_activeTipo) {
-                      CriarRequisicaoModalTipo.compra =>
-                        _buildCompraTab(fornecedores),
-                      CriarRequisicaoModalTipo.entrada =>
-                        _buildEntradaTab(fornecedores),
-                      CriarRequisicaoModalTipo.saida =>
-                        _buildSaidaTab(fornecedores),
-                    },
-                  ),
-                ),
-              ),
+              Expanded(child: suppliersSection),
             ],
           ),
         ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Cancelar'),
-        ),
-        FilledButton.icon(
-          onPressed: _canSubmit ? _submit : null,
-          icon: const Icon(Icons.check_rounded),
-          label: const Text('Iniciar requisição'),
-        ),
-      ],
+      actions: actions,
     );
   }
 }

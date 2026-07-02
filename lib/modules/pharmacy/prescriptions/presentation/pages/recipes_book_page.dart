@@ -8,7 +8,9 @@ import '../../../../../app/router/routes.dart';
 import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
+import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
+import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../../../stock/presentation/widgets/movimentacoes_pagination.dart';
@@ -213,25 +215,26 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
   }
 
   Future<void> _openReceitaDetail(String id) async {
-    await showDialog<void>(
+    await AdaptiveNavigator.openPanel<void>(
       context: context,
-      builder: (context) => Dialog(
-        child: SizedBox(
-          width: 920,
-          height: 680,
-          child: FutureBuilder<Map<String, dynamic>>(
-            future: _ds.getReceita(id),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState != ConnectionState.done) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (snapshot.hasError) {
-                return Center(child: Text(snapshot.error.toString()));
-              }
-              final data = snapshot.data ?? const <String, dynamic>{};
-              return _DetailScaffold(
-                title: data['numeroReceita']?.toString() ?? 'Receita',
-                child: ListView(
+      sideSheetWidth: 920,
+      builder: (panelContext) => SizedBox(
+        width: 920,
+        height: 680,
+        child: FutureBuilder<Map<String, dynamic>>(
+          future: _ds.getReceita(id),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return Center(child: Text(snapshot.error.toString()));
+            }
+            final data = snapshot.data ?? const <String, dynamic>{};
+            return _DetailScaffold(
+              title: data['numeroReceita']?.toString() ?? 'Receita',
+              onClose: () => AdaptiveNavigator.close(panelContext),
+              child: ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
                     Wrap(
@@ -294,73 +297,72 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
             },
           ),
         ),
-      ),
     );
   }
 
   Future<void> _openLivroDetail(String id) async {
-    await showDialog<void>(
+    await AdaptiveNavigator.openPanel<void>(
       context: context,
-      builder: (context) => Dialog(
-        child: SizedBox(
-          width: 860,
-          height: 640,
-          child: FutureBuilder<Map<String, dynamic>>(
-            future: _ds.getLivroReceita(id),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState != ConnectionState.done) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (snapshot.hasError) {
-                return Center(child: Text(snapshot.error.toString()));
-              }
-              final data = snapshot.data ?? const <String, dynamic>{};
-              return _DetailScaffold(
-                title: 'Movimento ${data['numeroReceita'] ?? data['id']}',
-                child: ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
-                      children: [
-                        _InfoTile(
-                          label: 'Paciente',
-                          value: data['cliente']?['nome']?.toString() ?? '—',
-                        ),
-                        _InfoTile(
-                          label: 'Produto',
-                          value: data['produto']?['nome']?.toString() ?? '—',
-                        ),
-                        _InfoTile(
-                          label: 'Movimento',
-                          value: data['tipoMovimento']?.toString() ?? '—',
-                        ),
-                        _InfoTile(
-                          label: 'Origem',
-                          value: data['origemReceita']?.toString() ?? '—',
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Auditoria',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    ...(data['auditLogs'] as List<dynamic>? ?? const []).map(
-                      (item) => ListTile(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(item['action']?.toString() ?? '—'),
-                        subtitle: Text(item['createdAt']?.toString() ?? '—'),
+      sideSheetWidth: 860,
+      builder: (panelContext) => SizedBox(
+        width: 860,
+        height: 640,
+        child: FutureBuilder<Map<String, dynamic>>(
+          future: _ds.getLivroReceita(id),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.hasError) {
+              return Center(child: Text(snapshot.error.toString()));
+            }
+            final data = snapshot.data ?? const <String, dynamic>{};
+            return _DetailScaffold(
+              title: 'Movimento ${data['numeroReceita'] ?? data['id']}',
+              onClose: () => AdaptiveNavigator.close(panelContext),
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      _InfoTile(
+                        label: 'Paciente',
+                        value: data['cliente']?['nome']?.toString() ?? '—',
                       ),
+                      _InfoTile(
+                        label: 'Produto',
+                        value: data['produto']?['nome']?.toString() ?? '—',
+                      ),
+                      _InfoTile(
+                        label: 'Movimento',
+                        value: data['tipoMovimento']?.toString() ?? '—',
+                      ),
+                      _InfoTile(
+                        label: 'Origem',
+                        value: data['origemReceita']?.toString() ?? '—',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Auditoria',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  ...(data['auditLogs'] as List<dynamic>? ?? const []).map(
+                    (item) => ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(item['action']?.toString() ?? '—'),
+                      subtitle: Text(item['createdAt']?.toString() ?? '—'),
                     ),
-                  ],
-                ),
-              );
-            },
-          ),
+                  ),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );
@@ -388,98 +390,99 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
       text: item?['observacoes']?.toString() ?? '',
     );
 
-    final saved = await showDialog<bool>(
+    final saved = await AdaptiveNavigator.openForm<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(item == null ? 'Nova receita' : 'Editar receita'),
-        content: SizedBox(
-          width: 520,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
+      title: Text(item == null ? 'Nova receita' : 'Editar receita'),
+      contentBuilder: (formContext) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            TextField(
+              controller: clienteId,
+              decoration: const InputDecoration(labelText: 'Cliente ID'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: numero,
+              decoration: const InputDecoration(
+                labelText: 'Número da receita',
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: medico,
+              decoration: const InputDecoration(labelText: 'Médico'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: unidade,
+              decoration: const InputDecoration(
+                labelText: 'Unidade sanitária',
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: data,
+              decoration: const InputDecoration(
+                labelText: 'Data (YYYY-MM-DD)',
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: observacoes,
+              maxLines: 3,
+              decoration: const InputDecoration(labelText: 'Observações'),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                TextField(
-                  controller: clienteId,
-                  decoration: const InputDecoration(labelText: 'Cliente ID'),
+                TextButton(
+                  onPressed: () => AdaptiveNavigator.complete(formContext, false),
+                  child: const Text('Cancelar'),
                 ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: numero,
-                  decoration: const InputDecoration(
-                    labelText: 'Número da receita',
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: medico,
-                  decoration: const InputDecoration(labelText: 'Médico'),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: unidade,
-                  decoration: const InputDecoration(
-                    labelText: 'Unidade sanitária',
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: data,
-                  decoration: const InputDecoration(
-                    labelText: 'Data (YYYY-MM-DD)',
-                  ),
-                ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: observacoes,
-                  maxLines: 3,
-                  decoration: const InputDecoration(labelText: 'Observações'),
+                const SizedBox(width: 8),
+                FilledButton(
+                  onPressed: () async {
+                    final body = <String, dynamic>{
+                      'clienteId': clienteId.text.trim(),
+                      'numeroReceita': numero.text.trim().isEmpty
+                          ? null
+                          : numero.text.trim(),
+                      'medicoNome': medico.text.trim().isEmpty
+                          ? null
+                          : medico.text.trim(),
+                      'unidadeSanitaria': unidade.text.trim().isEmpty
+                          ? null
+                          : unidade.text.trim(),
+                      'dataReceita': data.text.trim(),
+                      'observacoes': observacoes.text.trim().isEmpty
+                          ? null
+                          : observacoes.text.trim(),
+                    };
+                    try {
+                      if (item == null) {
+                        await _ds.createReceita(body);
+                      } else {
+                        await _ds.updateReceita(item['id'].toString(), body);
+                      }
+                      if (!formContext.mounted) return;
+                      AdaptiveNavigator.complete(formContext, true);
+                    } catch (error) {
+                      if (!formContext.mounted) return;
+                      ScaffoldMessenger.of(formContext).showSnackBar(
+                        SnackBar(content: Text(error.toString())),
+                      );
+                    }
+                  },
+                  child: const Text('Guardar'),
                 ),
               ],
             ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () async {
-              final body = <String, dynamic>{
-                'clienteId': clienteId.text.trim(),
-                'numeroReceita': numero.text.trim().isEmpty
-                    ? null
-                    : numero.text.trim(),
-                'medicoNome': medico.text.trim().isEmpty
-                    ? null
-                    : medico.text.trim(),
-                'unidadeSanitaria': unidade.text.trim().isEmpty
-                    ? null
-                    : unidade.text.trim(),
-                'dataReceita': data.text.trim(),
-                'observacoes': observacoes.text.trim().isEmpty
-                    ? null
-                    : observacoes.text.trim(),
-              };
-              try {
-                if (item == null) {
-                  await _ds.createReceita(body);
-                } else {
-                  await _ds.updateReceita(item['id'].toString(), body);
-                }
-                if (!context.mounted) return;
-                Navigator.of(context).pop(true);
-              } catch (error) {
-                if (!context.mounted) return;
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(SnackBar(content: Text(error.toString())));
-              }
-            },
-            child: const Text('Guardar'),
-          ),
-        ],
-      ),
+          ],
+        );
+      },
     );
 
     clienteId.dispose();
@@ -495,24 +498,14 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
   }
 
   Future<void> _deleteReceita(Map<String, dynamic> item) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await PharmaFeedback.confirm(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Remover receita'),
-        content: Text(
+      title: 'Remover receita',
+      message:
           'Deseja remover a receita ${item['numeroReceita'] ?? item['id']}?',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Remover'),
-          ),
-        ],
-      ),
+      confirmText: 'Remover',
+      cancelText: 'Cancelar',
+      destructive: true,
     );
 
     if (confirmed != true) return;
@@ -547,16 +540,6 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
         IconButton(
           onPressed: () => _reloadCurrentTab(),
           icon: const Icon(Icons.refresh),
-        ),
-        ...regulatoryReportActions(
-          ref: ref,
-          enabled: reportEnabled,
-          path: showingReceitas
-              ? ReportPaths.regulatoryReceitas
-              : ReportPaths.regulatoryLivroReceitas,
-          queryParameters: showingReceitas
-              ? _receitasReportQuery()
-              : _livroReportQuery(),
         ),
         if (_tabController.index == 0)
           FilledButton.icon(
@@ -617,11 +600,6 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
           : _buildLivroFilters(context),
       child: Column(
         children: [
-          if (regulatoryReportError(ref) != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: regulatoryReportError(ref),
-            ),
           TabBar(
             controller: _tabController,
             onTap: (index) {
@@ -997,10 +975,15 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
 }
 
 class _DetailScaffold extends StatelessWidget {
-  const _DetailScaffold({required this.title, required this.child});
+  const _DetailScaffold({
+    required this.title,
+    required this.child,
+    this.onClose,
+  });
 
   final String title;
   final Widget child;
+  final VoidCallback? onClose;
 
   @override
   Widget build(BuildContext context) {
@@ -1017,7 +1000,7 @@ class _DetailScaffold extends StatelessWidget {
                 ),
               ),
               IconButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: onClose ?? () => AdaptiveNavigator.close(context),
                 icon: const Icon(Icons.close),
               ),
             ],

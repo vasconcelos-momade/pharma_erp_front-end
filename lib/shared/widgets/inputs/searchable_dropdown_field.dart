@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/theme/spacing.dart';
+import '../../navigation/adaptive_navigator.dart';
 
 /// Dropdown com pesquisa integrada (demo UX — ligar a async repository depois).
 class SearchableDropdownField<T> extends StatefulWidget {
@@ -37,9 +38,6 @@ class _SearchableDropdownFieldState<T> extends State<SearchableDropdownField<T>>
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
-    final filtered = widget.items
-        .where((e) => widget.display(e).toLowerCase().contains(_search.text.trim().toLowerCase()))
-        .toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -52,33 +50,54 @@ class _SearchableDropdownFieldState<T> extends State<SearchableDropdownField<T>>
         InkWell(
           onTap: () async {
             _search.clear();
-            final picked = await showDialog<T>(
+            final picked = await AdaptiveNavigator.openPanel<T>(
               context: context,
-              builder: (ctx) {
+              builder: (panelContext) {
                 return AlertDialog(
                   backgroundColor: t.card,
-                  title: Text('Seleccionar', style: TextStyle(color: t.textPrimary)),
+                  title: Text(
+                    'Seleccionar',
+                    style: TextStyle(color: t.textPrimary),
+                  ),
                   content: SizedBox(
                     width: 420,
                     height: 360,
                     child: StatefulBuilder(
                       builder: (context, setLocal) {
+                        final panelFiltered = widget.items
+                            .where(
+                              (e) => widget
+                                  .display(e)
+                                  .toLowerCase()
+                                  .contains(
+                                    _search.text.trim().toLowerCase(),
+                                  ),
+                            )
+                            .toList();
                         return Column(
                           children: [
                             TextField(
                               controller: _search,
                               onChanged: (_) => setLocal(() {}),
-                              decoration: InputDecoration(hintText: widget.hintText),
+                              decoration: InputDecoration(
+                                hintText: widget.hintText,
+                              ),
                             ),
                             const SizedBox(height: AppSpacing.md),
                             Expanded(
                               child: ListView.builder(
-                                itemCount: filtered.length,
+                                itemCount: panelFiltered.length,
                                 itemBuilder: (c, i) {
-                                  final item = filtered[i];
+                                  final item = panelFiltered[i];
                                   return ListTile(
-                                    title: Text(widget.display(item), style: TextStyle(color: t.textPrimary)),
-                                    onTap: () => Navigator.pop(ctx, item),
+                                    title: Text(
+                                      widget.display(item),
+                                      style: TextStyle(color: t.textPrimary),
+                                    ),
+                                    onTap: () => AdaptiveNavigator.complete(
+                                      panelContext,
+                                      item,
+                                    ),
                                   );
                                 },
                               ),
