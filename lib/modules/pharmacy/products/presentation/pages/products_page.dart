@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/theme/design_tokens.dart';
-import '../../../../../core/theme/spacing.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/responsive/responsive_builder.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
@@ -100,6 +100,8 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                 )
               : null,
           body: EnterpriseModuleHub(
+            title: 'Produtos',
+            subtitle: 'Catálogo master com stock, lotes, validades e regras ANARME.',
             filters: isMobile
                 ? null
                 : ProdutoToolbar(
@@ -137,66 +139,22 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 if (isMobile) ...[
-                  ProdutoToolbar(
+                  ProdutoMobileToolbar(
                     searchController: _searchController,
                     state: state,
                     controller: controller,
-                    categories: categories,
                     onSearchChanged: controller.onSearchChanged,
-                    onOpenMobileFilters: () =>
+                    onOpenFilters: () =>
                         _openFilters(context, controller, state, categories),
+                    reportAction: pharmacyReportActions(
+                      ref: ref,
+                      enabled: !state.isLoading,
+                      path: ReportPaths.pharmacyProductsCatalog,
+                      queryParameters: reportQuery,
+                      expandChild: true,
+                      buttonLabel: 'Exportar..',
+                    ).single,
                   ),
-                  SizedBox(height: s.sm),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: state.isLoading
-                              ? null
-                              : () => _openFilters(context, controller, state, categories),
-                          icon: const Icon(Icons.tune_rounded),
-                          label: Text(state.hasFilters ? 'Filtros *' : 'Filtros'),
-                        ),
-                      ),
-                      SizedBox(width: s.sm),
-                      Expanded(
-                        child: pharmacyReportActions(
-                          ref: ref,
-                          enabled: !state.isLoading,
-                          path: ReportPaths.pharmacyProductsCatalog,
-                          queryParameters: reportQuery,
-                          expandChild: true,
-                          buttonLabel: 'Exportar..',
-                        ).single,
-                      ),
-                      SizedBox(width: s.sm),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: state.isLoading
-                              ? null
-                              : () => controller.refreshCurrentPage(),
-                          icon: const Icon(Icons.refresh_rounded),
-                          label: const Text(
-                            'Atualizar..',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            softWrap: false,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (state.hasFilters) ...[
-                    SizedBox(height: s.xs),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton.icon(
-                        onPressed: state.isLoading ? null : controller.clearFilters,
-                        icon: const Icon(Icons.filter_alt_off_outlined),
-                        label: const Text('Limpar filtros'),
-                      ),
-                    ),
-                  ],
                   SizedBox(height: s.sm),
                 ],
                 if (pharmacyReportError(ref) != null)
@@ -280,11 +238,12 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
     MasterProductListState state,
     List<Category> categories,
   ) {
+    final scheme = Theme.of(context).colorScheme;
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      barrierColor: Colors.transparent,
-      backgroundColor: Colors.transparent,
+      barrierColor: scheme.scrim.withValues(alpha: 0),
+      backgroundColor: scheme.surface.withValues(alpha: 0),
       builder: (_) => ProdutoFiltersBottomSheet(
         initialAtivo: state.ativoFilter,
         initialCategoriaId: state.categoriaId,

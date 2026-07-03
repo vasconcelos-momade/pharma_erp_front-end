@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'design_metrics.dart';
 import 'design_tokens.dart';
+import 'typography.dart';
 
 @immutable
 class TableTheme extends ThemeExtension<TableTheme> {
@@ -20,14 +22,15 @@ class TableTheme extends ThemeExtension<TableTheme> {
   final Color hoverColor;
   final Color selectedColor;
 
-  factory TableTheme.fromLegacy(PharmaTokens tokens) {
+  factory TableTheme.fromLegacy(PharmaTokens tokens, {TextTheme? textTheme}) {
+    final theme = textTheme ?? ThemeData().textTheme;
     return TableTheme(
       headerBackgroundColor: tokens.bgSecondary,
-      headerTextStyle: TextStyle(
+      headerTextStyle: theme.erpLabel.copyWith(
         color: tokens.textPrimary,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w600,
       ),
-      rowHeight: 52,
+      rowHeight: DesignMetrics.tableRowHeightMax,
       dividerColor: tokens.border,
       hoverColor: tokens.cardHover,
       selectedColor: tokens.brandGreen.withValues(alpha: 0.12),
@@ -72,5 +75,6 @@ extension TableThemeX on BuildContext {
       Theme.of(this).extension<TableTheme>() ??
       TableTheme.fromLegacy(
         Theme.of(this).extension<PharmaTokens>() ?? PharmaTokens.enterpriseLight(),
+        textTheme: Theme.of(this).textTheme,
       );
 }

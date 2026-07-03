@@ -32,56 +32,7 @@ class InvoicePagination extends StatelessWidget {
     final pageSizeOptions = const [10, 25, 50, 100];
 
     if (screen == PharmaScreenSize.mobile) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Text(
-                'Página $page',
-                style: Theme.of(context).textTheme.erpLabel,
-              ),
-              const Spacer(),
-              DropdownButton<int>(
-                value: pageSizeOptions.contains(pageSize)
-                    ? pageSize
-                    : pageSizeOptions.first,
-                items: pageSizeOptions
-                    .map(
-                      (value) => DropdownMenuItem<int>(
-                        value: value,
-                        child: Text('$value itens'),
-                      ),
-                    )
-                    .toList(growable: false),
-                onChanged: isBusy
-                    ? null
-                    : (value) => value != null ? onPageSizeChanged?.call(value) : null,
-              ),
-            ],
-          ),
-          SizedBox(height: s.sm),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: isBusy ? null : onPrev,
-                  icon: const Icon(Icons.chevron_left_rounded),
-                  label: const Text('Anterior'),
-                ),
-              ),
-              SizedBox(width: s.sm),
-              Expanded(
-                child: FilledButton.icon(
-                  onPressed: isBusy || !hasMore ? null : onNext,
-                  icon: const Icon(Icons.chevron_right_rounded),
-                  label: const Text('Próxima'),
-                ),
-              ),
-            ],
-          ),
-        ],
-      );
+      return const SizedBox.shrink();
     }
 
     return Row(

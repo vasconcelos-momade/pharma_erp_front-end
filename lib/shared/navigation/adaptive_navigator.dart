@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/breakpoints.dart';
+import '../../core/theme/extensions.dart';
 import '../widgets/dialogs/pharma_responsive_dialog.dart';
 import '../widgets/layout/adaptive_side_sheet.dart';
 
@@ -159,7 +160,7 @@ abstract final class AdaptiveNavigator {
               title: title is Text ? title : const Text('Formulário'),
             ),
             body: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
+              padding: EdgeInsets.all(context.spacing.lg),
               child: form,
             ),
           );
@@ -224,18 +225,17 @@ class _AdaptiveFormSheetChrome extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.spacing;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 8, 8),
+          padding: EdgeInsets.fromLTRB(s.lg, s.lg, s.sm, s.sm),
           child: Row(
             children: [
               Expanded(
                 child: DefaultTextStyle.merge(
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+                  style: Theme.of(context).textTheme.erpCardTitle,
                   child: title,
                 ),
               ),
@@ -250,7 +250,7 @@ class _AdaptiveFormSheetChrome extends StatelessWidget {
         const Divider(height: 1),
         Expanded(
           child: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(s.lg),
             child: child,
           ),
         ),

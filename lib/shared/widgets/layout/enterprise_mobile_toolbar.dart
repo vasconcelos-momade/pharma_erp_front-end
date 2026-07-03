@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/design_metrics.dart';
 import '../../../core/theme/design_tokens.dart';
-import '../../../core/theme/spacing.dart';
+import '../../../core/theme/extensions.dart';
 import 'enterprise_module_search_bar.dart';
 
 /// Barra de ferramentas mobile com pesquisa, filtros, exportação e atualização.
@@ -46,14 +47,14 @@ class EnterpriseMobileToolbar extends StatelessWidget {
     final t = context.pharmaTokens;
     final s = context.spacing;
     final compactButtonStyle = OutlinedButton.styleFrom(
-      minimumSize: const Size(0, 40),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+      minimumSize: Size(0, DesignMetrics.toolbarHeight),
+      padding: EdgeInsets.symmetric(horizontal: s.sm, vertical: 0),
       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       visualDensity: VisualDensity.compact,
     );
     final compactTextButtonStyle = TextButton.styleFrom(
-      minimumSize: const Size(0, 36),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+      minimumSize: Size(0, DesignMetrics.tabHeightMin),
+      padding: EdgeInsets.symmetric(horizontal: s.sm, vertical: 0),
       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       visualDensity: VisualDensity.compact,
     );
@@ -86,11 +87,11 @@ class EnterpriseMobileToolbar extends StatelessWidget {
                 if (showFiltersButton)
                   Expanded(
                     child: SizedBox(
-                      height: 40,
+                      height: DesignMetrics.toolbarHeight,
                       child: OutlinedButton.icon(
                         style: compactButtonStyle,
                         onPressed: enabled ? onOpenFilters : null,
-                        icon: const Icon(Icons.tune_rounded, size: 18),
+                        icon: Icon(Icons.tune_rounded, size: t.iconSm),
                         label: Text(
                           hasFilters ? '$filterLabel *' : filterLabel,
                           maxLines: 1,
@@ -106,11 +107,11 @@ class EnterpriseMobileToolbar extends StatelessWidget {
                 if (showRefreshButton)
                   Expanded(
                     child: SizedBox(
-                      height: 40,
+                      height: DesignMetrics.toolbarHeight,
                       child: OutlinedButton.icon(
                         style: compactButtonStyle,
                         onPressed: enabled ? onRefresh : null,
-                        icon: const Icon(Icons.refresh_rounded, size: 18),
+                        icon: Icon(Icons.refresh_rounded, size: t.iconSm),
                         label: Text(
                           refreshLabel,
                           maxLines: 1,
@@ -129,7 +130,7 @@ class EnterpriseMobileToolbar extends StatelessWidget {
                 child: TextButton.icon(
                   style: compactTextButtonStyle,
                   onPressed: enabled ? onClearFilters : null,
-                  icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
+                  icon: Icon(Icons.filter_alt_off_outlined, size: t.iconSm),
                   label: const Text('Limpar filtros'),
                 ),
               ),
@@ -245,3 +246,6 @@ class _EnterpriseDesktopListToolbarState extends State<EnterpriseDesktopListTool
     );
   }
 }
+
+/// Alias do prompt de design system para toolbars desktop.
+typedef EnterpriseDesktopToolbar = EnterpriseDesktopListToolbar;

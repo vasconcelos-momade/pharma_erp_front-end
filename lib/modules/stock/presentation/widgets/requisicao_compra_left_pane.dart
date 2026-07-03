@@ -119,7 +119,7 @@ class _RequisicaoCompraLeftPaneState extends State<RequisicaoCompraLeftPane>
             labelColor: t.textPrimary,
             unselectedLabelColor: t.textMuted,
             indicatorColor: t.brandBlue,
-            dividerColor: Colors.transparent,
+            dividerColor: t.card,
             labelPadding: EdgeInsets.symmetric(horizontal: s.sm),
             tabs: [
               Tab(height: t.minTouchTarget, text: 'Produtos'),

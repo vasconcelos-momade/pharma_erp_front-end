@@ -166,7 +166,7 @@ class ProdutoTable extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
         if (substancia != null && substancia.isNotEmpty) ...[
-          const SizedBox(height: 2),
+          SizedBox(height: context.spacing.xxs),
           Text(
             'Substância activa: $substancia',
             style: theme.textTheme.erpCaption.copyWith(

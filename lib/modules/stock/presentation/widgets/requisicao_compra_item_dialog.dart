@@ -374,9 +374,8 @@ class RequisicaoItemDialogProductHeader extends StatelessWidget {
                     ),
                     child: Text(
                       item,
-                      style: textTheme.erpCaption.copyWith(
+                      style: textTheme.erpLabel.copyWith(
                         color: t.textPrimary,
-                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),

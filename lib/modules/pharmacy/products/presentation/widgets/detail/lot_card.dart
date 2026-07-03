@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../../core/theme/design_tokens.dart';
 import '../../../../../../core/theme/extensions.dart';
-import '../../../../../../core/theme/spacing.dart';
+import '../../../../../../shared/widgets/cards/enterprise_list_card.dart';
 
 /// Card de lote na aba Lotes.
 class LotCard extends StatelessWidget {
@@ -40,18 +40,9 @@ class LotCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: estadoColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    _estadoLabel(estado),
-                    style: theme.textTheme.erpCaption.copyWith(
-                      color: estadoColor,
-                    ),
-                  ),
+                EnterpriseStatusChip(
+                  label: _estadoLabel(estado),
+                  color: estadoColor,
                 ),
               ],
             ),

@@ -7,21 +7,23 @@ import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
-import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/navigation/adaptive_navigator.dart';
-import '../../../../../shared/responsive/pharma_screen_layout.dart';
+import '../../../../../shared/responsive/responsive_builder.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../../shared/widgets/feedback/module_data_states.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
+import '../../../../../shared/widgets/layout/enterprise_module_search_bar.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
-import '../../../../stock/presentation/widgets/movimentacoes_pagination.dart';
+import '../../../../../shared/widgets/tables/enterprise_pagination.dart';
 import '../../data/repositories/user_repository_impl.dart';
 import '../../domain/entities/user_entities.dart';
 import '../providers/user_list_provider.dart';
 import '../widgets/admin_report_exports.dart';
 import '../widgets/user_detail_panel.dart';
 import '../widgets/user_form_dialog.dart';
+import '../widgets/user_list.dart';
+import '../widgets/user_toolbar.dart';
 
 class UsersPage extends ConsumerStatefulWidget {
   const UsersPage({super.key});
@@ -32,6 +34,7 @@ class UsersPage extends ConsumerStatefulWidget {
 
 class _UsersPageState extends ConsumerState<UsersPage> {
   late final TextEditingController _searchController;
+  List<TenantUserSummary> _accumulatedItems = [];
   static final _dateFmt = DateFormat('dd/MM/yyyy');
   static final _dateTimeFmt = DateFormat('dd/MM/yyyy HH:mm');
 
@@ -69,85 +72,139 @@ class _UsersPageState extends ConsumerState<UsersPage> {
       );
     }
 
-    return EnterpriseModuleHub(
-      title: 'Utilizadores',
-      subtitle: 'RBAC, multi-inquilino e políticas de sessão.',
-      tag: 'Administração',
-      actions: [
-        ...adminReportActions(
-          ref: ref,
-          enabled: !state.isBusy,
-          path: ReportPaths.adminUsers,
-          queryParameters: reportQuery,
-        ),
-        OutlinedButton.icon(
-          onPressed: state.isBusy ? null : notifier.refresh,
-          icon: const Icon(Icons.refresh_rounded),
-          label: const Text('Atualizar'),
-        ),
-        FilledButton.icon(
-          onPressed: state.isBusy ? null : () => _openCreateDialog(context),
-          icon: const Icon(Icons.person_add_outlined),
-          label: const Text('Novo utilizador'),
-        ),
-      ],
-      filters: Wrap(
-        spacing: s.sm,
-        runSpacing: s.sm,
-        children: [
-          SizedBox(
-            width: 260,
-            child: TextField(
-              controller: _searchController,
-              onChanged: notifier.onSearchChanged,
-              decoration: const InputDecoration(
-                hintText: 'Nome ou email...',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
+    ref.listen(userListProvider, (prev, next) {
+      if (prev?.query != next.query) {
+        if (next.query.page == 1) {
+          _accumulatedItems = List.of(next.items);
+        } else {
+          final newItems = next.items
+              .where((e) => !_accumulatedItems.any((a) => a.id == e.id))
+              .toList();
+          _accumulatedItems.addAll(newItems);
+        }
+      } else if (prev?.items != next.items && next.query.page == 1) {
+        _accumulatedItems = List.of(next.items);
+      }
+    });
+
+    return ResponsiveBuilder(
+      builder: (context, constraints) {
+        final isMobile = !constraints.isTabletOrWider;
+
+        return Scaffold(
+          floatingActionButton: isMobile
+              ? FloatingActionButton(
+                  onPressed: state.isBusy ? null : () => _openCreateDialog(context),
+                  child: const Icon(Icons.person_add_outlined),
+                )
+              : null,
+          body: EnterpriseModuleHub(
+            title: 'Utilizadores',
+            subtitle: 'RBAC, multi-inquilino e políticas de sessão.',
+            tag: 'Administração',
+            mobileKpisHorizontalScroll: isMobile,
+            actions: isMobile
+                ? null
+                : [
+                    ...adminReportActions(
+                      ref: ref,
+                      enabled: !state.isBusy,
+                      path: ReportPaths.adminUsers,
+                      queryParameters: reportQuery,
+                    ),
+                    OutlinedButton.icon(
+                      onPressed: state.isBusy ? null : notifier.refresh,
+                      icon: const Icon(Icons.refresh_rounded),
+                      label: const Text('Atualizar'),
+                    ),
+                    FilledButton.icon(
+                      onPressed: state.isBusy ? null : () => _openCreateDialog(context),
+                      icon: const Icon(Icons.person_add_outlined),
+                      label: const Text('Novo utilizador'),
+                    ),
+                  ],
+            filters: isMobile
+                ? null
+                : EnterpriseModuleSearchBar(
+                    controller: _searchController,
+                    hintText: 'Nome ou email...',
+                    enabled: !state.isBusy,
+                    onSubmitted: notifier.onSearchChanged,
+                    onChanged: notifier.onSearchChanged,
+                    maxWidth: 260,
+                  ),
+            kpis: [
+              EnterpriseStatCard(
+                title: 'Total',
+                value: '${dash.totalUtilizadores}',
+                icon: Icons.people_outline,
+                accent: StatCardAccent.info,
               ),
-            ),
+              EnterpriseStatCard(
+                title: 'Activos',
+                value: '${dash.ativos}',
+                icon: Icons.check_circle_outline,
+                accent: StatCardAccent.positive,
+              ),
+              EnterpriseStatCard(
+                title: 'Inactivos',
+                value: '${dash.inativos}',
+                icon: Icons.person_off_outlined,
+                accent: StatCardAccent.danger,
+              ),
+            ],
+            child: !access.isResolved
+                ? const ModuleLoadingState()
+                : access.canAccessAdministration
+                    ? Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (isMobile) ...[
+                            UserMobileToolbar(
+                              searchController: _searchController,
+                              state: state,
+                              onSearchChanged: notifier.onSearchChanged,
+                              onRefresh: notifier.refresh,
+                              reportAction: adminReportActions(
+                                ref: ref,
+                                enabled: !state.isBusy,
+                                path: ReportPaths.adminUsers,
+                                queryParameters: reportQuery,
+                                expandChild: true,
+                              ).single,
+                            ),
+                            SizedBox(height: s.sm),
+                          ],
+                          Expanded(
+                            child: _buildBody(
+                              context,
+                              state,
+                              notifier,
+                              isMobile: isMobile,
+                            ),
+                          ),
+                        ],
+                      )
+                    : ModuleErrorState(
+                        title: 'Sem acesso à administração',
+                        message:
+                            'A sessão atual não possui a permissão UTILIZADORES:VIEW.',
+                        onRetry: () =>
+                            ref.read(sessionAccessProvider.notifier).refresh(),
+                        icon: Icons.lock_outline,
+                      ),
           ),
-        ],
-      ),
-      kpis: [
-        EnterpriseStatCard(
-          title: 'Total',
-          value: '${dash.totalUtilizadores}',
-          icon: Icons.people_outline,
-          accent: StatCardAccent.info,
-        ),
-        EnterpriseStatCard(
-          title: 'Activos',
-          value: '${dash.ativos}',
-          icon: Icons.check_circle_outline,
-          accent: StatCardAccent.positive,
-        ),
-        EnterpriseStatCard(
-          title: 'Inactivos',
-          value: '${dash.inativos}',
-          icon: Icons.person_off_outlined,
-          accent: StatCardAccent.danger,
-        ),
-      ],
-      child: !access.isResolved
-          ? const ModuleLoadingState()
-          : access.canAccessAdministration
-          ? _buildBody(context, state, notifier)
-          : ModuleErrorState(
-              title: 'Sem acesso à administração',
-              message:
-                  'A sessão atual não possui a permissão UTILIZADORES:VIEW.',
-              onRetry: () => ref.read(sessionAccessProvider.notifier).refresh(),
-              icon: Icons.lock_outline,
-            ),
+        );
+      },
     );
   }
 
   Widget _buildBody(
     BuildContext context,
     UserListState state,
-    UserListController notifier,
-  ) {
+    UserListController notifier, {
+    required bool isMobile,
+  }) {
     if (state.viewState == UserViewState.loading) {
       return const ModuleLoadingState();
     }
@@ -169,105 +226,127 @@ class _UsersPageState extends ConsumerState<UsersPage> {
     final t = context.pharmaTokens;
     final s = context.spacing;
     final recentAccess = state.dashboard.ultimosAcessos;
+    final displayItems = isMobile
+        ? (_accumulatedItems.isEmpty ? state.items : _accumulatedItems)
+        : state.items;
+
+    if (!isMobile) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            flex: recentAccess.isEmpty ? 1 : 3,
+            child: EnterpriseDataTable(
+              columns: [
+                for (final label in ['Nome', 'Email', 'Perfil', 'Estado', 'Registo'])
+                  DataColumn(
+                    label: Text(
+                      label.toUpperCase(),
+                      style: Theme.of(context).textTheme.erpOverline.copyWith(color: t.textMuted),
+                    ),
+                  ),
+              ],
+              rowCount: state.items.length,
+              rowBuilder: (context, index) {
+                final u = state.items[index];
+                return DataRow(
+                  onSelectChanged: (_) => _openDetails(context, u),
+                  cells: [
+                    DataCell(Text(
+                      u.name,
+                      style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
+                    )),
+                    DataCell(Text(
+                      u.email ?? '—',
+                      style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textSecondary),
+                    )),
+                    DataCell(Text(
+                      _roleLabel(u.role),
+                      style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.brandBlue),
+                    )),
+                    DataCell(Text(
+                      u.active ? 'Activo' : 'Inactivo',
+                      style: Theme.of(context).textTheme.erpTabLabel.copyWith(
+                            color: u.active ? t.brandGreen : t.posDanger,
+                          ),
+                    )),
+                    DataCell(Text(
+                      _dateFmt.format(u.createdAt),
+                      style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
+                    )),
+                  ],
+                );
+              },
+            ),
+          ),
+          if (recentAccess.isNotEmpty) ...[
+            SizedBox(height: s.md),
+            Text(
+              'Últimos acessos',
+              style: Theme.of(context).textTheme.erpTabLabel.copyWith(color: t.textPrimary),
+            ),
+            SizedBox(height: s.sm),
+            Expanded(
+              flex: 2,
+              child: ListView.separated(
+                itemCount: recentAccess.length,
+                separatorBuilder: (_, _) =>
+                    Divider(color: t.border.withValues(alpha: 0.35)),
+                itemBuilder: (context, index) {
+                  final access = recentAccess[index];
+                  return ListTile(
+                    dense: true,
+                    leading: Icon(Icons.login, color: t.brandBlue, size: 20),
+                    title: Text(
+                      access.userName ?? 'Utilizador',
+                      style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
+                    ),
+                    subtitle: Text(
+                      '${access.action} • ${_dateTimeFmt.format(access.createdAt)}',
+                      style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
+                    ),
+                    trailing: access.userEmail != null
+                        ? Text(
+                            access.userEmail!,
+                            style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
+                          )
+                        : null,
+                  );
+                },
+              ),
+            ),
+          ],
+          SizedBox(height: s.md),
+          EnterprisePagination(
+            page: state.query.page,
+            pageSize: state.query.pageSize,
+            hasMore: state.hasMore,
+            itemsOnPage: state.items.length,
+            isBusy: state.isBusy,
+            itemLabel: 'utilizadores',
+            onPageChanged: notifier.goToPage,
+            onPageSizeChanged: notifier.setPageSize,
+          ),
+        ],
+      );
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Expanded(
-          flex: recentAccess.isEmpty ? 1 : 3,
-          child: EnterpriseDataTable(
-            columns: [
-              for (final label in ['Nome', 'Email', 'Perfil', 'Estado', 'Registo'])
-                DataColumn(
-                  label: Text(
-                    label.toUpperCase(),
-                    style: Theme.of(context).textTheme.erpOverline.copyWith(color: t.textMuted),
-                  ),
+          child: displayItems.isEmpty && !state.isBusy
+              ? const ModuleEmptyState(
+                  title: 'Nenhum utilizador encontrado',
+                  subtitle: 'Ainda não existem utilizadores.',
+                )
+              : UserList(
+                  items: displayItems,
+                  hasMore: state.hasMore,
+                  isLoading: state.isBusy,
+                  onLoadMore: () => notifier.goToPage(state.query.page + 1),
+                  onItemTap: (u) => _openDetails(context, u),
                 ),
-            ],
-            rowCount: state.items.length,
-            rowBuilder: (context, index) {
-              final u = state.items[index];
-              return DataRow(
-                onSelectChanged: (_) => _openDetails(context, u),
-                cells: [
-                DataCell(Text(
-                  u.name,
-                  style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
-                )),
-                DataCell(Text(
-                  u.email ?? '—',
-                  style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textSecondary),
-                )),
-                DataCell(Text(
-                  _roleLabel(u.role),
-                  style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.brandBlue),
-                )),
-                DataCell(Text(
-                  u.active ? 'Activo' : 'Inactivo',
-                  style: Theme.of(context).textTheme.erpTabLabel.copyWith(
-                        color: u.active ? t.brandGreen : t.posDanger,
-                      ),
-                )),
-                DataCell(Text(
-                  _dateFmt.format(u.createdAt),
-                  style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
-                )),
-                ],
-              );
-            },
-          ),
-        ),
-        if (recentAccess.isNotEmpty) ...[
-          SizedBox(height: s.md),
-          Text(
-            'Últimos acessos',
-            style: Theme.of(context).textTheme.erpTabLabel.copyWith(color: t.textPrimary),
-          ),
-          SizedBox(height: s.sm),
-          Expanded(
-            flex: 2,
-            child: ListView.separated(
-              itemCount: recentAccess.length,
-              separatorBuilder: (_, _) =>
-                  Divider(color: t.border.withValues(alpha: 0.35)),
-              itemBuilder: (context, index) {
-                final access = recentAccess[index];
-                return ListTile(
-                  dense: true,
-                  leading: Icon(Icons.login, color: t.brandBlue, size: 20),
-                  title: Text(
-                    access.userName ?? 'Utilizador',
-                    style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
-                  ),
-                  subtitle: Text(
-                    '${access.action} • ${_dateTimeFmt.format(access.createdAt)}',
-                    style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
-                  ),
-                  trailing: access.userEmail != null
-                      ? Text(
-                          access.userEmail!,
-                          style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
-                        )
-                      : null,
-                );
-              },
-            ),
-          ),
-        ],
-        SizedBox(height: s.md),
-        MovimentacoesPagination(
-          page: state.query.page,
-          pageSize: state.query.pageSize,
-          hasMore: state.hasMore,
-          isBusy: state.isBusy,
-          onPrev: state.query.page > 1
-              ? () => notifier.goToPage(state.query.page - 1)
-              : null,
-          onNext: state.hasMore
-              ? () => notifier.goToPage(state.query.page + 1)
-              : null,
-          onPageSizeChanged: notifier.setPageSize,
         ),
       ],
     );

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/theme/extensions.dart';
-import '../../../core/theme/spacing.dart';
 
 class OfflineModeBanner extends StatelessWidget {
   const OfflineModeBanner({super.key, required this.message});
@@ -12,6 +11,7 @@ class OfflineModeBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
+    final s = context.spacing;
     return Material(
       color: t.posWarning.withValues(alpha: 0.14),
       borderRadius: BorderRadius.circular(t.radiusMd),
@@ -19,15 +19,15 @@ class OfflineModeBanner extends StatelessWidget {
         onTap: () {},
         borderRadius: BorderRadius.circular(t.radiusMd),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+          padding: EdgeInsets.symmetric(horizontal: s.lg, vertical: s.md),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(t.radiusMd),
             border: Border.all(color: t.posWarning.withValues(alpha: 0.45)),
           ),
           child: Row(
             children: [
-              Icon(Icons.cloud_off_outlined, color: t.posWarning, size: 22),
-              const SizedBox(width: AppSpacing.md),
+              Icon(Icons.cloud_off_outlined, color: t.posWarning, size: t.iconSm),
+              SizedBox(width: s.md),
               Expanded(
                 child: Text(
                   message,

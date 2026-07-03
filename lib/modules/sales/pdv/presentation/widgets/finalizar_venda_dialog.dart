@@ -330,7 +330,6 @@ class _FinalizarVendaDialogState
               'Dados do paciente',
               style: Theme.of(context).textTheme.erpTabLabel.copyWith(
                     color: t.textPrimary,
-                    fontWeight: FontWeight.w700,
                   ),
             ),
             SizedBox(height: s.xs),
@@ -380,7 +379,6 @@ class _FinalizarVendaDialogState
             'Método de pagamento',
             style: Theme.of(context).textTheme.erpTabLabel.copyWith(
                   color: t.textPrimary,
-                  fontWeight: FontWeight.w700,
                 ),
           ),
           SizedBox(height: s.md),
@@ -526,7 +524,6 @@ class _FinalizarVendaDialogState
         'Finalizar Venda',
         style: Theme.of(context).textTheme.erpCardTitle.copyWith(
               color: t.textPrimary,
-              fontWeight: FontWeight.w700,
             ),
       ),
       content: content,
@@ -561,14 +558,12 @@ class _CheckoutSummaryCard extends StatelessWidget {
             'Total a pagar',
             style: Theme.of(context).textTheme.erpTabLabel.copyWith(
                   color: t.textPrimary,
-                  fontWeight: FontWeight.w700,
                 ),
           ),
           Text(
             _formatCheckoutMoney(total),
-            style: Theme.of(context).textTheme.erpTabLabel.copyWith(
+            style: Theme.of(context).textTheme.erpAppBarTitle.copyWith(
                   color: t.brandGreen,
-                  fontWeight: FontWeight.w800,
                 ),
           ),
         ],
@@ -595,7 +590,7 @@ class _PaymentMethodCard extends StatelessWidget {
     final descriptor = _descriptorFor(method);
 
     return Material(
-      color: Colors.transparent,
+      color: t.card,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadius.card(t)),
@@ -625,7 +620,6 @@ class _PaymentMethodCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.erpTabLabel.copyWith(
                         color: t.textPrimary,
-                        fontWeight: FontWeight.w600,
                       ),
                 ),
               ),

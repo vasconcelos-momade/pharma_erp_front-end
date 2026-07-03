@@ -251,7 +251,7 @@ class _AbrirCaixaDialogState extends ConsumerState<AbrirCaixaDialog> {
         mainAxisSize: MainAxisSize.min,
         children: [
           form,
-          const SizedBox(height: 16),
+          SizedBox(height: s.md),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: actions,
@@ -370,9 +370,8 @@ class _FecharCaixaDialogState extends ConsumerState<FecharCaixaDialog> {
                 SizedBox(height: s.xs),
                 Text(
                   formatCaixaMoney(widget.sessao.sistema),
-                  style: Theme.of(context).textTheme.erpTabLabel.copyWith(
+                  style: Theme.of(context).textTheme.erpAppBarTitle.copyWith(
                         color: t.textPrimary,
-                        fontWeight: FontWeight.w800,
                       ),
                 ),
               ],
@@ -433,7 +432,7 @@ class _FecharCaixaDialogState extends ConsumerState<FecharCaixaDialog> {
         mainAxisSize: MainAxisSize.min,
         children: [
           form,
-          const SizedBox(height: 16),
+          SizedBox(height: s.md),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: actions,

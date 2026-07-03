@@ -379,8 +379,6 @@ class _RequisicaoHubPageState extends ConsumerState<RequisicaoHubPage> {
             return RequisicaoCompraMobileLayout(
               leftPane: leftPane,
               compraState: compraState,
-              productState: productState,
-              productController: productController,
               onOpenPurchasePane: _showMobilePurchasePane,
             );
           }

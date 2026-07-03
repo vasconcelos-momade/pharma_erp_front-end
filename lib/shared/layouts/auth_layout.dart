@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/design_tokens.dart';
 import '../../core/theme/extensions.dart';
-import '../../core/theme/spacing.dart';
 import '../widgets/sync/offline_mode_banner.dart';
 
 /// Layout autenticação: fundo do design system e indicadores offline.
@@ -25,6 +24,7 @@ class AuthLayout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
+    final s = context.spacing;
     return Scaffold(
       backgroundColor: t.bgPrimary,
       body: Stack(
@@ -45,7 +45,7 @@ class AuthLayout extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
                         Padding(
-                          padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                          padding: EdgeInsets.only(bottom: s.md),
                           child: Row(
                             children: [
                               Container(
@@ -62,13 +62,10 @@ class AuthLayout extends StatelessWidget {
                                   size: 24,
                                 ),
                               ),
-                              const SizedBox(width: AppSpacing.md),
+                              SizedBox(width: s.md),
                               Text(
                                 'Pharma ERP',
-                                style: Theme.of(context).textTheme.erpCardTitle.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                      letterSpacing: -0.5,
-                                    ),
+                                style: Theme.of(context).textTheme.erpCardTitle,
                               ),
                             ],
                           ),
@@ -88,7 +85,7 @@ class AuthLayout extends StatelessWidget {
           ),
           Center(
             child: SingleChildScrollView(
-              padding: scrollPadding ?? AppSpacing.pagePadding,
+              padding: scrollPadding ?? SpacingTokens.pagePadding,
               child: child,
             ),
           ),

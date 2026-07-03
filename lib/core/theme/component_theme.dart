@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'design_metrics.dart';
 import 'design_tokens.dart';
 import 'pharma_surface.dart';
 import 'typography.dart';
@@ -11,7 +12,7 @@ abstract final class PharmaComponentTheme {
     return ButtonStyle(
       animationDuration: kPharmaInstantThemeDuration,
       minimumSize: WidgetStateProperty.all(
-        Size(tokens.minTouchTarget, tokens.minTouchTarget),
+        Size(tokens.minTouchTarget, DesignMetrics.buttonHeight),
       ),
       padding: WidgetStateProperty.all(tokens.density.buttonPadding),
       tapTargetSize: MaterialTapTargetSize.padded,
@@ -104,7 +105,7 @@ abstract final class PharmaComponentTheme {
     return InputDecorationTheme(
       filled: true,
       fillColor: isDark ? tokens.card.withValues(alpha: 0.35) : tokens.card,
-      constraints: BoxConstraints(minHeight: tokens.minTouchTarget),
+      constraints: const BoxConstraints(minHeight: DesignMetrics.fieldHeightMin),
       contentPadding: tokens.density.inputPadding,
       border: border,
       enabledBorder: border,
@@ -124,18 +125,30 @@ abstract final class PharmaComponentTheme {
     );
   }
 
-  static ChipThemeData chip(PharmaTokens tokens, ColorScheme scheme, {required bool isDark}) {
+  static ChipThemeData chip(
+    PharmaTokens tokens,
+    ColorScheme scheme, {
+    required bool isDark,
+    TextTheme? textTheme,
+  }) {
+    final label = (textTheme ?? ThemeData().textTheme).erpLabel.copyWith(
+          color: tokens.textPrimary,
+          fontWeight: FontWeight.w600,
+        );
     return ChipThemeData(
       backgroundColor: tokens.card,
       selectedColor: scheme.primary.withValues(alpha: isDark ? 0.22 : 0.14),
       disabledColor: scheme.onSurface.withValues(alpha: 0.08),
-      labelStyle: TextStyle(color: tokens.textPrimary, fontWeight: FontWeight.w600),
-      secondaryLabelStyle: TextStyle(color: tokens.textPrimary, fontWeight: FontWeight.w600),
+      labelStyle: label,
+      secondaryLabelStyle: label,
       side: BorderSide(color: tokens.border.withValues(alpha: isDark ? 0.55 : 0.75)),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(tokens.radiusMd),
       ),
-      padding: EdgeInsets.symmetric(horizontal: tokens.density.sm, vertical: tokens.density.xs),
+      padding: EdgeInsets.symmetric(
+        horizontal: tokens.density.sm,
+        vertical: tokens.density.xs,
+      ),
     );
   }
 
@@ -234,7 +247,7 @@ abstract final class PharmaComponentTheme {
       }),
       checkColor: WidgetStateProperty.all(scheme.onPrimary),
       side: BorderSide(color: scheme.outline),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RadiusScale.xs)),
     );
   }
 
@@ -285,17 +298,20 @@ abstract final class PharmaComponentTheme {
     );
   }
 
-  static DataTableThemeData dataTable(PharmaTokens tokens) {
+  static DataTableThemeData dataTable(PharmaTokens tokens, {TextTheme? textTheme}) {
+    final theme = textTheme ?? ThemeData().textTheme;
     return DataTableThemeData(
       headingRowColor: WidgetStateProperty.all(tokens.bgSecondary),
-      headingTextStyle: TextStyle(
+      headingTextStyle: theme.erpLabel.copyWith(
         color: tokens.textPrimary,
-        fontWeight: FontWeight.w700,
+        fontWeight: FontWeight.w600,
       ),
-      dataTextStyle: TextStyle(color: tokens.textPrimary),
+      dataTextStyle: theme.erpBodySecondary.copyWith(color: tokens.textPrimary),
       dividerThickness: 1,
       horizontalMargin: tokens.density.md,
       columnSpacing: tokens.density.lg,
+      dataRowMinHeight: DesignMetrics.tableRowHeightMin,
+      dataRowMaxHeight: DesignMetrics.tableRowHeightMax,
     );
   }
 
@@ -307,13 +323,21 @@ abstract final class PharmaComponentTheme {
     );
   }
 
-  static NavigationRailThemeData navigationRail(PharmaTokens tokens, ColorScheme scheme) {
+  static NavigationRailThemeData navigationRail(
+    PharmaTokens tokens,
+    ColorScheme scheme, {
+    TextTheme? textTheme,
+  }) {
+    final label = (textTheme ?? ThemeData().textTheme).erpLabel;
     return NavigationRailThemeData(
       backgroundColor: tokens.bgSecondary,
       selectedIconTheme: IconThemeData(color: scheme.primary),
       unselectedIconTheme: IconThemeData(color: tokens.textSecondary),
-      selectedLabelTextStyle: TextStyle(color: scheme.primary, fontWeight: FontWeight.w700),
-      unselectedLabelTextStyle: TextStyle(color: tokens.textSecondary),
+      selectedLabelTextStyle: label.copyWith(
+        color: scheme.primary,
+        fontWeight: FontWeight.w600,
+      ),
+      unselectedLabelTextStyle: label.copyWith(color: tokens.textSecondary),
     );
   }
 
@@ -324,11 +348,20 @@ abstract final class PharmaComponentTheme {
     );
   }
 
-  static NavigationBarThemeData navigationBar(PharmaTokens tokens, ColorScheme scheme, {required bool isDark}) {
+  static NavigationBarThemeData navigationBar(
+    PharmaTokens tokens,
+    ColorScheme scheme, {
+    required bool isDark,
+    TextTheme? textTheme,
+  }) {
+    final label = (textTheme ?? ThemeData().textTheme).erpLabel.copyWith(
+          fontWeight: FontWeight.w600,
+        );
     return NavigationBarThemeData(
       backgroundColor: tokens.bgSecondary,
       indicatorColor: scheme.primary.withValues(alpha: isDark ? 0.22 : 0.14),
-      labelTextStyle: WidgetStateProperty.all(const TextStyle(fontWeight: FontWeight.w700)),
+      labelTextStyle: WidgetStateProperty.all(label),
+      height: DesignMetrics.tabHeightMax,
     );
   }
 
@@ -340,7 +373,12 @@ abstract final class PharmaComponentTheme {
     );
   }
 
-  static TabBarThemeData tabBar(PharmaTokens tokens, ColorScheme scheme, {required bool isDark, required TextTheme textTheme}) {
+  static TabBarThemeData tabBar(
+    PharmaTokens tokens,
+    ColorScheme scheme, {
+    required bool isDark,
+    required TextTheme textTheme,
+  }) {
     return TabBarThemeData(
       labelColor: scheme.primary,
       unselectedLabelColor: tokens.textSecondary,
@@ -351,6 +389,7 @@ abstract final class PharmaComponentTheme {
       ),
       indicatorColor: scheme.primary,
       dividerColor: tokens.border.withValues(alpha: isDark ? 0.5 : 0.7),
+      labelPadding: EdgeInsets.symmetric(horizontal: tokens.density.md),
     );
   }
 }

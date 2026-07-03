@@ -50,7 +50,7 @@ class EnterpriseKpiGrid extends StatelessWidget {
           );
         }
 
-        final spacing = screen == PharmaScreenSize.mobile ? 10.0 : s.sm;
+        final spacing = s.sm;
         final availableWidth =
             constraints.maxWidth.isFinite && constraints.maxWidth > 0
                 ? constraints.maxWidth

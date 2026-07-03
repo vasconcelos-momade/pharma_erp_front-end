@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/extensions.dart';
-import '../../../../core/theme/spacing.dart';
+import '../../../../shared/widgets/cards/enterprise_list_card.dart';
+import '../../../../shared/widgets/feedback/module_data_states.dart';
 import '../../domain/entities/requisicao.dart';
 
 String formatRequisicaoRouteLabel(String? origem, String? destino) {
@@ -118,10 +119,7 @@ class RequisicaoResumoCard extends StatelessWidget {
                 children: [
                   header,
                   SizedBox(height: s.sm),
-                  _RequisicaoInfoTag(
-                    label: requisicao.status.label,
-                    color: accent,
-                  ),
+                  EnterpriseStatusChip(label: requisicao.status.label, color: accent),
                   SizedBox(height: s.sm),
                   Text(
                     'Data: ${_formatRequisicaoDate(requisicao.createdAt)}',
@@ -146,10 +144,7 @@ class RequisicaoResumoCard extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(child: header),
-                    _RequisicaoInfoTag(
-                      label: requisicao.status.label,
-                      color: accent,
-                    ),
+                    EnterpriseStatusChip(label: requisicao.status.label, color: accent),
                   ],
                 ),
                 SizedBox(height: s.sm),
@@ -235,8 +230,7 @@ class RequisicaoResumoListTab extends StatelessWidget {
         SizedBox(height: s.sm),
         Expanded(
           child: requisicoes.isEmpty
-              ? RequisicaoResumoEmptyPane(
-                  icon: emptyIcon,
+              ? ModuleEmptyState(
                   title: emptyTitle,
                   subtitle: emptySubtitle,
                 )
@@ -254,78 +248,6 @@ class RequisicaoResumoListTab extends StatelessWidget {
                 ),
         ),
       ],
-    );
-  }
-}
-
-class RequisicaoResumoEmptyPane extends StatelessWidget {
-  const RequisicaoResumoEmptyPane({
-    super.key,
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
-    final s = context.spacing;
-
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(s.lg),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 48, color: t.textMuted),
-            SizedBox(height: s.md),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.erpSectionTitle.copyWith(
-                    color: t.textPrimary,
-                  ),
-            ),
-            SizedBox(height: s.xs),
-            Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                    color: t.textMuted,
-                  ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _RequisicaoInfoTag extends StatelessWidget {
-  const _RequisicaoInfoTag({required this.label, required this.color});
-
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
-    final s = context.spacing;
-
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: s.sm, vertical: s.xs),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(t.radiusMd),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
-      ),
     );
   }
 }

@@ -178,7 +178,6 @@ class _ProdutoDetailPanelState extends ConsumerState<ProdutoDetailPanel>
           child: TabBar(
             controller: _tabs,
             isScrollable: true,
-            tabAlignment: TabAlignment.start,
             indicatorWeight: 2,
             dividerHeight: 1,
             dividerColor: t.border.withValues(alpha: 0.35),

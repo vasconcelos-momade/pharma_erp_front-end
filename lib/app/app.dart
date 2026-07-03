@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:responsive_framework/responsive_framework.dart';
 
 import '../core/theme/app_theme.dart';
+import '../core/theme/breakpoints.dart';
 import 'providers/app_theme_mode_provider.dart';
 import 'router/go_app_router.dart';
 
@@ -26,9 +27,17 @@ class PharmaErpApp extends ConsumerWidget {
         return ResponsiveBreakpoints.builder(
           child: child!,
           breakpoints: const [
-            Breakpoint(start: 0, end: 599, name: MOBILE),
-            Breakpoint(start: 600, end: 1023, name: TABLET),
-            Breakpoint(start: 1024, end: double.infinity, name: DESKTOP),
+            Breakpoint(start: 0, end: Breakpoints.responsiveMobileEnd, name: MOBILE),
+            Breakpoint(
+              start: Breakpoints.mobile,
+              end: Breakpoints.responsiveTabletEnd,
+              name: TABLET,
+            ),
+            Breakpoint(
+              start: Breakpoints.desktop,
+              end: double.infinity,
+              name: DESKTOP,
+            ),
           ],
         );
       },

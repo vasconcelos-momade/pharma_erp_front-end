@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/design_metrics.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/theme/extensions.dart';
 import '../../../core/theme/pharma_surface.dart';
@@ -41,6 +42,7 @@ class EnterpriseStatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
     final textTheme = context.typography;
+    final s = context.spacing;
     final compact = density == StatCardDensity.compact;
     final (Color fg, Color bg) = switch (accent) {
       StatCardAccent.positive => (t.brandGreen, t.brandGreen.withValues(alpha: 0.1)),
@@ -50,11 +52,13 @@ class EnterpriseStatCard extends StatelessWidget {
       StatCardAccent.neutral => (t.textSecondary, t.textMuted.withValues(alpha: 0.12)),
     };
 
-    final pad = compact ? const EdgeInsets.fromLTRB(10, 8, 10, 8) : const EdgeInsets.all(16);
-    final iconBox = compact ? 5.0 : 8.0;
-    final iconSize = compact ? 15.0 : 18.0;
-    final gapAfterHeader = compact ? 4.0 : 10.0;
-    final gapBeforeSubtitle = compact ? 2.0 : 8.0;
+    final pad = compact
+        ? EdgeInsets.fromLTRB(s.sm, s.sm, s.sm, s.sm)
+        : EdgeInsets.all(s.lg);
+    final iconBox = compact ? s.xs : s.sm;
+    final iconSize = compact ? DesignMetrics.iconSm : t.iconSm;
+    final gapAfterHeader = compact ? s.xs : s.md;
+    final gapBeforeSubtitle = compact ? s.xxs : s.sm;
     final titleStyle = AppTypography.kpiLabel(textTheme, compact: compact).copyWith(
       color: t.textMuted,
     );
@@ -84,12 +88,12 @@ class EnterpriseStatCard extends StatelessWidget {
             ),
             if (badge != null)
               Padding(
-                padding: const EdgeInsets.only(right: 4),
+                padding: EdgeInsets.only(right: s.xs),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                  padding: EdgeInsets.symmetric(horizontal: s.xs, vertical: s.xxs),
                   decoration: BoxDecoration(
                     color: fg.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(4),
+                    borderRadius: BorderRadius.circular(t.radiusSm),
                   ),
                   child: Text(
                     badge!,

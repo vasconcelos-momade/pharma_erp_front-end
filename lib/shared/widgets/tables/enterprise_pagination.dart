@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/design_metrics.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/theme/extensions.dart';
 import '../../../core/theme/pharma_surface.dart';
@@ -66,6 +67,9 @@ class EnterprisePagination extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (context.isMobile) {
+      return const SizedBox.shrink();
+    }
     if (_hasKnownTotal && _totalPages <= 1 && totalCount == 0) {
       return const SizedBox.shrink();
     }
@@ -286,7 +290,7 @@ class _PaginationGap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 40,
+      width: DesignMetrics.minTouchTarget,
       child: Center(
         child: Text(
           label,
@@ -325,19 +329,19 @@ class _PaginationSegmentButton extends StatelessWidget {
             : t.textMuted.withValues(alpha: 0.5);
 
     return SizedBox(
-      width: 40,
-      height: 40,
+      width: DesignMetrics.minTouchTarget,
+      height: DesignMetrics.minTouchTarget,
       child: TextButton(
         onPressed: enabled ? onPressed : null,
         style: pharmaInstantButtonStyle(
           TextButton.styleFrom(
             padding: EdgeInsets.zero,
-            minimumSize: const Size(40, 40),
+            minimumSize: Size.square(DesignMetrics.minTouchTarget),
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(t.radiusMd),
             ),
-            backgroundColor: selected ? activeBackground : Colors.transparent,
+            backgroundColor: selected ? activeBackground : scheme.surface.withValues(alpha: 0),
             foregroundColor: resolvedForeground,
             disabledForegroundColor: t.textMuted.withValues(alpha: 0.5),
           ),

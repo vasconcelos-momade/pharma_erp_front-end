@@ -1,19 +1,22 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/design_tokens.dart';
-import '../../../core/theme/spacing.dart';
+import '../../../core/theme/extensions.dart';
+import '../../../core/theme/spacing_tokens.dart';
 
 /// Blocos skeleton para listagens e cartões.
 class SkeletonBox extends StatelessWidget {
-  const SkeletonBox({super.key, this.width, this.height = 14, this.radius = 8});
+  const SkeletonBox({super.key, this.width, this.height, this.radius});
 
   final double? width;
-  final double height;
-  final double radius;
+  final double? height;
+  final double? radius;
 
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
+    final resolvedHeight = height ?? SpacingTokens.sm;
+    final resolvedRadius = radius ?? t.radiusMd;
     return TweenAnimationBuilder<double>(
       tween: Tween(begin: 0.35, end: 0.85),
       duration: const Duration(milliseconds: 900),
@@ -21,10 +24,10 @@ class SkeletonBox extends StatelessWidget {
       builder: (context, v, child) {
         return Container(
           width: width,
-          height: height,
+          height: resolvedHeight,
           decoration: BoxDecoration(
             color: t.border.withValues(alpha: v),
-            borderRadius: BorderRadius.circular(radius),
+            borderRadius: BorderRadius.circular(resolvedRadius),
           ),
         );
       },
@@ -38,8 +41,9 @@ class SkeletonCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
+    final s = context.spacing;
     return Container(
-      padding: AppSpacing.cardPadding,
+      padding: SpacingTokens.cardPadding,
       decoration: BoxDecoration(
         color: t.card,
         borderRadius: BorderRadius.circular(t.radiusMd),
@@ -48,11 +52,11 @@ class SkeletonCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SkeletonBox(width: 120, height: 12),
-          SizedBox(height: AppSpacing.lg),
-          SkeletonBox(width: double.infinity, height: 22),
-          SizedBox(height: AppSpacing.md),
-          SkeletonBox(width: 200, height: 12),
+          SkeletonBox(width: 120, height: s.sm),
+          SizedBox(height: s.lg),
+          SkeletonBox(width: double.infinity, height: s.xl),
+          SizedBox(height: s.md),
+          SkeletonBox(width: 200, height: s.sm),
         ],
       ),
     );

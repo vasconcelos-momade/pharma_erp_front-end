@@ -36,6 +36,7 @@ class EnterpriseModuleHub extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
+    final s = context.spacing;
     final size = context.pharmaScreen;
     final textTheme = context.typography;
     final titleStyle = context.erpPageTitle.copyWith(color: t.textPrimary);
@@ -59,7 +60,7 @@ class EnterpriseModuleHub extends StatelessWidget {
                     tag!.toUpperCase(),
                     style: textTheme.erpOverline.copyWith(color: t.brandBlue),
                   ),
-                  SizedBox(height: size == PharmaScreenSize.mobile ? 2 : AppSpacing.xs),
+                  SizedBox(height: size == PharmaScreenSize.mobile ? s.xxs : s.xs),
                   ],
                   if (title != null && title!.isNotEmpty) ...[
                   Text(
@@ -68,7 +69,7 @@ class EnterpriseModuleHub extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                     style: titleStyle,
                   ),
-                  SizedBox(height: size == PharmaScreenSize.mobile ? 4 : AppSpacing.sm),
+                  SizedBox(height: size == PharmaScreenSize.mobile ? s.xs : s.sm),
                   ],
                   if (subtitle != null && subtitle!.isNotEmpty)
                   Text(
@@ -90,8 +91,8 @@ class EnterpriseModuleHub extends StatelessWidget {
                 child: Align(
                   alignment: Alignment.topRight,
                   child: Wrap(
-                    spacing: AppSpacing.sm,
-                    runSpacing: AppSpacing.sm,
+                    spacing: s.sm,
+                    runSpacing: s.sm,
                     alignment: WrapAlignment.end,
                     children: actions!,
                   ),
@@ -100,7 +101,7 @@ class EnterpriseModuleHub extends StatelessWidget {
           ],
         ),
         if (filters != null) ...[
-          SizedBox(height: size == PharmaScreenSize.mobile ? AppSpacing.sm : AppSpacing.md),
+          SizedBox(height: size == PharmaScreenSize.mobile ? s.sm : s.md),
           _buildFiltersAndActionsRow(
             context: context,
             size: size,
@@ -109,10 +110,10 @@ class EnterpriseModuleHub extends StatelessWidget {
           ),
         ],
         if (kpis != null && kpis!.isNotEmpty) ...[
-          SizedBox(height: size == PharmaScreenSize.mobile ? AppSpacing.md : AppSpacing.lg),
+          SizedBox(height: size == PharmaScreenSize.mobile ? s.md : s.lg),
           _buildKpis(context, size),
         ],
-        SizedBox(height: size == PharmaScreenSize.mobile ? AppSpacing.md : AppSpacing.lg),
+        SizedBox(height: size == PharmaScreenSize.mobile ? s.md : s.lg),
         if (scrollable) child else Expanded(child: child),
       ],
     );
@@ -132,6 +133,7 @@ class EnterpriseModuleHub extends StatelessWidget {
     }
 
     if (mobileKpisHorizontalScroll && size == PharmaScreenSize.mobile) {
+      final s = context.spacing;
       return SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
@@ -142,7 +144,7 @@ class EnterpriseModuleHub extends StatelessWidget {
                 height: PharmaScreenLayout.kpiCardHeight(size),
                 child: kpis![i],
               ),
-              if (i < kpis!.length - 1) const SizedBox(width: AppSpacing.sm),
+              if (i < kpis!.length - 1) SizedBox(width: s.sm),
             ],
           ],
         ),
@@ -158,10 +160,10 @@ class EnterpriseModuleHub extends StatelessWidget {
       showDragHandle: true,
       builder: (ctx) => SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: EdgeInsets.all(context.spacing.lg),
           child: Wrap(
-            spacing: AppSpacing.sm,
-            runSpacing: AppSpacing.sm,
+            spacing: context.spacing.sm,
+            runSpacing: context.spacing.sm,
             children: actions,
           ),
         ),
@@ -177,6 +179,9 @@ class EnterpriseModuleHub extends StatelessWidget {
   }) {
     final hasActions = actions != null && actions.isNotEmpty;
     if (!hasActions) return filters;
+    final s = context.spacing;
+
+    final actionItems = actions;
 
     if (size == PharmaScreenSize.mobile) {
       return SingleChildScrollView(
@@ -185,8 +190,8 @@ class EnterpriseModuleHub extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             filters,
-            const SizedBox(width: AppSpacing.sm),
-            ...actions,
+            SizedBox(width: s.sm),
+            ...actionItems,
           ],
         ),
       );
@@ -196,12 +201,12 @@ class EnterpriseModuleHub extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Expanded(child: filters),
-        const SizedBox(width: AppSpacing.sm),
+        SizedBox(width: s.sm),
         Wrap(
-          spacing: AppSpacing.sm,
-          runSpacing: AppSpacing.sm,
+          spacing: s.sm,
+          runSpacing: s.sm,
           alignment: WrapAlignment.end,
-          children: actions,
+          children: actionItems,
         ),
       ],
     );

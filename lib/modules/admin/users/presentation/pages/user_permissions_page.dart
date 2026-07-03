@@ -80,7 +80,6 @@ class UserPermissionsPage extends ConsumerWidget {
               'Modo edição — alterações afectam o perfil ${state.selectedRole}',
               style: Theme.of(context).textTheme.erpCaption.copyWith(
                     color: context.pharmaTokens.brandBlue,
-                    fontWeight: FontWeight.w600,
                   ),
             ),
         ],

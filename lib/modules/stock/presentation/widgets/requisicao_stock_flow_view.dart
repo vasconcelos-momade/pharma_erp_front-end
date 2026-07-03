@@ -9,6 +9,7 @@ import '../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../shared/widgets/buttons/pharma_button_loader.dart';
 import '../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
+import '../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../../pharmacy/products/domain/entities/categoria_produto.dart';
 import '../../../pharmacy/products/domain/entities/product.dart';
 import '../../../pharmacy/products/presentation/providers/product_provider.dart';
@@ -428,15 +429,9 @@ class _RequisicaoStockFlowViewState
 
     if (isMobile) {
       final activeRequisicao = requisicaoState.activeRequisicao;
-      final showPagination =
-          requisicaoState.activeTab == RequisicaoTab.produtos &&
-          productState.isInitialized;
       final showSummary = activeRequisicao != null;
-      final paginationHeight = showPagination ? (t.minTouchTarget + s.lg) : 0.0;
       final summaryHeight = showSummary ? 84.0 : 0.0;
-      final footerGap = showPagination && showSummary ? s.sm : 0.0;
-      final bottomOverlayHeight = paginationHeight + summaryHeight + footerGap;
-      final contentBottomPadding = bottomOverlayHeight + s.md;
+      final contentBottomPadding = showSummary ? (summaryHeight + s.md) : 0.0;
 
       return Stack(
         children: [
@@ -446,7 +441,7 @@ class _RequisicaoStockFlowViewState
               child: leftPane,
             ),
           ),
-          if (showSummary || showPagination)
+          if (showSummary)
             Positioned(
               left: 0,
               right: 0,
@@ -462,29 +457,6 @@ class _RequisicaoStockFlowViewState
                         child: _MobileStockFlowSummaryBar(
                           requisicao: activeRequisicao,
                           onOpen: _showMobileStockFlowPane,
-                        ),
-                      ),
-                    if (showSummary && showPagination) SizedBox(height: s.sm),
-                    if (showPagination)
-                      Padding(
-                        padding: EdgeInsets.fromLTRB(s.xs, 0, s.xs, s.xs),
-                        child: RequisicaoProductsPaginationBar(
-                          page: productState.page,
-                          pageSize: productState.pageSize,
-                          itemCount: productState.items.length,
-                          hasMore: productState.hasMore,
-                          onPrevious:
-                              productState.page > 1 && !productState.isLoading
-                              ? () => productController.goToPage(
-                                  productState.page - 1,
-                                )
-                              : null,
-                          onNext:
-                              productState.hasMore && !productState.isLoading
-                              ? () => productController.goToPage(
-                                  productState.page + 1,
-                                )
-                              : null,
                         ),
                       ),
                   ],
@@ -720,7 +692,7 @@ class _LeftPaneState extends State<_LeftPane>
             labelColor: t.textPrimary,
             unselectedLabelColor: t.textMuted,
             indicatorColor: t.brandBlue,
-            dividerColor: Colors.transparent,
+            dividerColor: t.card,
             labelPadding: EdgeInsets.symmetric(horizontal: s.sm),
             tabs: [
               Tab(height: t.minTouchTarget, text: 'Produtos'),
@@ -843,6 +815,7 @@ class _RightPane extends StatelessWidget {
       onCancel: onCancel,
     );
 
+    final scheme = Theme.of(context).colorScheme;
     final decoration = BoxDecoration(
       color: t.card,
       borderRadius: fullscreen ? null : BorderRadius.circular(t.radiusXl),
@@ -850,7 +823,7 @@ class _RightPane extends StatelessWidget {
           ? null
           : [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.03),
+                color: scheme.shadow.withValues(alpha: 0.03),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -1259,69 +1232,52 @@ class _StockFlowItemsDesktopTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
-    final s = context.spacing;
+    final textTheme = Theme.of(context).textTheme;
 
-    return Scrollbar(
-      thumbVisibility: true,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: SizedBox(
-          width: 920,
-          child: SingleChildScrollView(
-            child: DataTable(
-              headingRowColor: WidgetStateProperty.all(
-                t.bgPrimary.withValues(alpha: 0.1),
-              ),
-              columnSpacing: s.lg,
-              columns: const [
-                DataColumn(label: Text('Produto')),
-                DataColumn(label: Text('Lote')),
-                DataColumn(label: Text('Validade')),
-                DataColumn(label: Text('Qtd')),
-                DataColumn(label: Text('Ações')),
-              ],
-              rows: items.map((item) {
-                return DataRow(
-                  cells: [
-                    DataCell(
-                      SizedBox(width: 260, child: Text(item.produtoNome)),
-                    ),
-                    DataCell(
-                      SizedBox(
-                        width: 150,
-                        child: Text(stockFlowItemLoteNumero(item)),
-                      ),
-                    ),
-                    DataCell(
-                      SizedBox(
-                        width: 130,
-                        child: Text(stockFlowItemLoteValidade(item)),
-                      ),
-                    ),
-                    DataCell(
-                      SizedBox(
-                        width: 90,
-                        child: Text(stockFlowFormatQuantity(item.quantidade)),
-                      ),
-                    ),
-                    DataCell(
-                      SizedBox(
-                        width: 140,
-                        child: _StockFlowItemActionButtons(
-                          item: item,
-                          isEditable: isEditable,
-                          onEdit: onEdit,
-                          onRemove: onRemove,
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              }).toList(),
+    return EnterpriseDataTable(
+      adaptive: false,
+      showCheckboxColumn: false,
+      columns: [
+        for (final label in ['PRODUTO', 'LOTE', 'VALIDADE', 'QTD', 'AÇÕES'])
+          DataColumn(
+            label: Text(
+              label,
+              style: textTheme.erpOverline.copyWith(color: t.textMuted),
             ),
           ),
-        ),
-      ),
+      ],
+      rowCount: items.length,
+      rowBuilder: (context, index) {
+        final item = items[index];
+        return DataRow(
+          cells: [
+            DataCell(SizedBox(width: 260, child: Text(item.produtoNome))),
+            DataCell(
+              SizedBox(width: 150, child: Text(stockFlowItemLoteNumero(item))),
+            ),
+            DataCell(
+              SizedBox(width: 130, child: Text(stockFlowItemLoteValidade(item))),
+            ),
+            DataCell(
+              SizedBox(
+                width: 90,
+                child: Text(stockFlowFormatQuantity(item.quantidade)),
+              ),
+            ),
+            DataCell(
+              SizedBox(
+                width: 140,
+                child: _StockFlowItemActionButtons(
+                  item: item,
+                  isEditable: isEditable,
+                  onEdit: onEdit,
+                  onRemove: onRemove,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -1342,63 +1298,50 @@ class _StockFlowItemsTabletTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
-    final s = context.spacing;
+    final textTheme = Theme.of(context).textTheme;
 
-    return Scrollbar(
-      thumbVisibility: true,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: SizedBox(
-          width: 720,
-          child: SingleChildScrollView(
-            child: DataTable(
-              headingRowColor: WidgetStateProperty.all(
-                t.bgPrimary.withValues(alpha: 0.1),
-              ),
-              columnSpacing: s.md,
-              columns: const [
-                DataColumn(label: Text('Produto')),
-                DataColumn(label: Text('Lote')),
-                DataColumn(label: Text('Qtd')),
-                DataColumn(label: Text('Ações')),
-              ],
-              rows: items.map((item) {
-                return DataRow(
-                  cells: [
-                    DataCell(
-                      SizedBox(width: 220, child: Text(item.produtoNome)),
-                    ),
-                    DataCell(
-                      SizedBox(
-                        width: 140,
-                        child: Text(stockFlowItemLoteNumero(item)),
-                      ),
-                    ),
-                    DataCell(
-                      SizedBox(
-                        width: 90,
-                        child: Text(stockFlowFormatQuantity(item.quantidade)),
-                      ),
-                    ),
-                    DataCell(
-                      SizedBox(
-                        width: 140,
-                        child: _StockFlowItemActionButtons(
-                          item: item,
-                          isEditable: isEditable,
-                          onEdit: onEdit,
-                          onRemove: onRemove,
-                          showDetailsButton: true,
-                        ),
-                      ),
-                    ),
-                  ],
-                );
-              }).toList(),
+    return EnterpriseDataTable(
+      adaptive: false,
+      showCheckboxColumn: false,
+      columns: [
+        for (final label in ['PRODUTO', 'LOTE', 'QTD', 'AÇÕES'])
+          DataColumn(
+            label: Text(
+              label,
+              style: textTheme.erpOverline.copyWith(color: t.textMuted),
             ),
           ),
-        ),
-      ),
+      ],
+      rowCount: items.length,
+      rowBuilder: (context, index) {
+        final item = items[index];
+        return DataRow(
+          cells: [
+            DataCell(SizedBox(width: 220, child: Text(item.produtoNome))),
+            DataCell(
+              SizedBox(width: 140, child: Text(stockFlowItemLoteNumero(item))),
+            ),
+            DataCell(
+              SizedBox(
+                width: 90,
+                child: Text(stockFlowFormatQuantity(item.quantidade)),
+              ),
+            ),
+            DataCell(
+              SizedBox(
+                width: 140,
+                child: _StockFlowItemActionButtons(
+                  item: item,
+                  isEditable: isEditable,
+                  onEdit: onEdit,
+                  onRemove: onRemove,
+                  showDetailsButton: true,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -2283,9 +2226,8 @@ class _ItemDialogProductHeader extends StatelessWidget {
                     ),
                     child: Text(
                       item,
-                      style: textTheme.erpCaption.copyWith(
+                      style: textTheme.erpLabel.copyWith(
                         color: t.textPrimary,
-                        fontWeight: FontWeight.w700,
                       ),
                     ),
                   ),

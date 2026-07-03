@@ -8,6 +8,7 @@ import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/responsive/responsive_builder.dart';
+import '../../../../../shared/widgets/cards/enterprise_list_card.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
@@ -480,7 +481,6 @@ class _CategoryMobileListState extends State<_CategoryMobileList> {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
-    final s = context.spacing;
 
     if (widget.items.isEmpty && !widget.isLoading) {
       return Center(
@@ -493,9 +493,14 @@ class _CategoryMobileListState extends State<_CategoryMobileList> {
 
     return ListView.separated(
       controller: _scrollController,
-      padding: EdgeInsets.all(s.md),
+      padding: EdgeInsets.zero,
       itemCount: widget.items.length + 1,
-      separatorBuilder: (_, _) => SizedBox(height: s.sm),
+      separatorBuilder: (_, index) {
+        if (index >= widget.items.length - 1) {
+          return const SizedBox.shrink();
+        }
+        return const EnterpriseListDivider();
+      },
       itemBuilder: (context, index) {
         if (index == widget.items.length) {
           if (widget.isLoading) {
@@ -552,108 +557,43 @@ class _CategoryMobileCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
-    final s = context.spacing;
-    final theme = Theme.of(context);
+    final descricao = category.descricao?.trim();
 
-    return Material(
-      color: theme.colorScheme.surfaceContainer,
-      borderRadius: BorderRadius.circular(t.radiusMd),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: s.md, vertical: s.sm),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Icon(
-                    Icons.category_outlined,
-                    size: t.iconSm,
-                    color: t.textPrimary,
-                  ),
-                  SizedBox(width: s.xs),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          category.nome,
-                          style: theme.textTheme.erpTabLabel.copyWith(color: t.textPrimary),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if ((category.descricao ?? '').trim().isNotEmpty) ...[
-                          SizedBox(height: s.xxs),
-                          Text(
-                            category.descricao!.trim(),
-                            style: theme.textTheme.erpCaption.copyWith(color: t.textSecondary),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  SizedBox(width: s.xs),
-                  _StatusChip(ativo: category.ativo),
-                  PopupMenuButton<String>(
-                    padding: EdgeInsets.zero,
-                    constraints: BoxConstraints(
-                      minWidth: t.minTouchTarget * 0.6,
-                      minHeight: t.minTouchTarget * 0.6,
-                    ),
-                    icon: Icon(Icons.more_vert, size: t.iconSm, color: t.textMuted),
-                    onSelected: (action) {
-                      switch (action) {
-                        case 'editar':
-                          onEdit();
-                          break;
-                        case 'excluir':
-                          onDelete();
-                          break;
-                      }
-                    },
-                    itemBuilder: (context) => const [
-                      PopupMenuItem(
-                        value: 'editar',
-                        child: Text('Editar'),
-                      ),
-                      PopupMenuItem(
-                        value: 'excluir',
-                        child: Text('Excluir'),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              SizedBox(height: s.xs),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      (category.descricao ?? 'Sem descrição'),
-                      style: theme.textTheme.erpCaption.copyWith(color: t.textMuted),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  SizedBox(width: s.sm),
-                  Text(
-                    'Produtos: ${category.productCount}',
-                    style: theme.textTheme.erpCaption.copyWith(
-                      color: t.textMuted,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+    return EnterpriseListCard(
+      title: category.nome,
+      subtitle: descricao != null && descricao.isNotEmpty ? descricao : null,
+      leading: Icons.category_outlined,
+      chip: EnterpriseStatusChip(
+        label: category.ativo ? 'Activa' : 'Inactiva',
+        color: category.ativo ? t.brandGreen : t.textMuted,
+      ),
+      trailingMeta: EnterpriseListCardMeta(
+        label: 'Produtos: ${category.productCount}',
+        alignEnd: true,
+        emphasized: true,
+      ),
+      onTap: onTap,
+      actions: PopupMenuButton<String>(
+        padding: EdgeInsets.zero,
+        constraints: BoxConstraints(
+          minWidth: t.minTouchTarget * 0.6,
+          minHeight: t.minTouchTarget * 0.6,
         ),
+        icon: Icon(Icons.more_vert, size: t.iconSm, color: t.textMuted),
+        onSelected: (action) {
+          switch (action) {
+            case 'editar':
+              onEdit();
+              break;
+            case 'excluir':
+              onDelete();
+              break;
+          }
+        },
+        itemBuilder: (context) => const [
+          PopupMenuItem(value: 'editar', child: Text('Editar')),
+          PopupMenuItem(value: 'excluir', child: Text('Excluir')),
+        ],
       ),
     );
   }

@@ -8,11 +8,13 @@ import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/widgets/buttons/pharma_button_loader.dart';
+import '../../../../../shared/widgets/feedback/module_data_states.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
+import '../../../../../shared/widgets/layout/enterprise_module_search_bar.dart';
+import '../../../../../shared/widgets/tables/enterprise_pagination.dart';
 import '../../../../pharmacy/products/domain/entities/categoria_produto.dart';
 import '../../../../pharmacy/products/domain/entities/product.dart';
 import '../../../../pharmacy/products/presentation/providers/product_provider.dart';
-import '../../../../pharmacy/products/presentation/widgets/produto_categoria_chip.dart';
 import '../../../invoices/presentation/providers/invoice_action_provider.dart';
 import '../../../../../core/errors/api_failure.dart';
 import '../../domain/entities/pdv_cart_line.dart';
@@ -23,17 +25,11 @@ import '../providers/pdv_cart_provider.dart';
 import '../providers/pdv_service_provider.dart';
 import '../widgets/abrir_caixa_dialog.dart';
 import '../widgets/finalizar_venda_dialog.dart';
-
-String _formatDate(DateTime? date) {
-  if (date == null) return '-';
-  return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
-}
-
-String _formatMoney(num value) {
-  final amount = value.toDouble();
-  final hasDecimals = amount != amount.truncateToDouble();
-  return '${amount.toStringAsFixed(hasDecimals ? 2 : 0)} MT';
-}
+import '../widgets/pdv_catalog_utils.dart';
+import '../widgets/pdv_product_list.dart';
+import '../widgets/pdv_product_table.dart';
+import '../widgets/pdv_service_list.dart';
+import '../widgets/pdv_service_table.dart';
 
 class PdvPage extends ConsumerStatefulWidget {
   const PdvPage({super.key});
@@ -48,6 +44,7 @@ class _PdvPageState extends ConsumerState<PdvPage>
   final _searchFocusNode = FocusNode();
   late final TabController _catalogTabController;
   int _catalogTabIndex = 0;
+  List<Product> _accumulatedProducts = [];
 
   @override
   void initState() {
@@ -113,16 +110,18 @@ class _PdvPageState extends ConsumerState<PdvPage>
   Future<void> _onSearchSubmitted({
     required List<Product> products,
     required List<PdvService> services,
+    List<Product>? accumulatedProducts,
   }) async {
     if (!_ensureCaixaAberto()) {
       return;
     }
 
     if (_isProductsTab) {
-      if (products.isEmpty) {
+      final catalogProducts = accumulatedProducts ?? products;
+      if (catalogProducts.isEmpty) {
         return;
       }
-      final added = await _addProduct(products.first);
+      final added = await _addProduct(catalogProducts.first);
       if (!added || !mounted) {
         return;
       }
@@ -213,14 +212,6 @@ class _PdvPageState extends ConsumerState<PdvPage>
       }
       return false;
     }
-  }
-
-  void _requestAddProduct(Product product) {
-    unawaited(_addProduct(product));
-  }
-
-  void _requestAddService(PdvService service) {
-    unawaited(_addService(service));
   }
 
   Future<void> _mutateCart(Future<bool> Function() action) async {
@@ -319,7 +310,7 @@ class _PdvPageState extends ConsumerState<PdvPage>
 
     PharmaFeedback.success(
       context,
-      'Pagamento confirmado. Fatura ${result.numero} — total ${_formatMoney(result.total)} (valores do servidor).',
+      'Pagamento confirmado. Fatura ${result.numero} — total ${pdvFormatMoney(result.total)} (valores do servidor).',
     );
 
     await _showCheckoutActions(result);
@@ -440,61 +431,57 @@ class _PdvPageState extends ConsumerState<PdvPage>
         ? productState.errorMessage
         : serviceState.errorMessage;
 
+    ref.listen<ProductListState>(productListProvider, (prev, next) {
+      if (prev?.page != next.page ||
+          prev?.query != next.query ||
+          prev?.categoria != next.categoria) {
+        if (next.page == 1) {
+          _accumulatedProducts = List.of(next.items);
+        } else {
+          final newItems = next.items
+              .where((e) => !_accumulatedProducts.any((a) => a.id == e.id))
+              .toList();
+          _accumulatedProducts.addAll(newItems);
+        }
+      } else if (prev?.items != next.items && next.page == 1) {
+        _accumulatedProducts = List.of(next.items);
+      }
+    });
+
+    final displayProducts = isMobile
+        ? (_accumulatedProducts.isEmpty ? productState.items : _accumulatedProducts)
+        : productState.items;
+    final canAddCatalog =
+        caixaAberto && !cartState.isMutating && !cartState.isLoading;
+    final catalogListBottomPadding = isMobile ? mobileCartButtonHeight + s.xl : 0.0;
+
     if (activeIsLoading && !activeIsInitialized && !activeHasItems) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const CircularProgressIndicator(),
-            SizedBox(height: s.lg),
-            Text(
-              _isProductsTab
-                  ? 'Carregando produtos...'
-                  : 'Carregando serviços...',
-              style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
-            ),
-          ],
-        ),
-      );
+      return const ModuleLoadingState(itemCount: 4);
     }
 
     if (activeErrorMessage != null && !activeHasItems) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.error_outline, size: t.minTouchTarget, color: t.posDanger),
-            SizedBox(height: s.lg),
-            Text(activeErrorMessage, style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted)),
-            SizedBox(height: s.sm),
-            FilledButton(
-              onPressed: _isProductsTab
-                  ? productController.refreshCurrentPage
-                  : serviceController.refreshCurrentQuery,
-              child: const Text('Tentar novamente'),
-            ),
-          ],
-        ),
+      return ModuleErrorState(
+        title: _isProductsTab ? 'Falha ao carregar produtos' : 'Falha ao carregar serviços',
+        message: activeErrorMessage,
+        onRetry: _isProductsTab
+            ? productController.refreshCurrentPage
+            : serviceController.refreshCurrentQuery,
+        icon: Icons.error_outline,
       );
     }
 
     final catalogFooter = _isProductsTab
-        ? _ProductsPaginationBar(
+        ? EnterprisePagination(
             page: productState.page,
             pageSize: productState.pageSize,
-            itemCount: productState.items.length,
             hasMore: productState.hasMore,
-            onPrevious: productState.page > 1
-                ? () => productController.goToPage(productState.page - 1)
-                : null,
-            onNext: productState.hasMore
-                ? () => productController.goToPage(productState.page + 1)
-                : null,
+            itemsOnPage: productState.items.length,
+            isBusy: productState.isLoading,
+            itemLabel: 'produtos',
+            onPageChanged: productController.goToPage,
+            onPageSizeChanged: (_) {},
           )
-        : _ServiceResultsBar(
-            itemCount: serviceState.items.length,
-            query: serviceState.query,
-          );
+        : null;
 
     final catalog = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -549,7 +536,7 @@ class _PdvPageState extends ConsumerState<PdvPage>
             labelColor: t.textPrimary,
             unselectedLabelColor: t.textMuted,
             indicatorColor: t.brandBlue,
-            dividerColor: Colors.transparent,
+            dividerColor: t.card,
             tabs: const [
               Tab(text: 'Lista de Produtos'),
               Tab(text: 'Serviços'),
@@ -600,76 +587,85 @@ class _PdvPageState extends ConsumerState<PdvPage>
           ),
           SizedBox(height: isMobile ? s.sm : s.md),
         ],
-        TextField(
-          controller: _search,
-          focusNode: _searchFocusNode,
-          onChanged: _onSearchChanged,
-          onSubmitted: (_) => _onSearchSubmitted(
-            products: productState.items,
-            services: serviceState.items,
-          ),
-          autofocus: true,
-          decoration: InputDecoration(
-            isDense: isMobile,
-            hintText: _isProductsTab
-                ? (isMobile
-                    ? 'Pesquisar produto...'
-                    : 'Pesquisar por código, nome ou EAN - F2')
-                : (isMobile
-                    ? 'Pesquisar serviço...'
-                    : 'Pesquisar por nome do serviço - F2'),
-            prefixIcon: Icon(
-              Icons.search_rounded,
-              color: t.brandBlue,
-              size: isMobile ? t.iconSm : t.iconMd,
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: EnterpriseModuleSearchBar(
+                controller: _search,
+                focusNode: _searchFocusNode,
+                autofocus: true,
+                hintText: _isProductsTab
+                    ? (isMobile
+                        ? 'Pesquisar produto...'
+                        : 'Pesquisar por código, nome ou EAN - F2')
+                    : (isMobile
+                        ? 'Pesquisar serviço...'
+                        : 'Pesquisar por nome do serviço - F2'),
+                enabled: !activeIsLoading,
+                onSubmitted: (_) => _onSearchSubmitted(
+                  products: productState.items,
+                  services: serviceState.items,
+                  accumulatedProducts: displayProducts,
+                ),
+                onChanged: _onSearchChanged,
+              ),
             ),
-            suffixIcon: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (_isProductsTab)
-                  IconButton(
-                    tooltip: 'Actualizar catálogo',
-                    onPressed: productState.isLoading
-                        ? null
-                        : () => unawaited(
-                              productController.refreshCatalogAndPage(),
-                            ),
-                    icon: Icon(
-                      Icons.refresh_rounded,
-                      color: t.brandBlue,
-                      size: isMobile ? t.iconSm : t.iconMd,
-                    ),
-                  ),
-              ],
-            ),
-          ),
+            if (_isProductsTab) ...[
+              SizedBox(width: s.sm),
+              IconButton(
+                tooltip: 'Actualizar catálogo',
+                onPressed: productState.isLoading
+                    ? null
+                    : () => unawaited(productController.refreshCatalogAndPage()),
+                icon: Icon(
+                  Icons.refresh_rounded,
+                  color: t.brandBlue,
+                  size: isMobile ? t.iconSm : t.iconMd,
+                ),
+              ),
+            ],
+          ],
         ),
         SizedBox(height: isMobile ? s.sm : s.md),
         Expanded(
           child: _isProductsTab
-              ? _ProductCatalogList(
-                  items: productState.items,
-                  query: productState.query,
-                  tokens: t,
-                  isDesktop: isDesktop,
-                  isMobile: isMobile,
-                  canAdd: caixaAberto && !cartState.isMutating && !cartState.isLoading,
-                  addingProductId: cartState.busyLineId,
-                  onAdd: _requestAddProduct,
-                  mobileCartButtonHeight: mobileCartButtonHeight,
-                )
-              : _ServiceCatalogList(
-                  items: serviceState.items,
-                  query: serviceState.query,
-                  tokens: t,
-                  isDesktop: isDesktop,
-                  isMobile: isMobile,
-                  canAdd: caixaAberto && !cartState.isMutating && !cartState.isLoading,
-                  onAdd: _requestAddService,
-                  mobileCartButtonHeight: mobileCartButtonHeight,
-                ),
+              ? isMobile
+                  ? PdvProductList(
+                      items: displayProducts,
+                      query: productState.query,
+                      hasMore: productState.hasMore,
+                      isLoading: productState.isLoading,
+                      canAdd: canAddCatalog,
+                      addingProductId: cartState.busyLineId,
+                      onAdd: (product) => unawaited(_addProduct(product)),
+                      onLoadMore: () =>
+                          productController.goToPage(productState.page + 1),
+                      bottomPadding: catalogListBottomPadding,
+                    )
+                  : PdvProductTable(
+                      items: productState.items,
+                      query: productState.query,
+                      canAdd: canAddCatalog,
+                      addingProductId: cartState.busyLineId,
+                      onAdd: (product) => unawaited(_addProduct(product)),
+                    )
+              : isMobile
+                  ? PdvServiceList(
+                      items: serviceState.items,
+                      query: serviceState.query,
+                      canAdd: canAddCatalog,
+                      onAdd: (service) => unawaited(_addService(service)),
+                      bottomPadding: catalogListBottomPadding,
+                    )
+                  : PdvServiceTable(
+                      items: serviceState.items,
+                      query: serviceState.query,
+                      canAdd: canAddCatalog,
+                      onAdd: (service) => unawaited(_addService(service)),
+                    ),
         ),
-        if (!isMobile) ...[
+        if (!isMobile && catalogFooter != null) ...[
           SizedBox(height: s.sm),
           catalogFooter,
         ],
@@ -714,8 +710,10 @@ class _PdvPageState extends ConsumerState<PdvPage>
               Column(
                 children: [
                   Expanded(child: mobileCatalog),
-                  SizedBox(height: s.sm),
-                  catalogFooter,
+                  if (!isMobile && catalogFooter != null) ...[
+                    SizedBox(height: s.sm),
+                    catalogFooter,
+                  ],
                 ],
               ),
               Positioned(
@@ -732,7 +730,7 @@ class _PdvPageState extends ConsumerState<PdvPage>
                         size: t.iconSm,
                       ),
                       label: Text(
-                        '$cartItemCount Itens • ${_formatMoney(cartState.total)}',
+                        '$cartItemCount Itens • ${pdvFormatMoney(cartState.total)}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -752,354 +750,6 @@ class _PdvPageState extends ConsumerState<PdvPage>
           onKeyEvent: _handleKeyEvent,
           child: content,
         );
-  }
-}
-
-class _ProductCatalogList extends StatelessWidget {
-  const _ProductCatalogList({
-    required this.items,
-    required this.query,
-    required this.tokens,
-    required this.isDesktop,
-    required this.isMobile,
-    required this.canAdd,
-    required this.addingProductId,
-    required this.onAdd,
-    required this.mobileCartButtonHeight,
-  });
-
-  final List<Product> items;
-  final String query;
-  final PharmaTokens tokens;
-  final bool isDesktop;
-  final bool isMobile;
-  final bool canAdd;
-  final String? addingProductId;
-  final void Function(Product product) onAdd;
-  final double mobileCartButtonHeight;
-
-  @override
-  Widget build(BuildContext context) {
-    final s = context.spacing;
-    if (items.isEmpty) {
-      return _CatalogEmptyState(
-        icon: Icons.inventory_2_outlined,
-        title: query.isEmpty
-            ? 'Nenhum produto disponível.'
-            : 'Nenhum produto encontrado.',
-        subtitle: query.isEmpty ? null : 'Tente outro nome, código ou EAN.',
-        tokens: tokens,
-      );
-    }
-
-    return ListView.separated(
-      padding: isMobile
-          ? EdgeInsets.only(bottom: mobileCartButtonHeight + s.xl)
-          : null,
-      itemCount: items.length,
-      separatorBuilder: (_, _) => SizedBox(height: s.sm),
-      itemBuilder: (context, i) {
-        final product = items[i];
-        final stockIndisponivel = product.estoqueAtual <= 0;
-        final stockColor =
-            stockIndisponivel ? tokens.posDanger : tokens.textMuted;
-        final lineId = 'produto:${product.id}';
-        final isAddingThis = addingProductId == lineId;
-        final canInteract = canAdd && !isAddingThis;
-
-        return Material(
-          color: Colors.transparent,
-          child: Ink(
-            decoration: BoxDecoration(
-              color: stockIndisponivel
-                  ? tokens.posDanger.withValues(alpha: 0.05)
-                  : tokens.card,
-              borderRadius: BorderRadius.circular(tokens.radiusMd),
-              border: Border.all(
-                color: stockIndisponivel
-                    ? tokens.posDanger.withValues(alpha: 0.35)
-                    : tokens.border.withValues(alpha: 0.45),
-              ),
-            ),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(tokens.radiusMd),
-              onTap: canInteract ? () => onAdd(product) : null,
-              child: Padding(
-                padding: EdgeInsets.fromLTRB(
-                  isMobile ? s.md : s.lg,
-                  isMobile ? s.sm : s.md,
-                  isMobile ? s.sm : s.lg,
-                  isMobile ? s.sm : s.md,
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      flex: isDesktop ? 8 : 7,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            product.nome,
-                            style:
-                                Theme.of(context).textTheme.erpTabLabel.copyWith(
-                                      color: tokens.textPrimary,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if ((product.substanciaActiva ?? '').isNotEmpty) ...[
-                            SizedBox(height: s.xxs),
-                            Text(
-                              product.substanciaActiva!,
-                              style: Theme.of(context).textTheme.erpCaption.copyWith(color: tokens.textSecondary),
-                            ),
-                          ],
-                          SizedBox(height: s.xs),
-                          ProdutoCategoriaChip(categoria: product.categoria),
-                          SizedBox(height: s.xs),
-                          Text(
-                            'PV ${_formatMoney(product.precoVenda)} • Date Exp. ${_formatDate(product.dataValidade)} • Lote ${product.lote ?? '-'} • Stock ${product.estoqueAtual.toInt()}',
-                            style: Theme.of(context).textTheme.erpCaption.copyWith(color: stockColor),
-                          ),
-                          if (product.requiresPsychotropicBook || stockIndisponivel)
-                            Padding(
-                              padding: EdgeInsets.only(top: s.xs),
-                              child: Wrap(
-                                spacing: s.xs,
-                                runSpacing: s.xs,
-                                children: [
-                                  if (product.requiresPsychotropicBook)
-                                    Chip(
-                                      visualDensity: VisualDensity.compact,
-                                      label: const Text('Psicotrópico'),
-                                      backgroundColor: tokens.psychotropic
-                                          .withValues(alpha: 0.2),
-                                    ),
-                                  if (stockIndisponivel)
-                                    Chip(
-                                      avatar: Icon(
-                                        Icons.warning_amber_rounded,
-                                        size: tokens.iconSm,
-                                        color: tokens.posDanger,
-                                      ),
-                                      visualDensity: VisualDensity.compact,
-                                      label: const Text('Stock indisponível'),
-                                      labelStyle: Theme.of(context).textTheme.erpCaption.copyWith(color: tokens.posDanger, fontWeight: FontWeight.w600),
-                                      backgroundColor: tokens.posDanger
-                                          .withValues(alpha: 0.12),
-                                      side: BorderSide(
-                                        color: tokens.posDanger
-                                            .withValues(alpha: 0.2),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(width: s.sm),
-                    SizedBox(
-                      width: isMobile ? tokens.minTouchTarget : null,
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: FilledButton(
-                          onPressed: canInteract ? () => onAdd(product) : null,
-                          child: isAddingThis
-                              ? PharmaButtonLoader(color: tokens.bgPrimary)
-                              : Text(isMobile ? '+' : 'Add'),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _ServiceCatalogList extends StatelessWidget {
-  const _ServiceCatalogList({
-    required this.items,
-    required this.query,
-    required this.tokens,
-    required this.isDesktop,
-    required this.isMobile,
-    required this.canAdd,
-    required this.onAdd,
-    required this.mobileCartButtonHeight,
-  });
-
-  final List<PdvService> items;
-  final String query;
-  final PharmaTokens tokens;
-  final bool isDesktop;
-  final bool isMobile;
-  final bool canAdd;
-  final void Function(PdvService service) onAdd;
-  final double mobileCartButtonHeight;
-
-  @override
-  Widget build(BuildContext context) {
-    final s = context.spacing;
-    if (items.isEmpty) {
-      return _CatalogEmptyState(
-        icon: Icons.medical_services_outlined,
-        title: query.isEmpty
-            ? 'Nenhum serviço disponível.'
-            : 'Nenhum serviço encontrado.',
-        subtitle: query.isEmpty ? null : 'Tente outro nome de serviço.',
-        tokens: tokens,
-      );
-    }
-
-    return ListView.separated(
-      padding: isMobile
-          ? EdgeInsets.only(bottom: mobileCartButtonHeight + s.xl)
-          : null,
-      itemCount: items.length,
-      separatorBuilder: (_, _) => SizedBox(height: s.sm),
-      itemBuilder: (context, i) {
-        final service = items[i];
-        return Material(
-          color: tokens.card,
-          borderRadius: BorderRadius.circular(tokens.radiusMd),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(tokens.radiusMd),
-            onTap: canAdd ? () => onAdd(service) : null,
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(
-                isMobile ? s.md : s.lg,
-                isMobile ? s.sm : s.md,
-                isMobile ? s.sm : s.lg,
-                isMobile ? s.sm : s.md,
-              ),
-              child: Row(
-                children: [
-                  Expanded(
-                    flex: isDesktop ? 8 : 7,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          service.nome,
-                          style:
-                              Theme.of(context).textTheme.erpTabLabel.copyWith(
-                                    color: tokens.textPrimary,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        if ((service.tipoServicoClinico ?? '').isNotEmpty) ...[
-                          SizedBox(height: s.xxs),
-                          Text(
-                            service.tipoServicoClinico!,
-                            style: Theme.of(context).textTheme.erpCaption.copyWith(color: tokens.textSecondary),
-                          ),
-                        ],
-                        SizedBox(height: s.xs),
-                        Text(
-                          'PV ${_formatMoney(service.preco)} • Serviço clínico ${service.tipoServicoClinico ?? '-'}',
-                          style: Theme.of(context).textTheme.erpCaption.copyWith(color: tokens.textMuted),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(width: s.sm),
-                  SizedBox(
-                    width: isMobile ? tokens.minTouchTarget : null,
-                    child: Align(
-                      alignment: Alignment.centerRight,
-                      child: FilledButton(
-                        onPressed: canAdd ? () => onAdd(service) : null,
-                        child: Text(isMobile ? '+' : 'Add'),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _CatalogEmptyState extends StatelessWidget {
-  const _CatalogEmptyState({
-    required this.icon,
-    required this.title,
-    required this.tokens,
-    this.subtitle,
-  });
-
-  final IconData icon;
-  final String title;
-  final String? subtitle;
-  final PharmaTokens tokens;
-
-  @override
-  Widget build(BuildContext context) {
-    final s = context.spacing;
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: tokens.minTouchTarget, color: tokens.border),
-          SizedBox(height: s.md),
-          Text(
-            title,
-            style: Theme.of(context).textTheme.erpCaption.copyWith(color: tokens.textMuted, fontWeight: FontWeight.w600),
-          ),
-          if (subtitle != null)
-            Text(
-              subtitle!,
-              style: Theme.of(context).textTheme.erpCaption.copyWith(color: tokens.textMuted),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ServiceResultsBar extends StatelessWidget {
-  const _ServiceResultsBar({
-    required this.itemCount,
-    required this.query,
-  });
-
-  final int itemCount;
-  final String query;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
-    final s = context.spacing;
-
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: s.md,
-        vertical: s.sm,
-      ),
-      decoration: BoxDecoration(
-        color: t.card,
-        borderRadius: BorderRadius.circular(t.radiusMd),
-        border: Border.all(color: t.border.withValues(alpha: 0.5)),
-      ),
-      child: Text(
-        itemCount == 0
-            ? (query.isEmpty ? 'Sem serviços disponíveis' : 'Sem serviços para esta pesquisa')
-            : 'Mostrando $itemCount serviço(s)',
-        style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
-      ),
-    );
   }
 }
 
@@ -1217,7 +867,6 @@ class _CartPane extends StatelessWidget {
                     'CARRINHO ATUAL',
                     style: Theme.of(context).textTheme.erpOverline.copyWith(
                           color: t.textMuted,
-                          fontWeight: FontWeight.w700,
                         ),
                   ),
                   Icon(
@@ -1230,26 +879,9 @@ class _CartPane extends StatelessWidget {
             Divider(height: compact ? s.md : s.xxl, color: t.border.withValues(alpha: 0.35)),
             Expanded(
               child: cart.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.remove_shopping_cart_rounded,
-                            size: t.minTouchTarget,
-                            color: t.border,
-                          ),
-                          SizedBox(height: s.md),
-                          Text(
-                            'Carrinho vazio',
-                            style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted, fontWeight: FontWeight.w600),
-                          ),
-                          Text(
-                            'Escaneie ou pesquise um produto ou serviço',
-                            style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
-                          ),
-                        ],
-                      ),
+                  ? const ModuleEmptyState(
+                      title: 'Carrinho vazio',
+                      subtitle: 'Escaneie ou pesquise um produto ou serviço',
                     )
                   : ListView.separated(
                       itemCount: cart.length,
@@ -1268,14 +900,15 @@ class _CartPane extends StatelessWidget {
                                   children: [
                                     Text(
                                       line.nome,
-                                      style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                                            color: t.textPrimary,
-                                            fontWeight: FontWeight.w700,
-                                          ),
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.erpLabel.copyWith(
+                                        color: t.textPrimary,
+                                      ),
                                     ),
                                     SizedBox(height: s.xxs),
                                     Text(
-                                      '${_formatMoney(line.precoUnitario)} / un',
+                                      '${pdvFormatMoney(line.precoUnitario)} / un',
                                       style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
                                     ),
                                     if ((line.service?.tipoServicoClinico ?? '').isNotEmpty)
@@ -1290,11 +923,12 @@ class _CartPane extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Text(
-                                    _formatMoney(line.lineTotal),
-                                    style: Theme.of(context).textTheme.erpTabLabel.copyWith(
-                                          color: t.brandGreen,
-                                          fontWeight: FontWeight.w800,
-                                        ),
+                                    pdvFormatMoney(line.lineTotal),
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.erpCardTitle.copyWith(
+                                      color: t.brandGreen,
+                                    ),
                                   ),
                                   SizedBox(height: s.xs),
                                   Row(
@@ -1313,7 +947,11 @@ class _CartPane extends StatelessWidget {
                                         padding: EdgeInsets.symmetric(horizontal: s.sm),
                                         child: Text(
                                           '${line.qty}',
-                                          style: Theme.of(context).textTheme.erpLabel.copyWith(fontWeight: FontWeight.bold, color: t.textPrimary),
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.erpLabel.copyWith(
+                                            color: t.textPrimary,
+                                          ),
                                         ),
                                       ),
                                       SizedBox.square(
@@ -1362,7 +1000,7 @@ class _CartPane extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('Subtotal', style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textSecondary)),
-                    Text(_formatMoney(subtotal), style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary)),
+                    Text(pdvFormatMoney(subtotal), style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary)),
                   ],
                 ),
                 SizedBox(height: s.xs),
@@ -1370,7 +1008,7 @@ class _CartPane extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('Desconto', style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textSecondary)),
-                    Text('- ${_formatMoney(discount)}', style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.posDanger)),
+                    Text('- ${pdvFormatMoney(discount)}', style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.posDanger)),
                   ],
                 ),
                 SizedBox(height: s.xs),
@@ -1378,7 +1016,7 @@ class _CartPane extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(taxLabel, style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textSecondary)),
-                    Text(_formatMoney(tax), style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary)),
+                    Text(pdvFormatMoney(tax), style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary)),
                   ],
                 ),
               ],
@@ -1395,13 +1033,17 @@ class _CartPane extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('TOTAL', style: Theme.of(context).textTheme.erpTabLabel.copyWith(color: t.brandGreen, fontWeight: FontWeight.w900)),
                   Text(
-                    _formatMoney(total),
-                    style: Theme.of(context).textTheme.erpCardTitle.copyWith(
-                          color: t.brandGreen,
-                          fontWeight: FontWeight.w900,
-                        ),
+                    'TOTAL',
+                    style: Theme.of(
+                      context,
+                    ).textTheme.erpLabel.copyWith(color: t.brandGreen),
+                  ),
+                  Text(
+                    pdvFormatMoney(total),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.erpAppBarTitle.copyWith(color: t.brandGreen),
                   ),
                 ],
               ),
@@ -1436,107 +1078,6 @@ class _CartPane extends StatelessWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _ProductsPaginationBar extends StatelessWidget {
-  const _ProductsPaginationBar({
-    required this.page,
-    required this.pageSize,
-    required this.itemCount,
-    required this.hasMore,
-    required this.onPrevious,
-    required this.onNext,
-  });
-
-  final int page;
-  final int pageSize;
-  final int itemCount;
-  final bool hasMore;
-  final VoidCallback? onPrevious;
-  final VoidCallback? onNext;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
-    final s = context.spacing;
-    final isMobile = MediaQuery.sizeOf(context).width <= 700;
-    final start = itemCount == 0 ? 0 : ((page - 1) * pageSize) + 1;
-    final end = itemCount == 0 ? 0 : start + itemCount - 1;
-    final resultsLabel = itemCount == 0
-        ? 'Sem resultados nesta página'
-        : 'Mostrando $start-$end';
-
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: s.md, vertical: s.sm),
-      decoration: BoxDecoration(
-        color: t.card,
-        borderRadius: BorderRadius.circular(t.radiusMd),
-        border: Border.all(color: t.border.withValues(alpha: 0.5)),
-      ),
-      child: isMobile
-          ? Row(
-              children: [
-                OutlinedButton(
-                  onPressed: onPrevious,
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: Size(t.minTouchTarget, t.minTouchTarget),
-                    padding: EdgeInsets.symmetric(horizontal: s.sm),
-                  ),
-                  child: Icon(Icons.chevron_left_rounded, size: t.iconSm),
-                ),
-                SizedBox(width: s.sm),
-                Expanded(
-                  child: Text(
-                    '$resultsLabel • Página $page',
-                    style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                SizedBox(width: s.sm),
-                FilledButton(
-                  onPressed: onNext,
-                  style: FilledButton.styleFrom(
-                    minimumSize: Size(t.minTouchTarget, t.minTouchTarget),
-                    padding: EdgeInsets.symmetric(horizontal: s.sm),
-                  ),
-                  child: Icon(Icons.chevron_right_rounded, size: t.iconSm),
-                ),
-              ],
-            )
-          : Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  resultsLabel,
-                  style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
-                ),
-                SizedBox(height: s.sm),
-                Row(
-                  children: [
-                    OutlinedButton.icon(
-                      onPressed: onPrevious,
-                      icon: const Icon(Icons.chevron_left_rounded),
-                      label: const Text('Anterior'),
-                    ),
-                    SizedBox(width: s.sm),
-                    Text(
-                      'Página $page',
-                      style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
-                    ),
-                    const Spacer(),
-                    FilledButton.icon(
-                      onPressed: onNext,
-                      icon: const Icon(Icons.chevron_right_rounded),
-                      label: Text(hasMore ? 'Próxima' : 'Fim'),
-                    ),
-                  ],
-                ),
-              ],
-            ),
     );
   }
 }

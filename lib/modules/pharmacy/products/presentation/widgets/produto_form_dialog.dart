@@ -455,7 +455,7 @@ Future<ProdutoFormDialogResult?> showProdutoFormDialog(
         return Scaffold(
           appBar: AppBar(title: title),
           body: SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(formContext.spacing.lg),
             child: ProdutoFormDialog(product: product, embedded: true),
           ),
         );
@@ -484,11 +484,12 @@ class _ProdutoFormSideSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.spacing;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 8, 8),
+          padding: EdgeInsets.fromLTRB(s.lg, s.lg, s.sm, s.sm),
           child: Row(
             children: [
               Expanded(
@@ -508,7 +509,7 @@ class _ProdutoFormSideSheet extends StatelessWidget {
         const Divider(height: 1),
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(s.lg),
             child: child,
           ),
         ),

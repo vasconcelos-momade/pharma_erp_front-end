@@ -11,6 +11,8 @@ import 'pharma_healthcare_tokens.dart';
 import 'pharma_navigation_tokens.dart';
 import 'pharma_radius_tokens.dart';
 import 'typography.dart';
+import 'width_tokens.dart';
+import 'elevation_tokens.dart';
 import 'dashboard_theme.dart';
 import 'table_theme.dart';
 import 'healthcare_theme.dart';
@@ -28,21 +30,23 @@ abstract final class AppTheme {
     final colorTokens = PharmaColorTokens.fromLegacy(tokens: tokens, scheme: scheme);
     final radiusTokens = PharmaRadiusTokens.fromLegacy(tokens);
     final borderTokens = PharmaBorderTokens.fromLegacy(tokens);
+    final widthTokens = WidthTokens.standard();
+    final elevationTokens = ElevationTokens.standard();
     final navigationTokens =
         PharmaNavigationTokens.fromLegacy(tokens: tokens, scheme: scheme);
     final dashboardTokens = PharmaDashboardTokens.fromLegacy(tokens);
     final financeTokens = PharmaFinanceTokens.fromLegacy(tokens);
     final healthcareTokens = PharmaHealthcareTokens.fromLegacy(tokens);
 
+    final textTheme = AppTypography.textThemeFor(brightness).apply(
+      bodyColor: tokens.textPrimary,
+      displayColor: tokens.textPrimary,
+    );
+
     final dashboardTheme = DashboardTheme.fromLegacy(tokens);
-    final tableTheme = TableTheme.fromLegacy(tokens);
+    final tableTheme = TableTheme.fromLegacy(tokens, textTheme: textTheme);
     final specificHealthcareTheme = HealthcareTheme.fromLegacy(tokens);
     final specificNavigationTheme = NavigationThemeData.fromLegacy(tokens);
-
-    final textTheme = AppTypography.textThemeFor(brightness).apply(
-        bodyColor: tokens.textPrimary,
-        displayColor: tokens.textPrimary,
-      );
 
     return ThemeData(
       useMaterial3: true,
@@ -54,6 +58,8 @@ abstract final class AppTheme {
         colorTokens,
         radiusTokens,
         borderTokens,
+        widthTokens,
+        elevationTokens,
         navigationTokens,
         dashboardTokens,
         financeTokens,
@@ -75,7 +81,7 @@ abstract final class AppTheme {
         ),
         toolbarTextStyle: textTheme.erpTabLabel.copyWith(color: tokens.textSecondary),
       ),
-      chipTheme: PharmaComponentTheme.chip(tokens, scheme, isDark: isDark),
+      chipTheme: PharmaComponentTheme.chip(tokens, scheme, isDark: isDark, textTheme: textTheme),
       tooltipTheme: PharmaComponentTheme.tooltip(tokens, scheme),
       snackBarTheme: PharmaComponentTheme.snackBar(tokens, scheme),
       scrollbarTheme: PharmaComponentTheme.scrollbar(tokens),
@@ -104,11 +110,20 @@ abstract final class AppTheme {
       radioTheme: PharmaComponentTheme.radio(scheme),
       sliderTheme: PharmaComponentTheme.slider(scheme),
       dividerTheme: PharmaComponentTheme.divider(tokens, isDark: isDark),
-      dataTableTheme: PharmaComponentTheme.dataTable(tokens),
+      dataTableTheme: PharmaComponentTheme.dataTable(tokens, textTheme: textTheme),
       listTileTheme: PharmaComponentTheme.listTile(tokens),
-      navigationRailTheme: PharmaComponentTheme.navigationRail(tokens, scheme),
+      navigationRailTheme: PharmaComponentTheme.navigationRail(
+        tokens,
+        scheme,
+        textTheme: textTheme,
+      ),
       navigationDrawerTheme: PharmaComponentTheme.navigationDrawer(tokens, scheme, isDark: isDark),
-      navigationBarTheme: PharmaComponentTheme.navigationBar(tokens, scheme, isDark: isDark),
+      navigationBarTheme: PharmaComponentTheme.navigationBar(
+        tokens,
+        scheme,
+        isDark: isDark,
+        textTheme: textTheme,
+      ),
       progressIndicatorTheme: PharmaComponentTheme.progressIndicator(scheme),
       tabBarTheme: PharmaComponentTheme.tabBar(tokens, scheme, isDark: isDark, textTheme: textTheme),
       pageTransitionsTheme: const PageTransitionsTheme(

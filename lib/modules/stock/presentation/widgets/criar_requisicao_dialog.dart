@@ -231,7 +231,7 @@ class _CriarRequisicaoDialogState extends ConsumerState<CriarRequisicaoDialog>
                         _selectedFornecedorNome = supplier.nome;
                       }),
                       trailing: isSelected
-                          ? const Icon(Icons.check_circle, color: Colors.green)
+                          ? Icon(Icons.check_circle, color: context.pharmaTokens.brandGreen)
                           : null,
                     );
                   },
@@ -376,7 +376,7 @@ class _CriarRequisicaoDialogState extends ConsumerState<CriarRequisicaoDialog>
         labelColor: t.textPrimary,
         unselectedLabelColor: t.textMuted,
         indicatorColor: t.brandBlue,
-        dividerColor: Colors.transparent,
+        dividerColor: t.card,
         labelPadding: EdgeInsets.symmetric(horizontal: s.sm),
         tabs: [
           Tab(height: t.minTouchTarget, text: 'Compra'),

@@ -39,6 +39,8 @@ class _SearchableDropdownFieldState<T> extends State<SearchableDropdownField<T>>
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
+    final s = context.spacing;
+    final widths = context.widths;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -47,7 +49,7 @@ class _SearchableDropdownFieldState<T> extends State<SearchableDropdownField<T>>
           widget.label,
           style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
         ),
-        const SizedBox(height: AppSpacing.sm),
+        SizedBox(height: s.sm),
         InkWell(
           onTap: () async {
             _search.clear();
@@ -61,8 +63,8 @@ class _SearchableDropdownFieldState<T> extends State<SearchableDropdownField<T>>
                     style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textPrimary),
                   ),
                   content: SizedBox(
-                    width: 420,
-                    height: 360,
+                    width: widths.formMax * 0.65,
+                    height: widths.sideSheetMax * 0.65,
                     child: StatefulBuilder(
                       builder: (context, setLocal) {
                         final panelFiltered = widget.items
@@ -84,7 +86,7 @@ class _SearchableDropdownFieldState<T> extends State<SearchableDropdownField<T>>
                                 hintText: widget.hintText,
                               ),
                             ),
-                            const SizedBox(height: AppSpacing.md),
+                            SizedBox(height: s.md),
                             Expanded(
                               child: ListView.builder(
                                 itemCount: panelFiltered.length,
@@ -125,7 +127,7 @@ class _SearchableDropdownFieldState<T> extends State<SearchableDropdownField<T>>
               _selected == null ? 'Toque para escolher' : widget.display(_selected as T),
               style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
                     color: _selected == null ? t.textMuted : t.textPrimary,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: Theme.of(context).textTheme.erpLabel.fontWeight,
                   ),
             ),
           ),

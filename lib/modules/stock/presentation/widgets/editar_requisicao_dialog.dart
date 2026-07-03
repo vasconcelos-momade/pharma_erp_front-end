@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/design_metrics.dart';
+import '../../../../core/theme/design_tokens.dart';
 import '../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
 import '../../domain/entities/fornecedor.dart';
@@ -214,7 +215,7 @@ class _EditarRequisicaoDialogState extends ConsumerState<EditarRequisicaoDialog>
                         _selectedFornecedorNome = supplier.nome;
                       }),
                       trailing: isSelected
-                          ? const Icon(Icons.check_circle, color: Colors.green)
+                          ? Icon(Icons.check_circle, color: context.pharmaTokens.brandGreen)
                           : null,
                     );
                   },

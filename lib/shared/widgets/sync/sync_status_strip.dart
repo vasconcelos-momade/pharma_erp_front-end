@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/design_metrics.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/theme/extensions.dart';
-import '../../../core/theme/spacing.dart';
 
 enum SyncVisualState { online, syncing, offline, conflict }
 
@@ -26,6 +26,8 @@ class SyncStatusStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
+    final s = context.spacing;
+    final textTheme = Theme.of(context).textTheme;
     final (Color fg, Color bg, IconData icon, String title, String subtitle) = switch (state) {
       SyncVisualState.online => (
           t.brandGreen,
@@ -62,17 +64,17 @@ class SyncStatusStrip extends StatelessWidget {
         message: '$title — $subtitle',
         child: Material(
           color: bg,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(t.radiusMd),
           child: InkWell(
             onTap: onTap,
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(t.radiusMd),
             child: Container(
-              padding: const EdgeInsets.all(8),
+              padding: EdgeInsets.all(s.sm),
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(t.radiusMd),
                 border: Border.all(color: fg.withValues(alpha: 0.28)),
               ),
-              child: Icon(icon, size: 18, color: fg),
+              child: Icon(icon, size: t.iconSm, color: fg),
             ),
           ),
         ),
@@ -86,7 +88,7 @@ class SyncStatusStrip extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(t.radiusMd),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+          padding: EdgeInsets.symmetric(horizontal: s.md, vertical: s.sm),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(t.radiusMd),
             border: Border.all(color: fg.withValues(alpha: 0.28)),
@@ -94,26 +96,22 @@ class SyncStatusStrip extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 18, color: fg),
-              const SizedBox(width: AppSpacing.sm),
+              Icon(icon, size: t.iconSm, color: fg),
+              SizedBox(width: s.sm),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     title.toUpperCase(),
-                    style: Theme.of(context).textTheme.erpOverline.copyWith(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w900,
+                    style: textTheme.erpOverline.copyWith(
                       letterSpacing: 1.2,
                       color: fg,
                     ),
                   ),
                   Text(
                     subtitle,
-                    style: Theme.of(context).textTheme.erpOverline.copyWith(
-                      fontSize: 8,
-                      fontWeight: FontWeight.w700,
+                    style: textTheme.erpCaption.copyWith(
                       color: t.textMuted,
                       letterSpacing: 0.4,
                     ),

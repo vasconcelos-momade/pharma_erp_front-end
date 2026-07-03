@@ -4,12 +4,13 @@ import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/extensions.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../shared/widgets/cards/enterprise_list_card.dart';
+import '../../../../shared/widgets/feedback/module_data_states.dart';
+import '../../../../shared/widgets/layout/enterprise_module_search_bar.dart';
 import '../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../../../shared/widgets/tables/enterprise_pagination.dart';
 import '../../../pharmacy/products/domain/entities/categoria_produto.dart';
 import '../../../pharmacy/products/domain/entities/product.dart';
 import '../../../pharmacy/products/presentation/providers/product_provider.dart';
-import '../../../pharmacy/products/presentation/widgets/produto_categoria_chip.dart';
 
 /// Lista de produtos partilhada por Compra, Entrada e Saída.
 class RequisicaoProductsTab extends StatelessWidget {
@@ -45,25 +46,26 @@ class RequisicaoProductsTab extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        TextField(
-          controller: searchController,
-          onChanged: onSearchChanged,
-          decoration: InputDecoration(
-            hintText:
-                'Pesquisar por nome, princípio ativo, lote ou código de barras...',
-            prefixIcon: const Icon(Icons.search_rounded),
-            suffixIcon: IconButton(
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: EnterpriseModuleSearchBar(
+                controller: searchController,
+                hintText:
+                    'Pesquisar por nome, princípio ativo, lote ou código de barras...',
+                enabled: !productState.isLoading,
+                onSubmitted: onSearchChanged,
+                onChanged: onSearchChanged,
+              ),
+            ),
+            SizedBox(width: s.sm),
+            IconButton(
               onPressed: productState.isLoading ? null : onRefreshProducts,
               icon: const Icon(Icons.refresh_rounded),
               tooltip: 'Actualizar catálogo',
             ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(t.radiusMd),
-              borderSide: BorderSide(color: t.border),
-            ),
-            filled: true,
-            fillColor: t.bgPrimary.withValues(alpha: 0.5),
-          ),
+          ],
         ),
         SizedBox(height: s.sm),
         SizedBox(
@@ -112,8 +114,7 @@ class RequisicaoProductsTab extends StatelessWidget {
           child: !productState.isInitialized && productState.isLoading
               ? const Center(child: CircularProgressIndicator())
               : products.isEmpty
-              ? const _RequisicaoProductsEmptyPane(
-                  icon: Icons.inventory_2_outlined,
+              ? const ModuleEmptyState(
                   title: 'Nenhum produto ativo encontrado',
                   subtitle:
                       'Ajuste a pesquisa ou actualize o catálogo para tentar novamente.',
@@ -123,7 +124,7 @@ class RequisicaoProductsTab extends StatelessWidget {
                     if (constraints.maxWidth < 768) {
                       return ListView.separated(
                         itemCount: products.length,
-                        separatorBuilder: (_, _) => SizedBox(height: s.sm),
+                        separatorBuilder: (_, __) => const EnterpriseListDivider(),
                         itemBuilder: (context, index) {
                           final product = products[index];
                           return _RequisicaoProductCard(
@@ -138,15 +139,25 @@ class RequisicaoProductsTab extends StatelessWidget {
                     return EnterpriseDataTable(
                       adaptive: false,
                       showCheckboxColumn: false,
-                      columns: const [
-                        DataColumn(label: Text('PRODUTO')),
-                        DataColumn(label: Text('CATEGORIA')),
-                        DataColumn(label: Text('SUBSTÂNCIA')),
-                        DataColumn(label: Text('DOSAGEM')),
-                        DataColumn(label: Text('LOTE')),
-                        DataColumn(label: Text('VALIDADE')),
-                        DataColumn(label: Text('ESTADO')),
-                        DataColumn(label: Text('AÇÕES')),
+                      columns: [
+                        for (final label in [
+                          'PRODUTO',
+                          'CATEGORIA',
+                          'SUBSTÂNCIA',
+                          'DOSAGEM',
+                          'LOTE',
+                          'VALIDADE',
+                          'ESTADO',
+                          'AÇÕES',
+                        ])
+                          DataColumn(
+                            label: Text(
+                              label,
+                              style: Theme.of(context).textTheme.erpOverline.copyWith(
+                                    color: t.textMuted,
+                                  ),
+                            ),
+                          ),
                       ],
                       rowCount: products.length,
                       rowBuilder: (context, index) {
@@ -299,164 +310,6 @@ class _RequisicaoProductsInlineBanner extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _RequisicaoProductsEmptyPane extends StatelessWidget {
-  const _RequisicaoProductsEmptyPane({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
-    final s = context.spacing;
-    return Center(
-      child: Padding(
-        padding: EdgeInsets.all(s.lg),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 48, color: t.textMuted),
-            SizedBox(height: s.md),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.erpCardTitle.copyWith(
-                    color: t.textPrimary,
-                  ),
-            ),
-            SizedBox(height: s.xs),
-            Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                    color: t.textMuted,
-                  ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class RequisicaoProductsPaginationBar extends StatelessWidget {
-  const RequisicaoProductsPaginationBar({
-    super.key,
-    required this.page,
-    required this.pageSize,
-    required this.itemCount,
-    required this.hasMore,
-    required this.onPrevious,
-    required this.onNext,
-  });
-
-  final int page;
-  final int pageSize;
-  final int itemCount;
-  final bool hasMore;
-  final VoidCallback? onPrevious;
-  final VoidCallback? onNext;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
-    final s = context.spacing;
-    final start = itemCount == 0 ? 0 : ((page - 1) * pageSize) + 1;
-    final end = itemCount == 0 ? 0 : start + itemCount - 1;
-    final resultsLabel = itemCount == 0
-        ? 'Sem resultados nesta página'
-        : 'Mostrando $start-$end';
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final compact = constraints.maxWidth < 520;
-
-        return Container(
-          padding: EdgeInsets.symmetric(horizontal: s.md, vertical: s.sm),
-          decoration: BoxDecoration(
-            color: t.card,
-            borderRadius: BorderRadius.circular(t.radiusMd),
-            border: Border.all(color: t.border.withValues(alpha: 0.5)),
-          ),
-          child: compact
-              ? Row(
-                  children: [
-                    OutlinedButton(
-                      onPressed: onPrevious,
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: Size(t.minTouchTarget, t.minTouchTarget),
-                        padding: EdgeInsets.symmetric(horizontal: s.sm),
-                      ),
-                      child: Icon(Icons.chevron_left_rounded, size: t.iconSm),
-                    ),
-                    SizedBox(width: s.sm),
-                    Expanded(
-                      child: Text(
-                        '$resultsLabel • Página $page',
-                        style: Theme.of(context).textTheme.erpLabel.copyWith(
-                              color: t.textPrimary,
-                            ),
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    SizedBox(width: s.sm),
-                    FilledButton(
-                      onPressed: onNext,
-                      style: FilledButton.styleFrom(
-                        minimumSize: Size(t.minTouchTarget, t.minTouchTarget),
-                        padding: EdgeInsets.symmetric(horizontal: s.sm),
-                      ),
-                      child: Icon(Icons.chevron_right_rounded, size: t.iconSm),
-                    ),
-                  ],
-                )
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      resultsLabel,
-                      style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                            color: t.textMuted,
-                          ),
-                    ),
-                    SizedBox(height: s.sm),
-                    Row(
-                      children: [
-                        OutlinedButton.icon(
-                          onPressed: onPrevious,
-                          icon: const Icon(Icons.chevron_left_rounded),
-                          label: const Text('Anterior'),
-                        ),
-                        const Spacer(),
-                        Text(
-                          'Página $page',
-                          style: Theme.of(context).textTheme.erpLabel.copyWith(
-                                color: t.textPrimary,
-                              ),
-                        ),
-                        const Spacer(),
-                        FilledButton.icon(
-                          onPressed: onNext,
-                          icon: const Icon(Icons.chevron_right_rounded),
-                          label: const Text('Seguinte'),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-        );
-      },
     );
   }
 }

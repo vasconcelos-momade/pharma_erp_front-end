@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
+import '../../../../../shared/widgets/cards/enterprise_list_card.dart';
 import '../../domain/entities/product.dart';
 
 class ProdutoRegulacaoBadges extends StatelessWidget {
@@ -12,41 +13,43 @@ class ProdutoRegulacaoBadges extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
+    final s = context.spacing;
     final badges = <Widget>[];
 
     if (_isMedicamento(product)) {
-      badges.add(_Badge(label: 'Medicamento', color: context.pharmaTokens.brandBlue));
+      badges.add(_badge('Medicamento', t.brandBlue));
     }
     if (product.antimicrobiano) {
-      badges.add(_Badge(label: 'Antimicrobiano', color: t.posWarning));
+      badges.add(_badge('Antimicrobiano', t.posWarning));
     }
     if (product.requiresPsychotropicBook ||
         product.tipoDispensacao == 'PSICOTROPICO' ||
         product.tipoDispensacao == 'NARCOTICO') {
-      badges.add(_Badge(label: 'Psicotrópico', color: t.brandBlue));
+      badges.add(_badge('Psicotrópico', t.brandBlue));
     }
     if (product.requiresPrescription ||
         product.tipoDispensacao == 'RECEITA_OBRIGATORIA' ||
         product.tipoDispensacao == 'RECEITA_CONTROLADA') {
-      badges.add(_Badge(label: 'Receita Obrigatória', color: t.posWarning));
+      badges.add(_badge('Receita Obrigatória', t.posWarning));
     }
 
     if (badges.isEmpty) {
       return Text(
         _dispensacaoLabel(product.tipoDispensacao),
-        style: Theme.of(context).textTheme.erpCaption.copyWith(
-              color: context.pharmaTokens.textMuted,
-            ),
+        style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
       );
     }
 
-    return Wrap(spacing: 4, runSpacing: 4, children: badges);
+    return Wrap(spacing: s.xs, runSpacing: s.xs, children: badges);
+  }
+
+  Widget _badge(String label, Color color) {
+    return EnterpriseStatusChip(label: label, color: color);
   }
 
   bool _isMedicamento(Product product) {
     final nome = product.categoriaNome?.toLowerCase() ?? '';
-    return product.categoria.name == 'medicamento' ||
-        nome.contains('medicament');
+    return product.categoria.name == 'medicamento' || nome.contains('medicament');
   }
 
   String _dispensacaoLabel(String tipo) {
@@ -66,28 +69,5 @@ class ProdutoRegulacaoBadges extends StatelessWidget {
       default:
         return tipo;
     }
-  }
-}
-
-class _Badge extends StatelessWidget {
-  const _Badge({required this.label, required this.color});
-
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withValues(alpha: 0.25)),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.erpCaption.copyWith(color: color),
-      ),
-    );
   }
 }

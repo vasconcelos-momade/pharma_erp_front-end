@@ -27,13 +27,14 @@ class _PropertyTileState extends State<PropertyTile> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.spacing;
     final t = context.pharmaTokens;
     final theme = Theme.of(context);
     final display = widget.value?.trim().isEmpty ?? true ? '—' : widget.value!.trim();
     final needsExpand = widget.expandable && display.length > 80;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: EdgeInsets.only(bottom: s.md),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -43,7 +44,7 @@ class _PropertyTileState extends State<PropertyTile> {
               color: t.textMuted,
             ),
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: s.xs),
           Text(
             display,
             maxLines: _expanded ? null : widget.maxLines,

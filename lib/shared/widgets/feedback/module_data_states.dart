@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/design_metrics.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/theme/extensions.dart';
 
@@ -18,7 +19,7 @@ class ModuleLoadingState extends StatelessWidget {
       itemCount: itemCount,
       separatorBuilder: (_, _) => SizedBox(height: s.sm),
       itemBuilder: (_, _) => Container(
-        height: 56,
+        height: DesignMetrics.topBarCompact,
         decoration: BoxDecoration(
           color: t.card.withValues(alpha: 0.65),
           borderRadius: BorderRadius.circular(t.radiusXl),
@@ -49,11 +50,11 @@ class ModuleErrorState extends StatelessWidget {
     final s = context.spacing;
     return Center(
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 420),
+        constraints: BoxConstraints(maxWidth: context.widths.authCardMax),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 42, color: t.posDanger),
+            Icon(icon, size: DesignMetrics.feedbackIconSize, color: t.posDanger),
             SizedBox(height: s.md),
             Text(
               title,
@@ -100,7 +101,7 @@ class ModuleEmptyState extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.inbox_outlined, size: 40, color: t.textMuted),
+          Icon(Icons.inbox_outlined, size: DesignMetrics.iconMd, color: t.textMuted),
           SizedBox(height: s.md),
           Text(
             title,

@@ -10,23 +10,27 @@ abstract final class SnackbarChannel {
 
   static void showSuccess(BuildContext context, String message) {
     final t = context.pharmaTokens;
+    final scheme = Theme.of(context).colorScheme;
     _show(
       context,
       message: message,
       icon: Icons.check_circle_outline_rounded,
-      iconColor: t.brandGreen,
-      backgroundColor: const Color(0xFF166534),
+      iconColor: scheme.onPrimary,
+      backgroundColor: t.brandGreen,
+      foregroundColor: scheme.onPrimary,
     );
   }
 
   static void showError(BuildContext context, String message) {
     final t = context.pharmaTokens;
+    final scheme = Theme.of(context).colorScheme;
     _show(
       context,
       message: message,
       icon: Icons.error_outline_rounded,
-      iconColor: t.posDanger,
-      backgroundColor: const Color(0xFFB91C1C),
+      iconColor: scheme.onError,
+      backgroundColor: t.posDanger,
+      foregroundColor: scheme.onError,
     );
   }
 
@@ -42,12 +46,14 @@ abstract final class SnackbarChannel {
 
   static void showWarning(BuildContext context, String message) {
     final t = context.pharmaTokens;
+    final scheme = Theme.of(context).colorScheme;
     _show(
       context,
       message: message,
       icon: Icons.warning_amber_rounded,
-      iconColor: t.posWarning,
-      backgroundColor: const Color(0xFF92400E),
+      iconColor: scheme.onPrimary,
+      backgroundColor: t.posWarning,
+      foregroundColor: scheme.onPrimary,
     );
   }
 
@@ -57,27 +63,35 @@ abstract final class SnackbarChannel {
     required IconData icon,
     Color? iconColor,
     Color? backgroundColor,
+    Color? foregroundColor,
   }) {
     final t = context.pharmaTokens;
+    final scheme = Theme.of(context).colorScheme;
+    final resolvedBg = backgroundColor ?? scheme.inverseSurface;
+    final resolvedFg = foregroundColor ??
+        (backgroundColor != null ? scheme.onPrimary : t.textPrimary);
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: backgroundColor ?? t.bgSecondary,
+        backgroundColor: resolvedBg,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(t.radiusMd),
           side: BorderSide(color: t.border.withValues(alpha: 0.6)),
         ),
         content: Row(
           children: [
-            Icon(icon, color: iconColor ?? t.brandGreen, size: DesignMetrics.feedbackIconSize),
+            Icon(
+              icon,
+              color: iconColor ?? t.brandGreen,
+              size: DesignMetrics.feedbackIconSize,
+            ),
             SizedBox(width: t.density.md),
             Expanded(
               child: Text(
                 message,
                 style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                      color:
-                          backgroundColor != null ? Colors.white : t.textPrimary,
+                      color: resolvedFg,
                       fontWeight: FontWeight.w600,
                     ),
               ),

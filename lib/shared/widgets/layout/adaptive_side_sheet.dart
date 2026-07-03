@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_shadows.dart';
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/theme/extensions.dart';
 import '../../../core/theme/motion.dart';
 
 /// Largura do painel lateral conforme o prompt (tablet vs desktop).
@@ -113,6 +114,8 @@ class _AdaptiveSideSheetOverlayState<T> extends State<_AdaptiveSideSheetOverlay<
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
+    final scheme = Theme.of(context).colorScheme;
+    final elevation = context.elevationTokens.level8;
 
     return Positioned.fill(
       child: Material(
@@ -130,7 +133,7 @@ class _AdaptiveSideSheetOverlayState<T> extends State<_AdaptiveSideSheetOverlay<
                   behavior: HitTestBehavior.opaque,
                   onTap: widget.barrierDismissible ? () => _close() : null,
                   child: ColoredBox(
-                    color: Colors.black.withValues(
+                    color: scheme.scrim.withValues(
                       alpha: AdaptiveSideSheetMetrics.backdropOpacity,
                     ),
                   ),
@@ -148,8 +151,8 @@ class _AdaptiveSideSheetOverlayState<T> extends State<_AdaptiveSideSheetOverlay<
                       height: double.infinity,
                       child: Material(
                         color: t.bgPrimary,
-                        elevation: 8,
-                        shadowColor: Colors.black.withValues(alpha: 0.22),
+                        elevation: elevation,
+                        shadowColor: scheme.shadow.withValues(alpha: 0.22),
                         child: DecoratedBox(
                           decoration: BoxDecoration(
                             color: t.bgPrimary,

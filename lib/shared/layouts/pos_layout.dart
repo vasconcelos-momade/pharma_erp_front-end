@@ -6,7 +6,6 @@ import '../../app/router/routes.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../core/theme/extensions.dart';
 import '../../core/theme/dimensions.dart';
-import '../../core/theme/spacing.dart';
 import '../../modules/sales/pdv/presentation/providers/caixa_sessao_provider.dart';
 import '../../modules/sales/pdv/presentation/widgets/abrir_caixa_dialog.dart';
 import '../widgets/buttons/pharma_button_loader.dart';
@@ -34,6 +33,8 @@ class PosLayout extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.pharmaTokens;
+    final s = context.spacing;
+    final scheme = Theme.of(context).colorScheme;
     final width = MediaQuery.sizeOf(context).width;
     final isMobile = width < 640;
     final caixaState = ref.watch(caixaSessaoProvider);
@@ -53,13 +54,13 @@ class PosLayout extends ConsumerWidget {
         children: [
           Container(
             height: AppDimensions.posHeader,
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+            padding: EdgeInsets.symmetric(horizontal: s.xl),
             decoration: BoxDecoration(
               color: t.bgSecondary,
               border: Border(bottom: BorderSide(color: t.border)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.35),
+                  color: scheme.shadow.withValues(alpha: 0.35),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -84,7 +85,7 @@ class PosLayout extends ConsumerWidget {
                         size: narrow ? 22 : 24,
                       ),
                     ),
-                    SizedBox(width: narrow ? AppSpacing.sm : AppSpacing.md),
+                    SizedBox(width: narrow ? s.sm : s.md),
                     Expanded(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -94,10 +95,7 @@ class PosLayout extends ConsumerWidget {
                             'Pharma ERP — PDV',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.erpTabLabel.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: narrow ? 13 : null,
-                                ),
+                            style: Theme.of(context).textTheme.erpTabLabel,
                           ),
                           if (!narrow)
                             Text(
@@ -110,9 +108,9 @@ class PosLayout extends ConsumerWidget {
                       ),
                     ),
                     if (!narrow && caixaState.isLoading)
-                      const Padding(
-                        padding: EdgeInsets.only(right: AppSpacing.sm),
-                        child: PharmaButtonLoader(),
+                      Padding(
+                        padding: EdgeInsets.only(right: s.sm),
+                        child: const PharmaButtonLoader(),
                       ),
                     Tooltip(
                       message: caixaLabel,
@@ -149,13 +147,13 @@ class PosLayout extends ConsumerWidget {
                               ),
                             ),
                     ),
-                    SizedBox(width: narrow ? AppSpacing.sm : AppSpacing.md),
+                    SizedBox(width: narrow ? s.sm : s.md),
                     SyncStatusStrip(
                       state: SyncVisualState.online,
                       pendingCount: 0,
                       compact: narrow,
                     ),
-                    SizedBox(width: narrow ? AppSpacing.sm : AppSpacing.lg),
+                    SizedBox(width: narrow ? s.sm : s.lg),
                     if (narrow)
                       IconButton(
                         tooltip: 'Sair PDV',
@@ -192,7 +190,7 @@ class PosLayout extends ConsumerWidget {
           if (!isMobile)
             Container(
               height: AppDimensions.posFooter,
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
+              padding: EdgeInsets.symmetric(horizontal: s.xl),
               decoration: BoxDecoration(
                 color: t.bgSecondary,
                 border: Border(top: BorderSide(color: t.border)),
@@ -200,9 +198,9 @@ class PosLayout extends ConsumerWidget {
               child: Row(
                 children: [
                   _ShortcutChip(icon: Icons.search, label: 'F2 Busca'),
-                  const SizedBox(width: AppSpacing.md),
+                  SizedBox(width: s.md),
                   _ShortcutChip(icon: Icons.qr_code_scanner, label: 'Scanner'),
-                  const SizedBox(width: AppSpacing.md),
+                  SizedBox(width: s.md),
                   _ShortcutChip(
                     icon: Icons.payments_outlined,
                     label: 'F4 Pagamento',
@@ -230,8 +228,9 @@ class _ShortcutChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
+    final s = context.spacing;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs),
+      padding: EdgeInsets.symmetric(horizontal: s.md, vertical: s.xs),
       decoration: BoxDecoration(
         color: t.card.withValues(alpha: 0.6),
         borderRadius: BorderRadius.circular(t.radiusMd),
@@ -239,8 +238,8 @@ class _ShortcutChip extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: t.brandBlue),
-          const SizedBox(width: AppSpacing.xs),
+          Icon(icon, size: t.iconSm, color: t.brandBlue),
+          SizedBox(width: s.xs),
           Text(
             label,
             style: Theme.of(context).textTheme.erpOverline.copyWith(color: t.textSecondary),

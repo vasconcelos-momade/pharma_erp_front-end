@@ -4,32 +4,30 @@ import '../../../../../core/theme/design_metrics.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
 import '../../../../../shared/widgets/cards/enterprise_list_card.dart';
-import '../../domain/entities/product.dart';
-import 'produto_card.dart';
+import '../../domain/entities/user_entities.dart';
+import 'user_card.dart';
 
-class ProdutoList extends StatefulWidget {
-  const ProdutoList({
+class UserList extends StatefulWidget {
+  const UserList({
     super.key,
     required this.items,
     required this.hasMore,
     required this.isLoading,
     required this.onLoadMore,
     required this.onItemTap,
-    required this.onItemAction,
   });
 
-  final List<Product> items;
+  final List<TenantUserSummary> items;
   final bool hasMore;
   final bool isLoading;
   final VoidCallback onLoadMore;
-  final void Function(Product) onItemTap;
-  final void Function(Product, String) onItemAction;
+  final void Function(TenantUserSummary) onItemTap;
 
   @override
-  State<ProdutoList> createState() => _ProdutoListState();
+  State<UserList> createState() => _UserListState();
 }
 
-class _ProdutoListState extends State<ProdutoList> {
+class _UserListState extends State<UserList> {
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -46,7 +44,8 @@ class _ProdutoListState extends State<ProdutoList> {
 
   void _onScroll() {
     if (!widget.hasMore || widget.isLoading) return;
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent * 0.8) {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent * 0.8) {
       widget.onLoadMore();
     }
   }
@@ -97,11 +96,10 @@ class _ProdutoListState extends State<ProdutoList> {
           return const SizedBox.shrink();
         }
 
-        final product = widget.items[index];
-        return ProdutoCard(
-          product: product,
-          onTap: () => widget.onItemTap(product),
-          onAction: (action) => widget.onItemAction(product, action),
+        final user = widget.items[index];
+        return UserCard(
+          user: user,
+          onTap: () => widget.onItemTap(user),
         );
       },
     );

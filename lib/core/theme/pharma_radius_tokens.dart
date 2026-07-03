@@ -3,6 +3,7 @@ import 'dart:ui' show lerpDouble;
 import 'package:flutter/material.dart';
 
 import 'design_tokens.dart';
+import 'radius.dart';
 
 /// Radius tokens (xs..full) como ThemeExtension especializada.
 @immutable
@@ -29,14 +30,14 @@ class PharmaRadiusTokens extends ThemeExtension<PharmaRadiusTokens> {
 
   factory PharmaRadiusTokens.fromLegacy(PharmaTokens tokens) {
     return PharmaRadiusTokens(
-      xs: 4,
-      sm: tokens.radiusMd,
+      xs: RadiusScale.xs,
+      sm: RadiusScale.sm,
       md: tokens.radiusMd,
-      lg: tokens.radiusXl,
+      lg: RadiusScale.lg,
       xl: tokens.radiusXl,
       x2l: tokens.radius2xl,
       x3l: tokens.radius3xl,
-      full: 999,
+      full: RadiusScale.full,
     );
   }
 

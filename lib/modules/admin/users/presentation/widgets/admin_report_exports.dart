@@ -36,11 +36,24 @@ List<Widget> adminReportActions({
   required bool enabled,
   required String path,
   required Map<String, dynamic> queryParameters,
+  bool expandChild = false,
+  String buttonLabel = 'Exportar',
 }) {
   final reportState = ref.watch(reportControllerProvider);
   final reportController = ref.read(reportControllerProvider.notifier);
   final isBusy = !enabled || reportState.isSubmitting;
   final query = adminReportQuery(queryParameters);
+
+  final trigger = OutlinedButton.icon(
+    onPressed: null,
+    icon: const Icon(Icons.download_outlined),
+    label: Text(
+      buttonLabel,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      softWrap: false,
+    ),
+  );
 
   return [
     PopupMenuButton<String>(
@@ -57,11 +70,7 @@ List<Widget> adminReportActions({
         PopupMenuItem<String>(value: 'pdf', child: Text('Exportar PDF')),
         PopupMenuItem<String>(value: 'csv', child: Text('Exportar CSV')),
       ],
-      child: OutlinedButton.icon(
-        onPressed: null,
-        icon: Icon(Icons.download_outlined),
-        label: Text('Exportar'),
-      ),
+      child: expandChild ? SizedBox(width: double.infinity, child: trigger) : trigger,
     ),
   ];
 }

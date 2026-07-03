@@ -12,7 +12,6 @@ import '../../core/theme/design_tokens.dart';
 import '../../core/theme/extensions.dart';
 import '../../core/theme/pharma_surface.dart';
 import '../../core/theme/dimensions.dart';
-import '../../core/theme/spacing.dart';
 import '../responsive/pharma_screen_layout.dart';
 import '../widgets/navigation/app_nav_config.dart';
 import '../widgets/navigation/sidebar_menu_icon.dart';
@@ -450,6 +449,7 @@ class _Sidebar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
+    final s = context.spacing;
     final w = expanded
         ? AppDimensions.sidebarExpanded
         : AppDimensions.sidebarCollapsed;
@@ -470,10 +470,10 @@ class _Sidebar extends StatelessWidget {
           if (expanded)
             Container(
               height: 3,
-              margin: const EdgeInsets.fromLTRB(
-                AppSpacing.lg,
-                AppSpacing.sm,
-                AppSpacing.lg,
+              margin: EdgeInsets.fromLTRB(
+                s.lg,
+                s.sm,
+                s.lg,
                 0,
               ),
               decoration: BoxDecoration(
@@ -483,10 +483,10 @@ class _Sidebar extends StatelessWidget {
             ),
           Padding(
             padding: EdgeInsets.fromLTRB(
-              expanded ? AppSpacing.lg : AppSpacing.sm,
-              AppSpacing.lg,
-              expanded ? AppSpacing.lg : AppSpacing.sm,
-              AppSpacing.md,
+              expanded ? s.lg : s.sm,
+              s.lg,
+              expanded ? s.lg : s.sm,
+              s.md,
             ),
             child: Stack(
               clipBehavior: Clip.none,
@@ -495,8 +495,8 @@ class _Sidebar extends StatelessWidget {
                   duration: const Duration(milliseconds: 280),
                   curve: Curves.easeOutCubic,
                   padding: EdgeInsets.symmetric(
-                    horizontal: expanded ? AppSpacing.md : AppSpacing.sm,
-                    vertical: expanded ? AppSpacing.md : AppSpacing.sm,
+                    horizontal: expanded ? s.md : s.sm,
+                    vertical: expanded ? s.md : s.sm,
                   ),
                   child: Container(
                     decoration: BoxDecoration(
@@ -521,7 +521,7 @@ class _Sidebar extends StatelessWidget {
                                   size: 22,
                                 ),
                               ),
-                            const SizedBox(width: AppSpacing.md),
+                            SizedBox(width: s.md),
                             Expanded(
                               child: Text(
                                 'PharmaERP',
@@ -585,17 +585,17 @@ class _Sidebar extends StatelessWidget {
           Divider(height: 1, color: t.border.withValues(alpha: 0.45)),
           Padding(
             padding: EdgeInsets.symmetric(
-              horizontal: expanded ? AppSpacing.lg : AppSpacing.xs,
-              vertical: AppSpacing.sm,
+              horizontal: expanded ? s.lg : s.xs,
+              vertical: s.sm,
             ),
             child: expanded
                 ? Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md,
-                          vertical: AppSpacing.sm,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: s.md,
+                          vertical: s.sm,
                         ),
                         decoration: BoxDecoration(
                           color: t.card.withValues(alpha: 0.68),
@@ -614,7 +614,7 @@ class _Sidebar extends StatelessWidget {
                                 borderRadius: BorderRadius.circular(999),
                               ),
                             ),
-                            const SizedBox(width: AppSpacing.sm),
+                            SizedBox(width: s.sm),
                             Expanded(
                               child: Text(
                                 'Sessão activa',
@@ -632,7 +632,7 @@ class _Sidebar extends StatelessWidget {
                           ],
                         ),
                       ),
-                      const SizedBox(height: AppSpacing.sm),
+                      SizedBox(height: s.sm),
                       OutlinedButton.icon(
                         onPressed: onLogout,
                         icon: Icon(
@@ -702,6 +702,7 @@ class _NavList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
+    final s = context.spacing;
     String? currentSection;
     final children = <Widget>[];
 
@@ -709,7 +710,7 @@ class _NavList extends StatelessWidget {
       if (item.isSectionLead) {
         currentSection = item.section;
         if (!expanded) {
-          children.add(const SizedBox(height: AppSpacing.sm));
+          children.add(SizedBox(height: s.sm));
         } else {
           children.add(_ErpNavSectionHeader(title: item.section!));
         }
@@ -721,9 +722,9 @@ class _NavList extends StatelessWidget {
           : '$currentSection · ${item.label}';
 
       final tile = Padding(
-        padding: const EdgeInsets.only(
-          left: AppSpacing.sm,
-          right: AppSpacing.sm,
+        padding: EdgeInsets.only(
+          left: s.sm,
+          right: s.sm,
           top: 1,
           bottom: 1,
         ),
@@ -746,8 +747,8 @@ class _NavList extends StatelessWidget {
                 ),
               ),
               padding: EdgeInsets.symmetric(
-                horizontal: expanded ? AppSpacing.md : AppSpacing.sm,
-                vertical: AppSpacing.sm + 1,
+                horizontal: expanded ? s.md : s.sm,
+                vertical: s.sm + 1,
               ),
               child: Row(
                 children: [
@@ -757,7 +758,7 @@ class _NavList extends StatelessWidget {
                     color: active ? t.brandGreen : t.textSecondary,
                   ),
                   if (expanded) ...[
-                    const SizedBox(width: AppSpacing.md),
+                    SizedBox(width: s.md),
                     Expanded(
                       child: Text(
                         item.label,
@@ -792,11 +793,11 @@ class _NavList extends StatelessWidget {
     return Scrollbar(
       thumbVisibility: expanded,
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.xs,
-          AppSpacing.sm,
-          AppSpacing.xs,
-          AppSpacing.lg,
+        padding: EdgeInsets.fromLTRB(
+          s.xs,
+          s.sm,
+          s.xs,
+          s.lg,
         ),
         children: children,
       ),
@@ -812,18 +813,19 @@ class _ErpNavSectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
+    final s = context.spacing;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.sm,
-        AppSpacing.lg,
-        AppSpacing.sm,
-        AppSpacing.xs,
+      padding: EdgeInsets.fromLTRB(
+        s.sm,
+        s.lg,
+        s.sm,
+        s.xs,
       ),
       child: Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
+        padding: EdgeInsets.symmetric(
+          horizontal: s.md,
+          vertical: s.sm,
         ),
         decoration: BoxDecoration(
           color: t.card.withValues(alpha: 0.72),
@@ -859,6 +861,7 @@ class _DrawerNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
+    final s = context.spacing;
     final drawerChildren = <Widget>[];
 
     for (final item in navItems) {
@@ -870,7 +873,7 @@ class _DrawerNav extends StatelessWidget {
 
       drawerChildren.add(
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+          padding: EdgeInsets.symmetric(horizontal: s.sm),
           child: Material(
             color: active
                 ? t.brandGreen.withValues(alpha: 0.1)
@@ -879,8 +882,8 @@ class _DrawerNav extends StatelessWidget {
             child: ListTile(
               dense: true,
               visualDensity: VisualDensity.compact,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
+              contentPadding: EdgeInsets.symmetric(
+                horizontal: s.md,
               ),
               leading: Icon(
                 item.icon,
@@ -908,9 +911,9 @@ class _DrawerNav extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.all(AppSpacing.xl),
+              padding: EdgeInsets.all(s.xl),
               child: Container(
-                padding: const EdgeInsets.all(AppSpacing.md),
+                padding: EdgeInsets.all(s.md),
                 decoration: BoxDecoration(
                   color: t.card.withValues(alpha: 0.86),
                   borderRadius: BorderRadius.circular(t.radiusLg),
@@ -933,7 +936,7 @@ class _DrawerNav extends StatelessWidget {
                         size: t.iconMd,
                       ),
                     ),
-                    const SizedBox(width: AppSpacing.md),
+                    SizedBox(width: s.md),
                     Expanded(
                       child: Text(
                         'PharmaERP',
@@ -958,11 +961,11 @@ class _DrawerNav extends StatelessWidget {
             ),
             Expanded(child: ListView(children: drawerChildren)),
             Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.lg,
-                AppSpacing.sm,
-                AppSpacing.lg,
-                AppSpacing.lg,
+              padding: EdgeInsets.fromLTRB(
+                s.lg,
+                s.sm,
+                s.lg,
+                s.lg,
               ),
               child: OutlinedButton.icon(
                 onPressed: onLogout,
@@ -977,9 +980,9 @@ class _DrawerNav extends StatelessWidget {
                   alignment: Alignment.centerLeft,
                   side: BorderSide(color: t.posDanger.withValues(alpha: 0.28)),
                   backgroundColor: t.posDanger.withValues(alpha: 0.06),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                    vertical: AppSpacing.md,
+                  padding: EdgeInsets.symmetric(
+                    horizontal: s.md,
+                    vertical: s.md,
                   ),
                 )),
               ),

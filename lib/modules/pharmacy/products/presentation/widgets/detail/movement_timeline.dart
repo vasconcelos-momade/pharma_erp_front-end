@@ -88,7 +88,7 @@ class _MovementTimelineEntry extends StatelessWidget {
                   Expanded(
                     child: Container(
                       width: 2,
-                      margin: const EdgeInsets.symmetric(vertical: 4),
+                      margin: EdgeInsets.symmetric(vertical: s.xs),
                       color: t.border.withValues(alpha: 0.45),
                     ),
                   ),

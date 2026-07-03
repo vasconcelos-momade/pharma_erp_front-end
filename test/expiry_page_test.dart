@@ -22,8 +22,8 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
     tester.takeException();
 
-    expect(find.text('Validades'), findsOneWidget);
     expect(find.text('CANDIGEN CREME'), findsOneWidget);
+    expect(find.text('Expirados'), findsOneWidget);
   });
 }
 

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/design_metrics.dart';
 import '../../../core/theme/design_tokens.dart';
-import '../../../core/theme/typography.dart';
+import '../../../core/theme/extensions.dart';
 import '../../../core/theme/pharma_surface.dart';
-import '../../../core/theme/spacing.dart';
-import '../../responsive/breakpoints.dart';
+import '../../responsive/breakpoints.dart' as responsive;
 import '../../responsive/pharma_screen_layout.dart';
 
 typedef EnterpriseRowBuilder = DataRow Function(BuildContext context, int index);
@@ -62,6 +62,8 @@ class EnterpriseDataTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
+    final s = context.spacing;
+    final textTheme = Theme.of(context).textTheme;
     return LayoutBuilder(
       builder: (context, c) {
         final useCards = adaptive && PharmaScreenLayout.isMobile(context);
@@ -74,22 +76,19 @@ class EnterpriseDataTable extends StatelessWidget {
                 ? const ClampingScrollPhysics()
                 : const NeverScrollableScrollPhysics(),
             itemCount: rowCount,
-            separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.xs),
+            separatorBuilder: (_, _) => SizedBox(height: s.xs),
             itemBuilder: (context, i) {
               final row = rowBuilder(context, i);
               final parts = row.cells
                   .map((e) => _describeCellWidget(e.child))
-                  .where((s) => s.isNotEmpty)
+                  .where((part) => part.isNotEmpty)
                   .toList();
               final title = parts.isNotEmpty ? parts.first : '—';
               final rest = parts.length > 1 ? parts.sublist(1).join(' · ') : null;
               return PharmaSurface(
                 onTap: row.onSelectChanged != null ? () => row.onSelectChanged!(true) : null,
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                    vertical: AppSpacing.sm,
-                  ),
+                  padding: EdgeInsets.symmetric(horizontal: s.md, vertical: s.sm),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -101,27 +100,31 @@ class EnterpriseDataTable extends StatelessWidget {
                               title,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: Theme.of(context).textTheme.erpCardTitle.copyWith(
-                                    height: 1.2,
-                                    color: t.textPrimary,
-                                  ),
+                              style: textTheme.erpCardTitle.copyWith(
+                                height: 1.2,
+                                color: t.textPrimary,
+                              ),
                             ),
                             if (rest != null && rest.isNotEmpty) ...[
-                              const SizedBox(height: 4),
+                              SizedBox(height: s.xs),
                               Text(
                                 rest,
                                 maxLines: 3,
                                 overflow: TextOverflow.ellipsis,
-                                style: Theme.of(context).textTheme.erpCaption.copyWith(
-                                      color: t.textMuted,
-                                      height: 1.25,
-                                    ),
+                                style: textTheme.erpCaption.copyWith(
+                                  color: t.textMuted,
+                                  height: 1.25,
+                                ),
                               ),
                             ],
                           ],
                         ),
                       ),
-                      Icon(Icons.chevron_right_rounded, size: 20, color: t.textMuted),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        size: t.iconSm,
+                        color: t.textMuted,
+                      ),
                     ],
                   ),
                 ),
@@ -136,7 +139,7 @@ class EnterpriseDataTable extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             child: ConstrainedBox(
               constraints: BoxConstraints(
-                minWidth: c.maxWidth.isFinite ? c.maxWidth : Breakpoints.tablet,
+                minWidth: c.maxWidth.isFinite ? c.maxWidth : responsive.Breakpoints.tablet,
               ),
               child: SingleChildScrollView(
                 physics: boundedHeight
@@ -150,19 +153,12 @@ class EnterpriseDataTable extends StatelessWidget {
                   headingRowColor: WidgetStatePropertyAll(
                     t.bgSecondary.withValues(alpha: 0.92),
                   ),
-                  dataRowMinHeight: PharmaScreenLayout.isTablet(context) ? 44 : 40,
-                  dataRowMaxHeight: 72,
-                  horizontalMargin: PharmaScreenLayout.isDesktop(context)
-                      ? AppSpacing.lg
-                      : AppSpacing.md,
-                  columnSpacing: PharmaScreenLayout.isDesktop(context)
-                      ? AppSpacing.xxl
-                      : AppSpacing.lg,
+                  dataRowMinHeight: DesignMetrics.tableRowHeightMin,
+                  dataRowMaxHeight: DesignMetrics.tableRowHeightMax,
+                  horizontalMargin: PharmaScreenLayout.isDesktop(context) ? s.lg : s.md,
+                  columnSpacing: PharmaScreenLayout.isDesktop(context) ? s.xxl : s.lg,
                   columns: columns,
-                  rows: List.generate(
-                    rowCount,
-                    (i) => rowBuilder(context, i),
-                  ),
+                  rows: List.generate(rowCount, (i) => rowBuilder(context, i)),
                 ),
               ),
             ),

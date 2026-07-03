@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/design_metrics.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/theme/extensions.dart';
+import '../cards/enterprise_list_card.dart';
 import 'pharma_pinned_sliver_header.dart';
 
 typedef EnterpriseMobileItemBuilder = Widget Function(BuildContext context, int index);
@@ -104,13 +106,15 @@ class _EnterpriseMobileScrollListState extends State<EnterpriseMobileScrollList>
           ),
         PharmaPinnedSliverHeader(child: widget.stickyHeader),
         if (isEmpty && widget.isLoading)
-          const SliverFillRemaining(
+          SliverFillRemaining(
             hasScrollBody: false,
             child: Center(
               child: SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(strokeWidth: 2),
+                width: DesignMetrics.iconMd,
+                height: DesignMetrics.iconMd,
+                child: CircularProgressIndicator(
+                  strokeWidth: DesignMetrics.buttonLoaderStrokeWidth,
+                ),
               ),
             ),
           )
@@ -126,27 +130,28 @@ class _EnterpriseMobileScrollListState extends State<EnterpriseMobileScrollList>
           )
         else
           SliverPadding(
-            padding: EdgeInsets.fromLTRB(s.md, s.sm, s.md, s.sm),
+            padding: EdgeInsets.only(top: s.sm, bottom: s.sm),
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
-                  final footerIndex = widget.itemCount * 2 - 1;
-                  if (index == footerIndex) {
+                  if (index == widget.itemCount) {
                     if (widget.isLoading) {
-                      return const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 16),
+                      return Padding(
+                        padding: EdgeInsets.symmetric(vertical: s.lg),
                         child: Center(
                           child: SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(strokeWidth: 2),
+                            width: DesignMetrics.iconMd,
+                            height: DesignMetrics.iconMd,
+                            child: CircularProgressIndicator(
+                              strokeWidth: DesignMetrics.buttonLoaderStrokeWidth,
+                            ),
                           ),
                         ),
                       );
                     }
                     if (!widget.hasMore) {
                       return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        padding: EdgeInsets.symmetric(vertical: s.lg),
                         child: Center(
                           child: Text(
                             'Fim da lista',
@@ -158,10 +163,15 @@ class _EnterpriseMobileScrollListState extends State<EnterpriseMobileScrollList>
                     return const SizedBox.shrink();
                   }
 
-                  if (index.isOdd) return SizedBox(height: s.sm);
-                  return widget.itemBuilder(context, index ~/ 2);
+                  return Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (index > 0) const EnterpriseListDivider(),
+                      widget.itemBuilder(context, index),
+                    ],
+                  );
                 },
-                childCount: widget.itemCount * 2,
+                childCount: widget.itemCount + 1,
               ),
             ),
           ),

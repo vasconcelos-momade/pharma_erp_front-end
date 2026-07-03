@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../../core/theme/design_tokens.dart';
-import '../../../../../../core/theme/extensions.dart';
+import '../../../../../../shared/widgets/cards/enterprise_list_card.dart';
 
 /// Badge de estado activo/inactivo.
 class StatusBadge extends StatelessWidget {
@@ -15,17 +15,6 @@ class StatusBadge extends StatelessWidget {
     final color = active ? t.brandGreen : t.posDanger;
     final label = active ? 'Activo' : 'Inactivo';
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withValues(alpha: 0.28)),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.erpCaption.copyWith(color: color),
-      ),
-    );
+    return EnterpriseStatusChip(label: label, color: color);
   }
 }

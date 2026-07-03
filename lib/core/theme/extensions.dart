@@ -8,11 +8,16 @@ import 'motion.dart';
 import 'typography.dart';
 import 'breakpoints.dart';
 import 'pharma_radius_tokens.dart';
+import 'width_tokens.dart';
+import 'elevation_tokens.dart';
 
 export 'typography.dart' show EnterpriseTextTheme, AppTypography;
 export 'spacing.dart';
+export 'spacing_tokens.dart';
 export 'radius.dart';
 export 'elevation.dart';
+export 'elevation_tokens.dart';
+export 'width_tokens.dart';
 export 'shadows.dart';
 export 'motion.dart';
 export 'breakpoints.dart';
@@ -85,8 +90,16 @@ extension ThemeContextExtension on BuildContext {
   /// Shadows
   ShadowsAccess get shadows => const ShadowsAccess();
 
-  /// Elevation
+  /// Elevation (escala numérica)
   ElevationAccess get elevation => const ElevationAccess();
+
+  /// Elevation como ThemeExtension
+  ElevationTokens get elevationTokens =>
+      Theme.of(this).extension<ElevationTokens>() ?? ElevationTokens.standard();
+
+  /// Larguras máximas por contexto
+  WidthTokens get widths =>
+      Theme.of(this).extension<WidthTokens>() ?? WidthTokens.standard();
 
   /// Utilitários de Breakpoints
   bool get isMobile => Breakpoints.isMobile(this);

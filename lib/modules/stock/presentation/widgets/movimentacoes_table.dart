@@ -45,7 +45,10 @@ class MovimentacoesTable extends StatelessWidget {
             DataCell(Text(_formatDateTime(item.createdAt), style: _cellStyle(textTheme, t))),
             DataCell(
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: EdgeInsets.symmetric(
+                  horizontal: context.spacing.sm,
+                  vertical: context.spacing.xs,
+                ),
                 decoration: BoxDecoration(
                   color: tipoColor.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(999),
@@ -62,7 +65,7 @@ class MovimentacoesTable extends StatelessWidget {
             DataCell(
               Text(
                 _formatQty(item.quantidade),
-                style: _cellStyle(textTheme, t).copyWith(fontWeight: FontWeight.w700),
+                style: textTheme.erpLabel.copyWith(color: t.textPrimary),
               ),
             ),
             DataCell(

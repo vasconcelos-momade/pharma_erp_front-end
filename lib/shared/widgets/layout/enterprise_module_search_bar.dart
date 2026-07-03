@@ -12,6 +12,8 @@ class EnterpriseModuleSearchBar extends StatefulWidget {
     this.enabled = true,
     this.onChanged,
     this.maxWidth,
+    this.focusNode,
+    this.autofocus = false,
   });
 
   final TextEditingController controller;
@@ -20,6 +22,8 @@ class EnterpriseModuleSearchBar extends StatefulWidget {
   final bool enabled;
   final ValueChanged<String>? onChanged;
   final double? maxWidth;
+  final FocusNode? focusNode;
+  final bool autofocus;
 
   @override
   State<EnterpriseModuleSearchBar> createState() => _EnterpriseModuleSearchBarState();
@@ -56,6 +60,8 @@ class _EnterpriseModuleSearchBarState extends State<EnterpriseModuleSearchBar> {
     final t = context.pharmaTokens;
     final field = TextField(
       controller: widget.controller,
+      focusNode: widget.focusNode,
+      autofocus: widget.autofocus,
       enabled: widget.enabled,
       onSubmitted: widget.onSubmitted,
       onChanged: widget.onChanged,

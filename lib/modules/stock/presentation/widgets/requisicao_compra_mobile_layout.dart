@@ -4,12 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/extensions.dart';
 import '../../../../core/theme/spacing.dart';
-import '../../../pharmacy/products/presentation/providers/product_provider.dart';
 import '../../domain/entities/requisicao.dart';
 import '../providers/requisicao_provider.dart';
 import 'requisicao_compra_right_pane.dart';
 import 'requisicao_hub_formatters.dart';
-import 'requisicao_products_tab.dart';
 
 class RequisicaoMobilePurchaseSummaryBar extends StatelessWidget {
   const RequisicaoMobilePurchaseSummaryBar({
@@ -115,31 +113,20 @@ class RequisicaoCompraMobileLayout extends StatelessWidget {
     super.key,
     required this.leftPane,
     required this.compraState,
-    required this.productState,
-    required this.productController,
     required this.onOpenPurchasePane,
   });
 
   final Widget leftPane;
   final RequisicaoState compraState;
-  final ProductListState productState;
-  final RequisicaoProductListController productController;
   final VoidCallback onOpenPurchasePane;
 
   @override
   Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
     final s = context.spacing;
     final activePurchase = compraState.activeRequisicao;
-    final showPagination =
-        compraState.activeTab == RequisicaoTab.produtos &&
-        productState.isInitialized;
     final showSummary = activePurchase != null;
-    final paginationHeight = showPagination ? (t.minTouchTarget + s.xl) : 0.0;
     final summaryHeight = showSummary ? 84.0 : 0.0;
-    final footerGap = showPagination && showSummary ? s.sm : 0.0;
-    final bottomOverlayHeight = paginationHeight + summaryHeight + footerGap;
-    final contentBottomPadding = bottomOverlayHeight + s.md;
+    final contentBottomPadding = showSummary ? (summaryHeight + s.md) : 0.0;
 
     return Stack(
       children: [
@@ -149,7 +136,7 @@ class RequisicaoCompraMobileLayout extends StatelessWidget {
             child: leftPane,
           ),
         ),
-        if (showSummary || showPagination)
+        if (showSummary)
           Positioned(
             left: 0,
             right: 0,
@@ -165,29 +152,6 @@ class RequisicaoCompraMobileLayout extends StatelessWidget {
                       child: RequisicaoMobilePurchaseSummaryBar(
                         requisicao: activePurchase,
                         onOpen: onOpenPurchasePane,
-                      ),
-                    ),
-                  if (showSummary && showPagination) SizedBox(height: s.sm),
-                  if (showPagination)
-                    Padding(
-                      padding: EdgeInsets.fromLTRB(s.xs, 0, s.xs, s.xs),
-                      child: RequisicaoProductsPaginationBar(
-                        page: productState.page,
-                        pageSize: productState.pageSize,
-                        itemCount: productState.items.length,
-                        hasMore: productState.hasMore,
-                        onPrevious:
-                            productState.page > 1 && !productState.isLoading
-                            ? () => productController.goToPage(
-                                productState.page - 1,
-                              )
-                            : null,
-                        onNext:
-                            productState.hasMore && !productState.isLoading
-                            ? () => productController.goToPage(
-                                productState.page + 1,
-                              )
-                            : null,
                       ),
                     ),
                 ],
