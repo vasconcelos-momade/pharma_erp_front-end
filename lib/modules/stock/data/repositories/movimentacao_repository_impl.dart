@@ -19,5 +19,7 @@ class MovimentacaoRepositoryImpl implements MovimentacaoRepository {
 }
 
 final movimentacaoRepositoryProvider = Provider<MovimentacaoRepository>((ref) {
-  return MovimentacaoRepositoryImpl(ref.watch(movimentacaoRemoteDataSourceProvider));
+  return MovimentacaoRepositoryImpl(
+    ref.watch(movimentacaoRemoteDataSourceProvider),
+  );
 });

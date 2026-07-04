@@ -63,17 +63,17 @@ class MovimentacoesErrorState extends StatelessWidget {
             SizedBox(height: s.md),
             Text(
               'Não foi possível carregar movimentos',
-              style: Theme.of(context).textTheme.erpCardTitle.copyWith(
-                    color: t.textPrimary,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.erpCardTitle.copyWith(color: t.textPrimary),
             ),
             SizedBox(height: s.xs),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                    color: t.textMuted,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
             ),
             SizedBox(height: s.md),
             FilledButton.icon(
@@ -89,10 +89,7 @@ class MovimentacoesErrorState extends StatelessWidget {
 }
 
 class MovimentacoesEmptyState extends StatelessWidget {
-  const MovimentacoesEmptyState({
-    super.key,
-    this.onClearFilters,
-  });
+  const MovimentacoesEmptyState({super.key, this.onClearFilters});
 
   final VoidCallback? onClearFilters;
 
@@ -110,17 +107,17 @@ class MovimentacoesEmptyState extends StatelessWidget {
             SizedBox(height: s.md),
             Text(
               'Nenhum movimento encontrado',
-              style: Theme.of(context).textTheme.erpCardTitle.copyWith(
-                    color: t.textPrimary,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.erpCardTitle.copyWith(color: t.textPrimary),
             ),
             SizedBox(height: s.xs),
             Text(
               'Ajuste os filtros ou o período para ver entradas, saídas e ajustes.',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                    color: t.textMuted,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
             ),
             if (onClearFilters != null) ...[
               SizedBox(height: s.md),
@@ -159,10 +156,7 @@ class MovimentacoesInfoBanner extends StatelessWidget {
           Icon(Icons.info_outline_rounded, color: t.posWarning),
           SizedBox(width: s.sm),
           Expanded(
-            child: Text(
-              message,
-              style: Theme.of(context).textTheme.erpCaption,
-            ),
+            child: Text(message, style: Theme.of(context).textTheme.erpCaption),
           ),
         ],
       ),

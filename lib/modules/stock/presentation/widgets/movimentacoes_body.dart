@@ -57,8 +57,12 @@ class MovimentacoesBody extends ConsumerWidget {
           pageSize: query.pageSize,
           hasMore: listState.hasMore,
           isBusy: listState.isBusy,
-          onPrev: query.page > 1 ? () => notifier.goToPage(query.page - 1) : null,
-          onNext: listState.hasMore ? () => notifier.goToPage(query.page + 1) : null,
+          onPrev: query.page > 1
+              ? () => notifier.goToPage(query.page - 1)
+              : null,
+          onNext: listState.hasMore
+              ? () => notifier.goToPage(query.page + 1)
+              : null,
           onPageSizeChanged: notifier.setPageSize,
         ),
       ],
@@ -116,10 +120,12 @@ class _MovimentacoesMobileBody extends ConsumerWidget {
             pageSize: query.pageSize,
             hasMore: listState.hasMore,
             isBusy: listState.isBusy,
-            onPrev:
-                query.page > 1 ? () => notifier.goToPage(query.page - 1) : null,
-            onNext:
-                listState.hasMore ? () => notifier.goToPage(query.page + 1) : null,
+            onPrev: query.page > 1
+                ? () => notifier.goToPage(query.page - 1)
+                : null,
+            onNext: listState.hasMore
+                ? () => notifier.goToPage(query.page + 1)
+                : null,
             onPageSizeChanged: notifier.setPageSize,
           ),
         ),
@@ -148,29 +154,28 @@ class _MovimentacoesResultsPane extends ConsumerWidget {
       switchOutCurve: Curves.easeIn,
       child: switch (listState.viewState) {
         MovimentacaoViewState.loading => MovimentacoesLoadingSkeleton(
-            embedded: embedded,
-          ),
+          embedded: embedded,
+        ),
         MovimentacaoViewState.updating => Stack(
-            children: [
-              MovimentacoesTable(items: listState.items),
-              Positioned(
-                left: 0,
-                right: 0,
-                top: 0,
-                child: LinearProgressIndicator(minHeight: s.xxs),
-              ),
-            ],
-          ),
+          children: [
+            MovimentacoesTable(items: listState.items),
+            Positioned(
+              left: 0,
+              right: 0,
+              top: 0,
+              child: LinearProgressIndicator(minHeight: s.xxs),
+            ),
+          ],
+        ),
         MovimentacaoViewState.error => MovimentacoesErrorState(
-            message:
-                listState.errorMessage ?? 'Falha ao carregar movimentos.',
-            onRetry: notifier.refresh,
-          ),
+          message: listState.errorMessage ?? 'Falha ao carregar movimentos.',
+          onRetry: notifier.refresh,
+        ),
         MovimentacaoViewState.empty => MovimentacoesEmptyState(
-            onClearFilters: listState.query.hasFilters
-                ? notifier.clearFilters
-                : null,
-          ),
+          onClearFilters: listState.query.hasFilters
+              ? notifier.clearFilters
+              : null,
+        ),
         _ => MovimentacoesTable(items: listState.items),
       },
     );

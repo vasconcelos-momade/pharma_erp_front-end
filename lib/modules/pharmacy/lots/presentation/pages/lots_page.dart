@@ -6,6 +6,7 @@ import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/spacing.dart';
+import '../../../../../core/utils/lote_stock_utils.dart';
 import '../../../../../shared/responsive/responsive_builder.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../../shared/widgets/layout/enterprise_mobile_scroll_list.dart';
@@ -62,10 +63,13 @@ class _LotsPageState extends ConsumerState<LotsPage> {
         : ReportPaths.pharmacyLotsActive;
     final reportQuery = <String, dynamic>{
       if ((current?.query ?? '').isNotEmpty) 'q': current!.query,
-      if (current?.estadoSanitario != null) 'estadoSanitario': current!.estadoSanitario,
-      if (current?.disponibilidade != null) 'disponibilidade': current!.disponibilidade,
+      if (current?.estadoSanitario != null)
+        'estadoSanitario': current!.estadoSanitario,
+      if (current?.disponibilidade != null)
+        'disponibilidade': current!.disponibilidade,
     };
-    final hasFilters = (current?.estadoSanitario != null) ||
+    final hasFilters =
+        (current?.estadoSanitario != null) ||
         (current?.disponibilidade != null) ||
         (current?.expirado != null);
     final kpis = dash == null
@@ -139,13 +143,16 @@ class _LotsPageState extends ConsumerState<LotsPage> {
           filters: null,
           child: Column(
             children: [
-              if (!isMobile && asyncState.isLoading) const LinearProgressIndicator(),
+              if (!isMobile && asyncState.isLoading)
+                const LinearProgressIndicator(),
               if (!isMobile && asyncState.hasError)
                 Padding(
                   padding: EdgeInsets.only(bottom: s.sm),
                   child: Text(
                     asyncState.error.toString(),
-                    style: Theme.of(context).textTheme.erpBody.copyWith(color: t.posDanger),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.erpBody.copyWith(color: t.posDanger),
                   ),
                 ),
               if (!isMobile)
@@ -209,16 +216,19 @@ class _LotsPageState extends ConsumerState<LotsPage> {
                           final lote = _accumulatedItems[index];
                           return _LoteMobileCard(
                             lote: lote,
-                            isBusy: current?.actionLoteId == lote['id']?.toString(),
+                            isBusy:
+                                current?.actionLoteId == lote['id']?.toString(),
                             validadeColor: (indicador) =>
                                 _validadeColor(context, indicador),
-                            onTap: () => _openLoteDetails(lote['id']?.toString() ?? ''),
+                            onTap: () =>
+                                _openLoteDetails(lote['id']?.toString() ?? ''),
                             onAction: (action) => _handleAction(action, lote),
                           );
                         },
                         hasMore: current?.hasMore ?? false,
                         isLoading: asyncState.isLoading,
-                        onLoadMore: () => controller.goToPage((current?.page ?? 1) + 1),
+                        onLoadMore: () =>
+                            controller.goToPage((current?.page ?? 1) + 1),
                         emptyMessage: 'Nenhum lote encontrado',
                         totalCount: current?.totalCount,
                         totalCountLabel: current?.totalCount != null
@@ -226,77 +236,106 @@ class _LotsPageState extends ConsumerState<LotsPage> {
                             : null,
                       )
                     : (current?.items.isEmpty ?? true) && !asyncState.isLoading
-                        ? const Center(child: Text('Nenhum lote encontrado'))
-                        : EnterpriseDataTable(
-                            columns: const [
-                              DataColumn(label: Text('PRODUTO')),
-                              DataColumn(label: Text('Nº LOTE')),
-                              DataColumn(label: Text('VALIDADE')),
-                              DataColumn(label: Text('STOCK')),
-                              DataColumn(label: Text('P. COMPRA')),
-                              DataColumn(label: Text('P. VENDA')),
-                              DataColumn(label: Text('ESTADO')),
-                              DataColumn(label: Text('AÇÕES')),
-                            ],
-                            rowCount: current?.items.length ?? 0,
-                            rowBuilder: (context, index) {
-                              final item = current!.items[index];
-                              final loteId = item['id']?.toString() ?? '';
-                              final color = _validadeColor(
-                                context,
-                                item['indicadorValidade'] as String?,
-                              );
-                              final isBusy = current.actionLoteId == loteId;
-                              return DataRow(
-                                onSelectChanged: (_) => _openLoteDetails(loteId),
-                                cells: [
-                                  DataCell(Text(item['produtoNome']?.toString() ?? '—')),
-                                  DataCell(Text(item['numeroLote']?.toString() ?? '—')),
-                                  DataCell(
-                                    Text(
-                                      item['dataValidade']?.toString().substring(0, 10) ?? '—',
-                                      style: Theme.of(context).textTheme.erpLabel.copyWith(
-                                        color: color,
-                                      ),
-                                    ),
-                                  ),
-                                  DataCell(Text(item['quantidadeDisponivel']?.toString() ?? '0')),
-                                  DataCell(Text(item['precoCompra']?.toString() ?? '—')),
-                                  DataCell(Text(item['precoVenda']?.toString() ?? '—')),
-                                  DataCell(Text(item['estadoSanitario']?.toString() ?? '—')),
-                                  DataCell(
-                                    isBusy
-                                        ? const SizedBox(
-                                            width: 24,
-                                            height: 24,
-                                            child: CircularProgressIndicator(strokeWidth: 2),
-                                          )
-                                        : PopupMenuButton<String>(
-                                            tooltip: 'Acções do lote',
-                                            onSelected: (action) => _handleAction(action, item),
-                                            itemBuilder: (context) => [
-                                              if (LotActionsHelper.canMoveToQuarentena(item))
-                                                const PopupMenuItem(
-                                                  value: 'quarentena',
-                                                  child: Text('Mover para Quarentena'),
-                                                ),
-                                              if (LotActionsHelper.canRevertQuarentena(item))
-                                                const PopupMenuItem(
-                                                  value: 'reverter',
-                                                  child: Text('Reverter Quarentena'),
-                                                ),
-                                              const PopupMenuItem(
-                                                value: 'historico',
-                                                child: Text('Visualizar histórico'),
+                    ? const Center(child: Text('Nenhum lote encontrado'))
+                    : EnterpriseDataTable(
+                        columns: const [
+                          DataColumn(label: Text('PRODUTO')),
+                          DataColumn(label: Text('Nº LOTE')),
+                          DataColumn(label: Text('VALIDADE')),
+                          DataColumn(label: Text('STOCK')),
+                          DataColumn(label: Text('P. COMPRA')),
+                          DataColumn(label: Text('P. VENDA')),
+                          DataColumn(label: Text('ESTADO')),
+                          DataColumn(label: Text('AÇÕES')),
+                        ],
+                        rowCount: current?.items.length ?? 0,
+                        rowBuilder: (context, index) {
+                          final item = current!.items[index];
+                          final loteId = item['id']?.toString() ?? '';
+                          final color = _validadeColor(
+                            context,
+                            item['indicadorValidade'] as String?,
+                          );
+                          final isBusy = current.actionLoteId == loteId;
+                          return DataRow(
+                            onSelectChanged: (_) => _openLoteDetails(loteId),
+                            cells: [
+                              DataCell(
+                                Text(item['produtoNomeComercial']?.toString() ?? item['produtoNome']?.toString() ?? '—'),
+                              ),
+                              DataCell(
+                                Text(item['numeroLote']?.toString() ?? '—'),
+                              ),
+                              DataCell(
+                                Text(
+                                  item['dataValidade']?.toString().substring(
+                                        0,
+                                        10,
+                                      ) ??
+                                      '—',
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.erpLabel.copyWith(color: color),
+                                ),
+                              ),
+                              DataCell(
+                                Text(LoteStockUtils.formatDisponivel(item)),
+                              ),
+                              DataCell(
+                                Text(item['precoCompra']?.toString() ?? '—'),
+                              ),
+                              DataCell(
+                                Text(item['precoVenda']?.toString() ?? '—'),
+                              ),
+                              DataCell(
+                                Text(
+                                  item['estadoSanitario']?.toString() ?? '—',
+                                ),
+                              ),
+                              DataCell(
+                                isBusy
+                                    ? const SizedBox(
+                                        width: 24,
+                                        height: 24,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                        ),
+                                      )
+                                    : PopupMenuButton<String>(
+                                        tooltip: 'Acções do lote',
+                                        onSelected: (action) =>
+                                            _handleAction(action, item),
+                                        itemBuilder: (context) => [
+                                          if (LotActionsHelper.canMoveToQuarentena(
+                                            item,
+                                          ))
+                                            const PopupMenuItem(
+                                              value: 'quarentena',
+                                              child: Text(
+                                                'Mover para Quarentena',
                                               ),
-                                            ],
-                                            icon: const Icon(Icons.more_vert),
+                                            ),
+                                          if (LotActionsHelper.canRevertQuarentena(
+                                            item,
+                                          ))
+                                            const PopupMenuItem(
+                                              value: 'reverter',
+                                              child: Text(
+                                                'Reverter Quarentena',
+                                              ),
+                                            ),
+                                          const PopupMenuItem(
+                                            value: 'historico',
+                                            child: Text('Visualizar histórico'),
                                           ),
-                                  ),
-                                ],
-                              );
-                            },
-                          ),
+                                        ],
+                                        icon: const Icon(Icons.more_vert),
+                                      ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
               ),
               if (!isMobile && current?.totalCount != null)
                 EnterprisePagination(
@@ -334,7 +373,8 @@ class _LotsPageState extends ConsumerState<LotsPage> {
     }
   }
 
-  Future<void> _openLoteDetails(String loteId) => openLoteDetails(context, loteId);
+  Future<void> _openLoteDetails(String loteId) =>
+      openLoteDetails(context, loteId);
 
   void _openMobileFilters(
     BuildContext context,
@@ -374,10 +414,12 @@ class _LotsFiltersBottomSheet extends StatefulWidget {
     String? estadoSanitario,
     String? disponibilidade,
     bool expirado,
-  ) onApply;
+  )
+  onApply;
 
   @override
-  State<_LotsFiltersBottomSheet> createState() => _LotsFiltersBottomSheetState();
+  State<_LotsFiltersBottomSheet> createState() =>
+      _LotsFiltersBottomSheetState();
 }
 
 class _LotsFiltersBottomSheetState extends State<_LotsFiltersBottomSheet> {
@@ -391,15 +433,17 @@ class _LotsFiltersBottomSheetState extends State<_LotsFiltersBottomSheet> {
     final s = context.spacing;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(s.md, s.md, s.md, s.md + MediaQuery.viewInsetsOf(context).bottom),
+      padding: EdgeInsets.fromLTRB(
+        s.md,
+        s.md,
+        s.md,
+        s.md + MediaQuery.viewInsetsOf(context).bottom,
+      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            'Filtros',
-            style: Theme.of(context).textTheme.erpSectionTitle,
-          ),
+          Text('Filtros', style: Theme.of(context).textTheme.erpSectionTitle),
           SizedBox(height: s.md),
           DropdownButtonFormField<String?>(
             initialValue: _estadoSanitario,
@@ -410,11 +454,19 @@ class _LotsFiltersBottomSheetState extends State<_LotsFiltersBottomSheet> {
             items: const [
               DropdownMenuItem<String?>(value: null, child: Text('Todos')),
               DropdownMenuItem<String?>(value: 'VALIDO', child: Text('Válido')),
-              DropdownMenuItem<String?>(value: 'EXPIRADO', child: Text('Expirado')),
-              DropdownMenuItem<String?>(value: 'QUARENTENA', child: Text('Quarentena')),
+              DropdownMenuItem<String?>(
+                value: 'EXPIRADO',
+                child: Text('Expirado'),
+              ),
+              DropdownMenuItem<String?>(
+                value: 'QUARENTENA',
+                child: Text('Quarentena'),
+              ),
               DropdownMenuItem<String?>(value: 'RECALL', child: Text('Recall')),
             ],
-            onChanged: _submitting ? null : (value) => setState(() => _estadoSanitario = value),
+            onChanged: _submitting
+                ? null
+                : (value) => setState(() => _estadoSanitario = value),
           ),
           SizedBox(height: s.md),
           DropdownButtonFormField<String?>(
@@ -425,18 +477,34 @@ class _LotsFiltersBottomSheetState extends State<_LotsFiltersBottomSheet> {
             ),
             items: const [
               DropdownMenuItem<String?>(value: null, child: Text('Todas')),
-              DropdownMenuItem<String?>(value: 'DISPONIVEL', child: Text('Disponível')),
-              DropdownMenuItem<String?>(value: 'RESERVADO', child: Text('Reservado')),
-              DropdownMenuItem<String?>(value: 'BLOQUEADO', child: Text('Bloqueado')),
-              DropdownMenuItem<String?>(value: 'INDISPONIVEL', child: Text('Indisponível')),
+              DropdownMenuItem<String?>(
+                value: 'DISPONIVEL',
+                child: Text('Disponível'),
+              ),
+              DropdownMenuItem<String?>(
+                value: 'RESERVADO',
+                child: Text('Reservado'),
+              ),
+              DropdownMenuItem<String?>(
+                value: 'BLOQUEADO',
+                child: Text('Bloqueado'),
+              ),
+              DropdownMenuItem<String?>(
+                value: 'INDISPONIVEL',
+                child: Text('Indisponível'),
+              ),
             ],
-            onChanged: _submitting ? null : (value) => setState(() => _disponibilidade = value),
+            onChanged: _submitting
+                ? null
+                : (value) => setState(() => _disponibilidade = value),
           ),
           SizedBox(height: s.md),
           FilterChip(
             label: const Text('Mostrar apenas expirados'),
             selected: _expirado,
-            onSelected: _submitting ? null : (value) => setState(() => _expirado = value),
+            onSelected: _submitting
+                ? null
+                : (value) => setState(() => _expirado = value),
           ),
           SizedBox(height: s.lg),
           Row(
@@ -538,7 +606,8 @@ class _LotsDesktopToolbarState extends State<_LotsDesktopToolbar> {
     final t = context.pharmaTokens;
     final s = context.spacing;
     final state = widget.state;
-    final hasFilters = (state?.estadoSanitario != null) ||
+    final hasFilters =
+        (state?.estadoSanitario != null) ||
         (state?.disponibilidade != null) ||
         (state?.expirado != null);
 
@@ -552,14 +621,14 @@ class _LotsDesktopToolbarState extends State<_LotsDesktopToolbar> {
             child: TextField(
               controller: widget.searchController,
               onSubmitted: widget.onSearchSubmitted,
-              style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: t.textPrimary,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodyLarge?.copyWith(color: t.textPrimary),
               decoration: InputDecoration(
                 hintText: 'Pesquisar produto ou nº lote...',
-                hintStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: t.textMuted,
-                    ),
+                hintStyle: Theme.of(
+                  context,
+                ).textTheme.bodyLarge?.copyWith(color: t.textMuted),
                 prefixIcon: Icon(
                   Icons.search_rounded,
                   color: t.textMuted,
@@ -613,11 +682,19 @@ class _LotsDesktopToolbarState extends State<_LotsDesktopToolbar> {
             items: const [
               DropdownMenuItem<String?>(value: null, child: Text('Todos')),
               DropdownMenuItem<String?>(value: 'VALIDO', child: Text('Válido')),
-              DropdownMenuItem<String?>(value: 'EXPIRADO', child: Text('Expirado')),
-              DropdownMenuItem<String?>(value: 'QUARENTENA', child: Text('Quarentena')),
+              DropdownMenuItem<String?>(
+                value: 'EXPIRADO',
+                child: Text('Expirado'),
+              ),
+              DropdownMenuItem<String?>(
+                value: 'QUARENTENA',
+                child: Text('Quarentena'),
+              ),
               DropdownMenuItem<String?>(value: 'RECALL', child: Text('Recall')),
             ],
-            onChanged: widget.isLoading ? null : widget.onEstadoSanitarioChanged,
+            onChanged: widget.isLoading
+                ? null
+                : widget.onEstadoSanitarioChanged,
           ),
         ),
         SizedBox(width: s.md),
@@ -628,12 +705,26 @@ class _LotsDesktopToolbarState extends State<_LotsDesktopToolbar> {
             decoration: _dropdownDecoration(context, 'Disponibilidade'),
             items: const [
               DropdownMenuItem<String?>(value: null, child: Text('Todas')),
-              DropdownMenuItem<String?>(value: 'DISPONIVEL', child: Text('Disponível')),
-              DropdownMenuItem<String?>(value: 'RESERVADO', child: Text('Reservado')),
-              DropdownMenuItem<String?>(value: 'BLOQUEADO', child: Text('Bloqueado')),
-              DropdownMenuItem<String?>(value: 'INDISPONIVEL', child: Text('Indisponível')),
+              DropdownMenuItem<String?>(
+                value: 'DISPONIVEL',
+                child: Text('Disponível'),
+              ),
+              DropdownMenuItem<String?>(
+                value: 'RESERVADO',
+                child: Text('Reservado'),
+              ),
+              DropdownMenuItem<String?>(
+                value: 'BLOQUEADO',
+                child: Text('Bloqueado'),
+              ),
+              DropdownMenuItem<String?>(
+                value: 'INDISPONIVEL',
+                child: Text('Indisponível'),
+              ),
             ],
-            onChanged: widget.isLoading ? null : widget.onDisponibilidadeChanged,
+            onChanged: widget.isLoading
+                ? null
+                : widget.onDisponibilidadeChanged,
           ),
         ),
         SizedBox(width: s.md),
@@ -749,7 +840,7 @@ class _LoteMobileCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          lote['produtoNome']?.toString() ?? '—',
+                          lote['produtoNomeComercial'] ?? lote['produtoNome']?.toString() ?? '—',
                           style: theme.textTheme.erpCardTitle.copyWith(
                             color: t.textPrimary,
                           ),
@@ -785,7 +876,11 @@ class _LoteMobileCard extends StatelessWidget {
                         minWidth: t.minTouchTarget * 0.6,
                         minHeight: t.minTouchTarget * 0.6,
                       ),
-                      icon: Icon(Icons.more_vert, size: t.iconSm, color: t.textMuted),
+                      icon: Icon(
+                        Icons.more_vert,
+                        size: t.iconSm,
+                        color: t.textMuted,
+                      ),
                       onSelected: onAction,
                       itemBuilder: (context) => [
                         if (LotActionsHelper.canMoveToQuarentena(lote))
@@ -813,16 +908,14 @@ class _LoteMobileCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       'Validade: ${_formatDate(lote['dataValidade'])}',
-                      style: theme.textTheme.erpCaption.copyWith(
-                        color: color,
-                      ),
+                      style: theme.textTheme.erpCaption.copyWith(color: color),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   SizedBox(width: s.sm),
                   Text(
-                    'Stock: ${lote['quantidadeDisponivel']?.toString() ?? '0'}',
+                    'Stock: ${LoteStockUtils.formatDisponivel(lote)}',
                     style: theme.textTheme.erpCaption.copyWith(
                       color: t.textMuted,
                     ),
@@ -836,7 +929,9 @@ class _LoteMobileCard extends StatelessWidget {
                   Expanded(
                     child: Text(
                       'Compra: ${lote['precoCompra']?.toString() ?? '—'}',
-                      style: theme.textTheme.erpCaption.copyWith(color: t.textMuted),
+                      style: theme.textTheme.erpCaption.copyWith(
+                        color: t.textMuted,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -846,7 +941,9 @@ class _LoteMobileCard extends StatelessWidget {
                     child: Text(
                       'Venda: ${lote['precoVenda']?.toString() ?? '—'}',
                       textAlign: TextAlign.end,
-                      style: theme.textTheme.erpCaption.copyWith(color: t.textMuted),
+                      style: theme.textTheme.erpCaption.copyWith(
+                        color: t.textMuted,
+                      ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),

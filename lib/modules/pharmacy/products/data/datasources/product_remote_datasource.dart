@@ -48,14 +48,14 @@ abstract class ProductRemoteDataSource {
   Future<PaginationResponse<ProductModel>> searchProducts({
     String? query,
     String? barcode,
-    String? categoria,
+    String? categoriaId,
     int page = 1,
     int pageSize = 20,
   });
 
   Future<PaginationResponse<ProductModel>> searchRequisitionProducts({
     String? query,
-    String? categoria,
+    String? categoriaId,
     int page = 1,
     int pageSize = 20,
   });
@@ -380,7 +380,7 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
   Future<PaginationResponse<ProductModel>> searchProducts({
     String? query,
     String? barcode,
-    String? categoria,
+    String? categoriaId,
     int page = 1,
     int pageSize = 20,
   }) async {
@@ -390,7 +390,7 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
         queryParameters: <String, dynamic>{
           if (query != null && query.trim().isNotEmpty) 'q': query.trim(),
           if (barcode != null && barcode.trim().isNotEmpty) 'barcode': barcode.trim(),
-          if (categoria != null && categoria.isNotEmpty) 'categoria': categoria,
+          if (categoriaId != null && categoriaId.isNotEmpty) 'categoriaId': categoriaId,
           'page': page,
           'pageSize': pageSize,
         },
@@ -420,7 +420,7 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
   @override
   Future<PaginationResponse<ProductModel>> searchRequisitionProducts({
     String? query,
-    String? categoria,
+    String? categoriaId,
     int page = 1,
     int pageSize = 20,
   }) async {
@@ -429,7 +429,7 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
         ApiConstants.tenantRequisicoesProdutosSearch,
         queryParameters: <String, dynamic>{
           if (query != null && query.trim().isNotEmpty) 'q': query.trim(),
-          if (categoria != null && categoria.isNotEmpty) 'categoria': categoria,
+          if (categoriaId != null && categoriaId.isNotEmpty) 'categoriaId': categoriaId,
           'page': page,
           'pageSize': pageSize,
         },

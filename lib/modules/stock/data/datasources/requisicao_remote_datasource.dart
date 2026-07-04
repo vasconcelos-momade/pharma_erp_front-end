@@ -55,7 +55,9 @@ class RequisicaoRemoteDataSourceImpl implements RequisicaoRemoteDataSource {
   final Dio _dio;
 
   @override
-  Future<List<FornecedorResumoModel>> listarFornecedores({String? search}) async {
+  Future<List<FornecedorResumoModel>> listarFornecedores({
+    String? search,
+  }) async {
     try {
       final response = await _dio.get<dynamic>(
         ApiConstants.tenantFornecedores,
@@ -97,19 +99,14 @@ class RequisicaoRemoteDataSourceImpl implements RequisicaoRemoteDataSource {
   }
 
   @override
-  Future<CriarLoteResultModel> criarLote(
-    CriarLoteRequestModel request,
-  ) async {
+  Future<CriarLoteResultModel> criarLote(CriarLoteRequestModel request) async {
     try {
       final response = await _dio.post<Map<String, dynamic>>(
         ApiConstants.tenantLotes,
         data: request.toJson(),
       );
       return CriarLoteResultModel.fromJson(
-        _expectMap(
-          response.data,
-          fallback: 'Resposta invalida ao criar lote.',
-        ),
+        _expectMap(response.data, fallback: 'Resposta invalida ao criar lote.'),
       );
     } on DioException catch (e) {
       throw ApiFailure.fromDio(e);
@@ -143,9 +140,7 @@ class RequisicaoRemoteDataSourceImpl implements RequisicaoRemoteDataSource {
   }
 
   @override
-  Future<RequisicaoDetalheModel> obterRequisicao(
-    String requisicaoId,
-  ) async {
+  Future<RequisicaoDetalheModel> obterRequisicao(String requisicaoId) async {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
         ApiConstants.tenantRequisicaoDetalhe(requisicaoId),
@@ -326,7 +321,8 @@ class RequisicaoRemoteDataSourceImpl implements RequisicaoRemoteDataSource {
   }
 }
 
-final requisicaoRemoteDataSourceProvider =
-    Provider<RequisicaoRemoteDataSource>((ref) {
-  return RequisicaoRemoteDataSourceImpl(ref.watch(dioProvider));
-});
+final requisicaoRemoteDataSourceProvider = Provider<RequisicaoRemoteDataSource>(
+  (ref) {
+    return RequisicaoRemoteDataSourceImpl(ref.watch(dioProvider));
+  },
+);

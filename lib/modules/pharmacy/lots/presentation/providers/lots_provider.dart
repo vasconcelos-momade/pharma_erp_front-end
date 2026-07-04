@@ -66,8 +66,9 @@ class LotsViewState {
       hasMore: hasMore ?? this.hasMore,
       totalCount: totalCount ?? this.totalCount,
       lastUpdated: lastUpdated ?? this.lastUpdated,
-      actionLoteId:
-          clearActionLoteId ? null : (actionLoteId ?? this.actionLoteId),
+      actionLoteId: clearActionLoteId
+          ? null
+          : (actionLoteId ?? this.actionLoteId),
     );
   }
 }
@@ -90,13 +91,7 @@ class LotsViewController extends AsyncNotifier<LotsViewState> {
   Future<void> setSearch(String value) async {
     final current = state.valueOrNull ?? _cache ?? const LotsViewState();
     state = await AsyncValue.guard(
-      () => _load(
-        current.copyWith(
-          query: value.trim(),
-          page: 1,
-        ),
-        force: true,
-      ),
+      () => _load(current.copyWith(query: value.trim(), page: 1), force: true),
     );
   }
 
@@ -207,7 +202,10 @@ class LotsViewController extends AsyncNotifier<LotsViewState> {
     }
   }
 
-  Future<LotsViewState> _load(LotsViewState current, {required bool force}) async {
+  Future<LotsViewState> _load(
+    LotsViewState current, {
+    required bool force,
+  }) async {
     final now = DateTime.now();
     if (!force &&
         current.lastUpdated != null &&
@@ -244,5 +242,5 @@ class LotsViewController extends AsyncNotifier<LotsViewState> {
 
 final lotsViewProvider =
     AsyncNotifierProvider<LotsViewController, LotsViewState>(
-  LotsViewController.new,
-);
+      LotsViewController.new,
+    );

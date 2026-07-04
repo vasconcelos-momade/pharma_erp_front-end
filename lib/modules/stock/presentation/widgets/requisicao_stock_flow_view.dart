@@ -10,7 +10,6 @@ import '../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../shared/widgets/buttons/pharma_button_loader.dart';
 import '../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
 import '../../../../shared/widgets/tables/enterprise_data_table.dart';
-import '../../../pharmacy/products/domain/entities/categoria_produto.dart';
 import '../../../pharmacy/products/domain/entities/product.dart';
 import '../../../pharmacy/products/presentation/providers/product_provider.dart';
 import '../../domain/entities/requisicao.dart';
@@ -164,7 +163,9 @@ class _RequisicaoStockFlowViewState
     super.initState();
     Future.microtask(() {
       ref.read(requisicaoProvider.notifier).initializeScope(widget.tipo);
-      ref.read(requisicaoProductListProvider.notifier).ensureLoaded(force: true);
+      ref
+          .read(requisicaoProductListProvider.notifier)
+          .ensureLoaded(force: true);
     });
   }
 
@@ -173,7 +174,9 @@ class _RequisicaoStockFlowViewState
     super.didUpdateWidget(oldWidget);
     if (oldWidget.tipo != widget.tipo) {
       ref.read(requisicaoProvider.notifier).initializeScope(widget.tipo);
-      ref.read(requisicaoProductListProvider.notifier).ensureLoaded(force: true);
+      ref
+          .read(requisicaoProductListProvider.notifier)
+          .ensureLoaded(force: true);
     }
   }
 
@@ -212,10 +215,7 @@ class _RequisicaoStockFlowViewState
       return;
     }
 
-    final quantidade = await showEditStockFlowItemDialog(
-      context,
-      item: item,
-    );
+    final quantidade = await showEditStockFlowItemDialog(context, item: item);
 
     if (!mounted || quantidade == null) {
       return;
@@ -513,16 +513,16 @@ class _MobileStockFlowSummaryBar extends StatelessWidget {
                   children: [
                     Text(
                       '${requisicao.totalItens} item${requisicao.totalItens == 1 ? '' : 's'}',
-                      style: Theme.of(context).textTheme.erpCardTitle.copyWith(
-                            color: t.textPrimary,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.erpCardTitle.copyWith(color: t.textPrimary),
                     ),
                     SizedBox(height: s.xxs),
                     Text(
                       'Quantidade: ${stockFlowFormatQuantity(requisicao.quantidadeTotal)}',
-                      style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                            color: t.textMuted,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
                     ),
                   ],
                 ),
@@ -609,7 +609,7 @@ class _LeftPane extends StatefulWidget {
   final bool canAddProducts;
   final TextEditingController searchController;
   final ValueChanged<String> onSearchChanged;
-  final ValueChanged<CategoriaProduto?> onCategoriaChanged;
+  final ValueChanged<String?> onCategoriaChanged;
   final Future<void> Function() onRefreshProducts;
   final Future<void> Function(int page) onGoToPage;
   final ValueChanged<RequisicaoTab> onTabChanged;
@@ -799,9 +799,9 @@ class _RightPane extends StatelessWidget {
             requisicao == null
                 ? 'Nova Requisição'
                 : 'Requisição #${requisicao.id}',
-            style: Theme.of(context).textTheme.erpPageTitle.copyWith(
-                  color: t.textPrimary,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.erpPageTitle.copyWith(color: t.textPrimary),
           ),
         ),
         if (isBusy) const PharmaButtonLoader(),
@@ -863,18 +863,16 @@ class _RightPane extends StatelessWidget {
                         SizedBox(height: s.sm),
                         Text(
                           requisicao.observacao!,
-                          style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                                color: t.textMuted,
-                              ),
+                          style: Theme.of(context).textTheme.erpBodySecondary
+                              .copyWith(color: t.textMuted),
                         ),
                       ],
                       if (requisicao.user != null) ...[
                         SizedBox(height: s.xs),
                         Text(
                           'Criada por ${requisicao.user!.nome}',
-                          style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                                color: t.textMuted,
-                              ),
+                          style: Theme.of(context).textTheme.erpBodySecondary
+                              .copyWith(color: t.textMuted),
                         ),
                       ],
                       SizedBox(height: s.md),
@@ -934,18 +932,18 @@ class _RightPane extends StatelessWidget {
               SizedBox(height: s.sm),
               Text(
                 requisicao.observacao!,
-                style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                      color: t.textMuted,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
               ),
             ],
             if (requisicao.user != null) ...[
               SizedBox(height: s.xs),
               Text(
                 'Criada por ${requisicao.user!.nome}',
-                style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                      color: t.textMuted,
-                    ),
+                style: Theme.of(
+                  context,
+                ).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
               ),
             ],
             SizedBox(height: s.md),
@@ -1011,9 +1009,9 @@ class _ActiveStockFlowHeader extends StatelessWidget {
                   requisicao.numeroDocumento.isNotEmpty
                       ? 'Documento ${requisicao.numeroDocumento}'
                       : 'Requisição #${requisicao.id}',
-                  style: Theme.of(context).textTheme.erpCardTitle.copyWith(
-                        color: t.textPrimary,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.erpCardTitle.copyWith(color: t.textPrimary),
                 ),
               ),
               if (canEdit && onEdit != null)
@@ -1096,9 +1094,9 @@ class _StockFlowActionFooter extends StatelessWidget {
           Text(
             helperText,
             style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                  color: highlightHelper ? t.textPrimary : t.textMuted,
-                  fontWeight: highlightHelper ? FontWeight.w600 : FontWeight.w500,
-                ),
+              color: highlightHelper ? t.textPrimary : t.textMuted,
+              fontWeight: highlightHelper ? FontWeight.w600 : FontWeight.w500,
+            ),
           ),
           if (state.canEditActiveRequisicao) ...[
             SizedBox(height: s.md),
@@ -1256,7 +1254,10 @@ class _StockFlowItemsDesktopTable extends StatelessWidget {
               SizedBox(width: 150, child: Text(stockFlowItemLoteNumero(item))),
             ),
             DataCell(
-              SizedBox(width: 130, child: Text(stockFlowItemLoteValidade(item))),
+              SizedBox(
+                width: 130,
+                child: Text(stockFlowItemLoteValidade(item)),
+              ),
             ),
             DataCell(
               SizedBox(
@@ -1416,9 +1417,9 @@ class _StockFlowItemCard extends StatelessWidget {
         children: [
           Text(
             item.produtoNome,
-            style: Theme.of(context).textTheme.erpCardTitle.copyWith(
-                  color: t.textPrimary,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.erpCardTitle.copyWith(color: t.textPrimary),
           ),
           SizedBox(height: s.sm),
           Wrap(
@@ -1596,11 +1597,8 @@ Future<RequisicaoItemDraft?> showRequisicaoLoteDialog(
   return AdaptiveNavigator.openEmbeddedForm<RequisicaoItemDraft>(
     context: context,
     title: const Text('Adicionar Item'),
-    formBuilder: (ctx, {required embedded}) => _RequisicaoLoteDialog(
-      product: product,
-      tipo: tipo,
-      embedded: embedded,
-    ),
+    formBuilder: (ctx, {required embedded}) =>
+        _RequisicaoLoteDialog(product: product, tipo: tipo, embedded: embedded),
   );
 }
 
@@ -1654,7 +1652,9 @@ class _InfoTag extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
+        style: Theme.of(
+          context,
+        ).textTheme.erpLabel.copyWith(color: t.textPrimary),
       ),
     );
   }
@@ -1686,17 +1686,17 @@ class _EmptyPane extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.erpCardTitle.copyWith(
-                    color: t.textPrimary,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.erpCardTitle.copyWith(color: t.textPrimary),
             ),
             SizedBox(height: s.sm),
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                    color: t.textMuted,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
             ),
           ],
         ),
@@ -1771,9 +1771,7 @@ class _EditStockFlowItemDialogState extends State<_EditStockFlowItemDialog> {
               labelText: 'Quantidade *',
               border: OutlineInputBorder(),
             ),
-            keyboardType: const TextInputType.numberWithOptions(
-              decimal: true,
-            ),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
             validator: (value) {
               final normalized = value?.trim().replaceAll(',', '.') ?? '';
               final parsed = double.tryParse(normalized);
@@ -1805,10 +1803,7 @@ class _EditStockFlowItemDialogState extends State<_EditStockFlowItemDialog> {
         children: [
           form,
           const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: actions,
-          ),
+          Row(mainAxisAlignment: MainAxisAlignment.end, children: actions),
         ],
       );
     }
@@ -1993,7 +1988,7 @@ class _RequisicaoLoteDialogState extends ConsumerState<_RequisicaoLoteDialog> {
 
       if (widget.tipo.isOutbound &&
           matchedLote != null &&
-          quantidade > matchedLote.quantidadeAtual) {
+          quantidade > matchedLote.quantidadeDisponivel) {
         setState(() {
           _error = 'Quantidade superior ao stock do lote.';
         });
@@ -2008,7 +2003,7 @@ class _RequisicaoLoteDialogState extends ConsumerState<_RequisicaoLoteDialog> {
         context,
         RequisicaoItemDraft(
           produtoId: widget.product.id,
-          produtoNome: widget.product.nome,
+          produtoNome: widget.product.nomeComercial,
           quantidadeSolicitada: quantidade,
           loteId: loteId,
         ),
@@ -2033,7 +2028,7 @@ class _RequisicaoLoteDialogState extends ConsumerState<_RequisicaoLoteDialog> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _ItemDialogProductHeader(
-            productName: widget.product.nome,
+            productName: widget.product.nomeComercial,
             description: widget.tipo == RequisicaoTipo.entrada
                 ? 'Informe os dados do lote para entrada do produto e registo documental da movimentação.'
                 : 'Selecione o lote e a quantidade do produto para movimentar com segurança.',
@@ -2053,7 +2048,9 @@ class _RequisicaoLoteDialogState extends ConsumerState<_RequisicaoLoteDialog> {
           if (_error != null) ...[
             Text(
               _error!,
-              style: Theme.of(context).textTheme.erpBody.copyWith(color: t.posDanger),
+              style: Theme.of(
+                context,
+              ).textTheme.erpBody.copyWith(color: t.posDanger),
             ),
             SizedBox(height: s.sm),
           ],
@@ -2102,9 +2099,7 @@ class _RequisicaoLoteDialogState extends ConsumerState<_RequisicaoLoteDialog> {
           SizedBox(height: s.md),
           TextFormField(
             controller: _quantidadeController,
-            keyboardType: const TextInputType.numberWithOptions(
-              decimal: true,
-            ),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: [
               FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
             ],
@@ -2145,10 +2140,7 @@ class _RequisicaoLoteDialogState extends ConsumerState<_RequisicaoLoteDialog> {
         children: [
           form,
           const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: actions,
-          ),
+          Row(mainAxisAlignment: MainAxisAlignment.end, children: actions),
         ],
       );
     }
@@ -2226,9 +2218,7 @@ class _ItemDialogProductHeader extends StatelessWidget {
                     ),
                     child: Text(
                       item,
-                      style: textTheme.erpLabel.copyWith(
-                        color: t.textPrimary,
-                      ),
+                      style: textTheme.erpLabel.copyWith(color: t.textPrimary),
                     ),
                   ),
               ],

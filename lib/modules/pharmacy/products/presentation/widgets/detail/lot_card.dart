@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../../core/theme/design_tokens.dart';
 import '../../../../../../core/theme/extensions.dart';
+import '../../../../../../core/utils/lote_stock_utils.dart';
 import '../../../../../../shared/widgets/cards/enterprise_list_card.dart';
 
 /// Card de lote na aba Lotes.
@@ -17,7 +18,7 @@ class LotCard extends StatelessWidget {
     final theme = Theme.of(context);
 
     final numero = lote['numeroLote']?.toString() ?? '—';
-    final quantidade = lote['quantidadeAtual']?.toString() ?? '0';
+    final quantidade = LoteStockUtils.formatDisponivel(lote);
     final validade = _formatDate(lote['dataValidade']);
     final estado = lote['estadoSanitario']?.toString() ?? 'NORMAL';
     final estadoColor = _estadoColor(t, estado);
@@ -49,7 +50,7 @@ class LotCard extends StatelessWidget {
             SizedBox(height: s.sm),
             Row(
               children: [
-                _Metric(label: 'Quantidade', value: quantidade, t: t),
+                _Metric(label: 'Disponível', value: quantidade, t: t),
                 SizedBox(width: s.lg),
                 _Metric(label: 'Validade', value: validade, t: t),
               ],
@@ -107,15 +108,15 @@ class _Metric extends StatelessWidget {
       children: [
         Text(
           label,
-          style: Theme.of(context).textTheme.erpCaption.copyWith(
-                color: t.textMuted,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.erpCaption.copyWith(color: t.textMuted),
         ),
         Text(
           value,
-          style: Theme.of(context).textTheme.erpLabel.copyWith(
-                color: t.textPrimary,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.erpLabel.copyWith(color: t.textPrimary),
         ),
       ],
     );

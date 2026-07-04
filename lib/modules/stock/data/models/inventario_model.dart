@@ -5,7 +5,9 @@ class AbrirInventarioRequestModel {
 
   final String? observacao;
 
-  factory AbrirInventarioRequestModel.fromEntity(AbrirInventarioRequest entity) {
+  factory AbrirInventarioRequestModel.fromEntity(
+    AbrirInventarioRequest entity,
+  ) {
     return AbrirInventarioRequestModel(observacao: entity.observacao);
   }
 
@@ -88,7 +90,7 @@ class InventarioItemModel {
     required this.id,
     required this.produtoId,
     required this.produtoNome,
-    this.substanciaActiva,
+    this.nomeGenerico,
     this.dosagem,
     this.forma,
     this.apresentacao,
@@ -105,7 +107,7 @@ class InventarioItemModel {
   final String id;
   final String produtoId;
   final String produtoNome;
-  final String? substanciaActiva;
+  final String? nomeGenerico;
   final String? dosagem;
   final String? forma;
   final String? apresentacao;
@@ -122,15 +124,19 @@ class InventarioItemModel {
     return InventarioItemModel(
       id: json['id'].toString(),
       produtoId: json['produtoId'].toString(),
-      produtoNome: json['produtoNome'] as String? ?? '',
-      substanciaActiva: json['substanciaActiva'] as String?,
+      produtoNome: json['produtoNomeComercial'] as String? ??
+          json['produtoNome'] as String? ??
+          '',
+      nomeGenerico: json['nomeGenerico'] as String?,
       dosagem: json['dosagem'] as String?,
       forma: json['forma'] as String?,
       apresentacao: json['apresentacao'] as String?,
       loteId: json['loteId']?.toString(),
       numeroLote: json['numeroLote'] as String?,
       dataValidade: json['dataValidade'] as String?,
-      estoqueLoteAtual: _toDouble(json['estoqueLoteAtual'] ?? json['estoqueSistema']),
+      estoqueLoteAtual: _toDouble(
+        json['estoqueLoteAtual'] ?? json['estoqueSistema'],
+      ),
       fornecedorNome: json['fornecedorNome'] as String?,
       estoqueSistema: _toDouble(json['estoqueSistema']),
       estoqueContado: _toDouble(json['estoqueContado']),
@@ -143,7 +149,7 @@ class InventarioItemModel {
       id: id,
       produtoId: produtoId,
       produtoNome: produtoNome,
-      substanciaActiva: substanciaActiva,
+      nomeGenerico: nomeGenerico,
       dosagem: dosagem,
       forma: forma,
       apresentacao: apresentacao,
@@ -194,9 +200,9 @@ class InventarioDetalheModel {
     final rawItens = json['itens'];
     final items = rawItens is List
         ? rawItens
-            .whereType<Map<String, dynamic>>()
-            .map(InventarioItemModel.fromJson)
-            .toList()
+              .whereType<Map<String, dynamic>>()
+              .map(InventarioItemModel.fromJson)
+              .toList()
         : const <InventarioItemModel>[];
 
     return InventarioDetalheModel(

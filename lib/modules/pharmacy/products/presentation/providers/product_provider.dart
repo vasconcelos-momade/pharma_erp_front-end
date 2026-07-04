@@ -7,7 +7,6 @@ import '../../../../../core/catalog/pdv_catalog_cache_policy.dart';
 import '../../../../../core/contracts/pagination_response.dart';
 import '../../../../../core/errors/api_failure.dart';
 import '../../data/repositories/product_repository_impl.dart';
-import '../../domain/entities/categoria_produto.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/entities/product_tax_rule.dart';
 
@@ -15,7 +14,7 @@ class ProductListState {
   const ProductListState({
     this.items = const <Product>[],
     this.query = '',
-    this.categoria,
+    this.categoriaId,
     this.page = 1,
     this.pageSize = 50,
     this.hasMore = false,
@@ -27,7 +26,7 @@ class ProductListState {
 
   final List<Product> items;
   final String query;
-  final CategoriaProduto? categoria;
+  final String? categoriaId;
   final int page;
   final int pageSize;
   final bool hasMore;
@@ -39,7 +38,7 @@ class ProductListState {
   ProductListState copyWith({
     List<Product>? items,
     String? query,
-    CategoriaProduto? categoria,
+    String? categoriaId,
     bool clearCategoria = false,
     int? page,
     int? pageSize,
@@ -53,7 +52,7 @@ class ProductListState {
     return ProductListState(
       items: items ?? this.items,
       query: query ?? this.query,
-      categoria: clearCategoria ? null : (categoria ?? this.categoria),
+      categoriaId: clearCategoria ? null : (categoriaId ?? this.categoriaId),
       page: page ?? this.page,
       pageSize: pageSize ?? this.pageSize,
       hasMore: hasMore ?? this.hasMore,
@@ -97,15 +96,15 @@ class ProductListController extends Notifier<ProductListState> {
     });
   }
 
-  void setCategoriaFilter(CategoriaProduto? categoria) {
-    if (state.categoria == categoria) {
+  void setCategoriaFilter(String? categoriaId) {
+    if (state.categoriaId == categoriaId) {
       return;
     }
 
     _debounce?.cancel();
     state = state.copyWith(
-      categoria: categoria,
-      clearCategoria: categoria == null,
+      categoriaId: categoriaId,
+      clearCategoria: categoriaId == null,
       page: 1,
       isLoading: true,
       clearError: true,
@@ -137,7 +136,7 @@ class ProductListController extends Notifier<ProductListState> {
     final isBarcode = _looksLikeBarcode(state.query);
     final cacheKey = PdvCatalogCachePolicy.productPageKey(
       query: state.query,
-      categoria: state.categoria?.apiValue,
+      categoria: state.categoriaId,
       page: state.page,
       pageSize: state.pageSize,
     );
@@ -167,7 +166,7 @@ class ProductListController extends Notifier<ProductListState> {
       final response = await repository.searchProducts(
         query: isBarcode ? null : state.query,
         barcode: isBarcode ? state.query : null,
-        categoria: state.categoria,
+        categoriaId: state.categoriaId,
         page: state.page,
         pageSize: state.pageSize,
       );
@@ -295,15 +294,15 @@ class RequisicaoProductListController extends Notifier<ProductListState> {
     });
   }
 
-  void setCategoriaFilter(CategoriaProduto? categoria) {
-    if (state.categoria == categoria) {
+  void setCategoriaFilter(String? categoriaId) {
+    if (state.categoriaId == categoriaId) {
       return;
     }
 
     _debounce?.cancel();
     state = state.copyWith(
-      categoria: categoria,
-      clearCategoria: categoria == null,
+      categoriaId: categoriaId,
+      clearCategoria: categoriaId == null,
       page: 1,
       isLoading: true,
       clearError: true,
@@ -332,7 +331,7 @@ class RequisicaoProductListController extends Notifier<ProductListState> {
       final repository = ref.read(productRepositoryProvider);
       final response = await repository.searchRequisitionProducts(
         query: state.query.isEmpty ? null : state.query,
-        categoria: state.categoria,
+        categoriaId: state.categoriaId,
         page: state.page,
         pageSize: state.pageSize,
       );
@@ -390,7 +389,7 @@ class MasterProductListState {
     this.tipoDispensacao,
     this.ativoFilter,
     this.includeInactive = false,
-    this.sortBy = 'nome',
+    this.sortBy = 'nomeComercial',
     this.sortOrder = 'asc',
     this.deletingProductIds = const <String>{},
     this.page = 1,

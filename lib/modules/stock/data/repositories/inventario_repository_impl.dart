@@ -12,7 +12,9 @@ class InventarioRepositoryImpl implements InventarioRepository {
   final InventarioRemoteDataSource _remoteDataSource;
 
   @override
-  Future<InventarioDetalhe> abrirInventario(AbrirInventarioRequest request) async {
+  Future<InventarioDetalhe> abrirInventario(
+    AbrirInventarioRequest request,
+  ) async {
     final response = await _remoteDataSource.abrirInventario(
       AbrirInventarioRequestModel.fromEntity(request),
     );
@@ -89,5 +91,7 @@ class InventarioRepositoryImpl implements InventarioRepository {
 }
 
 final inventarioRepositoryProvider = Provider<InventarioRepository>((ref) {
-  return InventarioRepositoryImpl(ref.watch(inventarioRemoteDataSourceProvider));
+  return InventarioRepositoryImpl(
+    ref.watch(inventarioRemoteDataSourceProvider),
+  );
 });

@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/contracts/pagination_response.dart';
-import '../../domain/entities/categoria_produto.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/entities/product_tax_rule.dart';
 import '../../domain/repositories/product_repository.dart';
@@ -80,14 +79,14 @@ class ProductRepositoryImpl implements ProductRepository {
   Future<PaginationResponse<Product>> searchProducts({
     String? query,
     String? barcode,
-    CategoriaProduto? categoria,
+    String? categoriaId,
     int page = 1,
     int pageSize = 20,
   }) async {
     final response = await _remoteDataSource.searchProducts(
       query: query,
       barcode: barcode,
-      categoria: categoria?.apiValue,
+      categoriaId: categoriaId,
       page: page,
       pageSize: pageSize,
     );
@@ -102,13 +101,13 @@ class ProductRepositoryImpl implements ProductRepository {
   @override
   Future<PaginationResponse<Product>> searchRequisitionProducts({
     String? query,
-    CategoriaProduto? categoria,
+    String? categoriaId,
     int page = 1,
     int pageSize = 20,
   }) async {
     final response = await _remoteDataSource.searchRequisitionProducts(
       query: query,
-      categoria: categoria?.apiValue,
+      categoriaId: categoriaId,
       page: page,
       pageSize: pageSize,
     );
@@ -123,8 +122,8 @@ class ProductRepositoryImpl implements ProductRepository {
   Product _toEntity(ProductModel model) {
     return Product(
       id: model.id,
-      nome: model.nome,
-      substanciaActiva: model.substanciaActiva,
+      nomeComercial: model.nomeComercial,
+      nomeGenerico: model.nomeGenerico,
       dosagem: model.dosagem,
       forma: model.forma,
       apresentacao: model.apresentacao,
@@ -132,7 +131,7 @@ class ProductRepositoryImpl implements ProductRepository {
       barcode: model.barcode,
       categoriaId: model.categoriaId,
       categoriaNome: model.categoriaNome,
-      categoria: model.categoria,
+      categoriaCodigoFnm: model.categoriaCodigoFnm,
       tipoDispensacao: model.tipoDispensacao,
       requiresPrescription: model.requiresPrescription,
       requiresDoubleCheck: model.requiresDoubleCheck,

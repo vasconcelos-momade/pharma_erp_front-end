@@ -42,7 +42,7 @@ class ProductHeader extends StatelessWidget {
               ),
             ),
           Text(
-            product.nome,
+            product.nomeComercial,
             style: theme.textTheme.erpCardTitle.copyWith(
               color: t.textPrimary,
             ),
@@ -54,8 +54,8 @@ class ProductHeader extends StatelessWidget {
             crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               ProdutoCategoriaChip(
-                categoria: product.categoria,
-                label: product.categoriaNome,
+                label: product.categoriaNome ?? '—',
+                categoriaCodigo: product.categoriaCodigoFnm,
               ),
               StatusBadge(active: product.ativo),
             ],

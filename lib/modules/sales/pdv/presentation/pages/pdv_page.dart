@@ -12,7 +12,7 @@ import '../../../../../shared/widgets/feedback/module_data_states.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_search_bar.dart';
 import '../../../../../shared/widgets/tables/enterprise_pagination.dart';
-import '../../../../pharmacy/products/domain/entities/categoria_produto.dart';
+import '../../../../pharmacy/products/presentation/widgets/produto_categoria_filter_dropdown.dart';
 import '../../../../pharmacy/products/domain/entities/product.dart';
 import '../../../../pharmacy/products/presentation/providers/product_provider.dart';
 import '../../../invoices/presentation/providers/invoice_action_provider.dart';
@@ -91,8 +91,8 @@ class _PdvPageState extends ConsumerState<PdvPage>
     ref.read(pdvServiceListProvider.notifier).onSearchChanged(value);
   }
 
-  void _onCategoryChanged(CategoriaProduto? categoria) {
-    ref.read(productListProvider.notifier).setCategoriaFilter(categoria);
+  void _onCategoryChanged(String? categoriaId) {
+    ref.read(productListProvider.notifier).setCategoriaFilter(categoriaId);
   }
 
   Future<void> _openAbrirCaixaDialog() {
@@ -157,7 +157,7 @@ class _PdvPageState extends ConsumerState<PdvPage>
       if (added) {
         PharmaFeedback.success(
           context,
-          '${p.nome} adicionado ao carrinho.',
+          '${p.nomeComercial} adicionado ao carrinho.',
         );
       }
       return added;
@@ -434,7 +434,7 @@ class _PdvPageState extends ConsumerState<PdvPage>
     ref.listen<ProductListState>(productListProvider, (prev, next) {
       if (prev?.page != next.page ||
           prev?.query != next.query ||
-          prev?.categoria != next.categoria) {
+          prev?.categoriaId != next.categoriaId) {
         if (next.page == 1) {
           _accumulatedProducts = List.of(next.items);
         } else {
@@ -557,32 +557,11 @@ class _PdvPageState extends ConsumerState<PdvPage>
         if (_isProductsTab) ...[
           Align(
             alignment: Alignment.centerLeft,
-            child: SizedBox(
+            child: ProdutoCategoriaFilterDropdown(
+              value: productState.categoriaId,
               width: isMobile ? double.infinity : 260,
-              child: DropdownButtonFormField<CategoriaProduto?>(
-                initialValue: productState.categoria,
-                decoration: InputDecoration(
-                  labelText: 'Categoria',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(t.radiusMd),
-                  ),
-                  filled: true,
-                  fillColor: t.bgPrimary.withValues(alpha: 0.5),
-                ),
-                items: [
-                  const DropdownMenuItem<CategoriaProduto?>(
-                    value: null,
-                    child: Text('Todas'),
-                  ),
-                  ...CategoriaProduto.values.map(
-                    (categoria) => DropdownMenuItem<CategoriaProduto?>(
-                      value: categoria,
-                      child: Text(categoria.label),
-                    ),
-                  ),
-                ],
-                onChanged: productState.isLoading ? null : _onCategoryChanged,
-              ),
+              enabled: !productState.isLoading,
+              onChanged: _onCategoryChanged,
             ),
           ),
           SizedBox(height: isMobile ? s.sm : s.md),

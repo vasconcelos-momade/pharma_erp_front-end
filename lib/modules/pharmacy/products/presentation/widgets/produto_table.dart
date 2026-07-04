@@ -84,8 +84,8 @@ class ProdutoTable extends StatelessWidget {
             DataCell(_cellText(context, product.forma)),
             DataCell(
               ProdutoCategoriaChip(
-                categoria: product.categoria,
-                label: product.categoriaNome,
+                label: product.categoriaNome ?? '—',
+                categoriaCodigo: product.categoriaCodigoFnm,
               ),
             ),
             DataCell(
@@ -151,14 +151,14 @@ class ProdutoTable extends StatelessWidget {
   Widget _nameCell(BuildContext context, Product product) {
     final t = context.pharmaTokens;
     final theme = Theme.of(context);
-    final substancia = product.substanciaActiva?.trim();
+    final substancia = product.nomeGenerico?.trim();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          product.nome,
+          product.nomeComercial,
           style: theme.textTheme.erpLabel.copyWith(
             color: t.textPrimary,
           ),
@@ -168,7 +168,7 @@ class ProdutoTable extends StatelessWidget {
         if (substancia != null && substancia.isNotEmpty) ...[
           SizedBox(height: context.spacing.xxs),
           Text(
-            'Substância activa: $substancia',
+            'Nome genérico: $substancia',
             style: theme.textTheme.erpCaption.copyWith(
               color: t.textSecondary,
             ),

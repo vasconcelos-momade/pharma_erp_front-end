@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/spacing.dart';
+import '../../../../../core/utils/lote_stock_utils.dart';
 import '../../../../../shared/responsive/responsive_builder.dart';
 import '../../../../../shared/widgets/cards/enterprise_list_card.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
@@ -216,8 +217,9 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
               ? null
               : [
                   IconButton(
-                    onPressed: () =>
-                        _tabController.index == 0 ? _loadSanitario() : _loadReports(),
+                    onPressed: () => _tabController.index == 0
+                        ? _loadSanitario()
+                        : _loadReports(),
                     icon: const Icon(Icons.refresh),
                   ),
                 ],
@@ -225,8 +227,8 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
           filters: isMobile
               ? null
               : (_tabController.index == 0
-                  ? _buildSanitarioFilters()
-                  : _buildReportsFilters()),
+                    ? _buildSanitarioFilters()
+                    : _buildReportsFilters()),
           child: Column(
             children: [
               TabBar(
@@ -418,10 +420,19 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
                   ),
                   items: const [
                     DropdownMenuItem(value: null, child: Text('Todos')),
-                    DropdownMenuItem(value: 'EXPIRADO', child: Text('Expirado')),
+                    DropdownMenuItem(
+                      value: 'EXPIRADO',
+                      child: Text('Expirado'),
+                    ),
                     DropdownMenuItem(value: 'RECALL', child: Text('Recall')),
-                    DropdownMenuItem(value: 'QUARENTENA', child: Text('Quarentena')),
-                    DropdownMenuItem(value: 'BLOQUEADO', child: Text('Bloqueado')),
+                    DropdownMenuItem(
+                      value: 'QUARENTENA',
+                      child: Text('Quarentena'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'BLOQUEADO',
+                      child: Text('Bloqueado'),
+                    ),
                     DropdownMenuItem(value: 'CRITICO', child: Text('Crítico')),
                   ],
                   onChanged: (value) => setModalState(() => estado = value),
@@ -435,10 +446,22 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
                   ),
                   items: const [
                     DropdownMenuItem(value: null, child: Text('Todos')),
-                    DropdownMenuItem(value: 'LOTE_EXPIRADO', child: Text('Lote expirado')),
-                    DropdownMenuItem(value: 'LOTE_A_EXPIRAR', child: Text('Lote a expirar')),
-                    DropdownMenuItem(value: 'ESTOQUE_BAIXO', child: Text('Stock baixo')),
-                    DropdownMenuItem(value: 'PRODUTO_ESGOTADO', child: Text('Esgotado')),
+                    DropdownMenuItem(
+                      value: 'LOTE_EXPIRADO',
+                      child: Text('Lote expirado'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'LOTE_A_EXPIRAR',
+                      child: Text('Lote a expirar'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'ESTOQUE_BAIXO',
+                      child: Text('Stock baixo'),
+                    ),
+                    DropdownMenuItem(
+                      value: 'PRODUTO_ESGOTADO',
+                      child: Text('Esgotado'),
+                    ),
                   ],
                   onChanged: (value) => setModalState(() => alertaTipo = value),
                 ),
@@ -512,7 +535,7 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
               ),
               EnterpriseListCardMeta(
                 label:
-                    '${item['latestAlert']?['tipo']?.toString() ?? '—'} · Stock: ${item['quantidadeAtual'] ?? 0}',
+                    '${item['latestAlert']?['tipo']?.toString() ?? '—'} · Stock: ${LoteStockUtils.formatDisponivel(item)}',
               ),
             ],
             onTap: () => _openHistory(item['id'].toString()),
@@ -538,7 +561,9 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
             child: Text(
               _sanitarioError!,
-              style: Theme.of(context).textTheme.erpBody.copyWith(color: t.posDanger),
+              style: Theme.of(
+                context,
+              ).textTheme.erpBody.copyWith(color: t.posDanger),
             ),
           ),
         Expanded(
@@ -580,7 +605,7 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
                         DataCell(
                           Text(item['latestAlert']?['tipo']?.toString() ?? '—'),
                         ),
-                        DataCell(Text('${item['quantidadeAtual'] ?? 0}')),
+                        DataCell(Text(LoteStockUtils.formatDisponivel(item))),
                       ],
                     );
                   },
@@ -617,7 +642,9 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
         ),
         Text(
           'Total: $_total lote(s)',
-          style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
+          style: Theme.of(
+            context,
+          ).textTheme.erpCaption.copyWith(color: t.textMuted),
         ),
       ],
     );
@@ -633,7 +660,9 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
             child: Text(
               _reportsError!,
-              style: Theme.of(context).textTheme.erpBody.copyWith(color: t.posDanger),
+              style: Theme.of(
+                context,
+              ).textTheme.erpBody.copyWith(color: t.posDanger),
             ),
           ),
         Expanded(
@@ -700,7 +729,9 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
         ),
         Text(
           'Total: $_reportsTotal relatório(s)',
-          style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
+          style: Theme.of(
+            context,
+          ).textTheme.erpCaption.copyWith(color: t.textMuted),
         ),
       ],
     );

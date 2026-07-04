@@ -1,16 +1,6 @@
-enum RequisicaoStatus {
-  pendente,
-  aprovada,
-  rejeitada,
-  concluida,
-  cancelada,
-}
+enum RequisicaoStatus { pendente, aprovada, rejeitada, concluida, cancelada }
 
-enum RequisicaoTipo {
-  compra,
-  entrada,
-  saida,
-}
+enum RequisicaoTipo { compra, entrada, saida }
 
 extension RequisicaoStatusX on RequisicaoStatus {
   String get apiValue {
@@ -198,11 +188,7 @@ class RequisicaoResumo {
 }
 
 class RequisicaoUsuario {
-  const RequisicaoUsuario({
-    required this.id,
-    required this.nome,
-    this.email,
-  });
+  const RequisicaoUsuario({required this.id, required this.nome, this.email});
 
   final String id;
   final String nome;
@@ -254,13 +240,13 @@ class ProdutoLoteDisponivel {
     required this.id,
     required this.numeroLote,
     required this.dataValidade,
-    required this.quantidadeAtual,
+    required this.quantidadeDisponivel,
   });
 
   final String id;
   final String numeroLote;
   final DateTime dataValidade;
-  final double quantidadeAtual;
+  final double quantidadeDisponivel;
 }
 
 class RequisicaoDetalhe {

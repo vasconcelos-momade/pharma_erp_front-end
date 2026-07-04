@@ -85,22 +85,22 @@ class RequisicaoResumoCard extends StatelessWidget {
                   requisicao.numeroDocumento.isNotEmpty
                       ? 'Doc. ${requisicao.numeroDocumento}'
                       : 'Requisição ${requisicao.id}',
-                  style: Theme.of(context).textTheme.erpCardTitle.copyWith(
-                        color: t.textPrimary,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.erpCardTitle.copyWith(color: t.textPrimary),
                 ),
                 Text(
                   _requisicaoSecondaryLine(requisicao),
-                  style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                        color: t.textMuted,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
                 ),
                 if (requisicao.numeroDocumento.isNotEmpty)
                   Text(
                     'ID interno: ${requisicao.id}',
-                    style: Theme.of(context).textTheme.erpCaption.copyWith(
-                          color: t.textMuted,
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.erpCaption.copyWith(color: t.textMuted),
                   ),
               ],
             );
@@ -119,19 +119,22 @@ class RequisicaoResumoCard extends StatelessWidget {
                 children: [
                   header,
                   SizedBox(height: s.sm),
-                  EnterpriseStatusChip(label: requisicao.status.label, color: accent),
+                  EnterpriseStatusChip(
+                    label: requisicao.status.label,
+                    color: accent,
+                  ),
                   SizedBox(height: s.sm),
                   Text(
                     'Data: ${_formatRequisicaoDate(requisicao.createdAt)}',
-                    style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                          color: t.textMuted,
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
                   ),
                   Text(
                     'Itens: ${requisicao.totalItens}',
-                    style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                          color: t.textMuted,
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
                   ),
                   if (isFinalized) ...[SizedBox(height: s.sm), actionButtons],
                 ],
@@ -144,7 +147,10 @@ class RequisicaoResumoCard extends StatelessWidget {
                 Row(
                   children: [
                     Expanded(child: header),
-                    EnterpriseStatusChip(label: requisicao.status.label, color: accent),
+                    EnterpriseStatusChip(
+                      label: requisicao.status.label,
+                      color: accent,
+                    ),
                   ],
                 ),
                 SizedBox(height: s.sm),
@@ -156,15 +162,13 @@ class RequisicaoResumoCard extends StatelessWidget {
                       children: [
                         Text(
                           'Data: ${_formatRequisicaoDate(requisicao.createdAt)}',
-                          style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                                color: t.textMuted,
-                              ),
+                          style: Theme.of(context).textTheme.erpBodySecondary
+                              .copyWith(color: t.textMuted),
                         ),
                         Text(
                           'Itens: ${requisicao.totalItens}',
-                          style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                                color: t.textMuted,
-                              ),
+                          style: Theme.of(context).textTheme.erpBodySecondary
+                              .copyWith(color: t.textMuted),
                         ),
                       ],
                     ),
@@ -214,26 +218,23 @@ class RequisicaoResumoListTab extends StatelessWidget {
       children: [
         Text(
           title,
-          style: Theme.of(context).textTheme.erpSectionTitle.copyWith(
-                color: t.textPrimary,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.erpSectionTitle.copyWith(color: t.textPrimary),
         ),
         SizedBox(height: s.xs),
         Text(
           subtitle,
-          style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                color: t.textMuted,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
         ),
         SizedBox(height: s.sm),
         if (isLoading) const LinearProgressIndicator(),
         SizedBox(height: s.sm),
         Expanded(
           child: requisicoes.isEmpty
-              ? ModuleEmptyState(
-                  title: emptyTitle,
-                  subtitle: emptySubtitle,
-                )
+              ? ModuleEmptyState(title: emptyTitle, subtitle: emptySubtitle)
               : ListView.separated(
                   itemCount: requisicoes.length,
                   separatorBuilder: (_, _) => SizedBox(height: s.sm),

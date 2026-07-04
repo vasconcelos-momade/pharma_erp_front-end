@@ -100,11 +100,11 @@ class _CriarRequisicaoDialogState extends ConsumerState<CriarRequisicaoDialog>
   }
 
   CriarRequisicaoModalTipo get _activeTipo => switch (_tabController.index) {
-        0 => CriarRequisicaoModalTipo.compra,
-        1 => CriarRequisicaoModalTipo.entrada,
-        2 => CriarRequisicaoModalTipo.saida,
-        _ => CriarRequisicaoModalTipo.compra,
-      };
+    0 => CriarRequisicaoModalTipo.compra,
+    1 => CriarRequisicaoModalTipo.entrada,
+    2 => CriarRequisicaoModalTipo.saida,
+    _ => CriarRequisicaoModalTipo.compra,
+  };
 
   bool get _canSubmit {
     switch (_activeTipo) {
@@ -170,8 +170,12 @@ class _CriarRequisicaoDialogState extends ConsumerState<CriarRequisicaoDialog>
     final filtered = fornecedores
         .where(
           (supplier) =>
-              supplier.nome.toLowerCase().contains(_fornecedorSearch.toLowerCase()) ||
-              supplier.id.toLowerCase().contains(_fornecedorSearch.toLowerCase()),
+              supplier.nome.toLowerCase().contains(
+                _fornecedorSearch.toLowerCase(),
+              ) ||
+              supplier.id.toLowerCase().contains(
+                _fornecedorSearch.toLowerCase(),
+              ),
         )
         .toList();
 
@@ -211,7 +215,8 @@ class _CriarRequisicaoDialogState extends ConsumerState<CriarRequisicaoDialog>
         SizedBox(height: s.md),
         ConstrainedBox(
           constraints: BoxConstraints(
-            maxHeight: MediaQuery.sizeOf(context).height *
+            maxHeight:
+                MediaQuery.sizeOf(context).height *
                 DesignMetrics.dialogSelectableListHeightFraction,
           ),
           child: filtered.isEmpty
@@ -231,7 +236,10 @@ class _CriarRequisicaoDialogState extends ConsumerState<CriarRequisicaoDialog>
                         _selectedFornecedorNome = supplier.nome;
                       }),
                       trailing: isSelected
-                          ? Icon(Icons.check_circle, color: context.pharmaTokens.brandGreen)
+                          ? Icon(
+                              Icons.check_circle,
+                              color: context.pharmaTokens.brandGreen,
+                            )
                           : null,
                     );
                   },
@@ -272,14 +280,10 @@ class _CriarRequisicaoDialogState extends ConsumerState<CriarRequisicaoDialog>
           ),
           initialValue: _selectedFornecedorDropdown,
           items: fornecedores
-              .map(
-                (f) => DropdownMenuItem(
-                  value: f,
-                  child: Text(f.nome),
-                ),
-              )
+              .map((f) => DropdownMenuItem(value: f, child: Text(f.nome)))
               .toList(),
-          onChanged: (value) => setState(() => _selectedFornecedorDropdown = value),
+          onChanged: (value) =>
+              setState(() => _selectedFornecedorDropdown = value),
           validator: (value) {
             if (_activeTipo != CriarRequisicaoModalTipo.entrada) {
               return null;
@@ -332,14 +336,10 @@ class _CriarRequisicaoDialogState extends ConsumerState<CriarRequisicaoDialog>
           ),
           initialValue: _selectedFornecedorDropdown,
           items: fornecedores
-              .map(
-                (f) => DropdownMenuItem(
-                  value: f,
-                  child: Text(f.nome),
-                ),
-              )
+              .map((f) => DropdownMenuItem(value: f, child: Text(f.nome)))
               .toList(),
-          onChanged: (value) => setState(() => _selectedFornecedorDropdown = value),
+          onChanged: (value) =>
+              setState(() => _selectedFornecedorDropdown = value),
           validator: (value) {
             if (_activeTipo != CriarRequisicaoModalTipo.saida) {
               return null;
@@ -431,10 +431,7 @@ class _CriarRequisicaoDialogState extends ConsumerState<CriarRequisicaoDialog>
             ),
           ),
           const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: actions,
-          ),
+          Row(mainAxisAlignment: MainAxisAlignment.end, children: actions),
         ],
       );
     }
@@ -444,7 +441,8 @@ class _CriarRequisicaoDialogState extends ConsumerState<CriarRequisicaoDialog>
       scrollable: false,
       content: ConstrainedBox(
         constraints: BoxConstraints(
-          maxHeight: MediaQuery.sizeOf(context).height *
+          maxHeight:
+              MediaQuery.sizeOf(context).height *
               DesignMetrics.dialogBodyMaxHeightFraction,
         ),
         child: Form(

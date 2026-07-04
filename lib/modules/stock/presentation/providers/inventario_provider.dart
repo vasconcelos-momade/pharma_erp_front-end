@@ -89,10 +89,13 @@ class InventarioState {
       isRecordingCount: isRecordingCount ?? this.isRecordingCount,
       isReconciling: isReconciling ?? this.isReconciling,
       isCancelling: isCancelling ?? this.isCancelling,
-      successMessage: clearSuccess ? null : (successMessage ?? this.successMessage),
+      successMessage: clearSuccess
+          ? null
+          : (successMessage ?? this.successMessage),
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
-      activeInventory:
-          clearActiveInventory ? null : (activeInventory ?? this.activeInventory),
+      activeInventory: clearActiveInventory
+          ? null
+          : (activeInventory ?? this.activeInventory),
       recordedItemIds: clearRecordedItems
           ? const <String>{}
           : (recordedItemIds ?? this.recordedItemIds),
@@ -128,10 +131,8 @@ class InventarioController extends Notifier<InventarioState> {
         status: InventarioStatus.reconciliado,
       );
 
-      final pending = <InventarioResumo>[
-        ...emContagem,
-        ...abertos,
-      ]..sort((a, b) => b.iniciadoEm.compareTo(a.iniciadoEm));
+      final pending = <InventarioResumo>[...emContagem, ...abertos]
+        ..sort((a, b) => b.iniciadoEm.compareTo(a.iniciadoEm));
 
       state = state.copyWith(
         isLoadingLists: false,
@@ -140,15 +141,9 @@ class InventarioController extends Notifier<InventarioState> {
         clearError: true,
       );
     } on ApiFailure catch (e) {
-      state = state.copyWith(
-        isLoadingLists: false,
-        errorMessage: e.message,
-      );
+      state = state.copyWith(isLoadingLists: false, errorMessage: e.message);
     } catch (e) {
-      state = state.copyWith(
-        isLoadingLists: false,
-        errorMessage: e.toString(),
-      );
+      state = state.copyWith(isLoadingLists: false, errorMessage: e.toString());
     }
   }
 
@@ -210,7 +205,8 @@ class InventarioController extends Notifier<InventarioState> {
     final active = state.activeInventory;
     if (active == null || !active.status.canRecordCount) {
       state = state.copyWith(
-        errorMessage: 'Seleccione um inventário em contagem para registar quantidades.',
+        errorMessage:
+            'Seleccione um inventário em contagem para registar quantidades.',
         clearSuccess: true,
       );
       return;
@@ -223,7 +219,9 @@ class InventarioController extends Notifier<InventarioState> {
     );
 
     try {
-      final updatedItem = await ref.read(inventarioRepositoryProvider).registarContagem(
+      final updatedItem = await ref
+          .read(inventarioRepositoryProvider)
+          .registarContagem(
             inventarioId: active.id,
             itemId: item.id,
             estoqueContado: estoqueContado,
@@ -231,7 +229,9 @@ class InventarioController extends Notifier<InventarioState> {
       InventoryCatalogCachePolicy.clear();
 
       final nextItems = active.itens
-          .map((current) => current.id == updatedItem.id ? updatedItem : current)
+          .map(
+            (current) => current.id == updatedItem.id ? updatedItem : current,
+          )
           .toList();
       final divergencias = nextItems.where((i) => i.hasDivergencia).length;
       final nextRecorded = {...state.recordedItemIds, updatedItem.id};
@@ -278,7 +278,9 @@ class InventarioController extends Notifier<InventarioState> {
     );
 
     try {
-      final updated = await ref.read(inventarioRepositoryProvider).reconciliar(active.id);
+      final updated = await ref
+          .read(inventarioRepositoryProvider)
+          .reconciliar(active.id);
       await refreshLists();
       InventoryCatalogCachePolicy.clear();
 
@@ -286,7 +288,8 @@ class InventarioController extends Notifier<InventarioState> {
         isReconciling: false,
         activeTab: InventarioTab.concluidos,
         activeInventory: updated,
-        successMessage: 'Inventário ${updated.codigo} reconciliado com sucesso.',
+        successMessage:
+            'Inventário ${updated.codigo} reconciliado com sucesso.',
         clearError: true,
       );
     } on ApiFailure catch (e) {
@@ -355,7 +358,9 @@ class InventarioController extends Notifier<InventarioState> {
     );
 
     try {
-      final detail = await ref.read(inventarioRepositoryProvider).obterInventario(inventarioId);
+      final detail = await ref
+          .read(inventarioRepositoryProvider)
+          .obterInventario(inventarioId);
       final recorded = detail.itens
           .where(_isRecordedItem)
           .map((item) => item.id)
@@ -369,10 +374,7 @@ class InventarioController extends Notifier<InventarioState> {
         clearError: true,
       );
     } on ApiFailure catch (e) {
-      state = state.copyWith(
-        isLoadingActive: false,
-        errorMessage: e.message,
-      );
+      state = state.copyWith(isLoadingActive: false, errorMessage: e.message);
     } catch (e) {
       state = state.copyWith(
         isLoadingActive: false,
@@ -388,5 +390,5 @@ class InventarioController extends Notifier<InventarioState> {
 
 final inventarioProvider =
     NotifierProvider.autoDispose<InventarioController, InventarioState>(
-  InventarioController.new,
-);
+      InventarioController.new,
+    );

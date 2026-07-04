@@ -2,48 +2,48 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
-import '../../domain/entities/categoria_produto.dart';
 
 class ProdutoCategoriaChip extends StatelessWidget {
   const ProdutoCategoriaChip({
     super.key,
-    required this.categoria,
-    this.label,
+    required this.label,
+    this.categoriaCodigo,
     this.compact = true,
   });
 
-  final CategoriaProduto categoria;
-  final String? label;
+  final String label;
+  final String? categoriaCodigo;
   final bool compact;
 
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
-    final color = _colorFor(categoria, t);
+    final color = _colorFor(categoriaCodigo ?? label, t);
+    final display = label.replaceAll('_', ' ');
 
     return Chip(
       visualDensity: compact ? VisualDensity.compact : VisualDensity.standard,
-      label: Text(label ?? categoria.label),
+      label: Text(display),
       labelStyle: Theme.of(context).textTheme.erpCaption.copyWith(color: color),
       backgroundColor: color.withValues(alpha: 0.12),
       side: BorderSide(color: color.withValues(alpha: 0.25)),
     );
   }
 
-  Color _colorFor(CategoriaProduto categoria, PharmaTokens t) {
-    switch (categoria) {
-      case CategoriaProduto.medicamento:
-        return t.brandBlue;
-      case CategoriaProduto.consumivel:
-        return t.brandGreen;
-      case CategoriaProduto.equipamento:
-        return t.textSecondary;
-      case CategoriaProduto.higiene:
-        return t.posInfo;
-      case CategoriaProduto.suplemento:
+  Color _colorFor(String value, PharmaTokens t) {
+    switch (value.toUpperCase()) {
+      case 'ANTIMICROBIANOS':
         return t.posWarning;
-      case CategoriaProduto.outro:
-        return t.textMuted;
+      case 'SISTEMA_NERVOSO_CENTRAL':
+      case 'CARDIOVASCULAR':
+        return t.brandBlue;
+      case 'DERMATOLOGIA':
+      case 'OFTALMOLOGIA':
+        return t.posInfo;
+      case 'NUTRICAO_VITAMINAS_MINERAIS':
+        return t.brandGreen;
+      default:
+        return t.textSecondary;
     }
   }
 }

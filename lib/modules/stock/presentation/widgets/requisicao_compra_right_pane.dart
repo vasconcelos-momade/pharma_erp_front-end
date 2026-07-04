@@ -48,9 +48,9 @@ class RequisicaoCompraRightPane extends StatelessWidget {
             activeRequisicao == null
                 ? 'Nova Requisição'
                 : 'Requisição #${activeRequisicao.id}',
-            style: Theme.of(context).textTheme.erpPageTitle.copyWith(
-                  color: t.textPrimary,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.erpPageTitle.copyWith(color: t.textPrimary),
           ),
         ),
         if (isBusy) const PharmaButtonLoader(),
@@ -109,7 +109,9 @@ class RequisicaoCompraRightPane extends StatelessWidget {
           ? null
           : [
               BoxShadow(
-                color: Theme.of(context).colorScheme.shadow.withValues(alpha: 0.03),
+                color: Theme.of(
+                  context,
+                ).colorScheme.shadow.withValues(alpha: 0.03),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -221,9 +223,9 @@ class RequisicaoActivePurchaseHeader extends StatelessWidget {
                   purchase.numeroDocumento.isNotEmpty
                       ? 'Documento ${purchase.numeroDocumento}'
                       : 'Requisição #${purchase.id}',
-                  style: Theme.of(context).textTheme.erpCardTitle.copyWith(
-                        color: t.textPrimary,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.erpCardTitle.copyWith(color: t.textPrimary),
                 ),
               ),
               if (canEdit && onEdit != null)

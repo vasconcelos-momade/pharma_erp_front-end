@@ -103,8 +103,8 @@ class _ProdutoDetailPanelState extends ConsumerState<ProdutoDetailPanel>
   Product _mapProduct(ProductModel model) {
     return Product(
       id: model.id,
-      nome: model.nome,
-      substanciaActiva: model.substanciaActiva,
+      nomeComercial: model.nomeComercial,
+      nomeGenerico: model.nomeGenerico,
       dosagem: model.dosagem,
       forma: model.forma,
       apresentacao: model.apresentacao,
@@ -112,7 +112,7 @@ class _ProdutoDetailPanelState extends ConsumerState<ProdutoDetailPanel>
       barcode: model.barcode,
       categoriaId: model.categoriaId,
       categoriaNome: model.categoriaNome,
-      categoria: model.categoria,
+      categoriaCodigoFnm: model.categoriaCodigoFnm,
       tipoDispensacao: model.tipoDispensacao,
       requiresPrescription: model.requiresPrescription,
       requiresDoubleCheck: model.requiresDoubleCheck,
@@ -150,7 +150,7 @@ class _ProdutoDetailPanelState extends ConsumerState<ProdutoDetailPanel>
     if (isMobile) {
       return Scaffold(
         appBar: AppBar(
-          title: Text(shortProductName(product.nome)),
+          title: Text(shortProductName(product.nomeComercial)),
           actions: [_buildActionsMenu(context)],
         ),
         body: body,
@@ -310,7 +310,7 @@ class _GeneralTab extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              PropertyTile(label: 'Substância activa', value: product.substanciaActiva),
+              PropertyTile(label: 'Nome genérico', value: product.nomeGenerico),
               PropertyTile(label: 'Dosagem', value: product.dosagem),
               PropertyTile(label: 'Forma', value: product.forma),
               PropertyTile(label: 'Apresentação', value: product.apresentacao),

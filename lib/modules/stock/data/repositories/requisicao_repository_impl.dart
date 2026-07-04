@@ -104,7 +104,9 @@ class RequisicaoRepositoryImpl implements RequisicaoRepository {
   }
 
   @override
-  Future<List<ProdutoLoteDisponivel>> listarLotesProduto(String produtoId) async {
+  Future<List<ProdutoLoteDisponivel>> listarLotesProduto(
+    String produtoId,
+  ) async {
     final response = await _remoteDataSource.listarLotesProduto(produtoId);
     return response
         .map(
@@ -112,7 +114,7 @@ class RequisicaoRepositoryImpl implements RequisicaoRepository {
             id: lote.id,
             numeroLote: lote.numeroLote,
             dataValidade: lote.dataValidade,
-            quantidadeAtual: lote.quantidadeAtual,
+            quantidadeDisponivel: lote.quantidadeDisponivel,
           ),
         )
         .toList();

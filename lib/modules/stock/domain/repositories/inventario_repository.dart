@@ -3,9 +3,7 @@ import '../entities/inventario.dart';
 
 abstract class InventarioRepository {
   Future<InventarioDetalhe> abrirInventario(AbrirInventarioRequest request);
-  Future<List<InventarioResumo>> listarInventarios({
-    InventarioStatus? status,
-  });
+  Future<List<InventarioResumo>> listarInventarios({InventarioStatus? status});
   Future<PaginationResponse<InventarioItem>> listarItensInventario({
     required String inventarioId,
     String? query,

@@ -112,13 +112,17 @@ class RequisicaoPurchaseItemsDesktopTable extends StatelessWidget {
                     DataCell(
                       SizedBox(
                         width: 130,
-                        child: Text(requisicaoFormatDisplayDate(item.dataValidade)),
+                        child: Text(
+                          requisicaoFormatDisplayDate(item.dataValidade),
+                        ),
                       ),
                     ),
                     DataCell(
                       SizedBox(
                         width: 130,
-                        child: Text(requisicaoFormatMoney(item.precoCompra ?? 0)),
+                        child: Text(
+                          requisicaoFormatMoney(item.precoCompra ?? 0),
+                        ),
                       ),
                     ),
                     DataCell(
@@ -228,7 +232,9 @@ class RequisicaoPurchaseItemsTabletTable extends StatelessWidget {
                     DataCell(
                       SizedBox(
                         width: 130,
-                        child: Text(requisicaoFormatMoney(item.precoCompra ?? 0)),
+                        child: Text(
+                          requisicaoFormatMoney(item.precoCompra ?? 0),
+                        ),
                       ),
                     ),
                     DataCell(
@@ -338,9 +344,9 @@ class RequisicaoPurchaseItemCard extends StatelessWidget {
         children: [
           Text(
             item.produtoNome,
-            style: Theme.of(context).textTheme.erpCardTitle.copyWith(
-                  color: t.textPrimary,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.erpCardTitle.copyWith(color: t.textPrimary),
           ),
           SizedBox(height: s.sm),
           Wrap(

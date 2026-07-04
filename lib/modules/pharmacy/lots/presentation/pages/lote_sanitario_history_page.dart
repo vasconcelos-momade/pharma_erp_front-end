@@ -17,9 +17,7 @@ class LoteSanitarioHistoryPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Histórico • ${numeroLote ?? loteId}'),
-      ),
+      appBar: AppBar(title: Text('Histórico • ${numeroLote ?? loteId}')),
       body: LoteSanitarioHistoryContent(
         loteId: loteId,
         numeroLote: numeroLote,

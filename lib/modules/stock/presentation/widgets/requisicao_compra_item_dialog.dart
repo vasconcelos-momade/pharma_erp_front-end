@@ -46,7 +46,7 @@ class RequisicaoCompraItemDialog extends StatefulWidget {
   final bool embedded;
 
   bool get isEditing => item != null;
-  String get productName => item?.produtoNome ?? product!.nome;
+  String get productName => item?.produtoNome ?? product!.nomeComercial;
   String get productId => item?.produtoId ?? product!.id;
 
   @override
@@ -54,7 +54,8 @@ class RequisicaoCompraItemDialog extends StatefulWidget {
       _RequisicaoCompraItemDialogState();
 }
 
-class _RequisicaoCompraItemDialogState extends State<RequisicaoCompraItemDialog> {
+class _RequisicaoCompraItemDialogState
+    extends State<RequisicaoCompraItemDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _loteController;
   late final TextEditingController _precoCompraController;
@@ -196,9 +197,7 @@ class _RequisicaoCompraItemDialogState extends State<RequisicaoCompraItemDialog>
             label: 'Preço de compra',
             hint: 'Ex.: 44.10',
             validator: _positiveNumberValidator,
-            keyboardType: const TextInputType.numberWithOptions(
-              decimal: true,
-            ),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
           ),
           SizedBox(height: s.md),
           RequisicaoItemDialogField(
@@ -206,9 +205,7 @@ class _RequisicaoCompraItemDialogState extends State<RequisicaoCompraItemDialog>
             label: 'Preço de venda',
             hint: 'Opcional',
             validator: _optionalPositiveNumberValidator,
-            keyboardType: const TextInputType.numberWithOptions(
-              decimal: true,
-            ),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
           ),
           SizedBox(height: s.md),
           RequisicaoItemDialogField(
@@ -216,9 +213,7 @@ class _RequisicaoCompraItemDialogState extends State<RequisicaoCompraItemDialog>
             label: 'Quantidade',
             hint: 'Ex.: 10',
             validator: _positiveNumberValidator,
-            keyboardType: const TextInputType.numberWithOptions(
-              decimal: true,
-            ),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
           ),
         ],
       ),
@@ -234,9 +229,7 @@ class _RequisicaoCompraItemDialogState extends State<RequisicaoCompraItemDialog>
         icon: Icon(
           widget.isEditing ? Icons.save_outlined : Icons.add_task_rounded,
         ),
-        label: Text(
-          widget.isEditing ? 'Guardar alterações' : 'Adicionar item',
-        ),
+        label: Text(widget.isEditing ? 'Guardar alterações' : 'Adicionar item'),
       ),
     ];
 
@@ -246,10 +239,7 @@ class _RequisicaoCompraItemDialogState extends State<RequisicaoCompraItemDialog>
         children: [
           form,
           const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: actions,
-          ),
+          Row(mainAxisAlignment: MainAxisAlignment.end, children: actions),
         ],
       );
     }
@@ -374,9 +364,7 @@ class RequisicaoItemDialogProductHeader extends StatelessWidget {
                     ),
                     child: Text(
                       item,
-                      style: textTheme.erpLabel.copyWith(
-                        color: t.textPrimary,
-                      ),
+                      style: textTheme.erpLabel.copyWith(color: t.textPrimary),
                     ),
                   ),
               ],

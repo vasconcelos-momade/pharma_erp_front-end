@@ -102,9 +102,7 @@ class RequisicaoItemRequestModel {
   final double? precoCompra;
   final double? precoVenda;
 
-  factory RequisicaoItemRequestModel.fromEntity(
-    RequisicaoItemRequest entity,
-  ) {
+  factory RequisicaoItemRequestModel.fromEntity(RequisicaoItemRequest entity) {
     return RequisicaoItemRequestModel(
       produtoId: entity.produtoId,
       quantidadeSolicitada: entity.quantidadeSolicitada,
@@ -302,17 +300,19 @@ class RequisicaoItemModel {
         const ['id', 'produtoId'],
       ),
       produtoNome: produto is Map<String, dynamic>
-          ? _stringValue(produto, const ['nome'], fallback: 'Produto')
-          : _stringValue(json, const ['produtoNome'], fallback: 'Produto'),
+          ? _stringValue(produto, const ['nomeComercial', 'nome'], fallback: 'Produto')
+          : _stringValue(json, const ['produtoNomeComercial', 'produtoNome'], fallback: 'Produto'),
       lote: lote is Map<String, dynamic>
           ? RequisicaoLoteModel.fromJson(lote)
           : null,
       numeroLote: _nullableString(json['numeroLote']),
       dataValidade: _nullableDate(json['dataValidade']),
-      precoCompra:
-          json['precoCompra'] == null ? null : _toDouble(json['precoCompra']),
-      precoVenda:
-          json['precoVenda'] == null ? null : _toDouble(json['precoVenda']),
+      precoCompra: json['precoCompra'] == null
+          ? null
+          : _toDouble(json['precoCompra']),
+      precoVenda: json['precoVenda'] == null
+          ? null
+          : _toDouble(json['precoVenda']),
       subtotal: json['subtotal'] == null ? null : _toDouble(json['subtotal']),
     );
   }
@@ -338,20 +338,20 @@ class ProdutoLoteDisponivelModel {
     required this.id,
     required this.numeroLote,
     required this.dataValidade,
-    required this.quantidadeAtual,
+    required this.quantidadeDisponivel,
   });
 
   final String id;
   final String numeroLote;
   final DateTime dataValidade;
-  final double quantidadeAtual;
+  final double quantidadeDisponivel;
 
   factory ProdutoLoteDisponivelModel.fromJson(Map<String, dynamic> json) {
     return ProdutoLoteDisponivelModel(
       id: _stringValue(json, const ['id']),
       numeroLote: _stringValue(json, const ['numeroLote'], fallback: 'Lote'),
       dataValidade: _dateValue(json, const ['dataValidade']),
-      quantidadeAtual: _toDouble(json['quantidadeAtual']),
+      quantidadeDisponivel: _toDouble(json['quantidadeDisponivel']),
     );
   }
 }
@@ -419,9 +419,9 @@ class RequisicaoDetalheModel {
       updatedAt: _dateValue(json, const ['updatedAt', 'createdAt', 'data']),
       itens: rawItens is List
           ? rawItens
-              .whereType<Map<String, dynamic>>()
-              .map(RequisicaoItemModel.fromJson)
-              .toList()
+                .whereType<Map<String, dynamic>>()
+                .map(RequisicaoItemModel.fromJson)
+                .toList()
           : const <RequisicaoItemModel>[],
       user: user is Map<String, dynamic>
           ? RequisicaoUsuarioModel.fromJson(user)
@@ -503,18 +503,16 @@ class CriarLoteResultModel {
 
   factory CriarLoteResultModel.fromJson(Map<String, dynamic> json) {
     return CriarLoteResultModel(
-      message: _stringValue(json, const ['message'], fallback: 'Lote criado com sucesso.'),
+      message: _stringValue(json, const [
+        'message',
+      ], fallback: 'Lote criado com sucesso.'),
       loteId: _stringValue(json, const ['loteId', 'id']),
       lote: json['lote'],
     );
   }
 
   CriarLoteResult toEntity() {
-    return CriarLoteResult(
-      message: message,
-      loteId: loteId,
-      lote: lote,
-    );
+    return CriarLoteResult(message: message, loteId: loteId, lote: lote);
   }
 }
 
@@ -529,20 +527,17 @@ class RequisicaoOperacaoResultadoModel {
   final String requisicaoId;
   final RequisicaoStatus? status;
 
-  factory RequisicaoOperacaoResultadoModel.fromJson(
-    Map<String, dynamic> json,
-  ) {
+  factory RequisicaoOperacaoResultadoModel.fromJson(Map<String, dynamic> json) {
     final statusValue = _nullableString(json['status']);
     return RequisicaoOperacaoResultadoModel(
-      message: _stringValue(
-        json,
-        const ['message'],
-        fallback: 'Operacao concluida com sucesso.',
-      ),
-      requisicaoId: _stringValue(
-        json,
-        const ['requisicaoId', 'transferenciaId', 'id'],
-      ),
+      message: _stringValue(json, const [
+        'message',
+      ], fallback: 'Operacao concluida com sucesso.'),
+      requisicaoId: _stringValue(json, const [
+        'requisicaoId',
+        'transferenciaId',
+        'id',
+      ]),
       status: statusValue == null
           ? null
           : RequisicaoStatusX.fromApi(statusValue),
@@ -558,8 +553,11 @@ class RequisicaoOperacaoResultadoModel {
   }
 }
 
-String _stringValue(Map<String, dynamic> json, List<String> keys,
-    {String fallback = ''}) {
+String _stringValue(
+  Map<String, dynamic> json,
+  List<String> keys, {
+  String fallback = '',
+}) {
   for (final key in keys) {
     if (json[key] != null) {
       final value = json[key].toString().trim();

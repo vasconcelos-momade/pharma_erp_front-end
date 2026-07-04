@@ -43,16 +43,16 @@ class RequisicaoMobilePurchaseSummaryBar extends StatelessWidget {
                   children: [
                     Text(
                       '${requisicao.totalItens} item${requisicao.totalItens == 1 ? '' : 's'}',
-                      style: Theme.of(context).textTheme.erpCardTitle.copyWith(
-                            color: t.textPrimary,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.erpCardTitle.copyWith(color: t.textPrimary),
                     ),
                     SizedBox(height: s.xxs),
                     Text(
                       'Total: ${requisicaoFormatMoney(total)}',
-                      style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                            color: t.textMuted,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
                     ),
                   ],
                 ),

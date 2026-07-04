@@ -48,8 +48,12 @@ class ProdutoRegulacaoBadges extends StatelessWidget {
   }
 
   bool _isMedicamento(Product product) {
+    if (product.categoriaCodigoFnm != null &&
+        product.categoriaCodigoFnm!.isNotEmpty) {
+      return true;
+    }
     final nome = product.categoriaNome?.toLowerCase() ?? '';
-    return product.categoria.name == 'medicamento' || nome.contains('medicament');
+    return nome.contains('medicament');
   }
 
   String _dispensacaoLabel(String tipo) {

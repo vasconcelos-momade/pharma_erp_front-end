@@ -337,7 +337,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
       context: context,
       title: 'Confirmar exclusão',
       message:
-          'Deseja excluir o produto «${product.nome}»?\n\n'
+          'Deseja excluir o produto «${product.nomeComercial}»?\n\n'
           'A operação seguirá o padrão actual do sistema.',
       confirmText: 'Excluir',
       cancelText: 'Cancelar',

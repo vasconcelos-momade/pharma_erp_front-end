@@ -30,7 +30,7 @@ class PdvCartLine {
     return PdvCartLine._(
       id: 'produto:${product.id}',
       faturaItemId: faturaItemId,
-      nome: product.nome,
+      nome: product.nomeComercial,
       precoUnitario: product.precoVenda,
       qty: qty,
       lineTotal: total,

@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../shared/widgets/buttons/pharma_button_loader.dart';
 import '../../../../../shared/widgets/cards/enterprise_list_card.dart';
-import '../../../../pharmacy/products/domain/entities/categoria_produto.dart';
 import '../../../../pharmacy/products/domain/entities/product.dart';
 import 'pdv_catalog_utils.dart';
 
@@ -33,9 +32,9 @@ class PdvProductCard extends StatelessWidget {
         'PV ${pdvFormatMoney(product.precoVenda)} • Val. ${pdvFormatDate(product.dataValidade)} • Lote ${product.lote ?? '—'} • Stock ${product.estoqueAtual.toInt()}';
 
     return EnterpriseListCard(
-      title: product.nome,
-      subtitle: (product.substanciaActiva ?? '').isNotEmpty
-          ? product.substanciaActiva
+      title: product.nomeComercial,
+      subtitle: (product.nomeGenerico ?? '').isNotEmpty
+          ? product.nomeGenerico
           : null,
       leading: Icons.medication_outlined,
       chip: stockIndisponivel
@@ -50,7 +49,7 @@ class PdvProductCard extends StatelessWidget {
                 )
               : null,
       metadata: [
-        EnterpriseListCardMeta(label: product.categoria.label),
+        EnterpriseListCardMeta(label: product.categoriaNome ?? '—'),
         EnterpriseListCardMeta(label: metadataLine, color: stockColor),
       ],
       onTap: canInteract ? onAdd : null,

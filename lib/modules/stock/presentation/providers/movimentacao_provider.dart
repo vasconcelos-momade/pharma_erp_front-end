@@ -8,13 +8,7 @@ import '../../../../core/errors/api_failure.dart';
 import '../../data/repositories/movimentacao_repository_impl.dart';
 import '../../domain/entities/movimentacao.dart';
 
-enum MovimentacaoViewState {
-  loading,
-  loaded,
-  empty,
-  error,
-  updating,
-}
+enum MovimentacaoViewState { loading, loaded, empty, error, updating }
 
 class MovimentacaoListState {
   const MovimentacaoListState({
@@ -79,7 +73,9 @@ class MovimentacaoListController extends Notifier<MovimentacaoListState> {
 
     ref.listen<AuthSessionState>(authSessionProvider, (previous, next) {
       final wasReady =
-          previous != null && !previous.isBootstrapping && previous.hasTenantContext;
+          previous != null &&
+          !previous.isBootstrapping &&
+          previous.hasTenantContext;
       final isReady = !next.isBootstrapping && next.hasTenantContext;
       if (isReady && !wasReady) {
         unawaited(fetch());
@@ -99,20 +95,13 @@ class MovimentacaoListController extends Notifier<MovimentacaoListState> {
   }
 
   void onSearchChanged(String value) {
-    final nextQuery = state.query.copyWith(
-      search: value.trim(),
-      page: 1,
-    );
+    final nextQuery = state.query.copyWith(search: value.trim(), page: 1);
     _setQuery(nextQuery, debounce: true);
   }
 
   Future<void> setTipoFilter(String? tipo) async {
     await fetch(
-      query: state.query.copyWith(
-        page: 1,
-        tipo: tipo,
-        clearTipo: tipo == null,
-      ),
+      query: state.query.copyWith(page: 1, tipo: tipo, clearTipo: tipo == null),
     );
   }
 
@@ -138,8 +127,11 @@ class MovimentacaoListController extends Notifier<MovimentacaoListState> {
         break;
       case MovimentacaoQuickFilter.week:
         final weekday = now.weekday;
-        dataInicio = DateTime(now.year, now.month, now.day)
-            .subtract(Duration(days: weekday - 1));
+        dataInicio = DateTime(
+          now.year,
+          now.month,
+          now.day,
+        ).subtract(Duration(days: weekday - 1));
         dataFim = DateTime(now.year, now.month, now.day);
         break;
       case MovimentacaoQuickFilter.month:
@@ -189,12 +181,7 @@ class MovimentacaoListController extends Notifier<MovimentacaoListState> {
     if (normalized == state.query.pageSize) {
       return;
     }
-    await fetch(
-      query: state.query.copyWith(
-        page: 1,
-        pageSize: normalized,
-      ),
-    );
+    await fetch(query: state.query.copyWith(page: 1, pageSize: normalized));
   }
 
   Future<void> refresh() async {
@@ -205,9 +192,7 @@ class MovimentacaoListController extends Notifier<MovimentacaoListState> {
     await fetch(query: const MovimentacaoQuery());
   }
 
-  Future<void> fetch({
-    MovimentacaoQuery? query,
-  }) async {
+  Future<void> fetch({MovimentacaoQuery? query}) async {
     if (!ref.read(authSessionProvider).hasTenantContext) {
       return;
     }
@@ -291,6 +276,7 @@ class MovimentacaoListController extends Notifier<MovimentacaoListState> {
 }
 
 final movimentacaoListProvider =
-    NotifierProvider.autoDispose<MovimentacaoListController, MovimentacaoListState>(
-  MovimentacaoListController.new,
-);
+    NotifierProvider.autoDispose<
+      MovimentacaoListController,
+      MovimentacaoListState
+    >(MovimentacaoListController.new);

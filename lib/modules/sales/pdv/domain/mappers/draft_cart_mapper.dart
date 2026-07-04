@@ -10,7 +10,7 @@ abstract final class DraftCartMapper {
   static Product productFromItem(DraftCartItemModel item) {
     return Product(
       id: item.produtoId ?? '',
-      nome: item.nome,
+      nomeComercial: item.nome,
       ativo: true,
       tipoDispensacao: item.tipoDispensacao ?? 'VENDA_LIVRE',
       requiresPrescription: item.requiresPrescription,

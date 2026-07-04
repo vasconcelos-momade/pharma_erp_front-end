@@ -60,5 +60,5 @@ class MovimentacaoRemoteDataSourceImpl implements MovimentacaoRemoteDataSource {
 
 final movimentacaoRemoteDataSourceProvider =
     Provider<MovimentacaoRemoteDataSource>((ref) {
-  return MovimentacaoRemoteDataSourceImpl(ref.watch(dioProvider));
-});
+      return MovimentacaoRemoteDataSourceImpl(ref.watch(dioProvider));
+    });

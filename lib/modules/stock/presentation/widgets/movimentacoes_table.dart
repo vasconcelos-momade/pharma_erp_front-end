@@ -6,10 +6,7 @@ import '../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../domain/entities/movimentacao.dart';
 
 class MovimentacoesTable extends StatelessWidget {
-  const MovimentacoesTable({
-    super.key,
-    required this.items,
-  });
+  const MovimentacoesTable({super.key, required this.items});
 
   final List<Movimentacao> items;
 
@@ -28,7 +25,9 @@ class MovimentacoesTable extends StatelessWidget {
         DataColumn(label: Text('Stock', style: _headerStyle(textTheme, t))),
         DataColumn(label: Text('Origem', style: _headerStyle(textTheme, t))),
         DataColumn(label: Text('Documento', style: _headerStyle(textTheme, t))),
-        DataColumn(label: Text('Utilizador', style: _headerStyle(textTheme, t))),
+        DataColumn(
+          label: Text('Utilizador', style: _headerStyle(textTheme, t)),
+        ),
       ],
       rowCount: items.length,
       rowBuilder: (context, index) {
@@ -42,7 +41,12 @@ class MovimentacoesTable extends StatelessWidget {
 
         return DataRow(
           cells: [
-            DataCell(Text(_formatDateTime(item.createdAt), style: _cellStyle(textTheme, t))),
+            DataCell(
+              Text(
+                _formatDateTime(item.createdAt),
+                style: _cellStyle(textTheme, t),
+              ),
+            ),
             DataCell(
               Container(
                 padding: EdgeInsets.symmetric(
@@ -61,7 +65,12 @@ class MovimentacoesTable extends StatelessWidget {
               ),
             ),
             DataCell(Text(produtoLabel, style: _cellStyle(textTheme, t))),
-            DataCell(Text(item.lote?.numeroLote ?? '—', style: _cellStyle(textTheme, t))),
+            DataCell(
+              Text(
+                item.lote?.numeroLote ?? '—',
+                style: _cellStyle(textTheme, t),
+              ),
+            ),
             DataCell(
               Text(
                 _formatQty(item.quantidade),
@@ -81,7 +90,9 @@ class MovimentacoesTable extends StatelessWidget {
                 style: _cellStyle(textTheme, t, muted: true),
               ),
             ),
-            DataCell(Text(item.user?.nome ?? '—', style: _cellStyle(textTheme, t))),
+            DataCell(
+              Text(item.user?.nome ?? '—', style: _cellStyle(textTheme, t)),
+            ),
           ],
         );
       },
@@ -92,7 +103,11 @@ class MovimentacoesTable extends StatelessWidget {
     return textTheme.erpOverline.copyWith(color: t.textMuted);
   }
 
-  TextStyle _cellStyle(TextTheme textTheme, PharmaTokens t, {bool muted = false}) {
+  TextStyle _cellStyle(
+    TextTheme textTheme,
+    PharmaTokens t, {
+    bool muted = false,
+  }) {
     return muted
         ? textTheme.erpBodySecondary.copyWith(color: t.textMuted)
         : textTheme.erpLabel.copyWith(color: t.textPrimary);

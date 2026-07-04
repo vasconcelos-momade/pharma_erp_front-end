@@ -40,16 +40,16 @@ class InventoryMobileSummaryBar extends StatelessWidget {
                   children: [
                     Text(
                       inventory.codigo,
-                      style: Theme.of(context).textTheme.erpCardTitle.copyWith(
-                            color: t.textPrimary,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.erpCardTitle.copyWith(color: t.textPrimary),
                     ),
                     SizedBox(height: s.xxs),
                     Text(
                       '$recordedCount contagem(ns) • ${inventory.itensComDivergencia} divergência(s)',
-                      style: Theme.of(context).textTheme.erpCaption.copyWith(
-                            color: t.textMuted,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.erpCaption.copyWith(color: t.textMuted),
                     ),
                   ],
                 ),

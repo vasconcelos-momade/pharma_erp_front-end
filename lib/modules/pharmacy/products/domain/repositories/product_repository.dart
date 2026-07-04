@@ -1,5 +1,4 @@
 import '../../../../../core/contracts/pagination_response.dart';
-import '../entities/categoria_produto.dart';
 import '../entities/product.dart';
 import '../entities/product_tax_rule.dart';
 
@@ -29,14 +28,14 @@ abstract class ProductRepository {
   Future<PaginationResponse<Product>> searchProducts({
     String? query,
     String? barcode,
-    CategoriaProduto? categoria,
+    String? categoriaId,
     int page = 1,
     int pageSize = 20,
   });
 
   Future<PaginationResponse<Product>> searchRequisitionProducts({
     String? query,
-    CategoriaProduto? categoria,
+    String? categoriaId,
     int page = 1,
     int pageSize = 20,
   });

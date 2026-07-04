@@ -12,11 +12,11 @@ import '../providers/product_provider.dart';
 
 class ProdutoFormDialogResult {
   const ProdutoFormDialogResult({
-    required this.nome,
+    required this.nomeComercial,
     required this.categoriaId,
     required this.activo,
     this.barcode,
-    this.substanciaActiva,
+    this.nomeGenerico,
     this.dosagem,
     this.forma,
     this.apresentacao,
@@ -24,11 +24,11 @@ class ProdutoFormDialogResult {
     this.taxRuleId,
   });
 
-  final String nome;
+  final String nomeComercial;
   final String categoriaId;
   final bool activo;
   final String? barcode;
-  final String? substanciaActiva;
+  final String? nomeGenerico;
   final String? dosagem;
   final String? forma;
   final String? apresentacao;
@@ -37,18 +37,16 @@ class ProdutoFormDialogResult {
 
   Map<String, dynamic> toPayload() {
     return <String, dynamic>{
-      'nome': nome,
+      'nomeComercial': nomeComercial,
       'categoriaId': categoriaId,
       'ativo': activo,
       'activo': activo,
       'taxRuleId': taxRuleId,
       if (barcode != null && barcode!.isNotEmpty) 'barcode': barcode,
-      if (substanciaActiva != null && substanciaActiva!.isNotEmpty)
-        'substanciaActiva': substanciaActiva,
+      if (nomeGenerico != null && nomeGenerico!.isNotEmpty) 'nomeGenerico': nomeGenerico,
       if (dosagem != null && dosagem!.isNotEmpty) 'dosagem': dosagem,
       if (forma != null && forma!.isNotEmpty) 'forma': forma,
-      if (apresentacao != null && apresentacao!.isNotEmpty)
-        'apresentacao': apresentacao,
+      if (apresentacao != null && apresentacao!.isNotEmpty) 'apresentacao': apresentacao,
       if (estoqueMinimo != null) 'estoqueMinimo': estoqueMinimo,
     };
   }
@@ -89,10 +87,10 @@ class _ProdutoFormDialogState extends ConsumerState<ProdutoFormDialog> {
   void initState() {
     super.initState();
     final product = widget.product;
-    _nomeController = TextEditingController(text: product?.nome ?? '');
+    _nomeController = TextEditingController(text: product?.nomeComercial ?? '');
     _barcodeController = TextEditingController(text: product?.barcode ?? '');
     _substanciaController =
-        TextEditingController(text: product?.substanciaActiva ?? '');
+        TextEditingController(text: product?.nomeGenerico ?? '');
     _dosagemController = TextEditingController(text: product?.dosagem ?? '');
     _formaController = TextEditingController(text: product?.forma ?? '');
     _apresentacaoController =
@@ -141,11 +139,11 @@ class _ProdutoFormDialogState extends ConsumerState<ProdutoFormDialog> {
     AdaptiveNavigator.complete(
       context,
       ProdutoFormDialogResult(
-        nome: _nomeController.text.trim(),
+        nomeComercial: _nomeController.text.trim(),
         categoriaId: _categoriaId!,
         activo: _activo,
         barcode: _barcodeController.text.trim(),
-        substanciaActiva: _substanciaController.text.trim(),
+        nomeGenerico: _substanciaController.text.trim(),
         dosagem: _dosagemController.text.trim(),
         forma: _formaController.text.trim(),
         apresentacao: _apresentacaoController.text.trim(),
@@ -202,12 +200,12 @@ class _ProdutoFormDialogState extends ConsumerState<ProdutoFormDialog> {
         TextFormField(
           controller: _nomeController,
           decoration: const InputDecoration(
-            labelText: 'Nome *',
+            labelText: 'Nome comercial *',
             border: OutlineInputBorder(),
           ),
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
-              return 'Nome é obrigatório';
+              return 'Nome comercial é obrigatório';
             }
             return null;
           },
@@ -329,7 +327,7 @@ class _ProdutoFormDialogState extends ConsumerState<ProdutoFormDialog> {
         TextFormField(
           controller: _substanciaController,
           decoration: const InputDecoration(
-            labelText: 'Substância activa',
+            labelText: 'Nome genérico',
             border: OutlineInputBorder(),
           ),
         ),

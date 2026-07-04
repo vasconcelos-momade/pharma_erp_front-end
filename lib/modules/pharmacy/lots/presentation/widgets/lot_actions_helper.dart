@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/errors/api_failure.dart';
+import '../../../../../core/utils/lote_stock_utils.dart';
 import '../../../../../shared/widgets/layout/adaptive_side_sheet.dart';
 import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
@@ -22,7 +23,7 @@ abstract final class LotActionsHelper {
 
   static bool canMoveToQuarentena(Map<String, dynamic> lote) {
     if (lote['estadoSanitario']?.toString() == 'RECALL') return false;
-    return _num(lote['quantidadeDisponivel']) > 0;
+    return LoteStockUtils.readDisponivel(lote) > 0;
   }
 
   static bool canRevertQuarentena(Map<String, dynamic> lote) {
@@ -96,7 +97,7 @@ abstract final class LotActionsHelper {
     final loteId = lote['id']?.toString() ?? '';
     final maxQty = isRevert
         ? _num(lote['quantidadeQuarentena'])
-        : _num(lote['quantidadeDisponivel']);
+        : LoteStockUtils.readDisponivel(lote);
     final title = Text(
       isRevert ? 'Reverter quarentena' : 'Mover para quarentena',
     );
@@ -157,14 +158,18 @@ abstract final class LotActionsHelper {
         title: isRevert ? 'A libertar quarentena' : 'A processar quarentena',
       );
       if (isRevert) {
-        await ref.read(lotsViewProvider.notifier).revertQuarentena(
+        await ref
+            .read(lotsViewProvider.notifier)
+            .revertQuarentena(
               loteId: loteId,
               quantidade: formData.quantidade,
               motivo: formData.motivo,
               documentoReferencia: formData.documentoReferencia,
             );
       } else {
-        await ref.read(lotsViewProvider.notifier).moveToQuarentena(
+        await ref
+            .read(lotsViewProvider.notifier)
+            .moveToQuarentena(
               loteId: loteId,
               quantidade: formData.quantidade,
               motivo: formData.motivo,

@@ -45,28 +45,17 @@ extension MovimentacaoTipoX on MovimentacaoTipo {
   }
 }
 
-enum MovimentacaoQuickFilter {
-  none,
-  today,
-  week,
-  month,
-}
+enum MovimentacaoQuickFilter { none, today, week, month }
 
 class MovimentacaoFilterOption {
-  const MovimentacaoFilterOption({
-    required this.value,
-    required this.label,
-  });
+  const MovimentacaoFilterOption({required this.value, required this.label});
 
   final String value;
   final String label;
 }
 
 class MovimentacaoAggregate {
-  const MovimentacaoAggregate({
-    required this.count,
-    required this.quantidade,
-  });
+  const MovimentacaoAggregate({required this.count, required this.quantidade});
 
   final int count;
   final double quantidade;
@@ -127,20 +116,14 @@ class MovimentacaoProdutoResumo {
 }
 
 class MovimentacaoLoteResumo {
-  const MovimentacaoLoteResumo({
-    required this.id,
-    required this.numeroLote,
-  });
+  const MovimentacaoLoteResumo({required this.id, required this.numeroLote});
 
   final String id;
   final String numeroLote;
 }
 
 class MovimentacaoUserResumo {
-  const MovimentacaoUserResumo({
-    required this.id,
-    required this.nome,
-  });
+  const MovimentacaoUserResumo({required this.id, required this.nome});
 
   final String id;
   final String nome;

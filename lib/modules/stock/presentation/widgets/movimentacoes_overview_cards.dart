@@ -50,10 +50,7 @@ class MovimentacoesOverviewCards extends StatelessWidget {
       ),
     ];
 
-    return EnterpriseKpiGrid(
-      cards: cards,
-      useDesktopRowWhenSingleLine: true,
-    );
+    return EnterpriseKpiGrid(cards: cards, useDesktopRowWhenSingleLine: true);
   }
 
   String _qtyLabel(double quantidade) {

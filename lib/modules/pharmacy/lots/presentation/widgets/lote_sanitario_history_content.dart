@@ -34,8 +34,7 @@ class LoteSanitarioHistoryContent extends ConsumerWidget {
 
         final data = snapshot.data ?? const <String, dynamic>{};
         final lote = data['lote'] as Map<String, dynamic>? ?? const {};
-        final title =
-            numeroLote ?? lote['numeroLote']?.toString() ?? loteId;
+        final title = numeroLote ?? lote['numeroLote']?.toString() ?? loteId;
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -105,10 +104,7 @@ class _HistoryBody extends StatelessWidget {
             ),
           ),
         const SizedBox(height: 16),
-        Text(
-          'Incinerações',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
+        Text('Incinerações', style: Theme.of(context).textTheme.titleMedium),
         const SizedBox(height: 8),
         if (incineracoes.isEmpty)
           const Text('Sem incinerações associadas.')
@@ -120,9 +116,7 @@ class _HistoryBody extends StatelessWidget {
               title: Text(
                 'Auto ${item['numeroAuto'] ?? item['id']} • ${item['quantidade'] ?? 0}',
               ),
-              subtitle: Text(
-                item['dataIncineracao']?.toString() ?? '—',
-              ),
+              subtitle: Text(item['dataIncineracao']?.toString() ?? '—'),
             ),
           ),
       ],

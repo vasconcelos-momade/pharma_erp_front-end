@@ -1,38 +1,10 @@
-import '../../domain/entities/categoria_produto.dart';
 import '../../domain/entities/product_tax_rule.dart';
 
 class ProductModel {
-  final String id;
-  final String nome;
-  final String? substanciaActiva;
-  final String? dosagem;
-  final String? forma;
-  final String? apresentacao;
-  final bool ativo;
-  final String? barcode;
-  final String? categoriaId;
-  final String? categoriaNome;
-  final CategoriaProduto categoria;
-  final String tipoDispensacao;
-  final bool requiresPrescription;
-  final bool requiresDoubleCheck;
-  final bool requiresPsychotropicBook;
-  final bool antimicrobiano;
-  final bool requiresManualReview;
-  final double precoVenda;
-  final double estoqueAtual;
-  final double estoqueMinimo;
-  final int numLotes;
-  final String? lote;
-  final DateTime? dataValidade;
-  final DateTime? proximaValidade;
-  final DateTime? createdAt;
-  final ProductTaxRule? taxRule;
-
-  ProductModel({
+  const ProductModel({
     required this.id,
-    required this.nome,
-    this.substanciaActiva,
+    required this.nomeComercial,
+    this.nomeGenerico,
     this.dosagem,
     this.forma,
     this.apresentacao,
@@ -40,7 +12,7 @@ class ProductModel {
     this.barcode,
     this.categoriaId,
     this.categoriaNome,
-    this.categoria = CategoriaProduto.medicamento,
+    this.categoriaCodigoFnm,
     required this.tipoDispensacao,
     required this.requiresPrescription,
     required this.requiresDoubleCheck,
@@ -58,21 +30,50 @@ class ProductModel {
     this.taxRule,
   });
 
+  final String id;
+  final String nomeComercial;
+  final String? nomeGenerico;
+  final String? dosagem;
+  final String? forma;
+  final String? apresentacao;
+  final bool ativo;
+  final String? barcode;
+  final String? categoriaId;
+  final String? categoriaNome;
+  final String? categoriaCodigoFnm;
+  final String tipoDispensacao;
+  final bool requiresPrescription;
+  final bool requiresDoubleCheck;
+  final bool requiresPsychotropicBook;
+  final bool antimicrobiano;
+  final bool requiresManualReview;
+  final double precoVenda;
+  final double estoqueAtual;
+  final double estoqueMinimo;
+  final int numLotes;
+  final String? lote;
+  final DateTime? dataValidade;
+  final DateTime? proximaValidade;
+  final DateTime? createdAt;
+  final ProductTaxRule? taxRule;
+
   factory ProductModel.fromJson(Map<String, dynamic> json) {
+    final categoria = json['categoria'];
     return ProductModel(
       id: json['id'].toString(),
-      nome: json['nome'] as String,
-      substanciaActiva: json['substanciaActiva'] as String?,
+      nomeComercial: (json['nomeComercial'] ?? json['nome'] ?? '').toString(),
+      nomeGenerico: (json['nomeGenerico'] ?? json['nomeGenerico']) as String?,
       dosagem: json['dosagem'] as String?,
       forma: json['forma'] as String?,
       apresentacao: json['apresentacao'] as String?,
       ativo: _toBool(json['ativo'] ?? json['activo'], defaultValue: true),
       barcode: json['barcode'] as String?,
-      categoria: _parseCategoria(json),
       categoriaId: json['categoriaId']?.toString() ??
-          (json['categoria'] is Map ? (json['categoria'] as Map)['id']?.toString() : null),
+          (categoria is Map ? (categoria)['id']?.toString() : null),
       categoriaNome: json['categoriaNome'] as String? ??
-          (json['categoria'] is Map ? (json['categoria'] as Map)['nome'] as String? : null),
+          (categoria is Map ? (categoria)['nome'] as String? : null),
+      categoriaCodigoFnm: json['categoriaCodigoFNM'] as String? ??
+          (categoria is Map ? (categoria)['codigoFNM'] as String? : null),
       tipoDispensacao: json['tipoDispensacao'] as String? ?? 'VENDA_LIVRE',
       requiresPrescription: _toBool(json['requiresPrescription']),
       requiresDoubleCheck: _toBool(json['requiresDoubleCheck']),
@@ -91,24 +92,6 @@ class ProductModel {
           : null,
       taxRule: _parseTaxRule(json['taxRule'], parent: json),
     );
-  }
-
-  static CategoriaProduto _parseCategoria(Map<String, dynamic> json) {
-    final categoria = json['categoria'];
-    if (categoria is String) {
-      return CategoriaProdutoX.fromApi(categoria);
-    }
-    if (categoria is Map<String, dynamic>) {
-      final nome = categoria['nome'] as String?;
-      if (nome != null && nome.trim().isNotEmpty) {
-        return _categoriaFromNome(nome);
-      }
-    }
-    final categoriaNome = json['categoriaNome'] as String?;
-    if (categoriaNome != null && categoriaNome.trim().isNotEmpty) {
-      return _categoriaFromNome(categoriaNome);
-    }
-    return CategoriaProduto.medicamento;
   }
 
   static ProductTaxRule? _parseTaxRule(
@@ -224,44 +207,18 @@ class ProductModel {
     return null;
   }
 
-  static CategoriaProduto _categoriaFromNome(String nome) {
-    final normalized = nome.trim().toLowerCase();
-    switch (normalized) {
-      case 'consumiveis':
-      case 'consumíveis':
-      case 'consumivel':
-      case 'consumível':
-        return CategoriaProduto.consumivel;
-      case 'equipamentos':
-      case 'equipamento':
-        return CategoriaProduto.equipamento;
-      case 'higiene':
-        return CategoriaProduto.higiene;
-      case 'suplementos':
-      case 'suplemento':
-        return CategoriaProduto.suplemento;
-      case 'outros':
-      case 'outro':
-        return CategoriaProduto.outro;
-      case 'medicamentos':
-      case 'medicamento':
-      default:
-        return CategoriaProduto.medicamento;
-    }
-  }
-
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'nome': nome,
-      'substanciaActiva': substanciaActiva,
+      'nomeComercial': nomeComercial,
+      'nomeGenerico': nomeGenerico,
       'dosagem': dosagem,
       'forma': forma,
       'apresentacao': apresentacao,
       'ativo': ativo,
       'activo': ativo,
       'barcode': barcode,
-      'categoria': categoria.apiValue,
+      'categoriaId': categoriaId,
       'tipoDispensacao': tipoDispensacao,
       'requiresPrescription': requiresPrescription,
       'requiresDoubleCheck': requiresDoubleCheck,

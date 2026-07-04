@@ -18,7 +18,8 @@ class FornecedorResumoModel {
   factory FornecedorResumoModel.fromJson(Map<String, dynamic> json) {
     return FornecedorResumoModel(
       id: json['id']?.toString() ?? '',
-      nome: json['nome']?.toString() ?? json['name']?.toString() ?? 'Fornecedor',
+      nome:
+          json['nome']?.toString() ?? json['name']?.toString() ?? 'Fornecedor',
       nuit: _nullableString(json['nuit']),
       telefone: _nullableString(json['telefone']),
       email: _nullableString(json['email']),

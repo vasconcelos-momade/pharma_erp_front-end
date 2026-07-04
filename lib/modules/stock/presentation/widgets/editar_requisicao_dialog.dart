@@ -63,7 +63,8 @@ class EditarRequisicaoDialog extends ConsumerStatefulWidget {
       _EditarRequisicaoDialogState();
 }
 
-class _EditarRequisicaoDialogState extends ConsumerState<EditarRequisicaoDialog> {
+class _EditarRequisicaoDialogState
+    extends ConsumerState<EditarRequisicaoDialog> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _numeroDocumentoController;
   late final TextEditingController _origemController;
@@ -80,12 +81,14 @@ class _EditarRequisicaoDialogState extends ConsumerState<EditarRequisicaoDialog>
   void initState() {
     super.initState();
     final requisicao = widget.requisicao;
-    _numeroDocumentoController =
-        TextEditingController(text: requisicao.numeroDocumento);
+    _numeroDocumentoController = TextEditingController(
+      text: requisicao.numeroDocumento,
+    );
     _origemController = TextEditingController(text: requisicao.origem ?? '');
     _destinoController = TextEditingController(text: requisicao.destino ?? '');
-    _observacaoController =
-        TextEditingController(text: requisicao.observacao ?? '');
+    _observacaoController = TextEditingController(
+      text: requisicao.observacao ?? '',
+    );
     _selectedFornecedorId = requisicao.fornecedorId;
     _selectedFornecedorNome = requisicao.fornecedorNome;
   }
@@ -155,8 +158,12 @@ class _EditarRequisicaoDialogState extends ConsumerState<EditarRequisicaoDialog>
     final filtered = fornecedores
         .where(
           (supplier) =>
-              supplier.nome.toLowerCase().contains(_fornecedorSearch.toLowerCase()) ||
-              supplier.id.toLowerCase().contains(_fornecedorSearch.toLowerCase()),
+              supplier.nome.toLowerCase().contains(
+                _fornecedorSearch.toLowerCase(),
+              ) ||
+              supplier.id.toLowerCase().contains(
+                _fornecedorSearch.toLowerCase(),
+              ),
         )
         .toList();
 
@@ -191,12 +198,11 @@ class _EditarRequisicaoDialogState extends ConsumerState<EditarRequisicaoDialog>
         if (_selectedFornecedorNome != null)
           Align(
             alignment: Alignment.centerLeft,
-            child: Chip(
-              label: Text('Fornecedor: $_selectedFornecedorNome'),
-            ),
+            child: Chip(label: Text('Fornecedor: $_selectedFornecedorNome')),
           ),
         SizedBox(
-          height: MediaQuery.sizeOf(context).height *
+          height:
+              MediaQuery.sizeOf(context).height *
               DesignMetrics.dialogSelectableListHeightFraction,
           child: filtered.isEmpty
               ? const Center(child: Text('Nenhum fornecedor encontrado'))
@@ -215,7 +221,10 @@ class _EditarRequisicaoDialogState extends ConsumerState<EditarRequisicaoDialog>
                         _selectedFornecedorNome = supplier.nome;
                       }),
                       trailing: isSelected
-                          ? Icon(Icons.check_circle, color: context.pharmaTokens.brandGreen)
+                          ? Icon(
+                              Icons.check_circle,
+                              color: context.pharmaTokens.brandGreen,
+                            )
                           : null,
                     );
                   },
@@ -269,12 +278,7 @@ class _EditarRequisicaoDialogState extends ConsumerState<EditarRequisicaoDialog>
           ),
           initialValue: selectedDropdown,
           items: fornecedores
-              .map(
-                (f) => DropdownMenuItem(
-                  value: f,
-                  child: Text(f.nome),
-                ),
-              )
+              .map((f) => DropdownMenuItem(value: f, child: Text(f.nome)))
               .toList(),
           onChanged: (value) => setState(() {
             _selectedFornecedorDropdown = value;
@@ -342,12 +346,7 @@ class _EditarRequisicaoDialogState extends ConsumerState<EditarRequisicaoDialog>
           ),
           initialValue: selectedDropdown,
           items: fornecedores
-              .map(
-                (f) => DropdownMenuItem(
-                  value: f,
-                  child: Text(f.nome),
-                ),
-              )
+              .map((f) => DropdownMenuItem(value: f, child: Text(f.nome)))
               .toList(),
           onChanged: (value) => setState(() {
             _selectedFornecedorDropdown = value;
@@ -432,10 +431,7 @@ class _EditarRequisicaoDialogState extends ConsumerState<EditarRequisicaoDialog>
         children: [
           formContent,
           const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: actions,
-          ),
+          Row(mainAxisAlignment: MainAxisAlignment.end, children: actions),
         ],
       );
     }
@@ -444,7 +440,8 @@ class _EditarRequisicaoDialogState extends ConsumerState<EditarRequisicaoDialog>
       title: Text('Editar requisição (${widget.requisicao.tipo.label})'),
       content: ConstrainedBox(
         constraints: BoxConstraints(
-          maxHeight: MediaQuery.sizeOf(context).height *
+          maxHeight:
+              MediaQuery.sizeOf(context).height *
               DesignMetrics.dialogBodyMaxHeightFraction,
         ),
         child: formContent,

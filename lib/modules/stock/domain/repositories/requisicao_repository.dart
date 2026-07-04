@@ -39,15 +39,9 @@ abstract class RequisicaoRepository {
 
   Future<List<ProdutoLoteDisponivel>> listarLotesProduto(String produtoId);
 
-  Future<RequisicaoOperacaoResultado> aprovarRequisicao(
-    String requisicaoId,
-  );
+  Future<RequisicaoOperacaoResultado> aprovarRequisicao(String requisicaoId);
 
-  Future<RequisicaoOperacaoResultado> rejeitarRequisicao(
-    String requisicaoId,
-  );
+  Future<RequisicaoOperacaoResultado> rejeitarRequisicao(String requisicaoId);
 
-  Future<RequisicaoOperacaoResultado> cancelarRequisicao(
-    String requisicaoId,
-  );
+  Future<RequisicaoOperacaoResultado> cancelarRequisicao(String requisicaoId);
 }

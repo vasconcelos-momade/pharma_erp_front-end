@@ -124,7 +124,9 @@ class RequisicaoState {
           isRejectingRequisicao ?? this.isRejectingRequisicao,
       isCancellingRequisicao:
           isCancellingRequisicao ?? this.isCancellingRequisicao,
-      successMessage: clearSuccess ? null : (successMessage ?? this.successMessage),
+      successMessage: clearSuccess
+          ? null
+          : (successMessage ?? this.successMessage),
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       activeRequisicao: clearActiveRequisicao
           ? null
@@ -171,15 +173,9 @@ class RequisicaoController extends Notifier<RequisicaoState> {
         clearError: true,
       );
     } on ApiFailure catch (e) {
-      state = state.copyWith(
-        isLoadingLists: false,
-        errorMessage: e.message,
-      );
+      state = state.copyWith(isLoadingLists: false, errorMessage: e.message);
     } catch (e) {
-      state = state.copyWith(
-        isLoadingLists: false,
-        errorMessage: e.toString(),
-      );
+      state = state.copyWith(isLoadingLists: false, errorMessage: e.toString());
     }
   }
 
@@ -257,17 +253,11 @@ class RequisicaoController extends Notifier<RequisicaoState> {
   }
 
   Future<void> selectPendingRequisition(String requisicaoId) async {
-    await _loadRequisicao(
-      requisicaoId,
-      tabAfterLoad: RequisicaoTab.produtos,
-    );
+    await _loadRequisicao(requisicaoId, tabAfterLoad: RequisicaoTab.produtos);
   }
 
   Future<void> selectHistoryRequisition(String requisicaoId) async {
-    await _loadRequisicao(
-      requisicaoId,
-      tabAfterLoad: RequisicaoTab.historico,
-    );
+    await _loadRequisicao(requisicaoId, tabAfterLoad: RequisicaoTab.historico);
   }
 
   Future<void> addCompraItemToActiveRequisition({
@@ -289,7 +279,9 @@ class RequisicaoController extends Notifier<RequisicaoState> {
     );
 
     try {
-      final updated = await ref.read(requisicaoRepositoryProvider).adicionarItem(
+      final updated = await ref
+          .read(requisicaoRepositoryProvider)
+          .adicionarItem(
             requisicaoId: activeRequisicao.id,
             request: RequisicaoItemRequest(
               produtoId: draft.produtoId,
@@ -344,7 +336,9 @@ class RequisicaoController extends Notifier<RequisicaoState> {
     );
 
     try {
-      final updated = await ref.read(requisicaoRepositoryProvider).atualizarItem(
+      final updated = await ref
+          .read(requisicaoRepositoryProvider)
+          .atualizarItem(
             requisicaoId: activeRequisicao.id,
             itemId: item.id,
             request: RequisicaoItemRequest(
@@ -399,11 +393,15 @@ class RequisicaoController extends Notifier<RequisicaoState> {
     );
 
     try {
-      final updated = await ref.read(requisicaoRepositoryProvider).adicionarItem(
+      final updated = await ref
+          .read(requisicaoRepositoryProvider)
+          .adicionarItem(
             requisicaoId: activeRequisicao.id,
             request: RequisicaoItemRequest(
               produtoId: draft.produtoId,
-              loteId: draft.loteId?.trim().isEmpty == true ? null : draft.loteId,
+              loteId: draft.loteId?.trim().isEmpty == true
+                  ? null
+                  : draft.loteId,
               quantidadeSolicitada: draft.quantidadeSolicitada,
             ),
           );
@@ -451,7 +449,9 @@ class RequisicaoController extends Notifier<RequisicaoState> {
     );
 
     try {
-      final updated = await ref.read(requisicaoRepositoryProvider).atualizarItem(
+      final updated = await ref
+          .read(requisicaoRepositoryProvider)
+          .atualizarItem(
             requisicaoId: activeRequisicao.id,
             itemId: item.id,
             request: RequisicaoItemRequest(
@@ -503,7 +503,9 @@ class RequisicaoController extends Notifier<RequisicaoState> {
     );
 
     try {
-      final updated = await ref.read(requisicaoRepositoryProvider).atualizarRequisicao(
+      final updated = await ref
+          .read(requisicaoRepositoryProvider)
+          .atualizarRequisicao(
             requisicaoId: activeRequisicao.id,
             request: request,
           );
@@ -537,13 +539,16 @@ class RequisicaoController extends Notifier<RequisicaoState> {
       return;
     }
 
-    state = state.copyWith(isAddingItem: true, clearError: true, clearSuccess: true);
+    state = state.copyWith(
+      isAddingItem: true,
+      clearError: true,
+      clearSuccess: true,
+    );
 
     try {
-      final updated = await ref.read(requisicaoRepositoryProvider).removerItem(
-            requisicaoId: activeRequisicao.id,
-            itemId: itemId,
-          );
+      final updated = await ref
+          .read(requisicaoRepositoryProvider)
+          .removerItem(requisicaoId: activeRequisicao.id, itemId: itemId);
       await _refreshListsSilently();
       state = state.copyWith(
         isAddingItem: false,
@@ -577,7 +582,8 @@ class RequisicaoController extends Notifier<RequisicaoState> {
     }
     if (activeRequisicao.itens.isEmpty) {
       state = state.copyWith(
-        errorMessage: 'Adicione pelo menos um item antes de aprovar a requisicao.',
+        errorMessage:
+            'Adicione pelo menos um item antes de aprovar a requisicao.',
         clearSuccess: true,
       );
       return;
@@ -799,8 +805,8 @@ class RequisicaoController extends Notifier<RequisicaoState> {
 
 final requisicaoProvider =
     NotifierProvider.autoDispose<RequisicaoController, RequisicaoState>(
-  RequisicaoController.new,
-);
+      RequisicaoController.new,
+    );
 
 class RequisicaoCompraController extends RequisicaoController {
   @override
@@ -815,5 +821,5 @@ class RequisicaoCompraController extends RequisicaoController {
 
 final requisicaoCompraProvider =
     NotifierProvider.autoDispose<RequisicaoCompraController, RequisicaoState>(
-  RequisicaoCompraController.new,
-);
+      RequisicaoCompraController.new,
+    );

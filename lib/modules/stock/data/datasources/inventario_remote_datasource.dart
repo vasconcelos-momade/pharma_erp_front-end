@@ -48,7 +48,10 @@ class InventarioRemoteDataSourceImpl implements InventarioRemoteDataSource {
         data: request.toJson(),
       );
       return InventarioDetalheModel.fromJson(
-        _expectMap(response.data, fallback: 'Resposta inválida ao abrir inventário.'),
+        _expectMap(
+          response.data,
+          fallback: 'Resposta inválida ao abrir inventário.',
+        ),
       );
     } on DioException catch (e) {
       throw ApiFailure.fromDio(e);
@@ -125,7 +128,10 @@ class InventarioRemoteDataSourceImpl implements InventarioRemoteDataSource {
         ApiConstants.tenantInventarioDetalhe(inventarioId),
       );
       return InventarioDetalheModel.fromJson(
-        _expectMap(response.data, fallback: 'Resposta inválida ao carregar inventário.'),
+        _expectMap(
+          response.data,
+          fallback: 'Resposta inválida ao carregar inventário.',
+        ),
       );
     } on DioException catch (e) {
       throw ApiFailure.fromDio(e);
@@ -139,7 +145,10 @@ class InventarioRemoteDataSourceImpl implements InventarioRemoteDataSource {
         ApiConstants.tenantInventarioIniciarContagem(inventarioId),
       );
       return InventarioDetalheModel.fromJson(
-        _expectMap(response.data, fallback: 'Resposta inválida ao iniciar contagem.'),
+        _expectMap(
+          response.data,
+          fallback: 'Resposta inválida ao iniciar contagem.',
+        ),
       );
     } on DioException catch (e) {
       throw ApiFailure.fromDio(e);
@@ -158,7 +167,10 @@ class InventarioRemoteDataSourceImpl implements InventarioRemoteDataSource {
         data: <String, dynamic>{'estoqueContado': estoqueContado},
       );
       return InventarioItemModel.fromJson(
-        _expectMap(response.data, fallback: 'Resposta inválida ao registar contagem.'),
+        _expectMap(
+          response.data,
+          fallback: 'Resposta inválida ao registar contagem.',
+        ),
       );
     } on DioException catch (e) {
       throw ApiFailure.fromDio(e);
@@ -172,7 +184,10 @@ class InventarioRemoteDataSourceImpl implements InventarioRemoteDataSource {
         ApiConstants.tenantInventarioReconciliar(inventarioId),
       );
       return InventarioDetalheModel.fromJson(
-        _expectMap(response.data, fallback: 'Resposta inválida ao reconciliar inventário.'),
+        _expectMap(
+          response.data,
+          fallback: 'Resposta inválida ao reconciliar inventário.',
+        ),
       );
     } on DioException catch (e) {
       throw ApiFailure.fromDio(e);
@@ -186,7 +201,10 @@ class InventarioRemoteDataSourceImpl implements InventarioRemoteDataSource {
         ApiConstants.tenantInventarioCancelar(inventarioId),
       );
       return InventarioDetalheModel.fromJson(
-        _expectMap(response.data, fallback: 'Resposta inválida ao cancelar inventário.'),
+        _expectMap(
+          response.data,
+          fallback: 'Resposta inválida ao cancelar inventário.',
+        ),
       );
     } on DioException catch (e) {
       throw ApiFailure.fromDio(e);
@@ -216,7 +234,8 @@ class InventarioRemoteDataSourceImpl implements InventarioRemoteDataSource {
   }
 }
 
-final inventarioRemoteDataSourceProvider =
-    Provider<InventarioRemoteDataSource>((ref) {
-  return InventarioRemoteDataSourceImpl(ref.watch(dioProvider));
-});
+final inventarioRemoteDataSourceProvider = Provider<InventarioRemoteDataSource>(
+  (ref) {
+    return InventarioRemoteDataSourceImpl(ref.watch(dioProvider));
+  },
+);

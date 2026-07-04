@@ -147,7 +147,7 @@ class _StockDashboardPageState extends ConsumerState<StockDashboardPage> {
                       context: context,
                       points: dashList(charts?['produtosMaisMovimentados']),
                       valueKey: 'quantidade',
-                      labelKey: 'produtoNome',
+                      labelKey: 'produtoNomeComercial',
                       color: Theme.of(context).colorScheme.secondary,
                     ),
                   ),
@@ -184,7 +184,8 @@ class _StockDashboardPageState extends ConsumerState<StockDashboardPage> {
                 },
                 rowBuilder: (row) => [
                   row['tipo']?.toString() ?? '—',
-                  row['produtoNome']?.toString() ?? '—',
+                  row['produtoNomeComercial']?.toString() ??
+                      row['produtoNome']?.toString() ?? '—',
                   '${row['quantidade'] ?? 0}',
                   row['origem']?.toString() ?? '—',
                 ],
@@ -280,7 +281,8 @@ class _StockDashboardPageState extends ConsumerState<StockDashboardPage> {
                   return DashboardPagedTableResult.fromMap(result);
                 },
                 rowBuilder: (row) => [
-                  row['produtoNome']?.toString() ?? '—',
+                  row['produtoNomeComercial']?.toString() ??
+                      row['produtoNome']?.toString() ?? '—',
                   row['numeroLote']?.toString() ?? '—',
                   '${row['quantidade'] ?? 0}',
                   dashLabel(row['expiresAt']),

@@ -29,8 +29,7 @@ class MovimentacoesToolbar extends ConsumerWidget {
       controller: searchController,
       onChanged: notifier.onSearchChanged,
       decoration: InputDecoration(
-        hintText:
-            'Pesquisar produto, lote, origem, documento ou utilizador...',
+        hintText: 'Pesquisar produto, lote, origem, documento ou utilizador...',
         prefixIcon: const Icon(Icons.search_rounded),
         filled: true,
         fillColor: t.card,
@@ -69,13 +68,13 @@ class MovimentacoesToolbar extends ConsumerWidget {
               final now = DateTime.now();
               final initialRange =
                   query.dataInicio != null && query.dataFim != null
-                  ? DateTimeRange(
-                      start: query.dataInicio!,
-                      end: query.dataFim!,
-                    )
+                  ? DateTimeRange(start: query.dataInicio!, end: query.dataFim!)
                   : DateTimeRange(
-                      start: DateTime(now.year, now.month, now.day)
-                          .subtract(const Duration(days: 6)),
+                      start: DateTime(
+                        now.year,
+                        now.month,
+                        now.day,
+                      ).subtract(const Duration(days: 6)),
                       end: DateTime(now.year, now.month, now.day),
                     );
               final pickedRange = await showDateRangePicker(
@@ -102,7 +101,9 @@ class MovimentacoesToolbar extends ConsumerWidget {
             : 'Intervalo',
       ),
       style: OutlinedButton.styleFrom(
-        backgroundColor: hasCustomDateRange ? t.brandBlue.withValues(alpha: 0.08) : null,
+        backgroundColor: hasCustomDateRange
+            ? t.brandBlue.withValues(alpha: 0.08)
+            : null,
       ),
     );
 
@@ -211,17 +212,19 @@ class MovimentacoesToolbar extends ConsumerWidget {
             Expanded(child: tipoDropdown),
             SizedBox(width: s.md),
             Expanded(child: origemDropdown),
-            if (clearButton != null) ...[
-              SizedBox(width: s.sm),
-              clearButton,
-            ],
+            if (clearButton != null) ...[SizedBox(width: s.sm), clearButton],
           ],
         ),
         SizedBox(height: s.sm),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(child: Align(alignment: Alignment.centerLeft, child: dateRangeButton)),
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: dateRangeButton,
+              ),
+            ),
             SizedBox(width: s.md),
             Flexible(
               child: Align(
@@ -242,9 +245,9 @@ class MovimentacoesToolbar extends ConsumerWidget {
             alignment: Alignment.centerLeft,
             child: Text(
               'Intervalo activo: ${_formatDateRange(query.dataInicio!, query.dataFim!)}',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: t.textMuted,
-              ),
+              style: Theme.of(
+                context,
+              ).textTheme.bodySmall?.copyWith(color: t.textMuted),
             ),
           ),
         ],

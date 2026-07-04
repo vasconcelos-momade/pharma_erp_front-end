@@ -31,7 +31,8 @@ class InventoryProductsTab extends ConsumerStatefulWidget {
   final ValueChanged<InventarioItem> onSelectProduct;
 
   @override
-  ConsumerState<InventoryProductsTab> createState() => _InventoryProductsTabState();
+  ConsumerState<InventoryProductsTab> createState() =>
+      _InventoryProductsTabState();
 }
 
 class _InventoryProductsTabState extends ConsumerState<InventoryProductsTab> {
@@ -128,7 +129,8 @@ class _InventoryProductsTabState extends ConsumerState<InventoryProductsTab> {
             Expanded(
               child: EnterpriseModuleSearchBar(
                 controller: widget.searchController,
-                hintText: 'Pesquisar por nome, substancia activa ou fornecedor...',
+                hintText:
+                    'Pesquisar por nome, substancia activa ou fornecedor...',
                 enabled: !catalogState.isLoading,
                 onSubmitted: catalogController.onSearchChanged,
                 onChanged: catalogController.onSearchChanged,
@@ -136,7 +138,9 @@ class _InventoryProductsTabState extends ConsumerState<InventoryProductsTab> {
             ),
             SizedBox(width: s.sm),
             IconButton(
-              onPressed: catalogState.isLoading ? null : catalogController.refreshCurrentPage,
+              onPressed: catalogState.isLoading
+                  ? null
+                  : catalogController.refreshCurrentPage,
               icon: const Icon(Icons.refresh_rounded),
               tooltip: 'Actualizar lista',
             ),
@@ -159,60 +163,64 @@ class _InventoryProductsTabState extends ConsumerState<InventoryProductsTab> {
           child: !catalogState.isInitialized && catalogState.isLoading
               ? const Center(child: CircularProgressIndicator())
               : catalogState.items.isEmpty
-                  ? const _InventoryProductsEmptyPane(
-                      icon: Icons.inventory_2_outlined,
-                      title: 'Nenhum lote encontrado',
-                      subtitle:
-                          'Ajuste a pesquisa ou actualize a lista para tentar novamente.',
-                    )
-                  : EnterpriseDataTable(
-                      adaptive: false,
-                      showCheckboxColumn: false,
-                      columns: const [
-                        DataColumn(label: Text('PRODUTO')),
-                        DataColumn(label: Text('SUBSTÂNCIA')),
-                        DataColumn(label: Text('DOSAGEM')),
-                        DataColumn(label: Text('FORMA')),
-                        DataColumn(label: Text('APRESENTAÇÃO')),
-                        DataColumn(label: Text('LOTE')),
-                        DataColumn(label: Text('ESTOQUE')),
-                        DataColumn(label: Text('FORNECEDOR')),
-                        DataColumn(label: Text('AÇÕES')),
-                      ],
-                      rowCount: catalogState.items.length,
-                      rowBuilder: (context, index) {
-                        final item = catalogState.items[index];
-                        return DataRow(
-                          onSelectChanged: widget.canAddItems
-                              ? (_) => widget.onSelectProduct(item)
-                              : null,
-                          cells: [
-                            DataCell(Text(item.produtoNome)),
-                            DataCell(Text(item.substanciaActiva ?? '—')),
-                            DataCell(Text(item.dosagem ?? '—')),
-                            DataCell(Text(item.forma ?? '—')),
-                            DataCell(Text(item.apresentacao ?? '—')),
-                            DataCell(Text(item.numeroLote ?? '—')),
-                            DataCell(Text(formatInventoryQuantity(item.estoqueLoteAtual))),
-                            DataCell(Text(item.fornecedorNome ?? '—')),
-                            DataCell(
-                              Align(
-                                alignment: Alignment.centerLeft,
-                                child: FilledButton.tonalIcon(
-                                  onPressed: widget.canAddItems
-                                      ? () => widget.onSelectProduct(item)
-                                      : null,
-                                  icon: const Icon(Icons.playlist_add_rounded),
-                                  label: const Text('Adicionar'),
-                                ),
-                              ),
+              ? const _InventoryProductsEmptyPane(
+                  icon: Icons.inventory_2_outlined,
+                  title: 'Nenhum lote encontrado',
+                  subtitle:
+                      'Ajuste a pesquisa ou actualize a lista para tentar novamente.',
+                )
+              : EnterpriseDataTable(
+                  adaptive: false,
+                  showCheckboxColumn: false,
+                  columns: const [
+                    DataColumn(label: Text('PRODUTO')),
+                    DataColumn(label: Text('SUBSTÂNCIA')),
+                    DataColumn(label: Text('DOSAGEM')),
+                    DataColumn(label: Text('FORMA')),
+                    DataColumn(label: Text('APRESENTAÇÃO')),
+                    DataColumn(label: Text('LOTE')),
+                    DataColumn(label: Text('ESTOQUE')),
+                    DataColumn(label: Text('FORNECEDOR')),
+                    DataColumn(label: Text('AÇÕES')),
+                  ],
+                  rowCount: catalogState.items.length,
+                  rowBuilder: (context, index) {
+                    final item = catalogState.items[index];
+                    return DataRow(
+                      onSelectChanged: widget.canAddItems
+                          ? (_) => widget.onSelectProduct(item)
+                          : null,
+                      cells: [
+                        DataCell(Text(item.produtoNome)),
+                        DataCell(Text(item.nomeGenerico ?? '—')),
+                        DataCell(Text(item.dosagem ?? '—')),
+                        DataCell(Text(item.forma ?? '—')),
+                        DataCell(Text(item.apresentacao ?? '—')),
+                        DataCell(Text(item.numeroLote ?? '—')),
+                        DataCell(
+                          Text(formatInventoryQuantity(item.estoqueLoteAtual)),
+                        ),
+                        DataCell(Text(item.fornecedorNome ?? '—')),
+                        DataCell(
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: FilledButton.tonalIcon(
+                              onPressed: widget.canAddItems
+                                  ? () => widget.onSelectProduct(item)
+                                  : null,
+                              icon: const Icon(Icons.playlist_add_rounded),
+                              label: const Text('Adicionar'),
                             ),
-                          ],
-                        );
-                      },
-                    ),
+                          ),
+                        ),
+                      ],
+                    );
+                  },
+                ),
         ),
-        if (catalogState.isInitialized && resolvedTotal != null && resolvedTotal > 0) ...[
+        if (catalogState.isInitialized &&
+            resolvedTotal != null &&
+            resolvedTotal > 0) ...[
           EnterprisePagination(
             page: catalogState.page,
             pageSize: catalogState.pageSize,
@@ -242,12 +250,12 @@ class _InventoryProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final details = [
-      item.substanciaActiva,
+      item.nomeGenerico,
       item.dosagem,
-      [item.forma, item.apresentacao]
-          .whereType<String>()
-          .where((value) => value.isNotEmpty)
-          .join(' / '),
+      [
+        item.forma,
+        item.apresentacao,
+      ].whereType<String>().where((value) => value.isNotEmpty).join(' / '),
     ].whereType<String>().where((value) => value.isNotEmpty).join(' • ');
 
     return EnterpriseListCard(
@@ -308,7 +316,9 @@ class _InventoryProductsInlineBanner extends StatelessWidget {
           Expanded(
             child: Text(
               message,
-              style: Theme.of(context).textTheme.erpBody.copyWith(color: t.textPrimary),
+              style: Theme.of(
+                context,
+              ).textTheme.erpBody.copyWith(color: t.textPrimary),
             ),
           ),
         ],
@@ -343,17 +353,17 @@ class _InventoryProductsEmptyPane extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.erpCardTitle.copyWith(
-                    color: t.textPrimary,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.erpCardTitle.copyWith(color: t.textPrimary),
             ),
             SizedBox(height: s.xs),
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                    color: t.textMuted,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
             ),
           ],
         ),

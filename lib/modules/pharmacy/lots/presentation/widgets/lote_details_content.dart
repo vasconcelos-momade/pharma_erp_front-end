@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/spacing.dart';
+import '../../../../../core/utils/lote_stock_utils.dart';
 import '../../../inventory/data/datasources/inventory_remote_datasource.dart';
 import 'lot_actions_helper.dart';
 
@@ -119,11 +120,10 @@ class LoteDetailsContentState extends ConsumerState<LoteDetailsContent>
                           style: Theme.of(context).textTheme.erpPageTitle,
                         ),
                         Text(
-                          detail?['produtoNome']?.toString() ??
+                          detail?['produtoNomeComercial']?.toString() ?? detail?['produtoNome']?.toString() ??
                               'Detalhe operacional do lote',
-                          style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                                color: t.textMuted,
-                              ),
+                          style: Theme.of(context).textTheme.erpBodySecondary
+                              .copyWith(color: t.textMuted),
                         ),
                       ],
                     ),
@@ -161,7 +161,9 @@ class LoteDetailsContentState extends ConsumerState<LoteDetailsContent>
               padding: EdgeInsets.all(s.md),
               child: Text(
                 _error!,
-                style: Theme.of(context).textTheme.erpBody.copyWith(color: t.posDanger),
+                style: Theme.of(
+                  context,
+                ).textTheme.erpBody.copyWith(color: t.posDanger),
               ),
             ),
           Expanded(
@@ -169,9 +171,7 @@ class LoteDetailsContentState extends ConsumerState<LoteDetailsContent>
               controller: _tabs,
               children: [
                 _ResumoTab(detail: detail),
-                _TimelineTab(
-                  items: _buildTimelineItems(),
-                ),
+                _TimelineTab(items: _buildTimelineItems()),
                 _CollectionTab(
                   empty: 'Sem movimentos registados.',
                   items: _movimentos,
@@ -267,9 +267,7 @@ class LoteDetailsContentState extends ConsumerState<LoteDetailsContent>
         },
       ),
     ];
-    items.sort(
-      (a, b) => _dateOf(b['data']).compareTo(_dateOf(a['data'])),
-    );
+    items.sort((a, b) => _dateOf(b['data']).compareTo(_dateOf(a['data'])));
     return items;
   }
 
@@ -314,13 +312,17 @@ class _ResumoTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = context.spacing;
     final rows = <MapEntry<String, String?>>[
-      MapEntry('Produto', detail?['produtoNome']?.toString()),
+      MapEntry('Produto', detail?['produtoNomeComercial']?.toString() ?? detail?['produtoNome']?.toString()),
       MapEntry('Fornecedor', detail?['fornecedor']?['nome']?.toString()),
-      MapEntry('Validade', LoteDetailsContentStateX.formatDate(detail?['dataValidade'])),
+      MapEntry(
+        'Validade',
+        LoteDetailsContentStateX.formatDate(detail?['dataValidade']),
+      ),
       MapEntry('Estado sanitário', detail?['estadoSanitario']?.toString()),
       MapEntry('Disponibilidade', detail?['disponibilidade']?.toString()),
       MapEntry('Qtd. inicial', detail?['quantidadeInicial']?.toString()),
-      MapEntry('Qtd. actual', detail?['quantidadeAtual']?.toString()),
+      MapEntry('Qtd. total', LoteStockUtils.formatTotal(detail)),
+      MapEntry('Qtd. disponível', LoteStockUtils.formatDisponivel(detail)),
       MapEntry('Qtd. quarentena', detail?['quantidadeQuarentena']?.toString()),
       MapEntry('Qtd. incinerada', detail?['quantidadeIncinerada']?.toString()),
       MapEntry('Preço compra', detail?['precoCompra']?.toString()),
@@ -335,10 +337,7 @@ class _ResumoTab extends StatelessWidget {
           children: [
             SizedBox(
               width: 150,
-              child: Text(
-                row.key,
-                style: Theme.of(context).textTheme.erpLabel,
-              ),
+              child: Text(row.key, style: Theme.of(context).textTheme.erpLabel),
             ),
             Expanded(child: Text(row.value ?? '—')),
           ],
@@ -456,9 +455,15 @@ class _SanitarioTab extends StatelessWidget {
           ...sanitarios.map(
             (item) => ListTile(
               contentPadding: EdgeInsets.zero,
-              title: Text(item['tipoLabel']?.toString() ?? item['tipo'].toString()),
-              subtitle: Text(item['observacoes']?.toString() ?? 'Sem observações'),
-              trailing: Text(LoteDetailsContentStateX.formatDate(item['createdAt'])),
+              title: Text(
+                item['tipoLabel']?.toString() ?? item['tipo'].toString(),
+              ),
+              subtitle: Text(
+                item['observacoes']?.toString() ?? 'Sem observações',
+              ),
+              trailing: Text(
+                LoteDetailsContentStateX.formatDate(item['createdAt']),
+              ),
             ),
           ),
       ],
@@ -519,7 +524,9 @@ class _QuickActionsTab extends ConsumerWidget {
     ];
 
     if (actions.isEmpty) {
-      return const Center(child: Text('Sem acções disponíveis para este lote.'));
+      return const Center(
+        child: Text('Sem acções disponíveis para este lote.'),
+      );
     }
 
     return ListView.separated(
@@ -530,7 +537,7 @@ class _QuickActionsTab extends ConsumerWidget {
           leading: Icon(action.icon),
           title: Text(action.label),
           subtitle: Text(
-            'Lote ${lote['numeroLote'] ?? loteId} • ${lote['produtoNome'] ?? 'Produto'}',
+            'Lote ${lote['numeroLote'] ?? loteId} • ${lote['produtoNomeComercial'] ?? lote['produtoNome'] ?? 'Produto'}',
           ),
           onTap: action.onTap,
         );
@@ -571,9 +578,9 @@ class _StatusCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   value,
-                  style: Theme.of(context).textTheme.erpSectionTitle.copyWith(
-                        color: color,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.erpSectionTitle.copyWith(color: color),
                 ),
               ],
             ),
@@ -586,5 +593,6 @@ class _StatusCard extends StatelessWidget {
 }
 
 extension LoteDetailsContentStateX on LoteDetailsContent {
-  static String formatDate(dynamic value) => LoteDetailsContentState.formatDateValue(value);
+  static String formatDate(dynamic value) =>
+      LoteDetailsContentState.formatDateValue(value);
 }

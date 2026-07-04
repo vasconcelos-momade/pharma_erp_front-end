@@ -21,7 +21,7 @@ class ProdutoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
     final lowStock = product.estoqueAtual <= product.estoqueMinimo;
-    final substancia = product.substanciaActiva?.trim();
+    final substancia = product.nomeGenerico?.trim();
     final metadata = <EnterpriseListCardMeta>[
       if (product.dosagem != null && product.dosagem!.trim().isNotEmpty)
         EnterpriseListCardMeta(label: product.dosagem!.trim()),
@@ -29,9 +29,9 @@ class ProdutoCard extends StatelessWidget {
     ];
 
     return EnterpriseListCard(
-      title: product.nome,
+      title: product.nomeComercial,
       subtitle: substancia != null && substancia.isNotEmpty
-          ? 'Substância activa: $substancia'
+          ? 'Nome genérico: $substancia'
           : null,
       leading: Icons.medication_outlined,
       chip: StatusBadge(active: product.ativo),

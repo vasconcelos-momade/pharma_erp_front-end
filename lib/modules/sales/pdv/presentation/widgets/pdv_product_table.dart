@@ -5,7 +5,6 @@ import '../../../../../core/theme/extensions.dart';
 import '../../../../../shared/widgets/buttons/pharma_button_loader.dart';
 import '../../../../../shared/widgets/feedback/module_data_states.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
-import '../../../../pharmacy/products/domain/entities/categoria_produto.dart';
 import '../../../../pharmacy/products/domain/entities/product.dart';
 import 'pdv_catalog_utils.dart';
 
@@ -73,7 +72,7 @@ class PdvProductTable extends StatelessWidget {
           onSelectChanged: canInteract ? (_) => onAdd(product) : null,
           cells: [
             DataCell(_nameCell(context, product)),
-            DataCell(Text(product.categoria.label)),
+            DataCell(Text(product.categoriaNome ?? '—')),
             DataCell(Text(pdvFormatMoney(product.precoVenda))),
             DataCell(Text(pdvFormatDate(product.dataValidade))),
             DataCell(Text(product.lote?.trim().isNotEmpty == true ? product.lote! : '—')),
@@ -111,14 +110,14 @@ class PdvProductTable extends StatelessWidget {
     final t = context.pharmaTokens;
     final s = context.spacing;
     final theme = Theme.of(context);
-    final substancia = product.substanciaActiva?.trim();
+    final substancia = product.nomeGenerico?.trim();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          product.nome,
+          product.nomeComercial,
           style: theme.textTheme.erpLabel.copyWith(color: t.textPrimary),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
@@ -126,7 +125,7 @@ class PdvProductTable extends StatelessWidget {
         if (substancia != null && substancia.isNotEmpty) ...[
           SizedBox(height: s.xxs),
           Text(
-            'Substância activa: $substancia',
+            'Nome genérico: $substancia',
             style: theme.textTheme.erpCaption.copyWith(color: t.textSecondary),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,

@@ -61,9 +61,9 @@ class _InventoryHubPageState extends ConsumerState<InventoryHubPage> {
       return;
     }
 
-    await ref.read(inventarioProvider.notifier).startInventory(
-          observacao: result.observacao,
-        );
+    await ref
+        .read(inventarioProvider.notifier)
+        .startInventory(observacao: result.observacao);
     await ref.read(inventoryCatalogProvider.notifier).refreshCurrentPage();
   }
 
@@ -83,10 +83,9 @@ class _InventoryHubPageState extends ConsumerState<InventoryHubPage> {
       return;
     }
 
-    await ref.read(inventarioProvider.notifier).recordCount(
-          item: item,
-          estoqueContado: estoqueContado,
-        );
+    await ref
+        .read(inventarioProvider.notifier)
+        .recordCount(item: item, estoqueContado: estoqueContado);
     await ref.read(inventoryCatalogProvider.notifier).refreshCurrentPage();
   }
 
@@ -162,7 +161,8 @@ class _InventoryHubPageState extends ConsumerState<InventoryHubPage> {
       if (!mounted) {
         return;
       }
-      if (previous?.errorMessage != next.errorMessage && next.errorMessage != null) {
+      if (previous?.errorMessage != next.errorMessage &&
+          next.errorMessage != null) {
         PharmaFeedback.error(context, next.errorMessage!);
       }
       if (previous?.successMessage != next.successMessage &&
@@ -175,7 +175,8 @@ class _InventoryHubPageState extends ConsumerState<InventoryHubPage> {
       activeTab: inventoryState.activeTab,
       inventoryState: inventoryState,
       searchController: _searchController,
-      canAddItems: inventoryState.canRecordCount &&
+      canAddItems:
+          inventoryState.canRecordCount &&
           !inventoryState.isRecordingCount &&
           !inventoryState.isReconciling,
       onTabChanged: inventoryController.setActiveTab,
@@ -314,7 +315,8 @@ class _LeftPane extends StatefulWidget {
   State<_LeftPane> createState() => _LeftPaneState();
 }
 
-class _LeftPaneState extends State<_LeftPane> with SingleTickerProviderStateMixin {
+class _LeftPaneState extends State<_LeftPane>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -379,8 +381,14 @@ class _LeftPaneState extends State<_LeftPane> with SingleTickerProviderStateMixi
             dividerColor: Colors.transparent,
             tabs: [
               const Tab(text: 'Produtos'),
-              Tab(text: 'Pendentes (${widget.inventoryState.pendingInventories.length})'),
-              Tab(text: 'Concluidos (${widget.inventoryState.completedInventories.length})'),
+              Tab(
+                text:
+                    'Pendentes (${widget.inventoryState.pendingInventories.length})',
+              ),
+              Tab(
+                text:
+                    'Concluidos (${widget.inventoryState.completedInventories.length})',
+              ),
             ],
           ),
         ),
@@ -388,33 +396,34 @@ class _LeftPaneState extends State<_LeftPane> with SingleTickerProviderStateMixi
         Expanded(
           child: switch (widget.activeTab) {
             InventarioTab.produtos => InventoryProductsTab(
-                searchController: widget.searchController,
-                canAddItems: widget.canAddItems,
-                onSelectProduct: widget.onSelectProduct,
-              ),
+              searchController: widget.searchController,
+              canAddItems: widget.canAddItems,
+              onSelectProduct: widget.onSelectProduct,
+            ),
             InventarioTab.pendentes => _InventariosTab(
-                title: 'Inventarios Pendentes',
-                subtitle:
-                    'Seleccione um inventario pendente para carregar os itens e voltar automaticamente para a tab Produtos.',
-                isLoading: widget.inventoryState.isLoadingLists,
-                inventories: widget.inventoryState.pendingInventories,
-                activeInventoryId: widget.inventoryState.activeInventory?.id,
-                emptyTitle: 'Nenhum inventario pendente',
-                emptySubtitle: 'Inicie um inventario para criar o registo no backend.',
-                onSelect: widget.onSelectPendingInventory,
-              ),
+              title: 'Inventarios Pendentes',
+              subtitle:
+                  'Seleccione um inventario pendente para carregar os itens e voltar automaticamente para a tab Produtos.',
+              isLoading: widget.inventoryState.isLoadingLists,
+              inventories: widget.inventoryState.pendingInventories,
+              activeInventoryId: widget.inventoryState.activeInventory?.id,
+              emptyTitle: 'Nenhum inventario pendente',
+              emptySubtitle:
+                  'Inicie um inventario para criar o registo no backend.',
+              onSelect: widget.onSelectPendingInventory,
+            ),
             InventarioTab.concluidos => _InventariosTab(
-                title: 'Inventarios Concluidos',
-                subtitle:
-                    'Apenas visualizacao. Abra um card para consultar o inventario no painel da direita.',
-                isLoading: widget.inventoryState.isLoadingLists,
-                inventories: widget.inventoryState.completedInventories,
-                activeInventoryId: widget.inventoryState.activeInventory?.id,
-                emptyTitle: 'Nenhum inventario concluido',
-                emptySubtitle:
-                    'Os inventarios reconciliados aparecerao aqui automaticamente.',
-                onSelect: widget.onSelectCompletedInventory,
-              ),
+              title: 'Inventarios Concluidos',
+              subtitle:
+                  'Apenas visualizacao. Abra um card para consultar o inventario no painel da direita.',
+              isLoading: widget.inventoryState.isLoadingLists,
+              inventories: widget.inventoryState.completedInventories,
+              activeInventoryId: widget.inventoryState.activeInventory?.id,
+              emptyTitle: 'Nenhum inventario concluido',
+              emptySubtitle:
+                  'Os inventarios reconciliados aparecerao aqui automaticamente.',
+              onSelect: widget.onSelectCompletedInventory,
+            ),
           },
         ),
       ],
@@ -452,12 +461,16 @@ class _InventariosTab extends StatelessWidget {
       children: [
         Text(
           title,
-          style: Theme.of(context).textTheme.erpSectionTitle.copyWith(color: t.textPrimary),
+          style: Theme.of(
+            context,
+          ).textTheme.erpSectionTitle.copyWith(color: t.textPrimary),
         ),
         SizedBox(height: s.xs),
         Text(
           subtitle,
-          style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
+          style: Theme.of(
+            context,
+          ).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
         ),
         SizedBox(height: s.sm),
         if (isLoading) const LinearProgressIndicator(),
@@ -526,9 +539,9 @@ class _InventarioResumoCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     inventory.codigo,
-                    style: Theme.of(context).textTheme.erpCardTitle.copyWith(
-                          color: t.textPrimary,
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.erpCardTitle.copyWith(color: t.textPrimary),
                   ),
                 ),
                 _InfoTag(label: inventory.status.label, color: accent),
@@ -537,20 +550,27 @@ class _InventarioResumoCard extends StatelessWidget {
             SizedBox(height: s.sm),
             Text(
               'Data: ${_formatDate(inventory.iniciadoEm)}',
-              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
+              style: Theme.of(
+                context,
+              ).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
             ),
             Text(
               'Itens: ${inventory.totalItens} | Divergencias: ${inventory.itensComDivergencia}',
-              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
+              style: Theme.of(
+                context,
+              ).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
             ),
-            if (inventory.observacao != null && inventory.observacao!.isNotEmpty)
+            if (inventory.observacao != null &&
+                inventory.observacao!.isNotEmpty)
               Padding(
                 padding: EdgeInsets.only(top: s.xs),
                 child: Text(
                   inventory.observacao!,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.erpCaption.copyWith(color: t.textMuted),
                 ),
               ),
           ],
@@ -592,9 +612,9 @@ class _RightPane extends StatelessWidget {
                   activeInventory == null
                       ? 'Novo Inventario'
                       : activeInventory.codigo,
-                  style: Theme.of(context).textTheme.erpPageTitle.copyWith(
-                        color: t.textPrimary,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.erpPageTitle.copyWith(color: t.textPrimary),
                 ),
               ),
               if (state.isLoadingActive ||
@@ -610,7 +630,8 @@ class _RightPane extends StatelessWidget {
             child: _EmptyPane(
               icon: Icons.fact_check_outlined,
               title: 'Nenhum inventario activo',
-              subtitle: 'Inicie ou seleccione um inventario para adicionar contagens.',
+              subtitle:
+                  'Inicie ou seleccione um inventario para adicionar contagens.',
             ),
           )
         else ...[
@@ -642,10 +663,7 @@ class _RightPane extends StatelessWidget {
     );
 
     if (fullscreen) {
-      return Padding(
-        padding: EdgeInsets.all(s.md),
-        child: content,
-      );
+      return Padding(padding: EdgeInsets.all(s.md), child: content);
     }
 
     return Container(
@@ -691,7 +709,9 @@ class _ActiveInventoryHeader extends StatelessWidget {
         children: [
           Text(
             inventory.codigo,
-            style: Theme.of(context).textTheme.erpPageTitle.copyWith(color: t.textPrimary),
+            style: Theme.of(
+              context,
+            ).textTheme.erpPageTitle.copyWith(color: t.textPrimary),
           ),
           SizedBox(height: s.sm),
           Wrap(
@@ -709,7 +729,9 @@ class _ActiveInventoryHeader extends StatelessWidget {
               ),
               _InfoTag(
                 label: 'Divergencias ${inventory.itensComDivergencia}',
-                color: inventory.itensComDivergencia > 0 ? t.posDanger : t.brandGreen,
+                color: inventory.itensComDivergencia > 0
+                    ? t.posDanger
+                    : t.brandGreen,
               ),
             ],
           ),
@@ -718,7 +740,9 @@ class _ActiveInventoryHeader extends StatelessWidget {
               padding: EdgeInsets.only(top: s.sm),
               child: Text(
                 inventory.observacao!,
-                style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
+                style: Theme.of(
+                  context,
+                ).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
               ),
             ),
         ],
@@ -809,8 +833,12 @@ class _InventoryRecordedDesktopTable extends StatelessWidget {
               rows: items.map((item) {
                 return DataRow(
                   cells: [
-                    DataCell(SizedBox(width: 260, child: Text(item.produtoNome))),
-                    DataCell(SizedBox(width: 150, child: Text(item.numeroLote ?? '-'))),
+                    DataCell(
+                      SizedBox(width: 260, child: Text(item.produtoNome)),
+                    ),
+                    DataCell(
+                      SizedBox(width: 150, child: Text(item.numeroLote ?? '-')),
+                    ),
                     DataCell(
                       SizedBox(
                         width: 120,
@@ -902,7 +930,9 @@ class _InventoryRecordedTabletTable extends StatelessWidget {
                         ),
                       ),
                     ),
-                    DataCell(SizedBox(width: 130, child: Text(item.numeroLote ?? '-'))),
+                    DataCell(
+                      SizedBox(width: 130, child: Text(item.numeroLote ?? '-')),
+                    ),
                     DataCell(
                       SizedBox(
                         width: 90,
@@ -998,9 +1028,9 @@ class _RecordedItemCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   item.produtoNome,
-                  style: Theme.of(context).textTheme.erpCardTitle.copyWith(
-                        color: t.textPrimary,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.erpCardTitle.copyWith(color: t.textPrimary),
                 ),
               ),
               if (editable)
@@ -1089,13 +1119,15 @@ class _InventoryFooter extends StatelessWidget {
     final helperText = switch (activeInventory?.status) {
       null => 'Inicie um inventario para habilitar accoes.',
       InventarioStatus.aberto => 'Inicie a contagem para registar itens.',
-      InventarioStatus.emContagem => state.recordedItems.isEmpty
-          ? 'Adicione itens para reconciliar o inventario.'
-          : 'Itens registados: ${state.recordedItems.length}',
+      InventarioStatus.emContagem =>
+        state.recordedItems.isEmpty
+            ? 'Adicione itens para reconciliar o inventario.'
+            : 'Itens registados: ${state.recordedItems.length}',
       InventarioStatus.reconciliado => 'Inventario concluido.',
       InventarioStatus.cancelado => 'Inventario cancelado.',
     };
-    final emphasized = activeInventory?.status == InventarioStatus.emContagem &&
+    final emphasized =
+        activeInventory?.status == InventarioStatus.emContagem &&
         state.recordedItems.isNotEmpty;
 
     return Container(
@@ -1111,9 +1143,9 @@ class _InventoryFooter extends StatelessWidget {
           Text(
             helperText,
             style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                  color: emphasized ? t.textPrimary : t.textMuted,
-                  fontWeight: emphasized ? FontWeight.w600 : FontWeight.w500,
-                ),
+              color: emphasized ? t.textPrimary : t.textMuted,
+              fontWeight: emphasized ? FontWeight.w600 : FontWeight.w500,
+            ),
           ),
           SizedBox(height: s.md),
           Row(
@@ -1178,17 +1210,17 @@ class _EmptyPane extends StatelessWidget {
             Text(
               title,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.erpCardTitle.copyWith(
-                    color: t.textPrimary,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.erpCardTitle.copyWith(color: t.textPrimary),
             ),
             SizedBox(height: s.xs),
             Text(
               subtitle,
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                    color: t.textMuted,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
             ),
           ],
         ),
@@ -1215,16 +1247,16 @@ class _InfoTag extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
+        style: Theme.of(
+          context,
+        ).textTheme.erpLabel.copyWith(color: t.textPrimary),
       ),
     );
   }
 }
 
 class NovoInventarioDialogResult {
-  const NovoInventarioDialogResult({
-    required this.observacao,
-  });
+  const NovoInventarioDialogResult({required this.observacao});
 
   final String observacao;
 }
@@ -1285,9 +1317,7 @@ class _NovoInventarioDialogState extends State<_NovoInventarioDialog> {
 
     AdaptiveNavigator.complete(
       context,
-      NovoInventarioDialogResult(
-        observacao: _observacaoController.text.trim(),
-      ),
+      NovoInventarioDialogResult(observacao: _observacaoController.text.trim()),
     );
   }
 
@@ -1338,10 +1368,7 @@ class _NovoInventarioDialogState extends State<_NovoInventarioDialog> {
         children: [
           form,
           const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: actions,
-          ),
+          Row(mainAxisAlignment: MainAxisAlignment.end, children: actions),
         ],
       );
     }
@@ -1360,7 +1387,8 @@ class _InventarioCountDialog extends StatefulWidget {
   final InventarioItem item;
   final bool embedded;
 
-  bool get hasExistingCount => item.estoqueContado != 0 || item.divergencia != 0;
+  bool get hasExistingCount =>
+      item.estoqueContado != 0 || item.divergencia != 0;
 
   @override
   State<_InventarioCountDialog> createState() => _InventarioCountDialogState();
@@ -1378,9 +1406,12 @@ class _InventarioCountDialogState extends State<_InventarioCountDialog> {
   void initState() {
     super.initState();
     _produtoController = TextEditingController(text: widget.item.produtoNome);
-    _loteController = TextEditingController(text: widget.item.numeroLote ?? '-');
-    _estoqueSistemaController =
-        TextEditingController(text: _formatQuantity(widget.item.estoqueSistema));
+    _loteController = TextEditingController(
+      text: widget.item.numeroLote ?? '-',
+    );
+    _estoqueSistemaController = TextEditingController(
+      text: _formatQuantity(widget.item.estoqueSistema),
+    );
     _estoqueContadoController = TextEditingController(
       text: widget.item.estoqueContado == 0
           ? ''
@@ -1487,10 +1518,7 @@ class _InventarioCountDialogState extends State<_InventarioCountDialog> {
         children: [
           form,
           const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: actions,
-          ),
+          Row(mainAxisAlignment: MainAxisAlignment.end, children: actions),
         ],
       );
     }

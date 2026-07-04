@@ -48,6 +48,9 @@ class EnterpriseDataTable extends StatelessWidget {
     this.sortColumnIndex,
     this.sortAscending = true,
     this.onSelectAll,
+    this.dataRowMinHeight,
+    this.dataRowMaxHeight,
+    this.columnSpacing,
   });
 
   final List<DataColumn> columns;
@@ -58,6 +61,9 @@ class EnterpriseDataTable extends StatelessWidget {
   final int? sortColumnIndex;
   final bool sortAscending;
   final ValueChanged<bool?>? onSelectAll;
+  final double? dataRowMinHeight;
+  final double? dataRowMaxHeight;
+  final double? columnSpacing;
 
   @override
   Widget build(BuildContext context) {
@@ -153,10 +159,13 @@ class EnterpriseDataTable extends StatelessWidget {
                   headingRowColor: WidgetStatePropertyAll(
                     t.bgSecondary.withValues(alpha: 0.92),
                   ),
-                  dataRowMinHeight: DesignMetrics.tableRowHeightMin,
-                  dataRowMaxHeight: DesignMetrics.tableRowHeightMax,
+                  dataRowMinHeight:
+                      dataRowMinHeight ?? DesignMetrics.tableRowHeightMin,
+                  dataRowMaxHeight:
+                      dataRowMaxHeight ?? DesignMetrics.tableRowHeightMax,
                   horizontalMargin: PharmaScreenLayout.isDesktop(context) ? s.lg : s.md,
-                  columnSpacing: PharmaScreenLayout.isDesktop(context) ? s.xxl : s.lg,
+                  columnSpacing: columnSpacing ??
+                      (PharmaScreenLayout.isDesktop(context) ? s.xxl : s.lg),
                   columns: columns,
                   rows: List.generate(rowCount, (i) => rowBuilder(context, i)),
                 ),

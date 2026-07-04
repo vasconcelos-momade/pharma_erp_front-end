@@ -33,8 +33,9 @@ class _LoteQuarentenaFormContentState extends State<LoteQuarentenaFormContent> {
   @override
   void initState() {
     super.initState();
-    _qtyController =
-        TextEditingController(text: widget.maxQuantidade.toString());
+    _qtyController = TextEditingController(
+      text: widget.maxQuantidade.toString(),
+    );
     _motivoController = TextEditingController();
     _docController = TextEditingController();
   }
@@ -73,14 +74,15 @@ class _LoteQuarentenaFormContentState extends State<LoteQuarentenaFormContent> {
           Text(
             widget.isRevert
                 ? 'Lote ${lote['numeroLote']} • em quarentena: $maxQty'
-                : 'Lote ${lote['numeroLote']} • ${lote['produtoNome'] ?? 'Produto'}',
+                : 'Lote ${lote['numeroLote']} • ${lote['produtoNomeComercial'] ?? lote['produtoNome'] ?? 'Produto'}',
           ),
           const SizedBox(height: 12),
           TextFormField(
             controller: _qtyController,
             decoration: InputDecoration(
-              labelText:
-                  widget.isRevert ? 'Quantidade a libertar' : 'Quantidade',
+              labelText: widget.isRevert
+                  ? 'Quantidade a libertar'
+                  : 'Quantidade',
               helperText: widget.isRevert
                   ? 'Máximo em quarentena: $maxQty'
                   : 'Máximo disponível: $maxQty',
@@ -136,10 +138,7 @@ class _LoteQuarentenaFormContentState extends State<LoteQuarentenaFormContent> {
                 child: const Text('Cancelar'),
               ),
               const SizedBox(width: 8),
-              FilledButton(
-                onPressed: _submit,
-                child: const Text('Continuar'),
-              ),
+              FilledButton(onPressed: _submit, child: const Text('Continuar')),
             ],
           ),
         ],

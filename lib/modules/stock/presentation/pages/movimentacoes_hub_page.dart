@@ -52,7 +52,8 @@ class _MovimentacoesHubPageState extends ConsumerState<MovimentacoesHubPage> {
       if (query.search.isNotEmpty) 'q': query.search,
       if (query.tipo != null) 'tipo': query.tipo,
       if (query.origem != null) 'origem': query.origem,
-      if (query.dataInicio != null) 'dataInicio': formatReportDate(query.dataInicio!),
+      if (query.dataInicio != null)
+        'dataInicio': formatReportDate(query.dataInicio!),
       if (query.dataFim != null) 'dataFim': formatReportDate(query.dataFim!),
     };
   }
@@ -62,7 +63,10 @@ class _MovimentacoesHubPageState extends ConsumerState<MovimentacoesHubPage> {
     final listState = ref.watch(movimentacaoListProvider);
     final s = context.spacing;
 
-    ref.listen<MovimentacaoListState>(movimentacaoListProvider, (previous, next) {
+    ref.listen<MovimentacaoListState>(movimentacaoListProvider, (
+      previous,
+      next,
+    ) {
       if (_searchController.text != next.query.search) {
         _searchController.value = TextEditingValue(
           text: next.query.search,

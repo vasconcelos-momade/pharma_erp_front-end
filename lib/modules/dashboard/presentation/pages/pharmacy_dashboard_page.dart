@@ -172,7 +172,7 @@ class _PharmacyDashboardPageState extends ConsumerState<PharmacyDashboardPage> {
                       context: context,
                       points: dashList(charts?['produtosMaisDispensados']),
                       valueKey: 'quantidade',
-                      labelKey: 'produtoNome',
+                      labelKey: 'produtoNomeComercial',
                     ),
                   ),
                 ],
@@ -220,7 +220,8 @@ class _PharmacyDashboardPageState extends ConsumerState<PharmacyDashboardPage> {
                   return DashboardPagedTableResult.fromMap(result);
                 },
                 rowBuilder: (row) => [
-                  row['produtoNome']?.toString() ?? '—',
+                  row['produtoNomeComercial']?.toString() ??
+                      row['produtoNome']?.toString() ?? '—',
                   row['numeroLote']?.toString() ?? '—',
                   '${row['quantidade'] ?? 0}',
                   row['origem']?.toString() ?? '—',
@@ -245,7 +246,8 @@ class _PharmacyDashboardPageState extends ConsumerState<PharmacyDashboardPage> {
                   return DashboardPagedTableResult.fromMap(result);
                 },
                 rowBuilder: (row) => [
-                  row['produtoNome']?.toString() ?? '—',
+                  row['produtoNomeComercial']?.toString() ??
+                      row['produtoNome']?.toString() ?? '—',
                   row['numeroLote']?.toString() ?? '—',
                   '${row['quantidade'] ?? 0}',
                   row['tipoDispensacao']?.toString() ?? '—',
@@ -270,7 +272,8 @@ class _PharmacyDashboardPageState extends ConsumerState<PharmacyDashboardPage> {
                   return DashboardPagedTableResult.fromMap(result);
                 },
                 rowBuilder: (row) => [
-                  row['produtoNome']?.toString() ?? '—',
+                  row['produtoNomeComercial']?.toString() ??
+                      row['produtoNome']?.toString() ?? '—',
                   row['tipo']?.toString() ?? '—',
                   row['mensagem']?.toString() ?? '—',
                 ],

@@ -368,7 +368,7 @@ class _FefoPageState extends ConsumerState<FefoPage> with SingleTickerProviderSt
               ? (_) => _openLotDrawer(loteId)
               : null,
           cells: [
-            DataCell(Text(item['produtoNome']?.toString() ?? '—')),
+            DataCell(Text(item['produtoNomeComercial']?.toString() ?? item['produtoNome']?.toString() ?? '—')),
             DataCell(Text(lote?['numeroLote']?.toString() ?? '—')),
             DataCell(Text(lote?['dataValidade']?.toString().substring(0, 10) ?? '—')),
             DataCell(Text(lote?['stock']?.toString() ?? '0')),
@@ -405,7 +405,7 @@ class _FefoPageState extends ConsumerState<FefoPage> with SingleTickerProviderSt
               ? (_) => _openLotDrawer(loteId)
               : null,
           cells: [
-            DataCell(Text(item['produtoNome']?.toString() ?? '—')),
+            DataCell(Text(item['produtoNomeComercial']?.toString() ?? item['produtoNome']?.toString() ?? '—')),
             DataCell(Text(usado?['numeroLote']?.toString() ?? '—')),
             DataCell(Text(correto?['numeroLote']?.toString() ?? '—')),
             DataCell(Text(user?['nome']?.toString() ?? '—')),
@@ -437,7 +437,7 @@ class _FefoPageState extends ConsumerState<FefoPage> with SingleTickerProviderSt
     final loteId = lote?['id']?.toString() ?? item['loteId']?.toString();
     return EnterpriseListCard(
       leading: Icons.inventory_2_outlined,
-      title: item['produtoNome']?.toString() ?? '—',
+      title: item['produtoNomeComercial']?.toString() ?? item['produtoNome']?.toString() ?? '—',
       subtitle: 'Lote FEFO: ${lote?['numeroLote']?.toString() ?? '—'}',
       chip: EnterpriseStatusChip(label: item['situacao']?.toString() ?? '—'),
       metadata: [
@@ -458,7 +458,7 @@ class _FefoPageState extends ConsumerState<FefoPage> with SingleTickerProviderSt
     final loteId = usado?['id']?.toString() ?? correto?['id']?.toString();
     return EnterpriseListCard(
       leading: Icons.rule_folder_outlined,
-      title: item['produtoNome']?.toString() ?? '—',
+      title: item['produtoNomeComercial']?.toString() ?? item['produtoNome']?.toString() ?? '—',
       subtitle: '${usado?['numeroLote'] ?? '—'} → ${correto?['numeroLote'] ?? '—'}',
       chip: EnterpriseStatusChip(label: item['situacao']?.toString() ?? '—'),
       metadata: [

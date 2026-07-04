@@ -99,10 +99,7 @@ class MovimentacaoOverviewModel {
 }
 
 class MovimentacaoFiltersModel {
-  const MovimentacaoFiltersModel({
-    required this.tipos,
-    required this.origens,
-  });
+  const MovimentacaoFiltersModel({required this.tipos, required this.origens});
 
   final List<MovimentacaoFilterOptionModel> tipos;
   final List<MovimentacaoFilterOptionModel> origens;
@@ -136,7 +133,7 @@ class MovimentacaoProdutoResumoModel {
   factory MovimentacaoProdutoResumoModel.fromJson(Map<String, dynamic> json) {
     return MovimentacaoProdutoResumoModel(
       id: json['id'].toString(),
-      nome: json['nome'] as String? ?? '',
+      nome: json['nomeComercial'] as String? ?? json['nome'] as String? ?? '',
       barcode: json['barcode'] as String?,
     );
   }
@@ -168,10 +165,7 @@ class MovimentacaoLoteResumoModel {
 }
 
 class MovimentacaoUserResumoModel {
-  const MovimentacaoUserResumoModel({
-    required this.id,
-    required this.nome,
-  });
+  const MovimentacaoUserResumoModel({required this.id, required this.nome});
 
   final String id;
   final String nome;
@@ -237,13 +231,18 @@ class MovimentacaoModel {
       origemLabel: json['origemLabel'] as String? ?? 'Sem origem',
       documentoReferencia: json['documentoReferencia'] as String?,
       observacoes: json['observacoes'] as String?,
-      createdAt: DateTime.tryParse(json['createdAt'] as String? ?? '') ??
+      createdAt:
+          DateTime.tryParse(json['createdAt'] as String? ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
       produto: produtoJson == null
           ? null
           : MovimentacaoProdutoResumoModel.fromJson(produtoJson),
-      lote: loteJson == null ? null : MovimentacaoLoteResumoModel.fromJson(loteJson),
-      user: userJson == null ? null : MovimentacaoUserResumoModel.fromJson(userJson),
+      lote: loteJson == null
+          ? null
+          : MovimentacaoLoteResumoModel.fromJson(loteJson),
+      user: userJson == null
+          ? null
+          : MovimentacaoUserResumoModel.fromJson(userJson),
     );
   }
 
@@ -288,9 +287,9 @@ class MovimentacoesPageResultModel {
     final rawItems = json['items'];
     final items = rawItems is List
         ? rawItems
-            .whereType<Map<String, dynamic>>()
-            .map(MovimentacaoModel.fromJson)
-            .toList()
+              .whereType<Map<String, dynamic>>()
+              .map(MovimentacaoModel.fromJson)
+              .toList()
         : const <MovimentacaoModel>[];
 
     return MovimentacoesPageResultModel(

@@ -100,7 +100,9 @@ class _AuditPsychotropicsPageState extends ConsumerState<AuditPsychotropicsPage>
   @override
   Widget build(BuildContext context) {
     final s = context.spacing;
-    final dash = _dashboard ?? const <String, dynamic>{};
+    final dash =
+        _dashboard?['kpis'] as Map<String, dynamic>? ??
+        const <String, dynamic>{};
 
     return EnterpriseModuleHub(
       title: 'Auditoria de psicotrópicos',

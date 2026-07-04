@@ -144,7 +144,7 @@ class _ExecutiveDashboardPageState
                       context: context,
                       points: dashList(charts?['topProdutos']),
                       valueKey: 'total',
-                      labelKey: 'produtoNome',
+                      labelKey: 'produtoNomeComercial',
                     ),
                   ),
                   dashboardChartCard(
@@ -212,7 +212,8 @@ class _ExecutiveDashboardPageState
                   return DashboardPagedTableResult.fromMap(result);
                 },
                 rowBuilder: (row) => [
-                  row['produtoNome']?.toString() ?? '—',
+                  row['produtoNomeComercial']?.toString() ??
+                      row['produtoNome']?.toString() ?? '—',
                   row['tipo']?.toString() ?? '—',
                   row['mensagem']?.toString() ?? '—',
                 ],

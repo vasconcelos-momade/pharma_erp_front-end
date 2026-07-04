@@ -6,6 +6,7 @@ import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/spacing.dart';
+import '../../../../../core/utils/lote_stock_utils.dart';
 import '../../../../../shared/responsive/responsive_builder.dart';
 import '../../../../../shared/widgets/cards/enterprise_list_card.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
@@ -191,7 +192,8 @@ class _ExpiryPageState extends ConsumerState<ExpiryPage> {
                 isLoading: asyncState.isLoading,
                 hasFilters: hasFilters,
                 onSearchSubmitted: controller.setSearch,
-                onOpenFilters: () => _openMobileFilters(context, controller, state),
+                onOpenFilters: () =>
+                    _openMobileFilters(context, controller, state),
                 onClearFilters: () async => controller.setBucket('todos'),
                 onRefresh: () => controller.refresh(force: true),
                 reportAction: pharmacyReportActions(
@@ -205,8 +207,13 @@ class _ExpiryPageState extends ConsumerState<ExpiryPage> {
               itemCount: _accumulatedItems.length,
               itemBuilder: (context, index) => _ExpiryMobileCard(
                 item: _accumulatedItems[index],
-                validadeColor: _rowColor(context, _accumulatedItems[index]['estado'] as String?),
-                onTap: () => _openLotDrawer(_accumulatedItems[index]['id']?.toString() ?? ''),
+                validadeColor: _rowColor(
+                  context,
+                  _accumulatedItems[index]['estado'] as String?,
+                ),
+                onTap: () => _openLotDrawer(
+                  _accumulatedItems[index]['id']?.toString() ?? '',
+                ),
               ),
               hasMore: state?.hasMore ?? false,
               isLoading: asyncState.isLoading,
@@ -242,8 +249,8 @@ class _ExpiryPageState extends ConsumerState<ExpiryPage> {
               ? 'Nenhum lote com stock activo.'
               : 'Nenhum lote neste filtro de validade.',
           style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                color: context.pharmaTokens.textMuted,
-              ),
+            color: context.pharmaTokens.textMuted,
+          ),
         ),
       );
     }
@@ -266,16 +273,18 @@ class _ExpiryPageState extends ConsumerState<ExpiryPage> {
         return DataRow(
           onSelectChanged: (_) => _openLotDrawer(item['id']?.toString() ?? ''),
           cells: [
-            DataCell(Text(item['produtoNome']?.toString() ?? '—')),
+            DataCell(Text(item['produtoNomeComercial']?.toString() ?? item['produtoNome']?.toString() ?? '—')),
             DataCell(Text(item['numeroLote']?.toString() ?? '—')),
             DataCell(Text(_formatDate(item['dataValidade']))),
             DataCell(
               Text(
                 '${item['diasRestantes'] ?? '—'}',
-                style: Theme.of(context).textTheme.erpLabel.copyWith(color: color),
+                style: Theme.of(
+                  context,
+                ).textTheme.erpLabel.copyWith(color: color),
               ),
             ),
-            DataCell(Text(item['quantidadeDisponivel']?.toString() ?? '0')),
+            DataCell(Text(LoteStockUtils.formatDisponivel(item))),
             DataCell(Text(item['valorEmStock']?.toString() ?? '0')),
             DataCell(Text(item['estado']?.toString() ?? '—')),
           ],
@@ -304,7 +313,8 @@ class _ExpiryPageState extends ConsumerState<ExpiryPage> {
     return raw.length >= 10 ? raw.substring(0, 10) : raw;
   }
 
-  Future<void> _openLotDrawer(String loteId) => openLoteDetails(context, loteId);
+  Future<void> _openLotDrawer(String loteId) =>
+      openLoteDetails(context, loteId);
 }
 
 class _ExpiryFiltersSheet extends StatelessWidget {
@@ -389,7 +399,7 @@ class _ExpiryMobileCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return EnterpriseListCard(
       leading: Icons.event_outlined,
-      title: item['produtoNome']?.toString() ?? '—',
+      title: item['produtoNomeComercial']?.toString() ?? item['produtoNome']?.toString() ?? '—',
       subtitle: 'Lote: ${item['numeroLote']?.toString() ?? '—'}',
       chip: EnterpriseStatusChip(
         label: item['estado']?.toString() ?? '—',
@@ -397,11 +407,13 @@ class _ExpiryMobileCard extends StatelessWidget {
       ),
       metadata: [
         EnterpriseListCardMeta(
-          label: 'Validade: ${_formatDate(item['dataValidade'])} (${item['diasRestantes'] ?? '—'} dias)',
+          label:
+              'Validade: ${_formatDate(item['dataValidade'])} (${item['diasRestantes'] ?? '—'} dias)',
           color: validadeColor,
         ),
         EnterpriseListCardMeta(
-          label: 'Qtd: ${item['quantidadeDisponivel']?.toString() ?? '0'} · Valor: ${item['valorEmStock']?.toString() ?? '0'}',
+          label:
+              'Qtd: ${LoteStockUtils.formatDisponivel(item)} · Valor: ${item['valorEmStock']?.toString() ?? '0'}',
         ),
       ],
       onTap: onTap,

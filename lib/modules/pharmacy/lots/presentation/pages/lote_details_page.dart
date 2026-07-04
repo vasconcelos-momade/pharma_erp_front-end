@@ -5,11 +5,7 @@ import '../widgets/lote_details_content.dart';
 
 /// Página full-screen de detalhe do lote (mobile, fora do [AppMainShell]).
 class LoteDetailsPage extends StatefulWidget {
-  const LoteDetailsPage({
-    super.key,
-    required this.loteId,
-    this.title,
-  });
+  const LoteDetailsPage({super.key, required this.loteId, this.title});
 
   final String loteId;
   final String? title;

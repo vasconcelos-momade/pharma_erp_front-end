@@ -90,13 +90,12 @@ class ExpiryViewController extends AsyncNotifier<ExpiryViewState> {
 
   Future<void> setSort(String sortBy) async {
     final current = state.valueOrNull ?? _cache ?? const ExpiryViewState();
-    final descending = current.sortBy == sortBy ? !current.sortDescending : false;
+    final descending = current.sortBy == sortBy
+        ? !current.sortDescending
+        : false;
     state = await AsyncValue.guard(
       () => _load(
-        current.copyWith(
-          sortBy: sortBy,
-          sortDescending: descending,
-        ),
+        current.copyWith(sortBy: sortBy, sortDescending: descending),
         force: true,
       ),
     );
@@ -117,7 +116,10 @@ class ExpiryViewController extends AsyncNotifier<ExpiryViewState> {
     );
   }
 
-  Future<ExpiryViewState> _load(ExpiryViewState current, {required bool force}) async {
+  Future<ExpiryViewState> _load(
+    ExpiryViewState current, {
+    required bool force,
+  }) async {
     final now = DateTime.now();
     if (!force &&
         current.lastUpdated != null &&
@@ -170,5 +172,5 @@ class ExpiryViewController extends AsyncNotifier<ExpiryViewState> {
 
 final expiryViewProvider =
     AsyncNotifierProvider<ExpiryViewController, ExpiryViewState>(
-  ExpiryViewController.new,
-);
+      ExpiryViewController.new,
+    );

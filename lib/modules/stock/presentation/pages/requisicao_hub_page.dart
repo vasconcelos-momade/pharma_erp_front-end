@@ -71,7 +71,9 @@ class _RequisicaoHubPageState extends ConsumerState<RequisicaoHubPage> {
       if (!mounted) {
         return;
       }
-      ref.read(requisicaoProductListProvider.notifier).ensureLoaded(force: true);
+      ref
+          .read(requisicaoProductListProvider.notifier)
+          .ensureLoaded(force: true);
     });
   }
 
@@ -170,10 +172,7 @@ class _RequisicaoHubPageState extends ConsumerState<RequisicaoHubPage> {
       return;
     }
 
-    final draft = await showRequisicaoCompraItemDialog(
-      context,
-      item: item,
-    );
+    final draft = await showRequisicaoCompraItemDialog(context, item: item);
 
     if (!mounted || draft == null) {
       return;
@@ -223,9 +222,9 @@ class _RequisicaoHubPageState extends ConsumerState<RequisicaoHubPage> {
         : ref.read(requisicaoProvider).activeRequisicao?.id;
     if (activeId == null) return;
 
-    await ref.read(reportControllerProvider.notifier).downloadPdf(
-          path: ReportPaths.stockRequisition(activeId),
-        );
+    await ref
+        .read(reportControllerProvider.notifier)
+        .downloadPdf(path: ReportPaths.stockRequisition(activeId));
   }
 
   List<Widget> _buildTopActions({required bool isCreating}) {
@@ -333,7 +332,9 @@ class _RequisicaoHubPageState extends ConsumerState<RequisicaoHubPage> {
       onEditHeader: _handleEditCompraHeader,
       onEditItem: _handleEditCompraItem,
       onRemoveItem: _confirmRemoveCompraItem,
-      onExportPdf: compraState.activeRequisicao != null ? _exportActiveRequisitionPdf : null,
+      onExportPdf: compraState.activeRequisicao != null
+          ? _exportActiveRequisitionPdf
+          : null,
     );
 
     return ModulePageFrame(
@@ -363,8 +364,9 @@ class _RequisicaoHubPageState extends ConsumerState<RequisicaoHubPage> {
             onCategoriaChanged: productController.setCategoriaFilter,
             onRefreshProducts: productController.refreshCurrentPage,
             onGoToPage: productController.goToPage,
-            onTabChanged:
-                ref.read(requisicaoCompraProvider.notifier).setActiveTab,
+            onTabChanged: ref
+                .read(requisicaoCompraProvider.notifier)
+                .setActiveTab,
             onSelectProduct: _handleProduct,
             onSelectPendingPurchase: ref
                 .read(requisicaoCompraProvider.notifier)

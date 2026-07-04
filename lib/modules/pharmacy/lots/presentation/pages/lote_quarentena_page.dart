@@ -30,9 +30,7 @@ class LoteQuarentenaPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          isRevert ? 'Reverter quarentena' : 'Mover para quarentena',
-        ),
+        title: Text(isRevert ? 'Reverter quarentena' : 'Mover para quarentena'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),

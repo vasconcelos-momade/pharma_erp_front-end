@@ -84,8 +84,9 @@ class InventoryCatalogController extends Notifier<InventoryCatalogState> {
       _debounce?.cancel();
     });
 
-    final inventoryId =
-        ref.watch(inventarioProvider.select((state) => state.activeInventory?.id));
+    final inventoryId = ref.watch(
+      inventarioProvider.select((state) => state.activeInventory?.id),
+    );
     final nextState = InventoryCatalogState(inventoryId: inventoryId);
     if (inventoryId != null) {
       Future.microtask(fetchCurrentPage);
@@ -152,8 +153,8 @@ class InventoryCatalogController extends Notifier<InventoryCatalogState> {
     if (!force) {
       final cached =
           InventoryCatalogCachePolicy.get<PaginationResponse<InventarioItem>>(
-        cacheKey,
-      );
+            cacheKey,
+          );
       if (cached != null) {
         state = state.copyWith(
           items: cached.items,
@@ -172,7 +173,9 @@ class InventoryCatalogController extends Notifier<InventoryCatalogState> {
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
-      final response = await ref.read(inventarioRepositoryProvider).listarItensInventario(
+      final response = await ref
+          .read(inventarioRepositoryProvider)
+          .listarItensInventario(
             inventarioId: inventoryId,
             query: state.query,
             page: state.page,
@@ -217,6 +220,7 @@ class InventoryCatalogController extends Notifier<InventoryCatalogState> {
 }
 
 final inventoryCatalogProvider =
-    NotifierProvider.autoDispose<InventoryCatalogController, InventoryCatalogState>(
-  InventoryCatalogController.new,
-);
+    NotifierProvider.autoDispose<
+      InventoryCatalogController,
+      InventoryCatalogState
+    >(InventoryCatalogController.new);

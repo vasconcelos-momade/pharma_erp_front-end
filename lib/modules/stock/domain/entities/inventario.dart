@@ -1,9 +1,4 @@
-enum InventarioStatus {
-  aberto,
-  emContagem,
-  reconciliado,
-  cancelado,
-}
+enum InventarioStatus { aberto, emContagem, reconciliado, cancelado }
 
 extension InventarioStatusX on InventarioStatus {
   String get apiValue {
@@ -95,7 +90,7 @@ class InventarioItem {
     required this.id,
     required this.produtoId,
     required this.produtoNome,
-    this.substanciaActiva,
+    this.nomeGenerico,
     this.dosagem,
     this.forma,
     this.apresentacao,
@@ -112,7 +107,7 @@ class InventarioItem {
   final String id;
   final String produtoId;
   final String produtoNome;
-  final String? substanciaActiva;
+  final String? nomeGenerico;
   final String? dosagem;
   final String? forma;
   final String? apresentacao;

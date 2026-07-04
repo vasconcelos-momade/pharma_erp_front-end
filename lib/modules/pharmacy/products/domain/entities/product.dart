@@ -1,38 +1,10 @@
-import 'categoria_produto.dart';
 import 'product_tax_rule.dart';
 
 class Product {
-  final String id;
-  final String nome;
-  final String? substanciaActiva;
-  final String? dosagem;
-  final String? forma;
-  final String? apresentacao;
-  final bool ativo;
-  final String? barcode;
-  final String? categoriaId;
-  final String? categoriaNome;
-  final CategoriaProduto categoria;
-  final String tipoDispensacao;
-  final bool requiresPrescription;
-  final bool requiresDoubleCheck;
-  final bool requiresPsychotropicBook;
-  final bool antimicrobiano;
-  final bool requiresManualReview;
-  final double precoVenda;
-  final double estoqueAtual;
-  final double estoqueMinimo;
-  final int numLotes;
-  final String? lote;
-  final DateTime? dataValidade;
-  final DateTime? proximaValidade;
-  final DateTime? createdAt;
-  final ProductTaxRule? taxRule;
-
-  Product({
+  const Product({
     required this.id,
-    required this.nome,
-    this.substanciaActiva,
+    required this.nomeComercial,
+    this.nomeGenerico,
     this.dosagem,
     this.forma,
     this.apresentacao,
@@ -40,7 +12,7 @@ class Product {
     this.barcode,
     this.categoriaId,
     this.categoriaNome,
-    this.categoria = CategoriaProduto.medicamento,
+    this.categoriaCodigoFnm,
     required this.tipoDispensacao,
     required this.requiresPrescription,
     required this.requiresDoubleCheck,
@@ -57,4 +29,35 @@ class Product {
     this.createdAt,
     this.taxRule,
   });
+
+  final String id;
+  final String nomeComercial;
+  final String? nomeGenerico;
+  final String? dosagem;
+  final String? forma;
+  final String? apresentacao;
+  final bool ativo;
+  final String? barcode;
+  final String? categoriaId;
+  final String? categoriaNome;
+  final String? categoriaCodigoFnm;
+  final String tipoDispensacao;
+  final bool requiresPrescription;
+  final bool requiresDoubleCheck;
+  final bool requiresPsychotropicBook;
+  final bool antimicrobiano;
+  final bool requiresManualReview;
+  final double precoVenda;
+  final double estoqueAtual;
+  final double estoqueMinimo;
+  final int numLotes;
+  final String? lote;
+  final DateTime? dataValidade;
+  final DateTime? proximaValidade;
+  final DateTime? createdAt;
+  final ProductTaxRule? taxRule;
+
+  bool get isAntimicrobianoFnm =>
+      categoriaCodigoFnm == 'ANTIMICROBIANOS' ||
+      categoriaNome == 'ANTIMICROBIANOS';
 }
