@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
 import '../../../../../shared/widgets/feedback/module_data_states.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
+import '../../../../../shared/widgets/tables/table_typography.dart';
 import '../../domain/entities/pdv_service.dart';
 import 'pdv_catalog_utils.dart';
 
@@ -25,9 +25,6 @@ class PdvServiceTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
-    final textTheme = Theme.of(context).textTheme;
-
     if (items.isEmpty) {
       return ModuleEmptyState(
         title: query.isEmpty
@@ -42,12 +39,7 @@ class PdvServiceTable extends StatelessWidget {
       showCheckboxColumn: false,
       columns: [
         for (final label in _columns)
-          DataColumn(
-            label: Text(
-              label,
-              style: textTheme.erpOverline.copyWith(color: t.textMuted),
-            ),
-          ),
+          DataColumn(label: TableTypography.headerLabel(context, label)),
       ],
       rowCount: items.length,
       rowBuilder: (context, index) {
@@ -56,13 +48,14 @@ class PdvServiceTable extends StatelessWidget {
           onSelectChanged: canAdd ? (_) => onAdd(service) : null,
           cells: [
             DataCell(
-              Text(
+              TableTypography.cellText(
+                context,
                 service.nome,
-                style: textTheme.erpLabel.copyWith(color: t.textPrimary),
+                style: TableTypography.primary(context),
               ),
             ),
-            DataCell(Text(service.tipoServicoClinico ?? '—')),
-            DataCell(Text(pdvFormatMoney(service.preco))),
+            DataCell(TableTypography.cellText(context, service.tipoServicoClinico ?? '—')),
+            DataCell(TableTypography.cellText(context, pdvFormatMoney(service.preco))),
             DataCell(
               FilledButton.tonalIcon(
                 onPressed: canAdd ? () => onAdd(service) : null,

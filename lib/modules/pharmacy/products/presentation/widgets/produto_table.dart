@@ -2,12 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
+import '../../../../../core/theme/table_theme.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../domain/entities/product.dart';
-import 'detail/status_badge.dart';
 import 'produto_categoria_chip.dart';
 
-/// Colunas alinhadas ao modelo [Product] / schema de produtos.
+/// Tabela desktop/web do catálogo master — layout SaaS com hierarquia visual na coluna Nome.
 class ProdutoTable extends StatelessWidget {
   const ProdutoTable({
     super.key,
@@ -34,8 +34,6 @@ class ProdutoTable extends StatelessWidget {
 
   static const _columnLabels = [
     'Nome',
-    'Dosagem',
-    'Forma',
     'Categoria',
     'Estoque',
     'Status',
@@ -45,7 +43,8 @@ class ProdutoTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
-    final theme = Theme.of(context);
+    final s = context.spacing;
+    final tableTheme = context.tableTheme;
 
     return EnterpriseDataTable(
       adaptive: false,
@@ -53,6 +52,9 @@ class ProdutoTable extends StatelessWidget {
       sortColumnIndex: _sortColumnIndex(),
       sortAscending: sortOrder == 'asc',
       onSelectAll: (selected) => onToggleSelectAll(selected ?? false),
+      dataRowMinHeight: 72,
+      dataRowMaxHeight: 92,
+      columnSpacing: s.xxl,
       columns: [
         for (var i = 0; i < _columnLabels.length; i++)
           _buildColumn(
@@ -61,65 +63,68 @@ class ProdutoTable extends StatelessWidget {
             onSort: _sortKeyForIndex(i) != null
                 ? () => _handleSort(_sortKeyForIndex(i)!)
                 : null,
-            numeric: i == 4,
+            numeric: i == 2,
           ),
       ],
       rowCount: items.length,
       rowBuilder: (context, index) {
         final product = items[index];
         final isSelected = selectedIds.contains(product.id);
-        final lowStock = product.estoqueAtual <= product.estoqueMinimo;
+        final isCriticalStock =
+            product.estoqueMinimo > 0 && product.estoqueAtual <= product.estoqueMinimo;
 
         return DataRow(
           selected: isSelected,
+          color: WidgetStateProperty.resolveWith((states) {
+            if (states.contains(WidgetState.selected)) {
+              return tableTheme.selectedColor;
+            }
+            if (states.contains(WidgetState.hovered)) {
+              return tableTheme.hoverColor;
+            }
+            if (index.isOdd) {
+              return t.bgSecondary.withValues(alpha: 0.45);
+            }
+            return null;
+          }),
           onSelectChanged: (selected) {
-            if (selected != null) onToggleSelect(product.id, selected);
+            if (selected != null) {
+              onToggleSelect(product.id, selected);
+            }
           },
           cells: [
             DataCell(
               _nameCell(context, product),
               onTap: () => onSelect(product),
             ),
-            DataCell(_cellText(context, product.dosagem)),
-            DataCell(_cellText(context, product.forma)),
             DataCell(
               ProdutoCategoriaChip(
                 label: product.categoriaNome ?? '—',
                 categoriaCodigo: product.categoriaCodigoFnm,
               ),
+              onTap: () => onSelect(product),
             ),
             DataCell(
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    _formatNumber(product.estoqueAtual),
-                    style: theme.textTheme.erpLabel.copyWith(
-                      color: lowStock ? t.posDanger : t.textPrimary,
-                    ),
-                  ),
-                  if (product.estoqueMinimo > 0)
-                    Text(
-                      'Mín. ${_formatNumber(product.estoqueMinimo)}',
-                      style: theme.textTheme.erpCaption.copyWith(
-                        color: t.textMuted,
-                      ),
-                    ),
-                ],
-              ),
+              _stockCell(context, product, isCriticalStock),
+              onTap: () => onSelect(product),
             ),
-            DataCell(StatusBadge(active: product.ativo)),
             DataCell(
-              PopupMenuButton<String>(
-                icon: Icon(Icons.more_vert, color: t.textMuted, size: t.iconSm),
-                tooltip: 'Acções',
-                onSelected: (action) => onAction(product, action),
-                itemBuilder: (context) => const [
-                  PopupMenuItem(value: 'detalhes', child: Text('Ver detalhes')),
-                  PopupMenuItem(value: 'editar', child: Text('Editar')),
-                  PopupMenuItem(value: 'excluir', child: Text('Eliminar')),
-                ],
+              _statusCell(context, product.ativo),
+              onTap: () => onSelect(product),
+            ),
+            DataCell(
+              Align(
+                alignment: Alignment.center,
+                child: PopupMenuButton<String>(
+                  icon: Icon(Icons.more_vert, color: t.textMuted, size: t.iconMd),
+                  tooltip: 'Acções',
+                  onSelected: (action) => onAction(product, action),
+                  itemBuilder: (context) => const [
+                    PopupMenuItem(value: 'detalhes', child: Text('Ver detalhes')),
+                    PopupMenuItem(value: 'editar', child: Text('Editar')),
+                    PopupMenuItem(value: 'excluir', child: Text('Eliminar')),
+                  ],
+                ),
               ),
             ),
           ],
@@ -135,14 +140,13 @@ class ProdutoTable extends StatelessWidget {
     bool numeric = false,
   }) {
     final t = context.pharmaTokens;
+    final textTheme = Theme.of(context).textTheme;
 
     return DataColumn(
       numeric: numeric,
       label: Text(
         label.toUpperCase(),
-        style: Theme.of(context).textTheme.erpOverline.copyWith(
-              color: t.textMuted,
-            ),
+        style: textTheme.erpTableHeader.copyWith(color: t.textMuted),
       ),
       onSort: onSort == null ? null : (_, _) => onSort(),
     );
@@ -150,50 +154,101 @@ class ProdutoTable extends StatelessWidget {
 
   Widget _nameCell(BuildContext context, Product product) {
     final t = context.pharmaTokens;
-    final theme = Theme.of(context);
+    final s = context.spacing;
+    final textTheme = Theme.of(context).textTheme;
     final substancia = product.nomeGenerico?.trim();
+    final formaDosagem = [
+      product.forma?.trim(),
+      product.dosagem?.trim(),
+    ].whereType<String>().where((value) => value.isNotEmpty).join(' · ');
+
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: s.xs),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            product.nomeComercial,
+            style: textTheme.erpTablePrimary.copyWith(color: t.textPrimary),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          if (substancia != null && substancia.isNotEmpty) ...[
+            SizedBox(height: s.xxs),
+            Text(
+              substancia,
+              style: textTheme.erpTableSecondary.copyWith(color: t.textSecondary),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+          if (formaDosagem.isNotEmpty) ...[
+            SizedBox(height: s.xxs),
+            Text(
+              formaDosagem,
+              style: textTheme.erpTableMeta.copyWith(color: t.textMuted),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _stockCell(BuildContext context, Product product, bool isCriticalStock) {
+    final t = context.pharmaTokens;
+    final textTheme = Theme.of(context).textTheme;
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.end,
+      mainAxisAlignment: MainAxisAlignment.center,
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          product.nomeComercial,
-          style: theme.textTheme.erpLabel.copyWith(
-            color: t.textPrimary,
+          _formatNumber(product.estoqueAtual),
+          style: textTheme.erpTablePrimary.copyWith(
+            color: isCriticalStock ? t.posDanger : t.textPrimary,
           ),
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
         ),
-        if (substancia != null && substancia.isNotEmpty) ...[
-          SizedBox(height: context.spacing.xxs),
+        if (product.estoqueMinimo > 0)
           Text(
-            'Nome genérico: $substancia',
-            style: theme.textTheme.erpCaption.copyWith(
-              color: t.textSecondary,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
+            'Mín. ${_formatNumber(product.estoqueMinimo)}',
+            style: textTheme.erpTableMeta.copyWith(color: t.textMuted),
           ),
-        ],
       ],
     );
   }
 
-  Widget _cellText(BuildContext context, String? value) {
+  Widget _statusCell(BuildContext context, bool active) {
     final t = context.pharmaTokens;
-    return Text(
-      _orDash(value),
-      style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-            color: t.textSecondary,
-          ),
+    final s = context.spacing;
+    final textTheme = Theme.of(context).textTheme;
+    final color = active ? t.brandGreen : t.textMuted;
+    final label = active ? 'Activo' : 'Inactivo';
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 7,
+          height: 7,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        SizedBox(width: s.xs),
+        Text(
+          label,
+          style: textTheme.erpTableSecondary.copyWith(color: t.textSecondary),
+        ),
+      ],
     );
   }
 
   String? _sortKeyForIndex(int index) {
     return switch (index) {
       0 => 'nome',
-      4 => 'estoqueAtual',
+      2 => 'estoqueAtual',
       _ => null,
     };
   }
@@ -201,7 +256,7 @@ class ProdutoTable extends StatelessWidget {
   int? _sortColumnIndex() {
     return switch (sortBy) {
       'nome' => 0,
-      'estoqueAtual' => 4,
+      'estoqueAtual' => 2,
       _ => null,
     };
   }
@@ -212,12 +267,6 @@ class ProdutoTable extends StatelessWidget {
     } else {
       onSort(column, 'asc');
     }
-  }
-
-  String _orDash(String? value) {
-    final trimmed = value?.trim();
-    if (trimmed == null || trimmed.isEmpty) return '—';
-    return trimmed;
   }
 
   String _formatNumber(double value) {

@@ -26,9 +26,8 @@ class TableTheme extends ThemeExtension<TableTheme> {
     final theme = textTheme ?? ThemeData().textTheme;
     return TableTheme(
       headerBackgroundColor: tokens.bgSecondary,
-      headerTextStyle: theme.erpLabel.copyWith(
+      headerTextStyle: theme.erpTableHeader.copyWith(
         color: tokens.textPrimary,
-        fontWeight: FontWeight.w600,
       ),
       rowHeight: DesignMetrics.tableRowHeightMax,
       dividerColor: tokens.border,

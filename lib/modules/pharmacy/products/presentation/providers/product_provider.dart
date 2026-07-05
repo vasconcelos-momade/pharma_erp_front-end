@@ -542,10 +542,14 @@ class MasterProductListController extends Notifier<MasterProductListState> {
   }
 
   void setAtivoFilter(bool? ativo) {
-    if (state.ativoFilter == ativo) return;
+    if (state.ativoFilter == ativo &&
+        state.includeInactive == (ativo == null)) {
+      return;
+    }
     state = state.copyWith(
       ativoFilter: ativo,
       clearAtivoFilter: ativo == null,
+      includeInactive: ativo == null,
       page: 1,
       isLoading: true,
       clearError: true,
@@ -570,6 +574,7 @@ class MasterProductListController extends Notifier<MasterProductListState> {
     state = state.copyWith(
       clearAtivoFilter: true,
       clearCategoriaId: true,
+      includeInactive: false,
       page: 1,
       isLoading: true,
       clearError: true,

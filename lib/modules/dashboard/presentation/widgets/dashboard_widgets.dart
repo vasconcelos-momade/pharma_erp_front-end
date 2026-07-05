@@ -9,6 +9,7 @@ import '../../../../core/theme/extensions.dart';
 import '../../../../core/theme/pharma_surface.dart';
 import '../../../../core/theme/spacing.dart';
 import '../../../../shared/widgets/tables/enterprise_data_table.dart';
+import '../../../../shared/widgets/tables/table_typography.dart';
 import '../../../reports/presentation/controllers/report_controller.dart';
 import '../../../stock/presentation/widgets/movimentacoes_pagination.dart';
 import '../../domain/dashboard_query.dart';
@@ -787,7 +788,7 @@ Widget dashboardSimpleTable({
           columns: List.generate(tableColumns.length, (index) {
             final column = tableColumns[index];
             return DataColumn(
-              label: Text(column.label),
+              label: TableTypography.headerLabel(context, column.label),
               onSort: column.sortKey == null || onSortColumn == null
                   ? null
                   : (_, _) => onSortColumn(index),
@@ -795,7 +796,13 @@ Widget dashboardSimpleTable({
           }),
           rowCount: rows.length,
           rowBuilder: (context, index) => DataRow(
-            cells: rows[index].map((cell) => DataCell(Text(cell))).toList(),
+            cells: rows[index]
+                .map(
+                  (cell) => DataCell(
+                    TableTypography.cellText(context, cell),
+                  ),
+                )
+                .toList(),
           ),
         ),
     ],
@@ -962,7 +969,7 @@ class _DashboardPaginatedTableState extends State<DashboardPaginatedTable> {
             if (_sortBy != null)
               Text(
                 _sortDir == 'asc' ? 'Ordem ascendente' : 'Ordem descendente',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                style: Theme.of(context).textTheme.erpTableMeta.copyWith(
                       color: t.textMuted,
                     ),
               ),
@@ -975,8 +982,8 @@ class _DashboardPaginatedTableState extends State<DashboardPaginatedTable> {
             if (result.totalCount != null) '${result.totalCount} no total',
             if (result.totalPages != null) 'página ${result.page} de ${result.totalPages}',
           ].join(' · '),
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: t.textMuted,
+          style: Theme.of(context).textTheme.erpTableSecondary.copyWith(
+                color: t.textSecondary,
               ),
         ),
         const SizedBox(height: AppSpacing.sm),

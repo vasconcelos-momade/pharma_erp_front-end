@@ -106,7 +106,7 @@ class EnterpriseDataTable extends StatelessWidget {
                               title,
                               maxLines: 2,
                               overflow: TextOverflow.ellipsis,
-                              style: textTheme.erpCardTitle.copyWith(
+                              style: textTheme.erpTablePrimary.copyWith(
                                 height: 1.2,
                                 color: t.textPrimary,
                               ),
@@ -117,7 +117,7 @@ class EnterpriseDataTable extends StatelessWidget {
                                 rest,
                                 maxLines: 3,
                                 overflow: TextOverflow.ellipsis,
-                                style: textTheme.erpCaption.copyWith(
+                                style: textTheme.erpTableMeta.copyWith(
                                   color: t.textMuted,
                                   height: 1.25,
                                 ),

@@ -100,7 +100,7 @@ class EnterprisePagination extends StatelessWidget {
             children: [
               Text(
                 summaryText,
-                style: theme.textTheme.erpLabel.copyWith(color: t.textMuted),
+                style: theme.textTheme.erpTableSecondary.copyWith(color: t.textPrimary),
               ),
               _PageSizeSelector(
                 pageSize: pageSize,
@@ -221,7 +221,7 @@ class _PageSizeSelector extends StatelessWidget {
     final t = context.pharmaTokens;
     final theme = Theme.of(context);
     final selectedValue = options.contains(pageSize) ? pageSize : options.first;
-    final valueStyle = theme.textTheme.erpLabel.copyWith(color: t.textSecondary);
+    final valueStyle = theme.textTheme.erpTableSecondary.copyWith(color: t.textPrimary);
 
     return PharmaSurface(
       padding: EdgeInsets.symmetric(
@@ -233,7 +233,7 @@ class _PageSizeSelector extends StatelessWidget {
         children: [
           Text(
             'Itens por pagina',
-            style: theme.textTheme.erpLabel.copyWith(color: t.textMuted),
+            style: theme.textTheme.erpTableSecondary.copyWith(color: t.textSecondary),
           ),
           SizedBox(width: context.spacing.xs),
           DropdownButtonHideUnderline(
@@ -294,7 +294,7 @@ class _PaginationGap extends StatelessWidget {
       child: Center(
         child: Text(
           label,
-          style: Theme.of(context).textTheme.erpLabel.copyWith(color: textColor),
+          style: Theme.of(context).textTheme.erpTableSecondary.copyWith(color: textColor),
         ),
       ),
     );
@@ -350,8 +350,9 @@ class _PaginationSegmentButton extends StatelessWidget {
             ? Icon(icon, size: t.iconSm)
             : Text(
                 label!,
-                style: Theme.of(context).textTheme.erpLabel.copyWith(
+                style: Theme.of(context).textTheme.erpTableSecondary.copyWith(
                       color: resolvedForeground,
+                      fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                     ),
               ),
       ),

@@ -8,12 +8,14 @@ import '../../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
 import '../../../categories/presentation/providers/category_provider.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/entities/product_tax_rule.dart';
+import '../../domain/produto_dispensacao.dart';
 import '../providers/product_provider.dart';
 
 class ProdutoFormDialogResult {
   const ProdutoFormDialogResult({
     required this.nomeComercial,
     required this.categoriaId,
+    required this.tipoDispensacao,
     required this.activo,
     this.barcode,
     this.nomeGenerico,
@@ -26,6 +28,7 @@ class ProdutoFormDialogResult {
 
   final String nomeComercial;
   final String categoriaId;
+  final String tipoDispensacao;
   final bool activo;
   final String? barcode;
   final String? nomeGenerico;
@@ -39,6 +42,7 @@ class ProdutoFormDialogResult {
     return <String, dynamic>{
       'nomeComercial': nomeComercial,
       'categoriaId': categoriaId,
+      'tipoDispensacao': tipoDispensacao,
       'ativo': activo,
       'activo': activo,
       'taxRuleId': taxRuleId,
@@ -80,6 +84,7 @@ class _ProdutoFormDialogState extends ConsumerState<ProdutoFormDialog> {
   late final TextEditingController _apresentacaoController;
   late final TextEditingController _estoqueMinimoController;
   String? _categoriaId;
+  late String _tipoDispensacao;
   late bool _activo;
   String? _selectedTaxRuleId;
 
@@ -96,9 +101,10 @@ class _ProdutoFormDialogState extends ConsumerState<ProdutoFormDialog> {
     _apresentacaoController =
         TextEditingController(text: product?.apresentacao ?? '');
     _estoqueMinimoController = TextEditingController(
-      text: product != null ? product.estoqueMinimo.toString() : '',
+      text: product != null ? product.estoqueMinimo.toString() : '0',
     );
     _categoriaId = product?.categoriaId;
+    _tipoDispensacao = product?.tipoDispensacao ?? 'VENDA_LIVRE';
     _activo = product?.ativo ?? true;
     _selectedTaxRuleId = product?.taxRule?.id;
   }
@@ -126,12 +132,18 @@ class _ProdutoFormDialogState extends ConsumerState<ProdutoFormDialog> {
         );
     final resolvedTaxRuleId = _resolveSelectedTaxRuleId(taxRules);
     final estoqueText = _estoqueMinimoController.text.trim().replaceAll(',', '.');
-    final estoqueMinimo =
-        estoqueText.isEmpty ? null : double.tryParse(estoqueText);
+    final estoqueMinimo = double.tryParse(estoqueText);
 
     if (_categoriaId == null || _categoriaId!.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Seleccione uma categoria')),
+      );
+      return;
+    }
+
+    if (estoqueMinimo == null || estoqueMinimo < 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Informe um estoque mínimo válido')),
       );
       return;
     }
@@ -141,6 +153,7 @@ class _ProdutoFormDialogState extends ConsumerState<ProdutoFormDialog> {
       ProdutoFormDialogResult(
         nomeComercial: _nomeController.text.trim(),
         categoriaId: _categoriaId!,
+        tipoDispensacao: _tipoDispensacao,
         activo: _activo,
         barcode: _barcodeController.text.trim(),
         nomeGenerico: _substanciaController.text.trim(),
@@ -183,6 +196,48 @@ class _ProdutoFormDialogState extends ConsumerState<ProdutoFormDialog> {
     return _selectedTaxRuleId;
   }
 
+  Widget _sectionTitle(BuildContext context, String title) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: context.spacing.sm, top: context.spacing.xs),
+      child: Text(
+        title,
+        style: Theme.of(context).textTheme.erpCardTitle,
+      ),
+    );
+  }
+
+  String _resolvedTipoDispensacao() {
+    if (produtoTipoDispensacaoValues.contains(_tipoDispensacao)) {
+      return _tipoDispensacao;
+    }
+    return produtoTipoDispensacaoValues.first;
+  }
+
+  String? _resolvedTaxRuleDropdownValue(List<ProductTaxRule> rules) {
+    final candidate = _selectedTaxRuleId ?? widget.product?.taxRule?.id;
+    if (candidate == null) {
+      return null;
+    }
+    return rules.any((rule) => rule.id == candidate) ? candidate : null;
+  }
+
+  List<DropdownMenuItem<String?>> _taxRuleDropdownItems(List<ProductTaxRule> rules) {
+    return [
+      const DropdownMenuItem<String?>(
+        value: null,
+        child: Text('Sem regra fiscal'),
+      ),
+      ...rules
+          .where((rule) => rule.id != null && rule.ativo)
+          .map(
+            (rule) => DropdownMenuItem<String?>(
+              value: rule.id,
+              child: Text(rule.displayLabel),
+            ),
+          ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = context.spacing;
@@ -192,20 +247,23 @@ class _ProdutoFormDialogState extends ConsumerState<ProdutoFormDialog> {
       data: (value) => value,
       orElse: () => const <ProductTaxRule>[],
     );
-    final effectiveTaxRuleId = _resolveSelectedTaxRuleId(taxRules);
+    final tipoDispensacaoValue = _resolvedTipoDispensacao();
+    final taxRuleDropdownValue = _resolvedTaxRuleDropdownValue(taxRules);
+    final derivedSummary = produtoDispensacaoDerivedSummary(tipoDispensacaoValue);
 
     final formFields = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        _sectionTitle(context, 'Informações gerais'),
         TextFormField(
           controller: _nomeController,
           decoration: const InputDecoration(
-            labelText: 'Nome comercial *',
+            labelText: 'Nome *',
             border: OutlineInputBorder(),
           ),
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
-              return 'Nome comercial é obrigatório';
+              return 'Nome é obrigatório';
             }
             return null;
           },
@@ -262,72 +320,10 @@ class _ProdutoFormDialogState extends ConsumerState<ProdutoFormDialog> {
           ),
         ),
         SizedBox(height: s.md),
-        SwitchListTile.adaptive(
-          value: _activo,
-          contentPadding: EdgeInsets.zero,
-          title: const Text('Activo'),
-          subtitle: const Text(
-            'Produtos inactivos deixam de aparecer no catálogo operacional.',
-          ),
-          onChanged: (value) {
-            setState(() => _activo = value);
-          },
-        ),
-        SizedBox(height: s.md),
-        DropdownButtonFormField<String?>(
-          key: ValueKey(
-            'tax-rule-${effectiveTaxRuleId ?? 'none'}-${taxRules.length}-${taxRulesAsync.isLoading}',
-          ),
-          initialValue: effectiveTaxRuleId,
-          decoration: const InputDecoration(
-            labelText: 'Taxa de IVA',
-            border: OutlineInputBorder(),
-          ),
-          items: [
-            const DropdownMenuItem<String?>(
-              value: null,
-              child: Text('Sem regra fiscal'),
-            ),
-            ...taxRules
-                .where((rule) => rule.id != null && rule.ativo)
-                .map(
-                  (rule) => DropdownMenuItem<String?>(
-                    value: rule.id,
-                    child: Text(rule.displayLabel),
-                  ),
-                ),
-          ],
-          onChanged: taxRulesAsync.isLoading
-              ? null
-              : (value) {
-                  setState(() => _selectedTaxRuleId = value);
-                },
-          hint: taxRulesAsync.isLoading
-              ? const Text('A carregar taxas de IVA...')
-              : const Text('Seleccione a taxa de IVA'),
-        ),
-        if (taxRulesAsync.hasError) ...[
-          SizedBox(height: s.xs),
-          Text(
-            'Não foi possível carregar as taxas de IVA.',
-            style: Theme.of(context).textTheme.erpBody.copyWith(
-                  color: Theme.of(context).colorScheme.error,
-                ),
-          ),
-        ],
-        SizedBox(height: s.md),
-        TextFormField(
-          controller: _barcodeController,
-          decoration: const InputDecoration(
-            labelText: 'Código de barras',
-            border: OutlineInputBorder(),
-          ),
-        ),
-        SizedBox(height: s.md),
         TextFormField(
           controller: _substanciaController,
           decoration: const InputDecoration(
-            labelText: 'Nome genérico',
+            labelText: 'Substância activa',
             border: OutlineInputBorder(),
           ),
         ),
@@ -343,7 +339,7 @@ class _ProdutoFormDialogState extends ConsumerState<ProdutoFormDialog> {
         TextFormField(
           controller: _formaController,
           decoration: const InputDecoration(
-            labelText: 'Forma',
+            labelText: 'Forma farmacêutica',
             border: OutlineInputBorder(),
           ),
         ),
@@ -357,12 +353,129 @@ class _ProdutoFormDialogState extends ConsumerState<ProdutoFormDialog> {
         ),
         SizedBox(height: s.md),
         TextFormField(
+          controller: _barcodeController,
+          decoration: const InputDecoration(
+            labelText: 'Código de barras',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        SizedBox(height: s.lg),
+        _sectionTitle(context, 'Comercial'),
+        TextFormField(
           controller: _estoqueMinimoController,
           decoration: const InputDecoration(
-            labelText: 'Estoque mínimo',
+            labelText: 'Estoque mínimo *',
             border: OutlineInputBorder(),
           ),
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          validator: (value) {
+            final text = value?.trim().replaceAll(',', '.') ?? '';
+            if (text.isEmpty) {
+              return 'Estoque mínimo é obrigatório';
+            }
+            final parsed = double.tryParse(text);
+            if (parsed == null || parsed < 0) {
+              return 'Informe um valor válido';
+            }
+            return null;
+          },
+        ),
+        SizedBox(height: s.md),
+        taxRulesAsync.when(
+          data: (rules) => DropdownButtonFormField<String?>(
+            key: ValueKey(
+              'tax-rule-$taxRuleDropdownValue-${rules.length}',
+            ),
+            initialValue: _resolvedTaxRuleDropdownValue(rules),
+            decoration: const InputDecoration(
+              labelText: 'Regra fiscal (IVA)',
+              border: OutlineInputBorder(),
+            ),
+            items: _taxRuleDropdownItems(rules),
+            onChanged: (value) {
+              setState(() => _selectedTaxRuleId = value);
+            },
+          ),
+          loading: () => const InputDecorator(
+            decoration: InputDecoration(
+              labelText: 'Regra fiscal (IVA)',
+              border: OutlineInputBorder(),
+            ),
+            child: LinearProgressIndicator(),
+          ),
+          error: (_, __) => Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              DropdownButtonFormField<String?>(
+                key: const ValueKey('tax-rule-error'),
+                initialValue: null,
+                decoration: const InputDecoration(
+                  labelText: 'Regra fiscal (IVA)',
+                  border: OutlineInputBorder(),
+                ),
+                items: const [
+                  DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text('Sem regra fiscal'),
+                  ),
+                ],
+                onChanged: (value) {
+                  setState(() => _selectedTaxRuleId = value);
+                },
+              ),
+              SizedBox(height: s.xs),
+              Text(
+                'Não foi possível carregar as taxas de IVA.',
+                style: Theme.of(context).textTheme.erpBody.copyWith(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: s.lg),
+        _sectionTitle(context, 'Regulação'),
+        DropdownButtonFormField<String>(
+          key: ValueKey('tipo-dispensacao-$tipoDispensacaoValue'),
+          initialValue: tipoDispensacaoValue,
+          decoration: const InputDecoration(
+            labelText: 'Tipo de dispensação *',
+            border: OutlineInputBorder(),
+          ),
+          items: produtoTipoDispensacaoValues
+              .map(
+                (tipo) => DropdownMenuItem(
+                  value: tipo,
+                  child: Text(produtoTipoDispensacaoLabel(tipo)),
+                ),
+              )
+              .toList(growable: false),
+          onChanged: (value) {
+            if (value == null) {
+              return;
+            }
+            setState(() => _tipoDispensacao = value);
+          },
+        ),
+        if (derivedSummary.isNotEmpty) ...[
+          SizedBox(height: s.xs),
+          Text(
+            derivedSummary,
+            style: Theme.of(context).textTheme.erpBodySecondary,
+          ),
+        ],
+        SizedBox(height: s.lg),
+        _sectionTitle(context, 'Estado'),
+        SwitchListTile.adaptive(
+          value: _activo,
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Produto activo'),
+          subtitle: const Text(
+            'Produtos inactivos deixam de aparecer no catálogo operacional.',
+          ),
+          onChanged: (value) {
+            setState(() => _activo = value);
+          },
         ),
       ],
     );

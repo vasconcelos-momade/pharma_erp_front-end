@@ -25,8 +25,6 @@ class PdvProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
-    final stockIndisponivel = product.estoqueAtual <= 0;
-    final stockColor = stockIndisponivel ? t.posDanger : t.textMuted;
     final canInteract = canAdd && !isAdding;
     final metadataLine =
         'PV ${pdvFormatMoney(product.precoVenda)} • Val. ${pdvFormatDate(product.dataValidade)} • Lote ${product.lote ?? '—'} • Stock ${product.estoqueAtual.toInt()}';
@@ -37,20 +35,20 @@ class PdvProductCard extends StatelessWidget {
           ? product.nomeGenerico
           : null,
       leading: Icons.medication_outlined,
-      chip: stockIndisponivel
+      chip: product.requiresPsychotropicBook
           ? EnterpriseStatusChip(
-              label: 'Stock indisponível',
-              color: t.posDanger,
+              label: 'Psicotrópico',
+              color: t.psychotropic,
             )
-          : product.requiresPsychotropicBook
+          : product.requiresPrescription
               ? EnterpriseStatusChip(
-                  label: 'Psicotrópico',
-                  color: t.psychotropic,
+                  label: 'Receita',
+                  color: t.posWarning,
                 )
               : null,
       metadata: [
         EnterpriseListCardMeta(label: product.categoriaNome ?? '—'),
-        EnterpriseListCardMeta(label: metadataLine, color: stockColor),
+        EnterpriseListCardMeta(label: metadataLine),
       ],
       onTap: canInteract ? onAdd : null,
       actions: FilledButton(

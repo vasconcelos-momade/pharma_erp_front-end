@@ -267,7 +267,7 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
       if (data == null) {
         throw const ApiFailure('Resposta inválida ao criar produto');
       }
-      return ProductModel.fromJson(data);
+      return ProductModel.fromJson(ApiEnvelope.unwrapMap(data));
     } on DioException catch (e) {
       throw ApiFailure.fromDio(e);
     }
@@ -284,7 +284,7 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
       if (data == null) {
         throw const ApiFailure('Resposta inválida ao actualizar produto');
       }
-      return ProductModel.fromJson(data);
+      return ProductModel.fromJson(ApiEnvelope.unwrapMap(data));
     } on DioException catch (e) {
       throw ApiFailure.fromDio(e);
     }
@@ -302,7 +302,7 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
   @override
   Future<List<ProductTaxRule>> listTaxRules() async {
     try {
-      final response = await _dio.get<dynamic>(ApiConstants.tenantPosTaxRules);
+      final response = await _dio.get<dynamic>(ApiConstants.tenantProdutosTaxRules);
       return ApiEnvelope.unwrapList(response.data)
           .map((json) => ProductTaxRule(
                 id: json['id']?.toString(),

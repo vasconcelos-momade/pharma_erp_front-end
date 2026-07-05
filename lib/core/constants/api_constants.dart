@@ -38,6 +38,7 @@ abstract final class ApiConstants {
   static const tenantPosSessaoCaixaAtual = '/tenant/pos/sessions/current';
   static const tenantPosCaixasDisponiveis = '/tenant/pos/caixas/available';
   static const tenantPosTaxRules = '/tenant/pos/tax-rules';
+  static const tenantProdutosTaxRules = '/tenant/produtos/tax-rules';
   static const tenantFornecedores = '/tenant/fornecedores';
   static const tenantCompras = '/tenant/compras';
   static const tenantDashboardProdutos = '/tenant/dashboard/produtos';

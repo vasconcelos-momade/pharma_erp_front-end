@@ -12,6 +12,7 @@ import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../data/datasources/product_remote_datasource.dart';
 import '../../data/models/product_model.dart';
 import '../../domain/entities/product.dart';
+import '../../domain/produto_dispensacao.dart';
 import 'detail/lot_card.dart';
 import 'detail/movement_timeline.dart';
 import 'detail/product_header.dart';
@@ -385,65 +386,46 @@ class _RegulationTab extends StatelessWidget {
       padding: EdgeInsets.all(s.md),
       children: [
         RegulationCard(
-          title: 'Receita',
+          title: 'Tipo de dispensação',
           items: [
             RegulationItem(
-              label: 'Receita obrigatória',
-              enabled: product.requiresPrescription,
+              label: produtoTipoDispensacaoLabel(product.tipoDispensacao),
+              enabled: true,
             ),
             RegulationItem(
-              label: _dispensacaoLabel(product.tipoDispensacao),
+              label: produtoDispensacaoDerivedSummary(product.tipoDispensacao),
               enabled: product.tipoDispensacao != 'VENDA_LIVRE',
             ),
           ],
         ),
         RegulationCard(
-          title: 'Segurança',
+          title: 'Livros regulatórios',
+          items: [
+            RegulationItem(
+              label: 'Livro de Receitas',
+              enabled: product.requiresPrescription,
+            ),
+            RegulationItem(
+              label: 'Livro de Psicotrópicos',
+              enabled: product.requiresPsychotropicBook,
+            ),
+          ],
+        ),
+        RegulationCard(
+          title: 'Regras derivadas (calculadas)',
           items: [
             RegulationItem(
               label: 'Dupla verificação',
               enabled: product.requiresDoubleCheck,
             ),
             RegulationItem(
-              label: 'Revisão manual',
-              enabled: product.requiresManualReview,
-            ),
-          ],
-        ),
-        RegulationCard(
-          title: 'Controlo',
-          items: [
-            RegulationItem(
-              label: 'Livro psicotrópicos',
-              enabled: product.requiresPsychotropicBook,
-            ),
-            RegulationItem(
-              label: 'Antimicrobiano',
+              label: 'Antimicrobiano (categoria FNM)',
               enabled: product.antimicrobiano,
             ),
           ],
         ),
       ],
     );
-  }
-
-  String _dispensacaoLabel(String tipo) {
-    switch (tipo) {
-      case 'VENDA_LIVRE':
-        return 'Venda livre';
-      case 'RECEITA_SIMPLES':
-        return 'Receita simples';
-      case 'RECEITA_CONTROLADA':
-        return 'Receita controlada';
-      case 'RECEITA_OBRIGATORIA':
-        return 'Receita obrigatória';
-      case 'PSICOTROPICO':
-        return 'Psicotrópico';
-      case 'NARCOTICO':
-        return 'Narcótico';
-      default:
-        return tipo;
-    }
   }
 }
 

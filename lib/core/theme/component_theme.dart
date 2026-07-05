@@ -302,11 +302,10 @@ abstract final class PharmaComponentTheme {
     final theme = textTheme ?? ThemeData().textTheme;
     return DataTableThemeData(
       headingRowColor: WidgetStateProperty.all(tokens.bgSecondary),
-      headingTextStyle: theme.erpLabel.copyWith(
+      headingTextStyle: theme.erpTableHeader.copyWith(
         color: tokens.textPrimary,
-        fontWeight: FontWeight.w600,
       ),
-      dataTextStyle: theme.erpBodySecondary.copyWith(color: tokens.textPrimary),
+      dataTextStyle: theme.erpTableSecondary.copyWith(color: tokens.textPrimary),
       dividerThickness: 1,
       horizontalMargin: tokens.density.md,
       columnSpacing: tokens.density.lg,

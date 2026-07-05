@@ -24,7 +24,7 @@ class ProdutoCategoriaChip extends StatelessWidget {
     return Chip(
       visualDensity: compact ? VisualDensity.compact : VisualDensity.standard,
       label: Text(display),
-      labelStyle: Theme.of(context).textTheme.erpCaption.copyWith(color: color),
+      labelStyle: Theme.of(context).textTheme.erpTableSecondary.copyWith(color: color),
       backgroundColor: color.withValues(alpha: 0.12),
       side: BorderSide(color: color.withValues(alpha: 0.25)),
     );

@@ -9,6 +9,7 @@ import '../../../../shared/widgets/layout/enterprise_mobile_scroll_list.dart';
 import '../../../../shared/widgets/layout/enterprise_mobile_toolbar.dart';
 import '../../../../shared/widgets/layout/enterprise_module_search_bar.dart';
 import '../../../../shared/widgets/tables/enterprise_data_table.dart';
+import '../../../../shared/widgets/tables/table_typography.dart';
 import '../../../../shared/widgets/tables/enterprise_pagination.dart';
 import '../../domain/entities/inventario.dart';
 import '../providers/inventory_catalog_provider.dart';
@@ -172,16 +173,16 @@ class _InventoryProductsTabState extends ConsumerState<InventoryProductsTab> {
               : EnterpriseDataTable(
                   adaptive: false,
                   showCheckboxColumn: false,
-                  columns: const [
-                    DataColumn(label: Text('PRODUTO')),
-                    DataColumn(label: Text('SUBSTÂNCIA')),
-                    DataColumn(label: Text('DOSAGEM')),
-                    DataColumn(label: Text('FORMA')),
-                    DataColumn(label: Text('APRESENTAÇÃO')),
-                    DataColumn(label: Text('LOTE')),
-                    DataColumn(label: Text('ESTOQUE')),
-                    DataColumn(label: Text('FORNECEDOR')),
-                    DataColumn(label: Text('AÇÕES')),
+                  columns: [
+                    DataColumn(label: TableTypography.headerLabel(context, 'PRODUTO')),
+                    DataColumn(label: TableTypography.headerLabel(context, 'SUBSTÂNCIA')),
+                    DataColumn(label: TableTypography.headerLabel(context, 'DOSAGEM')),
+                    DataColumn(label: TableTypography.headerLabel(context, 'FORMA')),
+                    DataColumn(label: TableTypography.headerLabel(context, 'APRESENTAÇÃO')),
+                    DataColumn(label: TableTypography.headerLabel(context, 'LOTE')),
+                    DataColumn(label: TableTypography.headerLabel(context, 'ESTOQUE')),
+                    DataColumn(label: TableTypography.headerLabel(context, 'FORNECEDOR')),
+                    DataColumn(label: TableTypography.headerLabel(context, 'AÇÕES')),
                   ],
                   rowCount: catalogState.items.length,
                   rowBuilder: (context, index) {
@@ -191,16 +192,19 @@ class _InventoryProductsTabState extends ConsumerState<InventoryProductsTab> {
                           ? (_) => widget.onSelectProduct(item)
                           : null,
                       cells: [
-                        DataCell(Text(item.produtoNome)),
-                        DataCell(Text(item.nomeGenerico ?? '—')),
-                        DataCell(Text(item.dosagem ?? '—')),
-                        DataCell(Text(item.forma ?? '—')),
-                        DataCell(Text(item.apresentacao ?? '—')),
-                        DataCell(Text(item.numeroLote ?? '—')),
+                        DataCell(TableTypography.cellText(context, item.produtoNome, style: TableTypography.primary(context))),
+                        DataCell(TableTypography.cellText(context, item.nomeGenerico ?? '—')),
+                        DataCell(TableTypography.cellText(context, item.dosagem ?? '—')),
+                        DataCell(TableTypography.cellText(context, item.forma ?? '—')),
+                        DataCell(TableTypography.cellText(context, item.apresentacao ?? '—')),
+                        DataCell(TableTypography.cellText(context, item.numeroLote ?? '—')),
                         DataCell(
-                          Text(formatInventoryQuantity(item.estoqueLoteAtual)),
+                          TableTypography.cellText(
+                            context,
+                            formatInventoryQuantity(item.estoqueLoteAtual),
+                          ),
                         ),
-                        DataCell(Text(item.fornecedorNome ?? '—')),
+                        DataCell(TableTypography.cellText(context, item.fornecedorNome ?? '—')),
                         DataCell(
                           Align(
                             alignment: Alignment.centerLeft,

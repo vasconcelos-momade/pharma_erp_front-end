@@ -12,7 +12,7 @@ import 'package:google_fonts/google_fonts.dart';
 /// - Titulo de secao e card: 16 / 600
 /// - AppBar: 18 / 600
 /// - Tabs: 14 / 500
-/// - Label: 13 / 500
+/// - Label: 14 / 500
 /// - Texto principal: 14 / 400
 /// - Texto secundario: 13 / 400
 /// - Caption / metadata: 12 / 400
@@ -136,12 +136,12 @@ abstract final class AppTypography {
         height: 1.4,
       ),
       labelLarge: GoogleFonts.inter(
-        fontSize: 13,
+        fontSize: 14,
         fontWeight: FontWeight.w500,
         letterSpacing: 0,
       ),
       labelMedium: GoogleFonts.inter(
-        fontSize: 13,
+        fontSize: 14,
         fontWeight: FontWeight.w500,
         letterSpacing: 0,
       ),
@@ -222,12 +222,12 @@ abstract final class AppTypography {
         height: 1.4,
       ),
       labelLarge: _w(base.labelLarge).copyWith(
-        fontSize: 13,
+        fontSize: 14,
         fontWeight: FontWeight.w500,
         letterSpacing: 0,
       ),
       labelMedium: _w(base.labelMedium).copyWith(
-        fontSize: 13,
+        fontSize: 14,
         fontWeight: FontWeight.w500,
         letterSpacing: 0,
       ),
@@ -272,4 +272,27 @@ extension EnterpriseTextTheme on TextTheme {
         letterSpacing: 0.4,
         height: 1.2,
       );
+
+  /// Tipografia de tabelas — alinhada à sidebar ([erpTabLabel], 14px).
+  TextStyle get erpTableHeader => erpTabLabel.copyWith(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        letterSpacing: 0.2,
+        height: 1.25,
+      );
+
+  TextStyle get erpTablePrimary => erpTabLabel.copyWith(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        height: 1.25,
+      );
+
+  TextStyle get erpTableSecondary => erpTabLabel.copyWith(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        height: 1.25,
+      );
+
+  /// Texto auxiliar em tabelas/paginação (13px).
+  TextStyle get erpTableMeta => erpBodySecondary.copyWith(height: 1.3);
 }

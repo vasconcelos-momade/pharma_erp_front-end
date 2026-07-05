@@ -75,6 +75,7 @@ class _ProdutoToolbarState extends State<ProdutoToolbar> {
     }
 
     final statusDropdown = DropdownButtonFormField<bool?>(
+      key: ValueKey('produto-status-${state.ativoFilter}'),
       isExpanded: true,
       initialValue: state.ativoFilter,
       decoration: enterpriseDropdownDecoration(context, 'Status'),
@@ -87,6 +88,7 @@ class _ProdutoToolbarState extends State<ProdutoToolbar> {
     );
 
     final categoryDropdown = DropdownButtonFormField<String?>(
+      key: ValueKey('produto-categoria-${state.categoriaId}'),
       isExpanded: true,
       initialValue: state.categoriaId,
       decoration: enterpriseDropdownDecoration(context, 'Categoria'),

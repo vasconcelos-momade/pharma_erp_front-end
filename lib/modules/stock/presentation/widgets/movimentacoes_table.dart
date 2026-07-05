@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/extensions.dart';
 import '../../../../shared/widgets/tables/enterprise_data_table.dart';
+import '../../../../shared/widgets/tables/table_typography.dart';
 import '../../domain/entities/movimentacao.dart';
 
 class MovimentacoesTable extends StatelessWidget {
@@ -17,17 +18,15 @@ class MovimentacoesTable extends StatelessWidget {
 
     return EnterpriseDataTable(
       columns: [
-        DataColumn(label: Text('Data', style: _headerStyle(textTheme, t))),
-        DataColumn(label: Text('Tipo', style: _headerStyle(textTheme, t))),
-        DataColumn(label: Text('Produto', style: _headerStyle(textTheme, t))),
-        DataColumn(label: Text('Lote', style: _headerStyle(textTheme, t))),
-        DataColumn(label: Text('Qtd', style: _headerStyle(textTheme, t))),
-        DataColumn(label: Text('Stock', style: _headerStyle(textTheme, t))),
-        DataColumn(label: Text('Origem', style: _headerStyle(textTheme, t))),
-        DataColumn(label: Text('Documento', style: _headerStyle(textTheme, t))),
-        DataColumn(
-          label: Text('Utilizador', style: _headerStyle(textTheme, t)),
-        ),
+        DataColumn(label: TableTypography.headerLabel(context, 'Data')),
+        DataColumn(label: TableTypography.headerLabel(context, 'Tipo')),
+        DataColumn(label: TableTypography.headerLabel(context, 'Produto')),
+        DataColumn(label: TableTypography.headerLabel(context, 'Lote')),
+        DataColumn(label: TableTypography.headerLabel(context, 'Qtd')),
+        DataColumn(label: TableTypography.headerLabel(context, 'Stock')),
+        DataColumn(label: TableTypography.headerLabel(context, 'Origem')),
+        DataColumn(label: TableTypography.headerLabel(context, 'Documento')),
+        DataColumn(label: TableTypography.headerLabel(context, 'Utilizador')),
       ],
       rowCount: items.length,
       rowBuilder: (context, index) {
@@ -42,9 +41,9 @@ class MovimentacoesTable extends StatelessWidget {
         return DataRow(
           cells: [
             DataCell(
-              Text(
+              TableTypography.cellText(
+                context,
                 _formatDateTime(item.createdAt),
-                style: _cellStyle(textTheme, t),
               ),
             ),
             DataCell(
@@ -60,57 +59,46 @@ class MovimentacoesTable extends StatelessWidget {
                 ),
                 child: Text(
                   item.tipoLabel,
-                  style: textTheme.erpOverline.copyWith(color: tipoColor),
+                  style: textTheme.erpTableSecondary.copyWith(color: tipoColor),
                 ),
               ),
             ),
-            DataCell(Text(produtoLabel, style: _cellStyle(textTheme, t))),
+            DataCell(TableTypography.cellText(context, produtoLabel)),
             DataCell(
-              Text(
+              TableTypography.cellText(
+                context,
                 item.lote?.numeroLote ?? '—',
-                style: _cellStyle(textTheme, t),
               ),
             ),
             DataCell(
-              Text(
+              TableTypography.cellText(
+                context,
                 _formatQty(item.quantidade),
-                style: textTheme.erpLabel.copyWith(color: t.textPrimary),
+                style: TableTypography.primary(context),
               ),
             ),
             DataCell(
-              Text(
+              TableTypography.cellText(
+                context,
                 '${_formatQty(item.estoqueAnterior)} → ${_formatQty(item.estoqueFinal)}',
-                style: _cellStyle(textTheme, t, muted: true),
+                muted: true,
               ),
             ),
-            DataCell(Text(item.origemLabel, style: _cellStyle(textTheme, t))),
+            DataCell(TableTypography.cellText(context, item.origemLabel)),
             DataCell(
-              Text(
+              TableTypography.cellText(
+                context,
                 item.documentoReferencia ?? '—',
-                style: _cellStyle(textTheme, t, muted: true),
+                muted: true,
               ),
             ),
             DataCell(
-              Text(item.user?.nome ?? '—', style: _cellStyle(textTheme, t)),
+              TableTypography.cellText(context, item.user?.nome ?? '—'),
             ),
           ],
         );
       },
     );
-  }
-
-  TextStyle _headerStyle(TextTheme textTheme, PharmaTokens t) {
-    return textTheme.erpOverline.copyWith(color: t.textMuted);
-  }
-
-  TextStyle _cellStyle(
-    TextTheme textTheme,
-    PharmaTokens t, {
-    bool muted = false,
-  }) {
-    return muted
-        ? textTheme.erpBodySecondary.copyWith(color: t.textMuted)
-        : textTheme.erpLabel.copyWith(color: t.textPrimary);
   }
 
   Color _tipoColor(PharmaTokens t, MovimentacaoTipo? tipo) {

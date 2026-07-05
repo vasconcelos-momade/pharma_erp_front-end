@@ -33,8 +33,8 @@ abstract final class DesignMetrics {
   static const double tabHeightMin = 44;
   static const double tabHeightMax = minTouchTarget;
   static const double toolbarHeight = minTouchTarget;
-  static const double tableRowHeightMin = 44;
-  static const double tableRowHeightMax = minTouchTarget;
+  static const double tableRowHeightMin = 52;
+  static const double tableRowHeightMax = 56;
 
   // Shell / layout
   static const double topBarDesktop = 72;

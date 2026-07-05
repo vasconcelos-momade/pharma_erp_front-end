@@ -72,6 +72,7 @@ class _ProdutoFiltersContentState extends State<ProdutoFiltersContent> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         DropdownButtonFormField<bool?>(
+          key: ValueKey('produto-filter-status-$_ativo'),
           initialValue: _ativo,
           decoration: _dropdownDecoration(context, 'Status'),
           items: const [
@@ -83,6 +84,7 @@ class _ProdutoFiltersContentState extends State<ProdutoFiltersContent> {
         ),
         SizedBox(height: s.md),
         DropdownButtonFormField<String?>(
+          key: ValueKey('produto-filter-categoria-$_categoriaId'),
           initialValue: _categoriaId,
           decoration: _dropdownDecoration(context, 'Categoria'),
           items: [

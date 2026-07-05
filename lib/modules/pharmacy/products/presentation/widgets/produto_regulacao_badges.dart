@@ -4,6 +4,7 @@ import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
 import '../../../../../shared/widgets/cards/enterprise_list_card.dart';
 import '../../domain/entities/product.dart';
+import '../../domain/produto_dispensacao.dart';
 
 class ProdutoRegulacaoBadges extends StatelessWidget {
   const ProdutoRegulacaoBadges({super.key, required this.product});
@@ -35,7 +36,7 @@ class ProdutoRegulacaoBadges extends StatelessWidget {
 
     if (badges.isEmpty) {
       return Text(
-        _dispensacaoLabel(product.tipoDispensacao),
+        produtoTipoDispensacaoLabel(product.tipoDispensacao),
         style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
       );
     }
@@ -54,24 +55,5 @@ class ProdutoRegulacaoBadges extends StatelessWidget {
     }
     final nome = product.categoriaNome?.toLowerCase() ?? '';
     return nome.contains('medicament');
-  }
-
-  String _dispensacaoLabel(String tipo) {
-    switch (tipo) {
-      case 'VENDA_LIVRE':
-        return 'Venda livre';
-      case 'RECEITA_SIMPLES':
-        return 'Receita simples';
-      case 'RECEITA_CONTROLADA':
-        return 'Receita controlada';
-      case 'RECEITA_OBRIGATORIA':
-        return 'Receita obrigatória';
-      case 'PSICOTROPICO':
-        return 'Psicotrópico';
-      case 'NARCOTICO':
-        return 'Narcótico';
-      default:
-        return tipo;
-    }
   }
 }

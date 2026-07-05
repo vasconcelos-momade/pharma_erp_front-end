@@ -84,7 +84,7 @@ class _DashboardPeriodFiltersState extends ConsumerState<DashboardPeriodFilters>
 
     final productOptions = productsAsync.maybeWhen(
       data: (items) => items
-          .map((item) => DashboardFilterOption(value: item.id, label: item.nome))
+          .map((item) => DashboardFilterOption(value: item.id, label: item.nomeComercial))
           .toList(growable: false),
       orElse: () => const <DashboardFilterOption>[],
     );

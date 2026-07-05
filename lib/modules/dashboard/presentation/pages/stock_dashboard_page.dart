@@ -209,7 +209,10 @@ class _StockDashboardPageState extends ConsumerState<StockDashboardPage> {
                   return DashboardPagedTableResult.fromMap(result);
                 },
                 rowBuilder: (row) => [
-                  row['nome']?.toString() ?? '—',
+                  row['nomeComercial']?.toString() ??
+                      row['nome']?.toString() ??
+                      row['produtoNomeComercial']?.toString() ??
+                      '—',
                   '${row['disponivel'] ?? 0}',
                   '${row['minimo'] ?? 0}',
                 ],

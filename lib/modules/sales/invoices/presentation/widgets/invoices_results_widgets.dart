@@ -4,6 +4,7 @@ import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/responsive/pharma_screen_layout.dart';
+import '../../../../../shared/widgets/tables/table_typography.dart';
 import '../../domain/entities/invoice_summary.dart';
 import 'invoice_formatters.dart';
 import 'invoice_status_badge.dart';
@@ -265,27 +266,30 @@ class InvoiceDesktopTable extends StatelessWidget {
                   dataRowMaxHeight: dense ? 54 : 62,
                   horizontalMargin: dense ? s.md : s.lg,
                   columnSpacing: dense ? s.lg : s.xl,
-                  columns: const [
-                    DataColumn(label: Text('Nº')),
-                    DataColumn(label: Text('Cliente')),
-                    DataColumn(label: Text('Data')),
-                    DataColumn(label: Text('Total')),
-                    DataColumn(label: Text('Estado')),
-                    DataColumn(label: Text('Ações')),
+                  columns: [
+                    DataColumn(label: TableTypography.headerLabel(context, 'Nº')),
+                    DataColumn(label: TableTypography.headerLabel(context, 'Cliente')),
+                    DataColumn(label: TableTypography.headerLabel(context, 'Data')),
+                    DataColumn(label: TableTypography.headerLabel(context, 'Total')),
+                    DataColumn(label: TableTypography.headerLabel(context, 'Estado')),
+                    DataColumn(label: TableTypography.headerLabel(context, 'Ações')),
                   ],
                   rows: invoices.map((invoice) {
                     return DataRow(
                       cells: [
-                        DataCell(Text(invoice.numero)),
-                        DataCell(Text(invoice.cliente?.nome ?? 'Consumidor final')),
-                        DataCell(Text(formatDateTime(invoice.createdAt))),
+                        DataCell(TableTypography.cellText(context, invoice.numero)),
                         DataCell(
-                          Text(
+                          TableTypography.cellText(
+                            context,
+                            invoice.cliente?.nome ?? 'Consumidor final',
+                          ),
+                        ),
+                        DataCell(TableTypography.cellText(context, formatDateTime(invoice.createdAt))),
+                        DataCell(
+                          TableTypography.cellText(
+                            context,
                             formatMoney(invoice.total),
-                            style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                                  fontWeight: FontWeight.w800,
-                                  color: t.brandGreen,
-                                ),
+                            style: TableTypography.primary(context, color: t.brandGreen),
                           ),
                         ),
                         DataCell(InvoiceStatusBadge(status: invoice.estado)),
