@@ -411,6 +411,7 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
         page: payload['page'] as int? ?? page,
         pageSize: payload['pageSize'] as int? ?? pageSize,
         hasMore: payload['hasMore'] as bool? ?? false,
+        totalCount: payload['totalCount'] as int?,
       );
     } on DioException catch (e) {
       throw ApiFailure.fromDio(e);

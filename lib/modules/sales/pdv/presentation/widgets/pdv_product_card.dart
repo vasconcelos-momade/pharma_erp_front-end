@@ -51,11 +51,12 @@ class PdvProductCard extends StatelessWidget {
         EnterpriseListCardMeta(label: metadataLine),
       ],
       onTap: canInteract ? onAdd : null,
-      actions: FilledButton(
+      actions: FilledButton.tonalIcon(
         onPressed: canInteract ? onAdd : null,
-        child: isAdding
-            ? PharmaButtonLoader(color: t.bgPrimary)
-            : Text(compactAction ? '+' : 'Add'),
+        icon: isAdding
+            ? PharmaButtonLoader(color: t.brandBlue)
+            : const Icon(Icons.add_shopping_cart_rounded),
+        label: Text(compactAction ? 'Add' : 'Adicionar'),
       ),
     );
   }

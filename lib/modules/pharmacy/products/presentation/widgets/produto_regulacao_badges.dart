@@ -24,11 +24,14 @@ class ProdutoRegulacaoBadges extends StatelessWidget {
       badges.add(_badge('Antimicrobiano', t.posWarning));
     }
     if (product.requiresPsychotropicBook ||
+        product.tipoDispensacao == 'RECEITA_ESPECIAL' ||
         product.tipoDispensacao == 'PSICOTROPICO' ||
         product.tipoDispensacao == 'NARCOTICO') {
       badges.add(_badge('Psicotrópico', t.brandBlue));
     }
     if (product.requiresPrescription ||
+        product.tipoDispensacao == 'RECEITA_NORMAL' ||
+        product.tipoDispensacao == 'RECEITA_ESPECIAL' ||
         product.tipoDispensacao == 'RECEITA_OBRIGATORIA' ||
         product.tipoDispensacao == 'RECEITA_CONTROLADA') {
       badges.add(_badge('Receita Obrigatória', t.posWarning));

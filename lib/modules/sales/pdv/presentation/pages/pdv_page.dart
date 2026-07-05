@@ -474,12 +474,13 @@ class _PdvPageState extends ConsumerState<PdvPage>
         ? EnterprisePagination(
             page: productState.page,
             pageSize: productState.pageSize,
-            hasMore: productState.hasMore,
+            totalCount: productState.totalCount,
+            hasMore: productState.totalCount == null ? productState.hasMore : null,
             itemsOnPage: productState.items.length,
             isBusy: productState.isLoading,
             itemLabel: 'produtos',
             onPageChanged: productController.goToPage,
-            onPageSizeChanged: (_) {},
+            onPageSizeChanged: productController.setPageSize,
           )
         : null;
 
@@ -689,10 +690,6 @@ class _PdvPageState extends ConsumerState<PdvPage>
               Column(
                 children: [
                   Expanded(child: mobileCatalog),
-                  if (!isMobile && catalogFooter != null) ...[
-                    SizedBox(height: s.sm),
-                    catalogFooter,
-                  ],
                 ],
               ),
               Positioned(

@@ -18,6 +18,7 @@ class ProductListState {
     this.page = 1,
     this.pageSize = 50,
     this.hasMore = false,
+    this.totalCount,
     this.isLoading = false,
     this.isInitialized = false,
     this.errorMessage,
@@ -30,6 +31,7 @@ class ProductListState {
   final int page;
   final int pageSize;
   final bool hasMore;
+  final int? totalCount;
   final bool isLoading;
   final bool isInitialized;
   final String? errorMessage;
@@ -43,6 +45,7 @@ class ProductListState {
     int? page,
     int? pageSize,
     bool? hasMore,
+    int? totalCount,
     bool? isLoading,
     bool? isInitialized,
     String? errorMessage,
@@ -56,6 +59,7 @@ class ProductListState {
       page: page ?? this.page,
       pageSize: pageSize ?? this.pageSize,
       hasMore: hasMore ?? this.hasMore,
+      totalCount: totalCount ?? this.totalCount,
       isLoading: isLoading ?? this.isLoading,
       isInitialized: isInitialized ?? this.isInitialized,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
@@ -120,6 +124,19 @@ class ProductListController extends Notifier<ProductListState> {
     await fetchCurrentPage();
   }
 
+  void setPageSize(int pageSize) {
+    if (pageSize < 1 || pageSize == state.pageSize) {
+      return;
+    }
+    state = state.copyWith(
+      pageSize: pageSize,
+      page: 1,
+      isLoading: true,
+      clearError: true,
+    );
+    unawaited(fetchCurrentPage());
+  }
+
   Future<void> refreshCurrentPage() async {
     await fetchCurrentPage(force: true);
   }
@@ -150,6 +167,7 @@ class ProductListController extends Notifier<ProductListState> {
           page: cached.page,
           pageSize: cached.pageSize,
           hasMore: cached.hasMore,
+          totalCount: cached.totalCount,
           isLoading: false,
           isInitialized: true,
           catalogVersion: PdvCatalogCachePolicy.activeCatalogVersion,
@@ -184,6 +202,7 @@ class ProductListController extends Notifier<ProductListState> {
         page: response.page,
         pageSize: response.pageSize,
         hasMore: response.hasMore,
+        totalCount: response.totalCount,
         isLoading: false,
         isInitialized: true,
         catalogVersion: PdvCatalogCachePolicy.activeCatalogVersion,
