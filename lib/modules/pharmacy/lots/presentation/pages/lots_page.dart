@@ -5,7 +5,6 @@ import '../../../../../core/extensions/async_value_extensions.dart';
 import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
-import '../../../../../core/theme/spacing.dart';
 import '../../../../../core/utils/lote_stock_utils.dart';
 import '../../../../../shared/responsive/responsive_builder.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
@@ -621,14 +620,10 @@ class _LotsDesktopToolbarState extends State<_LotsDesktopToolbar> {
             child: TextField(
               controller: widget.searchController,
               onSubmitted: widget.onSearchSubmitted,
-              style: Theme.of(
-                context,
-              ).textTheme.bodyLarge?.copyWith(color: t.textPrimary),
+              style: Theme.of(context).textTheme.erpBody.copyWith(color: t.textPrimary),
               decoration: InputDecoration(
                 hintText: 'Pesquisar produto ou nº lote...',
-                hintStyle: Theme.of(
-                  context,
-                ).textTheme.bodyLarge?.copyWith(color: t.textMuted),
+                hintStyle: Theme.of(context).textTheme.erpBody.copyWith(color: t.textMuted),
                 prefixIcon: Icon(
                   Icons.search_rounded,
                   color: t.textMuted,

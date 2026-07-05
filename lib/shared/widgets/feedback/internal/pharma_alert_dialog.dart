@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/design_tokens.dart';
-import '../../../../core/theme/spacing.dart';
+import '../../../../core/theme/extensions.dart';
 import '../../buttons/pharma_button_loader.dart';
 import '../../dialogs/pharma_responsive_dialog.dart';
 
@@ -41,7 +41,7 @@ abstract final class PharmaAlertDialog {
               SizedBox(height: s.md),
               Text(
                 message,
-                style: theme.textTheme.bodyMedium?.copyWith(color: t.textSecondary),
+                style: theme.textTheme.erpBodySecondary.copyWith(color: t.textSecondary),
               ),
             ],
           ),
@@ -139,7 +139,7 @@ abstract final class PharmaAlertDialog {
                 Text(
                   message,
                   textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyMedium?.copyWith(color: t.textSecondary),
+                  style: theme.textTheme.erpBodySecondary.copyWith(color: t.textSecondary),
                 ),
               ],
             ],
@@ -175,7 +175,7 @@ abstract final class PharmaAlertDialog {
               SizedBox(height: s.md),
               Text(
                 message,
-                style: theme.textTheme.bodyMedium?.copyWith(color: t.textSecondary),
+                style: theme.textTheme.erpBodySecondary.copyWith(color: t.textSecondary),
               ),
             ],
           ),

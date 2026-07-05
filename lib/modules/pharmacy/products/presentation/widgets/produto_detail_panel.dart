@@ -7,7 +7,6 @@ import '../../../../../core/contracts/api_envelope.dart';
 import '../../../../../core/network/dio/dio_provider.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
-import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../data/datasources/product_remote_datasource.dart';
 import '../../data/models/product_model.dart';

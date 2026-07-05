@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_shadows.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/theme/extensions.dart';
-import '../../../core/theme/motion.dart';
 
 /// Largura do painel lateral conforme o prompt (tablet vs desktop).
 abstract final class AdaptiveSideSheetMetrics {

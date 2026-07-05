@@ -65,7 +65,7 @@ class AuthLayout extends StatelessWidget {
                               SizedBox(width: s.md),
                               Text(
                                 'Pharma ERP',
-                                style: Theme.of(context).textTheme.erpCardTitle,
+                                style: Theme.of(context).textTheme.erpAppName,
                               ),
                             ],
                           ),

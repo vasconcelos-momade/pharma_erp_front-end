@@ -158,7 +158,7 @@ class InventoryRemoteDataSource {
     return _postMap(
       ApiConstants.tenantLoteLiberarQuarentena(loteId),
       <String, dynamic>{
-        if (quantidade != null) 'quantidade': quantidade,
+        'quantidade': ?quantidade,
         'motivo': motivo,
         'documentoReferencia': ?(documentoReferencia != null &&
                 documentoReferencia.isNotEmpty

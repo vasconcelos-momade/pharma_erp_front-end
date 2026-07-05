@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
-import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/responsive/pharma_screen_layout.dart';
 import '../providers/invoice_list_provider.dart';
 
@@ -79,9 +78,9 @@ class InvoicesInfoBanner extends StatelessWidget {
                   ? 'A mostrar cache em memória. ${state.errorMessage}'
                   : 'A mostrar cache instantânea enquanto a API sincroniza.',
               style: Theme.of(context).textTheme.erpCaption.copyWith(
-                    color: t.textPrimary,
-                    fontWeight: FontWeight.w600,
-                  ),
+                color: t.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
         ],
@@ -114,17 +113,16 @@ class InvoicesErrorState extends StatelessWidget {
             SizedBox(height: s.md),
             Text(
               'Falha ao carregar faturas',
-              style: Theme.of(context).textTheme.erpTabLabel.copyWith(
-                    color: t.textPrimary,
-                    fontWeight: FontWeight.w800,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.erpCardTitle.copyWith(color: t.textPrimary),
             ),
             SizedBox(height: s.sm),
             Text(
               message,
-              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                    color: t.textMuted,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
               textAlign: TextAlign.center,
             ),
             SizedBox(height: s.lg),
@@ -157,19 +155,18 @@ class InvoicesEmptyState extends StatelessWidget {
           SizedBox(height: s.md),
           Text(
             'Nenhuma fatura encontrada',
-            style: Theme.of(context).textTheme.erpTabLabel.copyWith(
-                  color: t.textPrimary,
-                  fontWeight: FontWeight.w800,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.erpCardTitle.copyWith(color: t.textPrimary),
           ),
           SizedBox(height: s.sm),
           Text(
             onClearFilters != null
                 ? 'Tenta limpar os filtros para ver mais resultados.'
                 : 'Ainda não existem faturas disponíveis para esta unidade.',
-            style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                  color: t.textMuted,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
           ),
           if (onClearFilters != null) ...[
             SizedBox(height: s.lg),

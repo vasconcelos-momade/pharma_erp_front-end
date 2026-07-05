@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/design_metrics.dart';
 import '../../../core/theme/design_tokens.dart';
-import '../../../core/theme/extensions.dart';
 import 'enterprise_module_search_bar.dart';
 
 /// Barra de ferramentas mobile com pesquisa, filtros, exportação e atualização.

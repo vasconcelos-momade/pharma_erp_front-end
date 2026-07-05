@@ -5,17 +5,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../app/router/routes.dart';
-import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
-import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../../../stock/presentation/widgets/movimentacoes_pagination.dart';
-import '../../../presentation/widgets/regulatory_report_exports.dart';
 import '../../../regulatory/data/datasources/regulatory_remote_datasource.dart';
 
 enum RecipesBookTab { receitas, book }
@@ -194,27 +191,6 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
     }
   }
 
-
-  Map<String, dynamic> _receitasReportQuery() {
-    return {
-      if (_receitasSearch.isNotEmpty) 'q': _receitasSearch,
-      if (_receitasStatus != null) 'status': _receitasStatus,
-      if (_receitasOrigem != null) 'origem': _receitasOrigem,
-      'sortBy': _receitasSortBy,
-      'sortDir': _receitasSortDir,
-    };
-  }
-
-  Map<String, dynamic> _livroReportQuery() {
-    return {
-      if (_livroSearch.isNotEmpty) 'q': _livroSearch,
-      if (_livroOrigem != null) 'origem': _livroOrigem,
-      if (_livroTipoMovimento != null) 'tipoMovimento': _livroTipoMovimento,
-      'sortBy': _livroSortBy,
-      'sortDir': _livroSortDir,
-    };
-  }
-
   Future<void> _openReceitaDetail(String id) async {
     await AdaptiveNavigator.openPanel<void>(
       context: context,
@@ -236,68 +212,68 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
               title: data['numeroReceita']?.toString() ?? 'Receita',
               onClose: () => AdaptiveNavigator.close(panelContext),
               child: ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    Wrap(
-                      spacing: 12,
-                      runSpacing: 12,
-                      children: [
-                        _InfoTile(
-                          label: 'Paciente',
-                          value: data['cliente']?['nome']?.toString() ?? '—',
-                        ),
-                        _InfoTile(
-                          label: 'Médico',
-                          value: data['medicoNome']?.toString() ?? '—',
-                        ),
-                        _InfoTile(
-                          label: 'Estado',
-                          value: data['status']?.toString() ?? '—',
-                        ),
-                        _InfoTile(
-                          label: 'Origem',
-                          value: data['origem']?.toString() ?? '—',
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Dispensações',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    ...(data['dispensacoes'] as List<dynamic>? ?? const []).map(
-                      (item) => ListTile(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(
-                          item['produto']?['nome']?.toString() ?? 'Produto',
-                        ),
-                        subtitle: Text(
-                          'Qtd: ${item['quantidade']} • ${item['tipoDispensacao']}',
-                        ),
+                padding: const EdgeInsets.all(16),
+                children: [
+                  Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: [
+                      _InfoTile(
+                        label: 'Paciente',
+                        value: data['cliente']?['nome']?.toString() ?? '—',
+                      ),
+                      _InfoTile(
+                        label: 'Médico',
+                        value: data['medicoNome']?.toString() ?? '—',
+                      ),
+                      _InfoTile(
+                        label: 'Estado',
+                        value: data['status']?.toString() ?? '—',
+                      ),
+                      _InfoTile(
+                        label: 'Origem',
+                        value: data['origem']?.toString() ?? '—',
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Dispensações',
+                    style: Theme.of(context).textTheme.erpBodyStrong,
+                  ),
+                  const SizedBox(height: 8),
+                  ...(data['dispensacoes'] as List<dynamic>? ?? const []).map(
+                    (item) => ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(
+                        item['produto']?['nome']?.toString() ?? 'Produto',
+                      ),
+                      subtitle: Text(
+                        'Qtd: ${item['quantidade']} • ${item['tipoDispensacao']}',
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Histórico',
-                      style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Histórico',
+                    style: Theme.of(context).textTheme.erpBodyStrong,
+                  ),
+                  const SizedBox(height: 8),
+                  ...(data['timeline'] as List<dynamic>? ?? const []).map(
+                    (item) => ListTile(
+                      dense: true,
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(item['description']?.toString() ?? '—'),
+                      subtitle: Text(item['at']?.toString() ?? '—'),
                     ),
-                    const SizedBox(height: 8),
-                    ...(data['timeline'] as List<dynamic>? ?? const []).map(
-                      (item) => ListTile(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        title: Text(item['description']?.toString() ?? '—'),
-                        subtitle: Text(item['at']?.toString() ?? '—'),
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
+                  ),
+                ],
+              ),
+            );
+          },
         ),
+      ),
     );
   }
 
@@ -349,7 +325,7 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
                   const SizedBox(height: 16),
                   Text(
                     'Auditoria',
-                    style: Theme.of(context).textTheme.titleMedium,
+                    style: Theme.of(context).textTheme.erpBodyStrong,
                   ),
                   const SizedBox(height: 8),
                   ...(data['auditLogs'] as List<dynamic>? ?? const []).map(
@@ -406,9 +382,7 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
             const SizedBox(height: 12),
             TextField(
               controller: numero,
-              decoration: const InputDecoration(
-                labelText: 'Número da receita',
-              ),
+              decoration: const InputDecoration(labelText: 'Número da receita'),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -418,16 +392,12 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
             const SizedBox(height: 12),
             TextField(
               controller: unidade,
-              decoration: const InputDecoration(
-                labelText: 'Unidade sanitária',
-              ),
+              decoration: const InputDecoration(labelText: 'Unidade sanitária'),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: data,
-              decoration: const InputDecoration(
-                labelText: 'Data (YYYY-MM-DD)',
-              ),
+              decoration: const InputDecoration(labelText: 'Data (YYYY-MM-DD)'),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -440,7 +410,8 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 TextButton(
-                  onPressed: () => AdaptiveNavigator.complete(formContext, false),
+                  onPressed: () =>
+                      AdaptiveNavigator.complete(formContext, false),
                   child: const Text('Cancelar'),
                 ),
                 const SizedBox(width: 8),
@@ -472,9 +443,9 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
                       AdaptiveNavigator.complete(formContext, true);
                     } catch (error) {
                       if (!formContext.mounted) return;
-                      ScaffoldMessenger.of(formContext).showSnackBar(
-                        SnackBar(content: Text(error.toString())),
-                      );
+                      ScaffoldMessenger.of(
+                        formContext,
+                      ).showSnackBar(SnackBar(content: Text(error.toString())));
                     }
                   },
                   child: const Text('Guardar'),
@@ -527,10 +498,6 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
         ? _receitasDashboard
         : _livroDashboard;
     final showingLivro = _tabController.index == 1;
-    final showingReceitas = !showingLivro;
-    final reportEnabled = showingReceitas
-        ? !_loadingReceitas && _receitasError == null
-        : !_loadingLivro && _livroError == null;
     return EnterpriseModuleHub(
       title: showingLivro ? 'Livro de Receitas' : 'Receitas',
       subtitle: showingLivro
@@ -795,7 +762,9 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
             child: Text(
               _receitasError!,
-              style: Theme.of(context).textTheme.erpBody.copyWith(color: t.posDanger),
+              style: Theme.of(
+                context,
+              ).textTheme.erpBody.copyWith(color: t.posDanger),
             ),
           ),
         Expanded(
@@ -887,7 +856,9 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
         ),
         Text(
           'Total: $_receitasTotal receita(s)',
-          style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
+          style: Theme.of(
+            context,
+          ).textTheme.erpCaption.copyWith(color: t.textMuted),
         ),
       ],
     );
@@ -903,7 +874,9 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
             child: Text(
               _livroError!,
-              style: Theme.of(context).textTheme.erpBody.copyWith(color: t.posDanger),
+              style: Theme.of(
+                context,
+              ).textTheme.erpBody.copyWith(color: t.posDanger),
             ),
           ),
         Expanded(
@@ -978,7 +951,9 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
         ),
         Text(
           'Total: $_livroTotal movimento(s)',
-          style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
+          style: Theme.of(
+            context,
+          ).textTheme.erpCaption.copyWith(color: t.textMuted),
         ),
       ],
     );
@@ -1007,7 +982,7 @@ class _DetailScaffold extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: Theme.of(context).textTheme.titleLarge,
+                  style: Theme.of(context).textTheme.erpCardTitle,
                 ),
               ),
               IconButton(
@@ -1044,11 +1019,18 @@ class _InfoTile extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted)),
+          Text(
+            label,
+            style: Theme.of(
+              context,
+            ).textTheme.erpCaption.copyWith(color: t.textMuted),
+          ),
           const SizedBox(height: 4),
           Text(
             value,
-            style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
+            style: Theme.of(
+              context,
+            ).textTheme.erpLabel.copyWith(color: t.textPrimary),
           ),
         ],
       ),

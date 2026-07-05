@@ -235,7 +235,7 @@ class EnterpriseAdaptiveListBody extends StatelessWidget {
         if (desktopToolbar != null)
           Padding(padding: EdgeInsets.only(bottom: s.md), child: desktopToolbar!),
         Expanded(child: desktopContent),
-        if (desktopPagination != null) desktopPagination!,
+        ?desktopPagination,
       ],
     );
   }

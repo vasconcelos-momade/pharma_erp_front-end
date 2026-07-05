@@ -26,10 +26,13 @@ class EnterpriseModuleHub extends StatelessWidget {
   final List<Widget>? actions;
   final List<EnterpriseStatCard>? kpis;
   final Widget child;
+
   /// Filtros opcionais com layout responsivo dentro da largura disponível.
   final Widget? filters;
+
   /// Corpo inteiro com scroll (painéis com muitos KPIs e gráficos).
   final bool scrollable;
+
   /// Em mobile, renderiza KPIs numa linha com scroll horizontal.
   final bool mobileKpisHorizontalScroll;
 
@@ -41,65 +44,77 @@ class EnterpriseModuleHub extends StatelessWidget {
     final textTheme = context.typography;
     final titleStyle = context.erpPageTitle.copyWith(color: t.textPrimary);
 
-    final hasHeaderTexts = (title != null && title!.isNotEmpty) || (subtitle != null && subtitle!.isNotEmpty) || (tag != null && tag!.isNotEmpty);
+    final hasHeaderTexts =
+        (title != null && title!.isNotEmpty) ||
+        (subtitle != null && subtitle!.isNotEmpty) ||
+        (tag != null && tag!.isNotEmpty);
 
     final body = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (hasHeaderTexts || ((filters == null) && (actions != null && actions!.isNotEmpty)))
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (hasHeaderTexts)
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (tag != null && tag!.isNotEmpty) ...[
-                  Text(
-                    tag!.toUpperCase(),
-                    style: textTheme.erpOverline.copyWith(color: t.brandBlue),
-                  ),
-                  SizedBox(height: size == PharmaScreenSize.mobile ? s.xxs : s.xs),
-                  ],
-                  if (title != null && title!.isNotEmpty) ...[
-                  Text(
-                    title!,
-                    maxLines: size == PharmaScreenSize.mobile ? 2 : 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: titleStyle,
-                  ),
-                  SizedBox(height: size == PharmaScreenSize.mobile ? s.xs : s.sm),
-                  ],
-                  if (subtitle != null && subtitle!.isNotEmpty)
-                  Text(
-                    subtitle!,
-                    maxLines: size == PharmaScreenSize.mobile ? 2 : 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: textTheme.erpBodySecondary.copyWith(
-                          color: t.textMuted,
-                          height: 1.3,
+        if (hasHeaderTexts ||
+            ((filters == null) && (actions != null && actions!.isNotEmpty)))
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (hasHeaderTexts)
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (tag != null && tag!.isNotEmpty) ...[
+                        Text(
+                          tag!.toUpperCase(),
+                          style: textTheme.erpOverline.copyWith(
+                            color: t.brandBlue,
+                          ),
                         ),
+                        SizedBox(
+                          height: size == PharmaScreenSize.mobile
+                              ? s.xxs
+                              : s.xs,
+                        ),
+                      ],
+                      if (title != null && title!.isNotEmpty) ...[
+                        Text(
+                          title!,
+                          maxLines: size == PharmaScreenSize.mobile ? 2 : 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: titleStyle,
+                        ),
+                        SizedBox(
+                          height: size == PharmaScreenSize.mobile ? s.xs : s.sm,
+                        ),
+                      ],
+                      if (subtitle != null && subtitle!.isNotEmpty)
+                        Text(
+                          subtitle!,
+                          maxLines: size == PharmaScreenSize.mobile ? 2 : 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: textTheme.erpBodySecondary.copyWith(
+                            color: t.textMuted,
+                            height: 1.3,
+                          ),
+                        ),
+                    ],
                   ),
-                ],
-              ),
-            )
-            else
-            const Spacer(),
-            if (filters == null && actions != null && actions!.isNotEmpty)
-              Flexible(
-                child: Align(
-                  alignment: Alignment.topRight,
-                  child: Wrap(
-                    spacing: s.sm,
-                    runSpacing: s.sm,
-                    alignment: WrapAlignment.end,
-                    children: actions!,
+                )
+              else
+                const Spacer(),
+              if (filters == null && actions != null && actions!.isNotEmpty)
+                Flexible(
+                  child: Align(
+                    alignment: Alignment.topRight,
+                    child: Wrap(
+                      spacing: s.sm,
+                      runSpacing: s.sm,
+                      alignment: WrapAlignment.end,
+                      children: actions!,
+                    ),
                   ),
                 ),
-              ),
-          ],
-        ),
+            ],
+          ),
         if (filters != null) ...[
           SizedBox(height: size == PharmaScreenSize.mobile ? s.sm : s.md),
           _buildFiltersAndActionsRow(
@@ -119,9 +134,7 @@ class EnterpriseModuleHub extends StatelessWidget {
     );
 
     if (scrollable) {
-      return SafeArea(
-        child: SingleChildScrollView(child: body),
-      );
+      return SafeArea(child: SingleChildScrollView(child: body));
     }
 
     return SafeArea(child: body);
@@ -152,23 +165,6 @@ class EnterpriseModuleHub extends StatelessWidget {
     }
 
     return EnterpriseKpiGrid(cards: kpis!);
-  }
-
-  static void _showQuickActions(BuildContext context, List<Widget> actions) {
-    showModalBottomSheet<void>(
-      context: context,
-      showDragHandle: true,
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: EdgeInsets.all(context.spacing.lg),
-          child: Wrap(
-            spacing: context.spacing.sm,
-            runSpacing: context.spacing.sm,
-            children: actions,
-          ),
-        ),
-      ),
-    );
   }
 
   static Widget _buildFiltersAndActionsRow({

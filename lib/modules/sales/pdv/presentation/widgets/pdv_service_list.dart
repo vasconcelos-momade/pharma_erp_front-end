@@ -38,7 +38,7 @@ class PdvServiceList extends StatelessWidget {
     return ListView.separated(
       padding: EdgeInsets.only(bottom: bottomPadding + s.md),
       itemCount: items.length,
-      separatorBuilder: (_, __) => const EnterpriseListDivider(),
+      separatorBuilder: (_, _) => const EnterpriseListDivider(),
       itemBuilder: (context, index) {
         final service = items[index];
         return PdvServiceCard(

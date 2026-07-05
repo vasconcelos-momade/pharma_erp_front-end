@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme/breakpoints.dart';
 import '../../core/theme/extensions.dart';
 import '../widgets/dialogs/pharma_responsive_dialog.dart';
 import '../widgets/layout/adaptive_side_sheet.dart';

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../core/theme/extensions.dart';
 import '../../../../../shared/widgets/feedback/module_data_states.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../../../../shared/widgets/tables/table_typography.dart';

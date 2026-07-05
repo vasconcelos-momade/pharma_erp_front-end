@@ -167,7 +167,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                     padding: EdgeInsets.only(bottom: s.sm),
                     child: Text(
                       state.errorMessage!,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
                             color: t.posDanger,
                           ),
                     ),

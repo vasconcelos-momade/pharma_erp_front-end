@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/extensions.dart';
-import '../../../../core/theme/spacing.dart';
 import '../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../shared/widgets/buttons/pharma_button_loader.dart';
@@ -358,7 +357,6 @@ class _RequisicaoStockFlowViewState
 
   @override
   Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
     final s = context.spacing;
     final width = MediaQuery.sizeOf(context).width;
     final isMobile = width <= 920;

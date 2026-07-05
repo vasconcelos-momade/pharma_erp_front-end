@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../../core/theme/extensions.dart';
 import '../../../inventory/data/datasources/inventory_remote_datasource.dart';
 
 /// Conteúdo do histórico sanitário do lote — desacoplado do container.
@@ -47,7 +48,7 @@ class LoteSanitarioHistoryContent extends ConsumerWidget {
                     Expanded(
                       child: Text(
                         'Histórico sanitário • $title',
-                        style: Theme.of(context).textTheme.titleLarge,
+                        style: Theme.of(context).textTheme.erpCardTitle,
                       ),
                     ),
                     if (onClose != null)
@@ -83,7 +84,7 @@ class _HistoryBody extends StatelessWidget {
       children: [
         Text(
           'Movimentos sanitários',
-          style: Theme.of(context).textTheme.titleMedium,
+          style: Theme.of(context).textTheme.erpBodyStrong,
         ),
         const SizedBox(height: 8),
         if (movimentos.isEmpty)
@@ -104,7 +105,7 @@ class _HistoryBody extends StatelessWidget {
             ),
           ),
         const SizedBox(height: 16),
-        Text('Incinerações', style: Theme.of(context).textTheme.titleMedium),
+        Text('Incinerações', style: Theme.of(context).textTheme.erpBodyStrong),
         const SizedBox(height: 8),
         if (incineracoes.isEmpty)
           const Text('Sem incinerações associadas.')

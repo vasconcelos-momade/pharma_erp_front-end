@@ -19,6 +19,49 @@ import 'package:google_fonts/google_fonts.dart';
 abstract final class AppTypography {
   AppTypography._();
 
+  static TextStyle _poppinsTitle({
+    required double fontSize,
+    required FontWeight fontWeight,
+    double? letterSpacing,
+    required double height,
+  }) {
+    return GoogleFonts.poppins(
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      letterSpacing: letterSpacing,
+      height: height,
+    );
+  }
+
+  static TextStyle _interBody({
+    required double fontSize,
+    required FontWeight fontWeight,
+    double? letterSpacing,
+    double? height,
+  }) {
+    return GoogleFonts.inter(
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      letterSpacing: letterSpacing,
+      height: height,
+    );
+  }
+
+  static TextStyle _webStyle(
+    TextStyle? base, {
+    required double fontSize,
+    required FontWeight fontWeight,
+    double? letterSpacing,
+    double? height,
+  }) {
+    return _w(base).copyWith(
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      letterSpacing: letterSpacing,
+      height: height,
+    );
+  }
+
   /// Monospace para códigos, números tabulares e IDs.
   static TextStyle monospace({
     required Brightness brightness,
@@ -71,172 +114,158 @@ abstract final class AppTypography {
       return _webEnterpriseTextTheme(base);
     }
     final inter = GoogleFonts.interTextTheme(base);
+    final display = _poppinsTitle(
+      fontSize: 28,
+      fontWeight: FontWeight.w600,
+      letterSpacing: -0.2,
+      height: 1.15,
+    );
+    final pageTitle = _poppinsTitle(
+      fontSize: 20,
+      fontWeight: FontWeight.w600,
+      height: 1.25,
+    );
+    final sectionTitle = _poppinsTitle(
+      fontSize: 16,
+      fontWeight: FontWeight.w600,
+      height: 1.25,
+    );
+    final emphasisBody = _interBody(
+      fontSize: 16,
+      fontWeight: FontWeight.w600,
+      height: 1.25,
+    );
+    final tabLabel = _interBody(
+      fontSize: 14,
+      fontWeight: FontWeight.w500,
+      height: 1.25,
+    );
+    final body = _interBody(
+      fontSize: 14,
+      fontWeight: FontWeight.w400,
+      height: 1.4,
+    );
+    final bodySecondary = _interBody(
+      fontSize: 13,
+      fontWeight: FontWeight.w400,
+      height: 1.4,
+    );
+    final caption = _interBody(
+      fontSize: 12,
+      fontWeight: FontWeight.w400,
+      height: 1.4,
+    );
+    final label = _interBody(
+      fontSize: 14,
+      fontWeight: FontWeight.w500,
+      letterSpacing: 0,
+    );
+    final microLabel = _interBody(
+      fontSize: 12,
+      fontWeight: FontWeight.w400,
+      letterSpacing: 0,
+      height: 1.3,
+    );
     return GoogleFonts.poppinsTextTheme(inter).copyWith(
-      displayLarge: GoogleFonts.poppins(
-        fontSize: 28,
-        fontWeight: FontWeight.w600,
-        letterSpacing: -0.2,
-        height: 1.15,
-      ),
-      displayMedium: GoogleFonts.poppins(
-        fontSize: 28,
-        fontWeight: FontWeight.w600,
-        letterSpacing: -0.2,
-        height: 1.15,
-      ),
-      displaySmall: GoogleFonts.poppins(
-        fontSize: 28,
-        fontWeight: FontWeight.w600,
-        letterSpacing: -0.2,
-        height: 1.15,
-      ),
-      headlineLarge: GoogleFonts.poppins(
-        fontSize: 20,
-        fontWeight: FontWeight.w600,
-        height: 1.25,
-      ),
-      headlineMedium: GoogleFonts.poppins(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        height: 1.25,
-      ),
-      headlineSmall: GoogleFonts.poppins(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        height: 1.25,
-      ),
-      titleLarge: GoogleFonts.poppins(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        height: 1.25,
-      ),
-      titleMedium: GoogleFonts.inter(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        height: 1.25,
-      ),
-      titleSmall: GoogleFonts.inter(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        height: 1.25,
-      ),
-      bodyLarge: GoogleFonts.inter(
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-        height: 1.4,
-      ),
-      bodyMedium: GoogleFonts.inter(
-        fontSize: 13,
-        fontWeight: FontWeight.w400,
-        height: 1.4,
-      ),
-      bodySmall: GoogleFonts.inter(
-        fontSize: 12,
-        fontWeight: FontWeight.w400,
-        height: 1.4,
-      ),
-      labelLarge: GoogleFonts.inter(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        letterSpacing: 0,
-      ),
-      labelMedium: GoogleFonts.inter(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        letterSpacing: 0,
-      ),
-      labelSmall: GoogleFonts.inter(
-        fontSize: 12,
-        fontWeight: FontWeight.w400,
-        letterSpacing: 0,
-        height: 1.3,
-      ),
+      displayLarge: display,
+      displayMedium: display,
+      displaySmall: display,
+      headlineLarge: pageTitle,
+      headlineMedium: sectionTitle,
+      headlineSmall: sectionTitle,
+      titleLarge: sectionTitle,
+      titleMedium: emphasisBody,
+      titleSmall: tabLabel,
+      bodyLarge: body,
+      bodyMedium: bodySecondary,
+      bodySmall: caption,
+      labelLarge: label,
+      labelMedium: label,
+      labelSmall: microLabel,
     );
   }
 
   static TextStyle _w(TextStyle? s) => s ?? const TextStyle();
 
   static TextTheme _webEnterpriseTextTheme(TextTheme base) {
+    final display = _webStyle(
+      base.displayLarge,
+      fontSize: 28,
+      fontWeight: FontWeight.w600,
+      letterSpacing: -0.2,
+      height: 1.15,
+    );
+    final pageTitle = _webStyle(
+      base.headlineLarge,
+      fontSize: 20,
+      fontWeight: FontWeight.w600,
+      height: 1.25,
+    );
+    final sectionTitle = _webStyle(
+      base.headlineMedium,
+      fontSize: 16,
+      fontWeight: FontWeight.w600,
+      height: 1.25,
+    );
+    final emphasisBody = _webStyle(
+      base.titleMedium,
+      fontSize: 16,
+      fontWeight: FontWeight.w600,
+      height: 1.25,
+    );
+    final tabLabel = _webStyle(
+      base.titleSmall,
+      fontSize: 14,
+      fontWeight: FontWeight.w500,
+      height: 1.25,
+    );
+    final body = _webStyle(
+      base.bodyLarge,
+      fontSize: 14,
+      fontWeight: FontWeight.w400,
+      height: 1.4,
+    );
+    final bodySecondary = _webStyle(
+      base.bodyMedium,
+      fontSize: 13,
+      fontWeight: FontWeight.w400,
+      height: 1.4,
+    );
+    final caption = _webStyle(
+      base.bodySmall,
+      fontSize: 12,
+      fontWeight: FontWeight.w400,
+      height: 1.4,
+    );
+    final label = _webStyle(
+      base.labelLarge,
+      fontSize: 14,
+      fontWeight: FontWeight.w500,
+      letterSpacing: 0,
+    );
+    final microLabel = _webStyle(
+      base.labelSmall,
+      fontSize: 12,
+      fontWeight: FontWeight.w400,
+      letterSpacing: 0,
+      height: 1.3,
+    );
     return base.copyWith(
-      displayLarge: _w(base.displayLarge).copyWith(
-        fontSize: 28,
-        fontWeight: FontWeight.w600,
-        letterSpacing: -0.2,
-        height: 1.15,
-      ),
-      displayMedium: _w(base.displayMedium).copyWith(
-        fontSize: 28,
-        fontWeight: FontWeight.w600,
-        letterSpacing: -0.2,
-        height: 1.15,
-      ),
-      displaySmall: _w(base.displaySmall).copyWith(
-        fontSize: 28,
-        fontWeight: FontWeight.w600,
-        letterSpacing: -0.2,
-        height: 1.15,
-      ),
-      headlineLarge: _w(base.headlineLarge).copyWith(
-        fontSize: 20,
-        fontWeight: FontWeight.w600,
-        height: 1.25,
-      ),
-      headlineMedium: _w(base.headlineMedium).copyWith(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        height: 1.25,
-      ),
-      headlineSmall: _w(base.headlineSmall).copyWith(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        height: 1.25,
-      ),
-      titleLarge: _w(base.titleLarge).copyWith(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        height: 1.25,
-      ),
-      titleMedium: _w(base.titleMedium).copyWith(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-        height: 1.25,
-      ),
-      titleSmall: _w(base.titleSmall).copyWith(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        height: 1.25,
-      ),
-      bodyLarge: _w(base.bodyLarge).copyWith(
-        fontSize: 14,
-        fontWeight: FontWeight.w400,
-        height: 1.4,
-      ),
-      bodyMedium: _w(base.bodyMedium).copyWith(
-        fontSize: 13,
-        fontWeight: FontWeight.w400,
-        height: 1.4,
-      ),
-      bodySmall: _w(base.bodySmall).copyWith(
-        fontSize: 12,
-        fontWeight: FontWeight.w400,
-        height: 1.4,
-      ),
-      labelLarge: _w(base.labelLarge).copyWith(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        letterSpacing: 0,
-      ),
-      labelMedium: _w(base.labelMedium).copyWith(
-        fontSize: 14,
-        fontWeight: FontWeight.w500,
-        letterSpacing: 0,
-      ),
-      labelSmall: _w(base.labelSmall).copyWith(
-        fontSize: 12,
-        fontWeight: FontWeight.w400,
-        letterSpacing: 0,
-        height: 1.3,
-      ),
+      displayLarge: display,
+      displayMedium: display,
+      displaySmall: display,
+      headlineLarge: pageTitle,
+      headlineMedium: sectionTitle,
+      headlineSmall: sectionTitle,
+      titleLarge: sectionTitle,
+      titleMedium: emphasisBody,
+      titleSmall: tabLabel,
+      bodyLarge: body,
+      bodyMedium: bodySecondary,
+      bodySmall: caption,
+      labelLarge: label,
+      labelMedium: label,
+      labelSmall: microLabel,
     );
   }
 
@@ -251,6 +280,7 @@ extension EnterpriseTextTheme on TextTheme {
   TextStyle get erpPageTitle => headlineLarge ?? const TextStyle();
   TextStyle get erpSectionTitle => headlineMedium ?? const TextStyle();
   TextStyle get erpCardTitle => titleLarge ?? const TextStyle();
+  TextStyle get erpAppName => erpAppBarTitle;
   TextStyle get erpAppBarTitle => (titleLarge ?? const TextStyle()).copyWith(
         fontSize: 18,
         fontWeight: FontWeight.w600,
@@ -264,7 +294,21 @@ extension EnterpriseTextTheme on TextTheme {
   }
   TextStyle get erpTabLabel => titleSmall ?? const TextStyle();
   TextStyle get erpLabel => labelLarge ?? const TextStyle();
+  TextStyle get erpButtonPrimary => erpLabel.copyWith(fontWeight: FontWeight.w600);
+  TextStyle get erpButtonSecondary => erpLabel.copyWith(fontWeight: FontWeight.w500);
+  TextStyle get erpSelectLabel => erpLabel.copyWith(fontWeight: FontWeight.w500);
+  TextStyle get erpSelectValue => erpLabel.copyWith(fontWeight: FontWeight.w500);
+  TextStyle get erpMenuItem => erpTabLabel.copyWith(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        height: 1.2,
+      );
+  TextStyle get erpMenuItemActive => erpMenuItem.copyWith(
+        fontWeight: FontWeight.w600,
+      );
   TextStyle get erpBody => bodyLarge ?? const TextStyle();
+  TextStyle get erpBodyMedium => erpBody.copyWith(fontWeight: FontWeight.w500);
+  TextStyle get erpBodyStrong => erpBody.copyWith(fontWeight: FontWeight.w600);
   TextStyle get erpBodySecondary => bodyMedium ?? const TextStyle();
   TextStyle get erpCaption => bodySmall ?? const TextStyle();
   TextStyle get erpOverline => (labelSmall ?? const TextStyle()).copyWith(

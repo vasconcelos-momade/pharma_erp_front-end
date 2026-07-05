@@ -2,14 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
-import '../../../../../core/theme/spacing.dart';
 
 class DetailSection extends StatelessWidget {
-  const DetailSection({
-    super.key,
-    required this.title,
-    required this.children,
-  });
+  const DetailSection({super.key, required this.title, required this.children});
 
   final String title;
   final List<Widget> children;
@@ -31,10 +26,9 @@ class DetailSection extends StatelessWidget {
         children: [
           Text(
             title,
-            style: Theme.of(context).textTheme.erpTabLabel.copyWith(
-                  color: t.textPrimary,
-                  fontWeight: FontWeight.w800,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.erpCardTitle.copyWith(color: t.textPrimary),
           ),
           SizedBox(height: s.md),
           ...children,
@@ -45,11 +39,7 @@ class DetailSection extends StatelessWidget {
 }
 
 class DetailRow extends StatelessWidget {
-  const DetailRow({
-    super.key,
-    required this.label,
-    required this.value,
-  });
+  const DetailRow({super.key, required this.label, required this.value});
 
   final String label;
   final String? value;
@@ -67,18 +57,17 @@ class DetailRow extends StatelessWidget {
             width: 140,
             child: Text(
               label,
-              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                    color: t.textMuted,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
             ),
           ),
           Expanded(
             child: Text(
               value ?? '-',
-              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                    color: t.textPrimary,
-                    fontWeight: FontWeight.w600,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.erpBodyStrong.copyWith(color: t.textPrimary),
             ),
           ),
         ],
@@ -101,9 +90,9 @@ class DetailHint extends StatelessWidget {
       child: Text(
         text,
         style: Theme.of(context).textTheme.erpCaption.copyWith(
-              color: t.textMuted,
-              fontStyle: FontStyle.italic,
-            ),
+          color: t.textMuted,
+          fontStyle: FontStyle.italic,
+        ),
       ),
     );
   }

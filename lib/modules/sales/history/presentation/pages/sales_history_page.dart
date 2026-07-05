@@ -5,14 +5,13 @@ import 'package:intl/intl.dart';
 import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
-import '../../../../../core/theme/spacing.dart';
 import '../../../../reports/presentation/controllers/report_controller.dart';
 import '../../../../../shared/navigation/adaptive_navigator.dart';
-import '../../../../../shared/responsive/pharma_screen_layout.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../../shared/widgets/feedback/module_data_states.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
+import '../../../../../shared/widgets/tables/table_typography.dart';
 import '../../../../stock/presentation/widgets/movimentacoes_pagination.dart';
 import '../../../invoices/domain/entities/invoice_summary.dart';
 import '../../../invoices/presentation/providers/invoice_detail_provider.dart';
@@ -228,12 +227,7 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
                 DataColumn(
                   label: Text(
                     label.toUpperCase(),
-                    style: Theme.of(context).textTheme.erpOverline.copyWith(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.2,
-                      color: t.textMuted,
-                    ),
+                    style: TableTypography.header(context),
                   ),
                 ),
             ],
@@ -244,34 +238,39 @@ class _SalesHistoryPageState extends ConsumerState<SalesHistoryPage> {
                 onSelectChanged: (_) => _openInvoiceDetail(inv),
                 cells: [
                   DataCell(
-                    Text(
-                      inv.numero,
-                      style: Theme.of(context).textTheme.erpTabLabel.copyWith(color: t.textPrimary, fontWeight: FontWeight.w800),
-                    ),
+                    Text(inv.numero, style: TableTypography.primary(context)),
                   ),
                   DataCell(
                     Text(
                       inv.cliente?.nome ?? '—',
-                      style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textSecondary),
+                      style: Theme.of(context).textTheme.erpBodySecondary
+                          .copyWith(color: t.textSecondary),
                     ),
                   ),
                   DataCell(
                     Text(
                       inv.terminal?.codigo ?? inv.terminal?.nome ?? '—',
-                      style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.erpCaption.copyWith(color: t.textMuted),
                     ),
                   ),
                   DataCell(
                     Text(
                       '${_currency.format(inv.total)} MT',
-                      style: Theme.of(context).textTheme.erpTabLabel.copyWith(color: t.brandGreen, fontWeight: FontWeight.w800),
+                      style: TableTypography.primary(
+                        context,
+                        color: t.brandGreen,
+                      ),
                     ),
                   ),
                   DataCell(InvoiceStatusBadge(status: inv.estado)),
                   DataCell(
                     Text(
                       _dateTime.format(inv.createdAt),
-                      style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.erpCaption.copyWith(color: t.textMuted),
                     ),
                   ),
                 ],

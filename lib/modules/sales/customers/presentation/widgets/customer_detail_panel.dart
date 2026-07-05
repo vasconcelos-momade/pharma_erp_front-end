@@ -4,7 +4,6 @@ import 'package:intl/intl.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
-import '../../../../../core/theme/spacing.dart';
 import '../../data/repositories/customer_repository_impl.dart';
 import '../../domain/entities/customer.dart';
 
@@ -102,7 +101,9 @@ class _CustomerDetailPanelState extends ConsumerState<CustomerDetailPanel>
               Expanded(
                 child: Text(
                   _detail?.nome ?? 'Cliente',
-                  style: Theme.of(context).textTheme.erpAppBarTitle.copyWith(color: t.textPrimary, fontWeight: FontWeight.w800),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.erpAppBarTitle.copyWith(color: t.textPrimary),
                 ),
               ),
               if (widget.onEdit != null)
@@ -139,57 +140,64 @@ class _CustomerDetailPanelState extends ConsumerState<CustomerDetailPanel>
           child: _loading
               ? const Center(child: CircularProgressIndicator())
               : _error != null
-                  ? Center(child: Text(_error!, style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.posDanger)))
-                  : TabBarView(
-                      controller: _tabs,
-                      children: [
-                        _buildDadosTab(t, s),
-                        _buildListTab(
-                          t,
-                          _faturas.isEmpty
-                              ? 'Sem faturas'
-                              : _faturas
-                                  .map(
-                                    (f) =>
-                                        '${f.numero} • ${_currency.format(f.total)} MT • ${f.estado}',
-                                  )
-                                  .join('\n'),
-                        ),
-                        _buildListTab(
-                          t,
-                          _contas.isEmpty
-                              ? 'Sem contas a receber'
-                              : _contas
-                                  .map(
-                                    (c) =>
-                                        '${c.status} • saldo ${_currency.format(c.saldo)} MT',
-                                  )
-                                  .join('\n'),
-                        ),
-                        _buildListTab(
-                          t,
-                          _receitas.isEmpty
-                              ? 'Sem receitas'
-                              : _receitas
-                                  .map(
-                                    (r) =>
-                                        '${r.numeroReceita ?? '—'} • ${_dateFmt.format(r.dataReceita)}',
-                                  )
-                                  .join('\n'),
-                        ),
-                        _buildListTab(
-                          t,
-                          _audit.isEmpty
-                              ? 'Sem registos de auditoria'
-                              : _audit
-                                  .map(
-                                    (a) =>
-                                        '${a.action} • ${a.userNome ?? 'Sistema'} • ${_dateTimeFmt.format(a.createdAt)}',
-                                  )
-                                  .join('\n'),
-                        ),
-                      ],
+              ? Center(
+                  child: Text(
+                    _error!,
+                    style: Theme.of(
+                      context,
+                    ).textTheme.erpBodySecondary.copyWith(color: t.posDanger),
+                  ),
+                )
+              : TabBarView(
+                  controller: _tabs,
+                  children: [
+                    _buildDadosTab(t, s),
+                    _buildListTab(
+                      t,
+                      _faturas.isEmpty
+                          ? 'Sem faturas'
+                          : _faturas
+                                .map(
+                                  (f) =>
+                                      '${f.numero} • ${_currency.format(f.total)} MT • ${f.estado}',
+                                )
+                                .join('\n'),
                     ),
+                    _buildListTab(
+                      t,
+                      _contas.isEmpty
+                          ? 'Sem contas a receber'
+                          : _contas
+                                .map(
+                                  (c) =>
+                                      '${c.status} • saldo ${_currency.format(c.saldo)} MT',
+                                )
+                                .join('\n'),
+                    ),
+                    _buildListTab(
+                      t,
+                      _receitas.isEmpty
+                          ? 'Sem receitas'
+                          : _receitas
+                                .map(
+                                  (r) =>
+                                      '${r.numeroReceita ?? '—'} • ${_dateFmt.format(r.dataReceita)}',
+                                )
+                                .join('\n'),
+                    ),
+                    _buildListTab(
+                      t,
+                      _audit.isEmpty
+                          ? 'Sem registos de auditoria'
+                          : _audit
+                                .map(
+                                  (a) =>
+                                      '${a.action} • ${a.userNome ?? 'Sistema'} • ${_dateTimeFmt.format(a.createdAt)}',
+                                )
+                                .join('\n'),
+                    ),
+                  ],
+                ),
         ),
       ],
     );
@@ -228,7 +236,10 @@ class _CustomerDetailPanelState extends ConsumerState<CustomerDetailPanel>
       padding: EdgeInsets.all(context.spacing.lg),
       child: Text(
         content,
-        style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textSecondary, height: 1.6),
+        style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
+          color: t.textSecondary,
+          height: 1.6,
+        ),
       ),
     );
   }
@@ -243,13 +254,17 @@ class _CustomerDetailPanelState extends ConsumerState<CustomerDetailPanel>
             width: 120,
             child: Text(
               label,
-              style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
+              style: Theme.of(
+                context,
+              ).textTheme.erpCaption.copyWith(color: t.textMuted),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
+              style: Theme.of(
+                context,
+              ).textTheme.erpLabel.copyWith(color: t.textPrimary),
             ),
           ),
         ],
@@ -258,8 +273,8 @@ class _CustomerDetailPanelState extends ConsumerState<CustomerDetailPanel>
   }
 
   String _tipoLabel(String tipo) => switch (tipo) {
-        'EMPRESA' => 'Empresa',
-        'CONVENIO' => 'Convénio',
-        _ => 'Paciente',
-      };
+    'EMPRESA' => 'Empresa',
+    'CONVENIO' => 'Convénio',
+    _ => 'Paciente',
+  };
 }

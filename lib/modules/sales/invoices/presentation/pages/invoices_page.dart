@@ -2,11 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/constants/report_paths.dart';
-import '../../../../../core/theme/design_tokens.dart';
-import '../../../../../core/theme/spacing.dart';
 import '../../../../reports/presentation/controllers/report_controller.dart';
 import '../../../../../shared/navigation/adaptive_navigator.dart';
-import '../../../../../shared/responsive/pharma_screen_layout.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../domain/entities/invoice_summary.dart';

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/extensions.dart';
-import '../../../../core/theme/spacing.dart';
 import '../../../../shared/widgets/buttons/pharma_button_loader.dart';
 import '../../domain/entities/requisicao.dart';
 import '../providers/requisicao_provider.dart';

@@ -20,7 +20,6 @@ import '../widgets/requisicao_compra_mobile_layout.dart';
 import '../widgets/requisicao_compra_right_pane.dart';
 import '../widgets/requisicao_stock_flow_view.dart';
 import '../widgets/requisicao_top_actions_bar.dart';
-import '../widgets/stock_report_exports.dart';
 import '../../../reports/presentation/controllers/report_controller.dart';
 
 class RequisicaoHubPage extends ConsumerStatefulWidget {
@@ -206,14 +205,6 @@ class _RequisicaoHubPageState extends ConsumerState<RequisicaoHubPage> {
     await ref
         .read(requisicaoCompraProvider.notifier)
         .updateActiveRequisitionHeader(request: result.toRequest());
-  }
-
-  String _requisitionListReportPath() {
-    return switch (_selectedTipo) {
-      'entrada' => ReportPaths.stockRequisitionsEntrada,
-      'saida' => ReportPaths.stockRequisitionsSaida,
-      _ => ReportPaths.stockRequisitionsCompra,
-    };
   }
 
   Future<void> _exportActiveRequisitionPdf() async {

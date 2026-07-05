@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'design_tokens.dart';
+import 'typography.dart';
 
 /// Duração zero para superfícies Material (evita atraso ao trocar tema).
 const Duration kPharmaInstantThemeDuration = Duration.zero;
@@ -43,7 +44,8 @@ class PharmaSurface extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final radius = borderRadius ?? BorderRadius.circular(t.radiusMd);
-    final resolvedBorder = border ??
+    final resolvedBorder =
+        border ??
         Border.all(
           color: scheme.outline.withValues(alpha: isDark ? 0.6 : 0.85),
         );
@@ -58,7 +60,11 @@ class PharmaSurface extends StatelessWidget {
     );
 
     if (clipBehavior != Clip.none) {
-      content = ClipRRect(borderRadius: radius, clipBehavior: clipBehavior, child: content);
+      content = ClipRRect(
+        borderRadius: radius,
+        clipBehavior: clipBehavior,
+        child: content,
+      );
     }
 
     if (onTap == null) return content;
@@ -93,6 +99,7 @@ class PharmaInstantFilterChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
+    final textTheme = Theme.of(context).textTheme;
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -106,10 +113,7 @@ class PharmaInstantFilterChip extends StatelessWidget {
       ),
       onTap: () => onSelected(!selected),
       child: DefaultTextStyle(
-        style: TextStyle(
-          color: t.textPrimary,
-          fontWeight: FontWeight.w600,
-        ),
+        style: textTheme.erpBodyStrong.copyWith(color: t.textPrimary),
         child: label,
       ),
     );
@@ -144,6 +148,7 @@ class PharmaInstantField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
+    final textTheme = Theme.of(context).textTheme;
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -161,7 +166,7 @@ class PharmaInstantField extends StatelessWidget {
         onSubmitted: onSubmitted,
         textInputAction: textInputAction,
         keyboardType: keyboardType,
-        style: TextStyle(color: t.textPrimary),
+        style: textTheme.erpBody.copyWith(color: t.textPrimary),
         decoration: InputDecoration(
           hintText: hintText,
           labelText: labelText,
@@ -175,8 +180,8 @@ class PharmaInstantField extends StatelessWidget {
           errorBorder: InputBorder.none,
           focusedErrorBorder: InputBorder.none,
           contentPadding: t.density.inputPadding,
-          hintStyle: TextStyle(color: t.textMuted),
-          labelStyle: TextStyle(color: t.textSecondary),
+          hintStyle: textTheme.erpBodySecondary.copyWith(color: t.textMuted),
+          labelStyle: textTheme.erpSelectLabel.copyWith(color: t.textSecondary),
         ),
       ),
     );
@@ -203,6 +208,7 @@ class PharmaInstantDropdown<T> extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
+    final textTheme = Theme.of(context).textTheme;
     final scheme = Theme.of(context).colorScheme;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -230,10 +236,10 @@ class PharmaInstantDropdown<T> extends StatelessWidget {
           errorBorder: InputBorder.none,
           focusedErrorBorder: InputBorder.none,
           contentPadding: t.density.inputPadding,
-          labelStyle: TextStyle(color: t.textSecondary),
+          labelStyle: textTheme.erpSelectLabel.copyWith(color: t.textSecondary),
         ),
         dropdownColor: scheme.surfaceContainerHighest,
-        style: TextStyle(color: t.textPrimary),
+        style: textTheme.erpSelectValue.copyWith(color: t.textPrimary),
       ),
     );
 

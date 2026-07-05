@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/extensions.dart';
-import '../../../../core/theme/spacing.dart';
 import '../../../../shared/widgets/buttons/pharma_button_loader.dart';
 
 class RequisicaoTopActionsBar extends StatelessWidget {

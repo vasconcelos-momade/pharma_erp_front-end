@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/theme/extensions.dart';
-import '../../../core/theme/spacing_tokens.dart';
 
 /// Blocos skeleton para listagens e cartões.
 class SkeletonBox extends StatelessWidget {

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/extensions.dart';
-import '../../../../core/theme/spacing.dart';
 import '../../../../shared/navigation/adaptive_navigator.dart';
 import '../../domain/entities/requisicao.dart';
 import 'requisicao_hub_formatters.dart';

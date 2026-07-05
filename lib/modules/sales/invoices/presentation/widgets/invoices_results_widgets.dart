@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
-import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/responsive/pharma_screen_layout.dart';
 import '../../../../../shared/widgets/tables/table_typography.dart';
 import '../../domain/entities/invoice_summary.dart';
@@ -31,7 +30,8 @@ class InvoicesResults extends StatelessWidget {
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final useCards = PharmaScreenLayout.isMobile(context) || constraints.maxWidth < 860;
+        final useCards =
+            PharmaScreenLayout.isMobile(context) || constraints.maxWidth < 860;
         if (useCards) {
           return Column(
             children: [
@@ -160,11 +160,7 @@ class InvoiceCardList extends StatelessWidget {
                         Expanded(
                           child: Text(
                             invoice.numero,
-                            style:
-                                Theme.of(context).textTheme.erpTabLabel.copyWith(
-                                      color: t.textPrimary,
-                                      fontWeight: FontWeight.w800,
-                                    ),
+                            style: TableTypography.primary(context),
                           ),
                         ),
                         InvoiceStatusBadge(status: invoice.estado),
@@ -173,9 +169,8 @@ class InvoiceCardList extends StatelessWidget {
                     SizedBox(height: s.xs),
                     Text(
                       invoice.cliente?.nome ?? 'Consumidor final',
-                      style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                            color: t.textSecondary,
-                          ),
+                      style: Theme.of(context).textTheme.erpBodySecondary
+                          .copyWith(color: t.textSecondary),
                     ),
                     SizedBox(height: s.sm),
                     Wrap(
@@ -185,7 +180,8 @@ class InvoiceCardList extends StatelessWidget {
                         MetaChip(label: formatDateTime(invoice.createdAt)),
                         MetaChip(label: formatMoney(invoice.total)),
                         MetaChip(
-                          label: invoice.terminal?.codigo ??
+                          label:
+                              invoice.terminal?.codigo ??
                               invoice.terminal?.nome ??
                               'Sem terminal',
                         ),
@@ -260,64 +256,95 @@ class InvoiceDesktopTable extends StatelessWidget {
               child: ConstrainedBox(
                 constraints: BoxConstraints(minWidth: c.maxWidth),
                 child: DataTable(
-                  headingRowColor:
-                      WidgetStatePropertyAll(t.bgSecondary.withValues(alpha: 0.92)),
+                  headingRowColor: WidgetStatePropertyAll(
+                    t.bgSecondary.withValues(alpha: 0.92),
+                  ),
                   dataRowMinHeight: dense ? 48 : 54,
                   dataRowMaxHeight: dense ? 54 : 62,
                   horizontalMargin: dense ? s.md : s.lg,
                   columnSpacing: dense ? s.lg : s.xl,
                   columns: [
-                    DataColumn(label: TableTypography.headerLabel(context, 'Nº')),
-                    DataColumn(label: TableTypography.headerLabel(context, 'Cliente')),
-                    DataColumn(label: TableTypography.headerLabel(context, 'Data')),
-                    DataColumn(label: TableTypography.headerLabel(context, 'Total')),
-                    DataColumn(label: TableTypography.headerLabel(context, 'Estado')),
-                    DataColumn(label: TableTypography.headerLabel(context, 'Ações')),
+                    DataColumn(
+                      label: TableTypography.headerLabel(context, 'Nº'),
+                    ),
+                    DataColumn(
+                      label: TableTypography.headerLabel(context, 'Cliente'),
+                    ),
+                    DataColumn(
+                      label: TableTypography.headerLabel(context, 'Data'),
+                    ),
+                    DataColumn(
+                      label: TableTypography.headerLabel(context, 'Total'),
+                    ),
+                    DataColumn(
+                      label: TableTypography.headerLabel(context, 'Estado'),
+                    ),
+                    DataColumn(
+                      label: TableTypography.headerLabel(context, 'Ações'),
+                    ),
                   ],
-                  rows: invoices.map((invoice) {
-                    return DataRow(
-                      cells: [
-                        DataCell(TableTypography.cellText(context, invoice.numero)),
-                        DataCell(
-                          TableTypography.cellText(
-                            context,
-                            invoice.cliente?.nome ?? 'Consumidor final',
-                          ),
-                        ),
-                        DataCell(TableTypography.cellText(context, formatDateTime(invoice.createdAt))),
-                        DataCell(
-                          TableTypography.cellText(
-                            context,
-                            formatMoney(invoice.total),
-                            style: TableTypography.primary(context, color: t.brandGreen),
-                          ),
-                        ),
-                        DataCell(InvoiceStatusBadge(status: invoice.estado)),
-                        DataCell(
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              IconButton(
-                                tooltip: 'Ver',
-                                onPressed: () => onView(invoice),
-                                icon: const Icon(Icons.visibility_outlined),
+                  rows: invoices
+                      .map((invoice) {
+                        return DataRow(
+                          cells: [
+                            DataCell(
+                              TableTypography.cellText(context, invoice.numero),
+                            ),
+                            DataCell(
+                              TableTypography.cellText(
+                                context,
+                                invoice.cliente?.nome ?? 'Consumidor final',
                               ),
-                              IconButton(
-                                tooltip: invoice.isCancelled ? 'Já cancelada' : 'Cancelar',
-                                onPressed: invoice.isCancelled ? null : () => onCancel(invoice),
-                                icon: const Icon(Icons.block_rounded),
+                            ),
+                            DataCell(
+                              TableTypography.cellText(
+                                context,
+                                formatDateTime(invoice.createdAt),
                               ),
-                              IconButton(
-                                tooltip: 'Imprimir',
-                                onPressed: () => onPrint(invoice),
-                                icon: const Icon(Icons.print_outlined),
+                            ),
+                            DataCell(
+                              TableTypography.cellText(
+                                context,
+                                formatMoney(invoice.total),
+                                style: TableTypography.primary(
+                                  context,
+                                  color: t.brandGreen,
+                                ),
                               ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    );
-                  }).toList(growable: false),
+                            ),
+                            DataCell(
+                              InvoiceStatusBadge(status: invoice.estado),
+                            ),
+                            DataCell(
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  IconButton(
+                                    tooltip: 'Ver',
+                                    onPressed: () => onView(invoice),
+                                    icon: const Icon(Icons.visibility_outlined),
+                                  ),
+                                  IconButton(
+                                    tooltip: invoice.isCancelled
+                                        ? 'Já cancelada'
+                                        : 'Cancelar',
+                                    onPressed: invoice.isCancelled
+                                        ? null
+                                        : () => onCancel(invoice),
+                                    icon: const Icon(Icons.block_rounded),
+                                  ),
+                                  IconButton(
+                                    tooltip: 'Imprimir',
+                                    onPressed: () => onPrint(invoice),
+                                    icon: const Icon(Icons.print_outlined),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        );
+                      })
+                      .toList(growable: false),
                 ),
               ),
             ),

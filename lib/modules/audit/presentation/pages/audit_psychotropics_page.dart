@@ -4,16 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../core/constants/report_paths.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/extensions.dart';
-import '../../../../core/theme/spacing.dart';
 import '../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../shared/widgets/feedback/module_data_states.dart';
 import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../../stock/presentation/widgets/movimentacoes_pagination.dart';
-import '../widgets/audit_report_exports.dart';
 import '../../../pharmacy/regulatory/data/datasources/regulatory_remote_datasource.dart';
 
 class AuditPsychotropicsPage extends ConsumerStatefulWidget {
@@ -24,7 +21,8 @@ class AuditPsychotropicsPage extends ConsumerStatefulWidget {
       _AuditPsychotropicsPageState();
 }
 
-class _AuditPsychotropicsPageState extends ConsumerState<AuditPsychotropicsPage> {
+class _AuditPsychotropicsPageState
+    extends ConsumerState<AuditPsychotropicsPage> {
   late final TextEditingController _searchController;
   static final _dateTime = DateFormat('dd/MM/yyyy HH:mm');
 
@@ -89,12 +87,6 @@ class _AuditPsychotropicsPageState extends ConsumerState<AuditPsychotropicsPage>
         _error = error.toString();
       });
     }
-  }
-
-  Map<String, dynamic> _reportQuery() {
-    return auditReportQuery(<String, dynamic>{
-      if (_search.isNotEmpty) 'q': _search,
-    });
   }
 
   @override
@@ -174,7 +166,8 @@ class _AuditPsychotropicsPageState extends ConsumerState<AuditPsychotropicsPage>
     if (_items.isEmpty) {
       return const ModuleEmptyState(
         title: 'Sem movimentos auditáveis',
-        subtitle: 'Não existem registos de psicotrópicos para os filtros actuais.',
+        subtitle:
+            'Não existem registos de psicotrópicos para os filtros actuais.',
       );
     }
 
@@ -185,43 +178,69 @@ class _AuditPsychotropicsPageState extends ConsumerState<AuditPsychotropicsPage>
         Expanded(
           child: EnterpriseDataTable(
             columns: [
-              for (final label in ['Data', 'Documento', 'Produto', 'Movimento', 'Qtd'])
+              for (final label in [
+                'Data',
+                'Documento',
+                'Produto',
+                'Movimento',
+                'Qtd',
+              ])
                 DataColumn(
                   label: Text(
                     label.toUpperCase(),
-                    style: Theme.of(context).textTheme.erpOverline.copyWith(color: t.textMuted),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.erpOverline.copyWith(color: t.textMuted),
                   ),
                 ),
             ],
             rowCount: _items.length,
             rowBuilder: (context, index) {
               final item = _items[index];
-              final createdAt = DateTime.tryParse(
-                    item['createdAt']?.toString() ?? '',
-                  ) ??
+              final createdAt =
+                  DateTime.tryParse(item['createdAt']?.toString() ?? '') ??
                   DateTime.now();
               return DataRow(
                 cells: [
-                  DataCell(Text(
-                    _dateTime.format(createdAt),
-                    style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
-                  )),
-                  DataCell(Text(
-                    item['numeroDocumento']?.toString() ?? '—',
-                    style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
-                  )),
-                  DataCell(Text(
-                    item['produto']?['nome']?.toString() ?? '—',
-                    style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textSecondary),
-                  )),
-                  DataCell(Text(
-                    item['tipoMovimento']?.toString() ?? '—',
-                    style: Theme.of(context).textTheme.erpBody.copyWith(color: t.textPrimary),
-                  )),
-                  DataCell(Text(
-                    '${item['quantidade'] ?? 0}',
-                    style: Theme.of(context).textTheme.erpTabLabel.copyWith(color: t.brandGreen),
-                  )),
+                  DataCell(
+                    Text(
+                      _dateTime.format(createdAt),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.erpCaption.copyWith(color: t.textMuted),
+                    ),
+                  ),
+                  DataCell(
+                    Text(
+                      item['numeroDocumento']?.toString() ?? '—',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.erpLabel.copyWith(color: t.textPrimary),
+                    ),
+                  ),
+                  DataCell(
+                    Text(
+                      item['produto']?['nome']?.toString() ?? '—',
+                      style: Theme.of(context).textTheme.erpBodySecondary
+                          .copyWith(color: t.textSecondary),
+                    ),
+                  ),
+                  DataCell(
+                    Text(
+                      item['tipoMovimento']?.toString() ?? '—',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.erpBody.copyWith(color: t.textPrimary),
+                    ),
+                  ),
+                  DataCell(
+                    Text(
+                      '${item['quantidade'] ?? 0}',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.erpTabLabel.copyWith(color: t.brandGreen),
+                    ),
+                  ),
                 ],
               );
             },

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../../../../core/theme/design_tokens.dart';
 import '../../../../../../core/theme/extensions.dart';
-import '../../../../../../core/theme/spacing.dart';
 
 /// Timeline de movimentos de stock.
 class MovementTimeline extends StatelessWidget {

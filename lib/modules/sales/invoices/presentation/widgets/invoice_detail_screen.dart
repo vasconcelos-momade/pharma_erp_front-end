@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
-import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/responsive/pharma_screen_layout.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/buttons/pharma_button_loader.dart';
@@ -18,11 +17,7 @@ import 'invoice_formatters.dart';
 import 'invoice_status_badge.dart';
 
 class InvoiceDetailScreen extends ConsumerWidget {
-  const InvoiceDetailScreen({
-    super.key,
-    required this.invoice,
-    this.onCancel,
-  });
+  const InvoiceDetailScreen({super.key, required this.invoice, this.onCancel});
 
   final InvoiceSummary invoice;
   final VoidCallback? onCancel;
@@ -33,7 +28,9 @@ class InvoiceDetailScreen extends ConsumerWidget {
     final s = context.spacing;
     final actionState = ref.watch(invoiceActionProvider);
     final detailState = ref.watch(invoiceDetailProvider);
-    final detail = detailState.detail?.id == invoice.id ? detailState.detail : null;
+    final detail = detailState.detail?.id == invoice.id
+        ? detailState.detail
+        : null;
     final isCancelling =
         actionState.isSubmitting && actionState.activeInvoiceId == invoice.id;
     final canCancel = detail?.permissions.canCancel ?? !invoice.isCancelled;
@@ -41,9 +38,7 @@ class InvoiceDetailScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: t.bgPrimary,
       appBar: AppBar(
-        leading: BackButton(
-          onPressed: () => Navigator.of(context).pop(),
-        ),
+        leading: BackButton(onPressed: () => Navigator.of(context).pop()),
         title: Text(invoice.numero),
       ),
       body: SafeArea(
@@ -83,7 +78,9 @@ class InvoiceDetailPanel extends ConsumerWidget {
     final isMobile = PharmaScreenLayout.isMobile(context);
     final actionState = ref.watch(invoiceActionProvider);
     final detailState = ref.watch(invoiceDetailProvider);
-    final detail = detailState.detail?.id == invoice.id ? detailState.detail : null;
+    final detail = detailState.detail?.id == invoice.id
+        ? detailState.detail
+        : null;
     final isCancelling =
         actionState.isSubmitting && actionState.activeInvoiceId == invoice.id;
     final canCancel = detail?.permissions.canCancel ?? !invoice.isCancelled;
@@ -141,7 +138,8 @@ class _InvoiceDetailScaffold extends StatelessWidget {
     final t = context.pharmaTokens;
     final s = context.spacing;
     final status = detail?.estado ?? invoice.estado;
-    final customerName = detail?.cliente?.nome ?? invoice.cliente?.nome ?? 'Consumidor final';
+    final customerName =
+        detail?.cliente?.nome ?? invoice.cliente?.nome ?? 'Consumidor final';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -155,17 +153,16 @@ class _InvoiceDetailScaffold extends StatelessWidget {
                   children: [
                     Text(
                       invoice.numero,
-                      style: Theme.of(context).textTheme.erpCardTitle.copyWith(
-                            color: t.textPrimary,
-                            fontWeight: FontWeight.w800,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.erpCardTitle.copyWith(color: t.textPrimary),
                     ),
                     SizedBox(height: s.xs),
                     Text(
                       customerName,
-                      style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                            color: t.textMuted,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
                     ),
                   ],
                 ),
@@ -176,9 +173,9 @@ class _InvoiceDetailScaffold extends StatelessWidget {
         else
           Text(
             customerName,
-            style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                  color: t.textMuted,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
           ),
         SizedBox(height: s.md),
         InvoiceStatusBadge(status: status),
@@ -194,7 +191,8 @@ class _InvoiceDetailScaffold extends StatelessWidget {
                   _LoadedInvoiceDetail(detail: detail!)
                 else
                   _DetailErrorState(
-                    message: errorMessage ?? 'Falha ao carregar detalhe da fatura.',
+                    message:
+                        errorMessage ?? 'Falha ao carregar detalhe da fatura.',
                     onRetry: onRetry,
                   ),
               ],
@@ -232,10 +230,22 @@ class _LoadedInvoiceDetail extends StatelessWidget {
             DetailRow(label: 'Série', value: detail.serie ?? '-'),
             DetailRow(label: 'Tipo', value: detail.tipo),
             DetailRow(label: 'Data', value: formatDateTime(detail.createdAt)),
-            DetailRow(label: 'Actualizada em', value: formatDateTime(detail.updatedAt)),
-            DetailRow(label: 'Cancelada em', value: formatDateTime(detail.cancelledAt)),
-            DetailRow(label: 'Método de pagamento', value: detail.tipoPagamento ?? '-'),
-            DetailRow(label: 'Operação fiscal', value: detail.tipoOperacao ?? '-'),
+            DetailRow(
+              label: 'Actualizada em',
+              value: formatDateTime(detail.updatedAt),
+            ),
+            DetailRow(
+              label: 'Cancelada em',
+              value: formatDateTime(detail.cancelledAt),
+            ),
+            DetailRow(
+              label: 'Método de pagamento',
+              value: detail.tipoPagamento ?? '-',
+            ),
+            DetailRow(
+              label: 'Operação fiscal',
+              value: detail.tipoOperacao ?? '-',
+            ),
             DetailRow(
               label: 'Terminal',
               value: detail.terminal?.codigo ?? detail.terminal?.nome ?? '-',
@@ -243,7 +253,10 @@ class _LoadedInvoiceDetail extends StatelessWidget {
             DetailRow(label: 'Operador', value: detail.user?.name ?? '-'),
             DetailRow(
               label: 'Responsável anulação',
-              value: detail.cancelledBy?.name ?? detail.anulacao?.user?.name ?? '-',
+              value:
+                  detail.cancelledBy?.name ??
+                  detail.anulacao?.user?.name ??
+                  '-',
             ),
           ],
         ),
@@ -269,7 +282,10 @@ class _LoadedInvoiceDetail extends StatelessWidget {
         DetailSection(
           title: 'Itens',
           children: [
-            DetailRow(label: 'Linhas registadas', value: '${detail.summary.itemCount}'),
+            DetailRow(
+              label: 'Linhas registadas',
+              value: '${detail.summary.itemCount}',
+            ),
             SizedBox(height: s.sm),
             ...detail.items.map((item) => _DetailItemTile(item: item)),
           ],
@@ -278,12 +294,19 @@ class _LoadedInvoiceDetail extends StatelessWidget {
         DetailSection(
           title: 'Pagamentos',
           children: [
-            DetailRow(label: 'Pagamentos', value: '${detail.summary.paymentCount}'),
+            DetailRow(
+              label: 'Pagamentos',
+              value: '${detail.summary.paymentCount}',
+            ),
             SizedBox(height: s.sm),
             if (detail.payments.isEmpty)
-              const DetailHint(text: 'Sem pagamentos registados para esta fatura.')
+              const DetailHint(
+                text: 'Sem pagamentos registados para esta fatura.',
+              )
             else
-              ...detail.payments.map((payment) => _DetailPaymentTile(payment: payment)),
+              ...detail.payments.map(
+                (payment) => _DetailPaymentTile(payment: payment),
+              ),
           ],
         ),
         if (detail.anulacao != null) ...[
@@ -337,10 +360,9 @@ class _DetailItemTile extends StatelessWidget {
         children: [
           Text(
             item.descricao,
-            style: Theme.of(context).textTheme.erpBody.copyWith(
-                  color: t.textPrimary,
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.erpBodyStrong.copyWith(color: t.textPrimary),
           ),
           SizedBox(height: s.xs),
           Wrap(
@@ -348,9 +370,18 @@ class _DetailItemTile extends StatelessWidget {
             runSpacing: s.xs,
             children: [
               _InlineMeta(label: 'Tipo', value: item.tipo.toUpperCase()),
-              _InlineMeta(label: 'Qtd', value: item.quantidade.toStringAsFixed(item.quantidade % 1 == 0 ? 0 : 2)),
+              _InlineMeta(
+                label: 'Qtd',
+                value: item.quantidade.toStringAsFixed(
+                  item.quantidade % 1 == 0 ? 0 : 2,
+                ),
+              ),
               _InlineMeta(label: 'Unit.', value: formatMoney(item.precoUnit)),
-              _InlineMeta(label: 'IVA', value: '${item.taxaAplicada.toStringAsFixed(item.taxaAplicada % 1 == 0 ? 0 : 2)}%'),
+              _InlineMeta(
+                label: 'IVA',
+                value:
+                    '${item.taxaAplicada.toStringAsFixed(item.taxaAplicada % 1 == 0 ? 0 : 2)}%',
+              ),
               _InlineMeta(label: 'Total', value: formatMoney(item.total)),
             ],
           ),
@@ -358,12 +389,14 @@ class _DetailItemTile extends StatelessWidget {
             SizedBox(height: s.xs),
             Text(
               [
-                if (item.codigoRegraFiscal != null) 'Regra: ${item.codigoRegraFiscal}',
-                if (item.motivoIsencao != null) 'Motivo isenção: ${item.motivoIsencao}',
+                if (item.codigoRegraFiscal != null)
+                  'Regra: ${item.codigoRegraFiscal}',
+                if (item.motivoIsencao != null)
+                  'Motivo isenção: ${item.motivoIsencao}',
               ].join(' | '),
-              style: Theme.of(context).textTheme.erpCaption.copyWith(
-                    color: t.textMuted,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.erpCaption.copyWith(color: t.textMuted),
             ),
           ],
           if (hasLotes) ...[
@@ -373,9 +406,9 @@ class _DetailItemTile extends StatelessWidget {
                 padding: EdgeInsets.only(bottom: s.xs),
                 child: Text(
                   'Lote ${lote.codigo} · ${lote.quantidade.toStringAsFixed(lote.quantidade % 1 == 0 ? 0 : 2)} un. · FEFO ${lote.ordemFefo}',
-                  style: Theme.of(context).textTheme.erpCaption.copyWith(
-                        color: t.textSecondary,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.erpCaption.copyWith(color: t.textSecondary),
                 ),
               ),
             ),
@@ -410,10 +443,9 @@ class _DetailPaymentTile extends StatelessWidget {
         children: [
           Text(
             payment.metodo,
-            style: Theme.of(context).textTheme.erpBody.copyWith(
-                  color: t.textPrimary,
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.erpBodyStrong.copyWith(color: t.textPrimary),
           ),
           SizedBox(height: s.xs),
           Wrap(
@@ -422,16 +454,19 @@ class _DetailPaymentTile extends StatelessWidget {
             children: [
               _InlineMeta(label: 'Valor', value: formatMoney(payment.valor)),
               _InlineMeta(label: 'Estado', value: payment.status),
-              _InlineMeta(label: 'Data', value: formatDateTime(payment.createdAt)),
+              _InlineMeta(
+                label: 'Data',
+                value: formatDateTime(payment.createdAt),
+              ),
             ],
           ),
           if (payment.referencia != null) ...[
             SizedBox(height: s.xs),
             Text(
               'Referência: ${payment.referencia}',
-              style: Theme.of(context).textTheme.erpCaption.copyWith(
-                    color: t.textMuted,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.erpCaption.copyWith(color: t.textMuted),
             ),
           ],
         ],
@@ -554,11 +589,7 @@ class _DetailActions extends ConsumerWidget {
       );
     }
 
-    return Wrap(
-      spacing: s.sm,
-      runSpacing: s.sm,
-      children: children,
-    );
+    return Wrap(spacing: s.sm, runSpacing: s.sm, children: children);
   }
 }
 
@@ -577,7 +608,10 @@ class _DetailLoadingState extends StatelessWidget {
           title: 'Dados da fatura',
           children: [
             DetailRow(label: 'Número', value: invoice.numero),
-            DetailRow(label: 'Cliente', value: invoice.cliente?.nome ?? 'Consumidor final'),
+            DetailRow(
+              label: 'Cliente',
+              value: invoice.cliente?.nome ?? 'Consumidor final',
+            ),
             const DetailHint(text: 'A carregar detalhe completo da fatura...'),
           ],
         ),
@@ -589,10 +623,7 @@ class _DetailLoadingState extends StatelessWidget {
 }
 
 class _DetailErrorState extends StatelessWidget {
-  const _DetailErrorState({
-    required this.message,
-    required this.onRetry,
-  });
+  const _DetailErrorState({required this.message, required this.onRetry});
 
   final String message;
   final VoidCallback onRetry;
@@ -606,9 +637,9 @@ class _DetailErrorState extends StatelessWidget {
       children: [
         Text(
           message,
-          style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
-                color: t.textPrimary,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.erpBodySecondary.copyWith(color: t.textPrimary),
         ),
         SizedBox(height: s.md),
         OutlinedButton.icon(
@@ -622,10 +653,7 @@ class _DetailErrorState extends StatelessWidget {
 }
 
 class _InlineMeta extends StatelessWidget {
-  const _InlineMeta({
-    required this.label,
-    required this.value,
-  });
+  const _InlineMeta({required this.label, required this.value});
 
   final String label;
   final String value;
@@ -635,17 +663,16 @@ class _InlineMeta extends StatelessWidget {
     final t = context.pharmaTokens;
     return RichText(
       text: TextSpan(
-        style: Theme.of(context).textTheme.erpCaption.copyWith(
-              color: t.textMuted,
-            ),
+        style: Theme.of(
+          context,
+        ).textTheme.erpCaption.copyWith(color: t.textMuted),
         children: [
           TextSpan(text: '$label: '),
           TextSpan(
             text: value,
-            style: Theme.of(context).textTheme.erpCaption.copyWith(
-                  color: t.textPrimary,
-                  fontWeight: FontWeight.w700,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.erpBodySecondary.copyWith(color: t.textPrimary),
           ),
         ],
       ),

@@ -3,16 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
-import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../../../stock/presentation/widgets/movimentacoes_pagination.dart';
-import '../../../presentation/widgets/regulatory_report_exports.dart';
 import '../../../regulatory/data/datasources/regulatory_remote_datasource.dart';
 
 class PsychotropicsBookPage extends ConsumerStatefulWidget {
@@ -23,8 +20,7 @@ class PsychotropicsBookPage extends ConsumerStatefulWidget {
       _PsychotropicsBookPageState();
 }
 
-class _PsychotropicsBookPageState
-    extends ConsumerState<PsychotropicsBookPage> {
+class _PsychotropicsBookPageState extends ConsumerState<PsychotropicsBookPage> {
   late final TextEditingController _searchController;
   Timer? _refreshTimer;
 
@@ -105,15 +101,6 @@ class _PsychotropicsBookPageState
     }
   }
 
-  Map<String, dynamic> _reportQuery() {
-    return {
-      if (_search.isNotEmpty) 'q': _search,
-      if (_tipoMovimento != null) 'tipoMovimento': _tipoMovimento,
-      'sortBy': _sortBy,
-      'sortDir': _sortDir,
-    };
-  }
-
   Future<void> _openDetail(String id) async {
     await AdaptiveNavigator.openPanel<void>(
       context: context,
@@ -140,7 +127,7 @@ class _PsychotropicsBookPageState
                       Expanded(
                         child: Text(
                           'Movimento ${data['numeroDocumento'] ?? data['id']}',
-                          style: Theme.of(context).textTheme.titleLarge,
+                          style: Theme.of(context).textTheme.erpCardTitle,
                         ),
                       ),
                       IconButton(
@@ -180,19 +167,17 @@ class _PsychotropicsBookPageState
                       const SizedBox(height: 16),
                       Text(
                         'Auditoria',
-                        style: Theme.of(context).textTheme.titleMedium,
+                        style: Theme.of(context).textTheme.erpBodyStrong,
                       ),
                       const SizedBox(height: 8),
-                      ...(data['auditLogs'] as List<dynamic>? ?? const [])
-                          .map(
-                            (item) => ListTile(
-                              dense: true,
-                              contentPadding: EdgeInsets.zero,
-                              title: Text(item['action']?.toString() ?? '—'),
-                              subtitle:
-                                  Text(item['createdAt']?.toString() ?? '—'),
-                            ),
-                          ),
+                      ...(data['auditLogs'] as List<dynamic>? ?? const []).map(
+                        (item) => ListTile(
+                          dense: true,
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(item['action']?.toString() ?? '—'),
+                          subtitle: Text(item['createdAt']?.toString() ?? '—'),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -213,12 +198,7 @@ class _PsychotropicsBookPageState
       subtitle:
           'Livro oficial de entradas e saídas com saldos, conformidade e auditoria regulatória.',
       tag: 'Regulatório',
-      actions: [
-        IconButton(
-          onPressed: _load,
-          icon: const Icon(Icons.refresh),
-        ),
-      ],
+      actions: [IconButton(onPressed: _load, icon: const Icon(Icons.refresh))],
       kpis: dash == null
           ? null
           : [
@@ -277,7 +257,10 @@ class _PsychotropicsBookPageState
                 DropdownMenuItem(value: null, child: Text('Todos')),
                 DropdownMenuItem(value: 'ENTRADA', child: Text('Entrada')),
                 DropdownMenuItem(value: 'SAIDA', child: Text('Saída')),
-                DropdownMenuItem(value: 'IMPORTACAO', child: Text('Importação')),
+                DropdownMenuItem(
+                  value: 'IMPORTACAO',
+                  child: Text('Importação'),
+                ),
               ],
               onChanged: (value) {
                 setState(() {
@@ -298,7 +281,9 @@ class _PsychotropicsBookPageState
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
               child: Text(
                 _error!,
-                style: Theme.of(context).textTheme.erpBody.copyWith(color: t.posDanger),
+                style: Theme.of(
+                  context,
+                ).textTheme.erpBody.copyWith(color: t.posDanger),
               ),
             ),
           Expanded(
@@ -329,7 +314,9 @@ class _PsychotropicsBookPageState
                             Text(item['produto']?['nome']?.toString() ?? '—'),
                           ),
                           DataCell(
-                            Text(item['lote']?['numeroLote']?.toString() ?? '—'),
+                            Text(
+                              item['lote']?['numeroLote']?.toString() ?? '—',
+                            ),
                           ),
                           DataCell(
                             _PsychBadge(
@@ -373,7 +360,9 @@ class _PsychotropicsBookPageState
           ),
           Text(
             'Total: $_total movimento(s)',
-            style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
+            style: Theme.of(
+              context,
+            ).textTheme.erpCaption.copyWith(color: t.textMuted),
           ),
         ],
       ),
@@ -382,10 +371,7 @@ class _PsychotropicsBookPageState
 }
 
 class _PsychInfo extends StatelessWidget {
-  const _PsychInfo({
-    required this.label,
-    required this.value,
-  });
+  const _PsychInfo({required this.label, required this.value});
 
   final String label;
   final String value;
@@ -404,11 +390,18 @@ class _PsychInfo extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted)),
+          Text(
+            label,
+            style: Theme.of(
+              context,
+            ).textTheme.erpCaption.copyWith(color: t.textMuted),
+          ),
           const SizedBox(height: 4),
           Text(
             value,
-            style: Theme.of(context).textTheme.erpLabel.copyWith(color: t.textPrimary),
+            style: Theme.of(
+              context,
+            ).textTheme.erpLabel.copyWith(color: t.textPrimary),
           ),
         ],
       ),

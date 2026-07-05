@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import 'app_colors.dart';
 import 'design_metrics.dart';
-import 'spacing_tokens.dart';
 
 enum DensityLevel {
   mobile,

@@ -6,15 +6,14 @@ import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
-import '../../../../../core/theme/spacing.dart';
 import '../../../../reports/presentation/controllers/report_controller.dart';
 import '../../../../../shared/navigation/adaptive_navigator.dart';
-import '../../../../../shared/responsive/pharma_screen_layout.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../../shared/widgets/feedback/module_data_states.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
+import '../../../../../shared/widgets/tables/table_typography.dart';
 import '../../../../stock/presentation/widgets/movimentacoes_pagination.dart';
 import '../../domain/entities/customer.dart';
 import '../providers/customer_list_provider.dart';
@@ -219,7 +218,9 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
             padding: EdgeInsets.only(bottom: s.sm),
             child: Text(
               state.errorMessage!,
-              style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.posWarning),
+              style: Theme.of(
+                context,
+              ).textTheme.erpCaption.copyWith(color: t.posWarning),
             ),
           ),
         Expanded(
@@ -236,12 +237,7 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
                 DataColumn(
                   label: Text(
                     label.toUpperCase(),
-                    style: Theme.of(context).textTheme.erpOverline.copyWith(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 1.2,
-                      color: t.textMuted,
-                    ),
+                    style: TableTypography.header(context),
                   ),
                 ),
             ],
@@ -252,36 +248,46 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
                 onSelectChanged: (_) => _openDetails(context, c),
                 cells: [
                   DataCell(
-                    Text(
-                      c.nome,
-                      style: Theme.of(context).textTheme.erpTabLabel.copyWith(color: t.textPrimary, fontWeight: FontWeight.w700),
-                    ),
+                    Text(c.nome, style: TableTypography.primary(context)),
                   ),
                   DataCell(
                     Text(
                       _tipoLabel(c.tipo),
-                      style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textSecondary),
+                      style: Theme.of(context).textTheme.erpBodySecondary
+                          .copyWith(color: t.textSecondary),
                     ),
                   ),
                   DataCell(
-                    Text(c.nuit ?? '—', style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted)),
+                    Text(
+                      c.nuit ?? '—',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.erpCaption.copyWith(color: t.textMuted),
+                    ),
                   ),
                   DataCell(
                     Text(
                       '${_currency.format(c.saldoAtual)} MT',
-                      style: Theme.of(context).textTheme.erpTabLabel.copyWith(color: c.saldoAtual > 0 ? t.posWarning : t.brandGreen, fontWeight: FontWeight.w700),
+                      style: TableTypography.primary(
+                        context,
+                        color: c.saldoAtual > 0 ? t.posWarning : t.brandGreen,
+                      ),
                     ),
                   ),
                   DataCell(
                     Text(
                       '${c.faturaCount}',
-                      style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.brandBlue),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.erpBodySecondary.copyWith(color: t.brandBlue),
                     ),
                   ),
                   DataCell(
                     Text(
                       dateFmt.format(c.createdAt),
-                      style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.erpCaption.copyWith(color: t.textMuted),
                     ),
                   ),
                 ],

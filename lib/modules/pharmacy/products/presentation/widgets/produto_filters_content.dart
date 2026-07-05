@@ -63,9 +63,7 @@ class _ProdutoFiltersContentState extends State<ProdutoFiltersContent> {
 
   @override
   Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
     final s = context.spacing;
-    final theme = Theme.of(context);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -92,10 +90,7 @@ class _ProdutoFiltersContentState extends State<ProdutoFiltersContent> {
             ...widget.categories.map(
               (cat) => DropdownMenuItem<String?>(
                 value: cat.id,
-                child: Text(
-                  cat.nome,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                child: Text(cat.nome, overflow: TextOverflow.ellipsis),
               ),
             ),
           ],

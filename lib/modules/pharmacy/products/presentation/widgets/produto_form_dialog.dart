@@ -403,7 +403,7 @@ class _ProdutoFormDialogState extends ConsumerState<ProdutoFormDialog> {
             ),
             child: LinearProgressIndicator(),
           ),
-          error: (_, __) => Column(
+          error: (_, _) => Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               DropdownButtonFormField<String?>(

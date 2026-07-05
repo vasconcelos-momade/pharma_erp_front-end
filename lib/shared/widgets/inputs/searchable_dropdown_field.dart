@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/theme/extensions.dart';
-import '../../../core/theme/spacing.dart';
 import '../../navigation/adaptive_navigator.dart';
 
 /// Dropdown com pesquisa integrada (demo UX — ligar a async repository depois).
@@ -47,7 +46,7 @@ class _SearchableDropdownFieldState<T> extends State<SearchableDropdownField<T>>
       children: [
         Text(
           widget.label,
-          style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
+          style: Theme.of(context).textTheme.erpSelectLabel.copyWith(color: t.textSecondary),
         ),
         SizedBox(height: s.sm),
         InkWell(
@@ -60,7 +59,7 @@ class _SearchableDropdownFieldState<T> extends State<SearchableDropdownField<T>>
                   backgroundColor: t.card,
                   title: Text(
                     'Seleccionar',
-                    style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textPrimary),
+                    style: Theme.of(context).textTheme.erpBodyStrong.copyWith(color: t.textPrimary),
                   ),
                   content: SizedBox(
                     width: widths.formMax * 0.65,
@@ -95,7 +94,9 @@ class _SearchableDropdownFieldState<T> extends State<SearchableDropdownField<T>>
                                   return ListTile(
                                     title: Text(
                                       widget.display(item),
-                                      style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textPrimary),
+                                      style: Theme.of(context).textTheme.erpSelectValue.copyWith(
+                                            color: t.textPrimary,
+                                          ),
                                     ),
                                     onTap: () => AdaptiveNavigator.complete(
                                       panelContext,
@@ -125,9 +126,8 @@ class _SearchableDropdownFieldState<T> extends State<SearchableDropdownField<T>>
             ),
             child: Text(
               _selected == null ? 'Toque para escolher' : widget.display(_selected as T),
-              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
+              style: Theme.of(context).textTheme.erpSelectValue.copyWith(
                     color: _selected == null ? t.textMuted : t.textPrimary,
-                    fontWeight: Theme.of(context).textTheme.erpLabel.fontWeight,
                   ),
             ),
           ),

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../../../../core/theme/design_tokens.dart';
 import '../../../../../../core/theme/extensions.dart';
-import '../../../../../../core/theme/spacing.dart';
 
 /// Secção de regulação com ícones de confirmação (✓ / ✗).
 class RegulationCard extends StatelessWidget {

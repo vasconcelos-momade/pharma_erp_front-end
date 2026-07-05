@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../../../../core/theme/design_tokens.dart';
 import '../../../../../../core/theme/extensions.dart';
-import '../../../../../../core/theme/spacing.dart';
 
 /// Agrupa conteúdo de uma secção com título e card M3.
 class SectionCard extends StatelessWidget {

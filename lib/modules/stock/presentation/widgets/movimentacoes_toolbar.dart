@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/design_tokens.dart';
-import '../../../../core/theme/spacing.dart';
+import '../../../../core/theme/extensions.dart';
 import '../../../../shared/responsive/pharma_screen_layout.dart';
 import '../../domain/entities/movimentacao.dart';
 import '../providers/movimentacao_provider.dart';
@@ -245,9 +245,7 @@ class MovimentacoesToolbar extends ConsumerWidget {
             alignment: Alignment.centerLeft,
             child: Text(
               'Intervalo activo: ${_formatDateRange(query.dataInicio!, query.dataFim!)}',
-              style: Theme.of(
-                context,
-              ).textTheme.bodySmall?.copyWith(color: t.textMuted),
+              style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
             ),
           ),
         ],

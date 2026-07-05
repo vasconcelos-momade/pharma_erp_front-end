@@ -5,7 +5,6 @@ import '../../../../core/errors/api_failure.dart';
 import '../../../../core/security/secure_storage_service.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/extensions.dart';
-import '../../../../core/theme/spacing.dart';
 import '../../../../platform/printing/thermal/printer_connection.dart';
 import '../../../../platform/printing/thermal/printer_discovery.dart';
 import '../../../../shared/responsive/responsive_builder.dart';

@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
-import '../../../../../core/theme/spacing.dart';
+import '../../../../../core/theme/extensions.dart';
 
 class ProdutoSearchBar extends StatefulWidget {
   const ProdutoSearchBar({
@@ -69,10 +69,10 @@ class _ProdutoSearchBarState extends State<ProdutoSearchBar> {
       child: TextField(
         controller: _controller,
         onChanged: _onChanged,
-        style: theme.textTheme.bodyLarge?.copyWith(color: t.textPrimary),
+        style: theme.textTheme.erpBody.copyWith(color: t.textPrimary),
         decoration: InputDecoration(
           hintText: 'Pesquisar produto...',
-          hintStyle: theme.textTheme.bodyLarge?.copyWith(color: t.textMuted),
+          hintStyle: theme.textTheme.erpBody.copyWith(color: t.textMuted),
           prefixIcon: Icon(Icons.search, color: t.textMuted, size: t.iconSm),
           suffixIcon: _controller.text.isNotEmpty
               ? IconButton(

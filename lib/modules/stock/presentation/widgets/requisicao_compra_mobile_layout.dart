@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/extensions.dart';
-import '../../../../core/theme/spacing.dart';
 import '../../domain/entities/requisicao.dart';
 import '../providers/requisicao_provider.dart';
 import 'requisicao_compra_right_pane.dart';

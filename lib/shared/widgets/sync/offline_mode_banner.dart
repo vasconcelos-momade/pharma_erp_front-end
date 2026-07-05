@@ -26,15 +26,18 @@ class OfflineModeBanner extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Icon(Icons.cloud_off_outlined, color: t.posWarning, size: t.iconSm),
+              Icon(
+                Icons.cloud_off_outlined,
+                color: t.posWarning,
+                size: t.iconSm,
+              ),
               SizedBox(width: s.md),
               Expanded(
                 child: Text(
                   message,
-                  style: Theme.of(context).textTheme.erpCaption.copyWith(
-                        color: t.textPrimary,
-                        fontWeight: FontWeight.w600,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.erpBodyStrong.copyWith(color: t.textPrimary),
                 ),
               ),
             ],

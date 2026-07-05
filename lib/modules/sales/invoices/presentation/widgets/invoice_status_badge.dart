@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
-import '../../../../../core/theme/spacing.dart';
 
 class InvoiceStatusBadge extends StatelessWidget {
   const InvoiceStatusBadge({super.key, required this.status});
@@ -28,11 +27,7 @@ class InvoiceStatusBadge extends StatelessWidget {
       ),
       child: Text(
         normalized,
-        style: Theme.of(context).textTheme.erpOverline.copyWith(
-              color: fg,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.5,
-            ),
+        style: Theme.of(context).textTheme.erpOverline.copyWith(color: fg),
       ),
     );
   }
@@ -55,10 +50,9 @@ class MetaChip extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: Theme.of(context).textTheme.erpOverline.copyWith(
-              color: t.textSecondary,
-              fontWeight: FontWeight.w700,
-            ),
+        style: Theme.of(
+          context,
+        ).textTheme.erpOverline.copyWith(color: t.textSecondary),
       ),
     );
   }

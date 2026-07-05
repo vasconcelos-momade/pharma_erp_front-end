@@ -31,16 +31,24 @@ class ProdutoCategoriaFilterDropdown extends ConsumerWidget {
         loading: () => DropdownButtonFormField<String?>(
           initialValue: value,
           decoration: _decoration(context, t, 'Categoria'),
-          items: const [
-            DropdownMenuItem<String?>(value: null, child: Text('Todas')),
+          style: Theme.of(context).textTheme.erpSelectValue.copyWith(color: t.textPrimary),
+          items: [
+            DropdownMenuItem<String?>(
+              value: null,
+              child: Text('Todas', style: Theme.of(context).textTheme.erpSelectValue),
+            ),
           ],
           onChanged: null,
         ),
-        error: (_, __) => DropdownButtonFormField<String?>(
+        error: (_, _) => DropdownButtonFormField<String?>(
           initialValue: value,
           decoration: _decoration(context, t, 'Categoria'),
-          items: const [
-            DropdownMenuItem<String?>(value: null, child: Text('Todas')),
+          style: Theme.of(context).textTheme.erpSelectValue.copyWith(color: t.textPrimary),
+          items: [
+            DropdownMenuItem<String?>(
+              value: null,
+              child: Text('Todas', style: Theme.of(context).textTheme.erpSelectValue),
+            ),
           ],
           onChanged: enabled ? onChanged : null,
 
@@ -50,10 +58,11 @@ class ProdutoCategoriaFilterDropdown extends ConsumerWidget {
               ? value
               : null,
           decoration: _decoration(context, t, 'Categoria'),
+          style: Theme.of(context).textTheme.erpSelectValue.copyWith(color: t.textPrimary),
           items: [
-            const DropdownMenuItem<String?>(
+            DropdownMenuItem<String?>(
               value: null,
-              child: Text('Todas'),
+              child: Text('Todas', style: Theme.of(context).textTheme.erpSelectValue),
             ),
             ...categories.map(
               (cat) => DropdownMenuItem<String?>(
@@ -61,6 +70,7 @@ class ProdutoCategoriaFilterDropdown extends ConsumerWidget {
                 child: Text(
                   cat.nome,
                   overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.erpSelectValue,
                 ),
               ),
             ),
@@ -78,6 +88,9 @@ class ProdutoCategoriaFilterDropdown extends ConsumerWidget {
   ) {
     return InputDecoration(
       labelText: label,
+      labelStyle: Theme.of(context).textTheme.erpSelectLabel.copyWith(
+            color: t.textSecondary,
+          ),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(t.radiusMd),
         borderSide: BorderSide(color: t.border),

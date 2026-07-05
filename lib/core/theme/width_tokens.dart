@@ -2,7 +2,6 @@ import 'dart:ui' show lerpDouble;
 
 import 'package:flutter/material.dart';
 
-import 'breakpoints.dart';
 import 'design_metrics.dart';
 
 /// Larguras máximas por contexto de layout (conteúdo, formulários, diálogos).

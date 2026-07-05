@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/design_tokens.dart';
+import '../../../core/theme/extensions.dart';
 
 /// Campo de pesquisa padronizado para módulos enterprise (mobile e desktop).
 class EnterpriseModuleSearchBar extends StatefulWidget {
@@ -65,10 +66,10 @@ class _EnterpriseModuleSearchBarState extends State<EnterpriseModuleSearchBar> {
       enabled: widget.enabled,
       onSubmitted: widget.onSubmitted,
       onChanged: widget.onChanged,
-      style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: t.textPrimary),
+      style: Theme.of(context).textTheme.erpBody.copyWith(color: t.textPrimary),
       decoration: InputDecoration(
         hintText: widget.hintText,
-        hintStyle: Theme.of(context).textTheme.bodyLarge?.copyWith(color: t.textMuted),
+        hintStyle: Theme.of(context).textTheme.erpBody.copyWith(color: t.textMuted),
         prefixIcon: Icon(Icons.search_rounded, color: t.textMuted, size: t.iconSm),
         suffixIcon: widget.controller.text.isNotEmpty
             ? IconButton(

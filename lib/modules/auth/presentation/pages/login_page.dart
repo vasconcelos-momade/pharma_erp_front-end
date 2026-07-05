@@ -10,7 +10,6 @@ import '../../../../core/network/connectivity/connection_mode.dart';
 import '../../../../core/network/connectivity/connection_status.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/extensions.dart';
-import '../../../../core/theme/spacing.dart';
 import '../../../../shared/layouts/auth_layout.dart';
 import '../../../../shared/responsive/pharma_screen_layout.dart';
 import '../../../../shared/widgets/feedback/pharma_feedback.dart';

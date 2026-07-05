@@ -95,7 +95,7 @@ class PosLayout extends ConsumerWidget {
                             'Pharma ERP — PDV',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.erpTabLabel,
+                            style: Theme.of(context).textTheme.erpAppName,
                           ),
                           if (!narrow)
                             Text(
@@ -138,7 +138,9 @@ class PosLayout extends ConsumerWidget {
                                   : Icon(caixaIcon, color: caixaColor),
                               label: Text(
                                 caixaLabel,
-                                style: Theme.of(context).textTheme.erpTabLabel.copyWith(color: caixaColor),
+                                style: Theme.of(context).textTheme.erpButtonSecondary.copyWith(
+                                      color: caixaColor,
+                                    ),
                               ),
                               style: OutlinedButton.styleFrom(
                                 side: BorderSide(

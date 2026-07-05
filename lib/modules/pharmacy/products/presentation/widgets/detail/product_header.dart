@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../../../../core/theme/design_tokens.dart';
 import '../../../../../../core/theme/extensions.dart';
-import '../../../../../../core/theme/spacing.dart';
 import '../../../domain/entities/product.dart';
 import '../produto_categoria_chip.dart';
 import '../produto_regulacao_badges.dart';

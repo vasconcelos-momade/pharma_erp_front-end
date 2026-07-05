@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../core/theme/design_tokens.dart';
-import '../../../../../core/theme/extensions.dart';
 import '../../../../../shared/responsive/pharma_screen_layout.dart';
 import '../../../../../shared/widgets/layout/enterprise_mobile_toolbar.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_search_bar.dart';

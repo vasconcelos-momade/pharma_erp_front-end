@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/design_metrics.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/theme/extensions.dart';
-import '../../../core/theme/radius.dart';
 
 /// Divisor horizontal padrão para listas operacionais mobile (1dp, margem 12–16).
 class EnterpriseListDivider extends StatelessWidget {
@@ -120,7 +119,7 @@ class EnterpriseListCard extends StatelessWidget {
                               Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  if (chip != null) chip!,
+                                  ?chip,
                                   if (chip != null &&
                                       (actions != null || trailing != null || isBusy))
                                     SizedBox(width: s.xxs),
@@ -134,8 +133,7 @@ class EnterpriseListCard extends StatelessWidget {
                                     )
                                   else if (actions != null)
                                     actions!
-                                  else if (trailing != null)
-                                    trailing!,
+                                  else ?trailing,
                                 ],
                               ),
                             if (trailingMeta != null) ...[

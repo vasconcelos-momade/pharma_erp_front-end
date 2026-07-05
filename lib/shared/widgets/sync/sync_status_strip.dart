@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/design_metrics.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/theme/extensions.dart';
 
