@@ -68,6 +68,16 @@ class SessionAccessNotifier extends Notifier<SessionAccessState> {
         return;
       }
 
+      final cached = next.session?.permissions;
+      if (cached != null) {
+        _requestId++;
+        state = SessionAccessState(
+          permissions: cached,
+          viewState: SessionAccessViewState.loaded,
+        );
+        return;
+      }
+
       final sessionChanged =
           previous?.session?.tenantId != next.session?.tenantId ||
           previous?.session?.branchId != next.session?.branchId ||
@@ -77,12 +87,15 @@ class SessionAccessNotifier extends Notifier<SessionAccessState> {
       }
     });
 
-    final authReady = ref.watch(
-      authSessionProvider.select(
-        (session) => !session.isBootstrapping && session.hasTenantContext,
-      ),
-    );
-    if (authReady) {
+    final auth = ref.watch(authSessionProvider);
+    if (!auth.isBootstrapping && auth.hasTenantContext) {
+      final cached = auth.session?.permissions;
+      if (cached != null) {
+        return SessionAccessState(
+          permissions: cached,
+          viewState: SessionAccessViewState.loaded,
+        );
+      }
       Future.microtask(refresh);
     }
 

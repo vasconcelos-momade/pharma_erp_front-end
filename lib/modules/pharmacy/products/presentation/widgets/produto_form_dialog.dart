@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/theme/design_metrics.dart';
 import '../../../../../core/theme/extensions.dart';
+import '../../../../../core/theme/pharma_surface.dart';
 import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
 import '../../../categories/presentation/providers/category_provider.dart';
@@ -10,6 +11,7 @@ import '../../domain/entities/product.dart';
 import '../../domain/entities/product_tax_rule.dart';
 import '../../domain/produto_dispensacao.dart';
 import '../providers/product_provider.dart';
+import '../../../../../app/providers/auth_session_notifier.dart';
 
 class ProdutoFormDialogResult {
   const ProdutoFormDialogResult({
@@ -238,9 +240,50 @@ class _ProdutoFormDialogState extends ConsumerState<ProdutoFormDialog> {
     ];
   }
 
+  Widget _dropdownLoading(String label) {
+    return InputDecorator(
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+      ),
+      child: const LinearProgressIndicator(),
+    );
+  }
+
+  Widget _dropdownError(String label, String message) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        PharmaInstantDropdown<String?>(
+          label: label,
+          value: null,
+          items: const [
+            DropdownMenuItem<String?>(
+              value: null,
+              child: Text('—'),
+            ),
+          ],
+          onChanged: null,
+        ),
+        SizedBox(height: context.spacing.xs),
+        Text(
+          message,
+          style: Theme.of(context).textTheme.erpBody.copyWith(
+                color: Theme.of(context).colorScheme.error,
+              ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = context.spacing;
+    final authReady = ref.watch(
+      authSessionProvider.select(
+        (session) => !session.isBootstrapping && session.hasTenantContext,
+      ),
+    );
     final taxRulesAsync = ref.watch(productTaxRulesProvider);
     final categoriesAsync = ref.watch(activeCategoriesProvider);
     final taxRules = taxRulesAsync.maybeWhen(
@@ -269,56 +312,45 @@ class _ProdutoFormDialogState extends ConsumerState<ProdutoFormDialog> {
           },
         ),
         SizedBox(height: s.md),
-        categoriesAsync.when(
-          data: (categories) {
-            final resolvedId = _categoriaId != null &&
-                    categories.any((c) => c.id == _categoriaId)
-                ? _categoriaId
-                : (categories.isNotEmpty ? categories.first.id : null);
-            if (_categoriaId == null && resolvedId != null) {
-              _categoriaId = resolvedId;
-            }
-            return DropdownButtonFormField<String>(
-              key: ValueKey('form-categoria-$resolvedId'),
-              initialValue: resolvedId,
-              decoration: const InputDecoration(
-                labelText: 'Categoria *',
-                border: OutlineInputBorder(),
-              ),
-              items: categories
-                  .map(
-                    (c) => DropdownMenuItem(
-                      value: c.id,
-                      child: Text(c.nome),
-                    ),
-                  )
-                  .toList(growable: false),
-              onChanged: categories.isEmpty
-                  ? null
-                  : (value) => setState(() => _categoriaId = value),
-              validator: (value) {
-                if (value == null || value.isEmpty) {
-                  return 'Categoria é obrigatória';
-                }
-                return null;
-              },
-            );
-          },
-          loading: () => const InputDecorator(
-            decoration: InputDecoration(
-              labelText: 'Categoria *',
-              border: OutlineInputBorder(),
-            ),
-            child: LinearProgressIndicator(),
+        if (!authReady || categoriesAsync.isLoading)
+          _dropdownLoading('Categoria *')
+        else if (categoriesAsync.hasError)
+          _dropdownError(
+            'Categoria *',
+            'Não foi possível carregar categorias',
+          )
+        else ...[
+          Builder(
+            builder: (context) {
+              final categories = categoriesAsync.requireValue;
+              final resolvedId = _categoriaId != null &&
+                      categories.any((c) => c.id == _categoriaId)
+                  ? _categoriaId
+                  : (categories.isNotEmpty ? categories.first.id : null);
+              if (_categoriaId == null && resolvedId != null) {
+                WidgetsBinding.instance.addPostFrameCallback((_) {
+                  if (!mounted) return;
+                  setState(() => _categoriaId = resolvedId);
+                });
+              }
+              return PharmaInstantDropdown<String?>(
+                label: 'Categoria *',
+                value: resolvedId,
+                items: categories
+                    .map(
+                      (c) => DropdownMenuItem<String?>(
+                        value: c.id,
+                        child: Text(c.nome),
+                      ),
+                    )
+                    .toList(growable: false),
+                onChanged: categories.isEmpty
+                    ? null
+                    : (value) => setState(() => _categoriaId = value),
+              );
+            },
           ),
-          error: (_, _) => const InputDecorator(
-            decoration: InputDecoration(
-              labelText: 'Categoria *',
-              border: OutlineInputBorder(),
-            ),
-            child: Text('Não foi possível carregar categorias'),
-          ),
-        ),
+        ],
         SizedBox(height: s.md),
         TextFormField(
           controller: _substanciaController,
@@ -381,70 +413,28 @@ class _ProdutoFormDialogState extends ConsumerState<ProdutoFormDialog> {
           },
         ),
         SizedBox(height: s.md),
-        taxRulesAsync.when(
-          data: (rules) => DropdownButtonFormField<String?>(
-            key: ValueKey(
-              'tax-rule-$taxRuleDropdownValue-${rules.length}',
-            ),
-            initialValue: _resolvedTaxRuleDropdownValue(rules),
-            decoration: const InputDecoration(
-              labelText: 'Regra fiscal (IVA)',
-              border: OutlineInputBorder(),
-            ),
-            items: _taxRuleDropdownItems(rules),
-            onChanged: (value) {
-              setState(() => _selectedTaxRuleId = value);
-            },
+        if (!authReady || taxRulesAsync.isLoading)
+          _dropdownLoading('Regra fiscal (IVA)')
+        else if (taxRulesAsync.hasError)
+          _dropdownError(
+            'Regra fiscal (IVA)',
+            'Não foi possível carregar as taxas de IVA.',
+          )
+        else
+          PharmaInstantDropdown<String?>(
+            label: 'Regra fiscal (IVA)',
+            value: taxRuleDropdownValue,
+            items: _taxRuleDropdownItems(taxRules),
+            onChanged: (value) => setState(() => _selectedTaxRuleId = value),
           ),
-          loading: () => const InputDecorator(
-            decoration: InputDecoration(
-              labelText: 'Regra fiscal (IVA)',
-              border: OutlineInputBorder(),
-            ),
-            child: LinearProgressIndicator(),
-          ),
-          error: (_, _) => Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              DropdownButtonFormField<String?>(
-                key: const ValueKey('tax-rule-error'),
-                initialValue: null,
-                decoration: const InputDecoration(
-                  labelText: 'Regra fiscal (IVA)',
-                  border: OutlineInputBorder(),
-                ),
-                items: const [
-                  DropdownMenuItem<String?>(
-                    value: null,
-                    child: Text('Sem regra fiscal'),
-                  ),
-                ],
-                onChanged: (value) {
-                  setState(() => _selectedTaxRuleId = value);
-                },
-              ),
-              SizedBox(height: s.xs),
-              Text(
-                'Não foi possível carregar as taxas de IVA.',
-                style: Theme.of(context).textTheme.erpBody.copyWith(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-              ),
-            ],
-          ),
-        ),
         SizedBox(height: s.lg),
         _sectionTitle(context, 'Regulação'),
-        DropdownButtonFormField<String>(
-          key: ValueKey('tipo-dispensacao-$tipoDispensacaoValue'),
-          initialValue: tipoDispensacaoValue,
-          decoration: const InputDecoration(
-            labelText: 'Tipo de dispensação *',
-            border: OutlineInputBorder(),
-          ),
+        PharmaInstantDropdown<String>(
+          label: 'Tipo de dispensação *',
+          value: tipoDispensacaoValue,
           items: produtoTipoDispensacaoValues
               .map(
-                (tipo) => DropdownMenuItem(
+                (tipo) => DropdownMenuItem<String>(
                   value: tipo,
                   child: Text(produtoTipoDispensacaoLabel(tipo)),
                 ),

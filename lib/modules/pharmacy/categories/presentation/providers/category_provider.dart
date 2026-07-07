@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../../app/providers/auth_session_notifier.dart';
 import '../../../../../core/errors/api_failure.dart';
 import '../../data/datasources/category_remote_datasource.dart';
 import '../../domain/entities/category.dart';
@@ -10,7 +11,7 @@ class CategoryListState {
   const CategoryListState({
     this.items = const <Category>[],
     this.query = '',
-    this.includeInactive = false,
+    this.includeInactive = true,
     this.page = 1,
     this.pageSize = 20,
     this.hasMore = false,
@@ -134,6 +135,17 @@ final categoryListProvider =
 );
 
 final activeCategoriesProvider = FutureProvider.autoDispose<List<Category>>((ref) async {
-  final models = await ref.watch(categoryRemoteDataSourceProvider).listActive();
+  final tenantId = ref.watch(
+    authSessionProvider.select(
+      (session) => !session.isBootstrapping && session.hasTenantContext
+          ? session.session?.tenantId
+          : null,
+    ),
+  );
+  if (tenantId == null) {
+    return const <Category>[];
+  }
+
+  final models = await ref.read(categoryRemoteDataSourceProvider).listActive();
   return models.map((m) => m.toEntity()).toList(growable: false);
 });

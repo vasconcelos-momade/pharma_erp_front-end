@@ -86,7 +86,7 @@ class _ProdutoToolbarState extends State<ProdutoToolbar> {
     );
 
     final categoryDropdown = DropdownButtonFormField<String?>(
-      key: ValueKey('produto-categoria-${state.categoriaId}'),
+      key: ValueKey('produto-categoria-${state.categoriaId}-${widget.categories.length}'),
       isExpanded: true,
       initialValue: state.categoriaId,
       decoration: enterpriseDropdownDecoration(context, 'Categoria'),

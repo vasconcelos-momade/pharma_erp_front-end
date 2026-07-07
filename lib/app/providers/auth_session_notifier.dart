@@ -1,7 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../modules/auth/domain/entities/auth_session.dart';
-import '../../modules/auth/domain/entities/tenant_access.dart';
 import '../../core/errors/api_failure.dart';
 import '../../modules/auth/data/repositories/auth_repository_impl.dart';
 
@@ -21,6 +20,9 @@ class AuthSessionState {
 
   bool get isAuthenticated => session != null;
   bool get hasTenantContext => session?.hasTenantContext ?? false;
+  bool get isPlatformSession => session?.isPlatformSession ?? false;
+  bool get isSuperAdmin => session?.isSuperAdmin ?? false;
+  bool get isTenantRole => session?.isTenantRole ?? false;
 
   AuthSessionState copyWith({
     bool? isBootstrapping,
@@ -63,31 +65,40 @@ class AuthSessionNotifier extends Notifier<AuthSessionState> {
     }
   }
 
-  Future<bool> login({required String email, required String password}) async {
+  /// Login único em `/login`. Devolve path de redirect ou null em falha.
+  Future<String?> login({
+    required String email,
+    required String password,
+  }) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       final repo = ref.read(authRepositoryProvider);
-      final session = await repo.login(email: email.trim(), password: password);
-      state = AuthSessionState(session: session);
+      final result = await repo.login(email: email.trim(), password: password);
+      var session = result.session;
 
-      if (_shouldAutoSelectTenant(session.tenants)) {
-        final t = session.tenants.first;
-        final b = t.branches.first;
-        await selectTenantBranch(tenantId: t.id, branchId: b.id);
+      if (session.isSuperAdmin) {
+        session = session.copyWith(clearTenant: true, clearPermissions: true);
+        await repo.saveSession(session);
+        state = AuthSessionState(session: session);
+        return result.redirectTo;
       }
-      return true;
+
+      if (session.hasTenantContext) {
+        session = session.copyWith(permissions: result.permissions);
+        await repo.saveSession(session);
+        state = AuthSessionState(session: session);
+        return result.redirectTo;
+      }
+
+      state = AuthSessionState(session: session);
+      return result.redirectTo;
     } on ApiFailure catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.message);
-      return false;
+      return null;
     } catch (e) {
       state = state.copyWith(isLoading: false, errorMessage: e.toString());
-      return false;
+      return null;
     }
-  }
-
-  bool _shouldAutoSelectTenant(List<TenantAccess> tenants) {
-    if (tenants.length != 1) return false;
-    return tenants.first.branches.length == 1;
   }
 
   Future<void> selectTenantBranch({
@@ -97,7 +108,11 @@ class AuthSessionNotifier extends Notifier<AuthSessionState> {
     final current = state.session;
     if (current == null) return;
 
-    final updated = current.copyWith(tenantId: tenantId, branchId: branchId);
+    final updated = current.copyWith(
+      tenantId: tenantId,
+      branchId: branchId,
+      clearPermissions: true,
+    );
     await ref.read(authRepositoryProvider).persistTenantContext(
           tenantId: tenantId,
           branchId: branchId,
@@ -114,7 +129,6 @@ class AuthSessionNotifier extends Notifier<AuthSessionState> {
 final authSessionProvider =
     NotifierProvider<AuthSessionNotifier, AuthSessionState>(AuthSessionNotifier.new);
 
-/// Compatibilidade com código que esperava `bool` autenticado.
 final isAuthenticatedProvider = Provider<bool>(
-  (ref) => ref.watch(authSessionProvider).hasTenantContext,
+  (ref) => ref.watch(authSessionProvider).isAuthenticated,
 );

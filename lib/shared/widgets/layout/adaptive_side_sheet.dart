@@ -162,9 +162,13 @@ class _AdaptiveSideSheetOverlayState<T> extends State<_AdaptiveSideSheetOverlay<
                             ),
                             boxShadow: AppShadows.dialog(context),
                           ),
-                          child: _AdaptiveSideSheetScope(
-                            close: ([result]) => _close(result as T?),
-                            child: widget.child,
+                          child: Navigator(
+                            onGenerateRoute: (_) => MaterialPageRoute<void>(
+                              builder: (_) => _AdaptiveSideSheetScope(
+                                close: ([result]) => _close(result as T?),
+                                child: widget.child,
+                              ),
+                            ),
                           ),
                         ),
                       ),

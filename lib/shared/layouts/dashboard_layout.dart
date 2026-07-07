@@ -20,9 +20,18 @@ import 'tablet_layout.dart';
 
 /// Shell enterprise: sidebar animada, topbar, breadcrumbs, sync e adaptação tablet/mobile.
 class DashboardLayout extends ConsumerStatefulWidget {
-  const DashboardLayout({super.key, required this.child});
+  const DashboardLayout({
+    super.key,
+    required this.child,
+    this.navItemsOverride,
+    this.appTitle = 'Pharma ERP',
+    this.showSyncStrip = true,
+  });
 
   final Widget child;
+  final List<AppNavItem>? navItemsOverride;
+  final String appTitle;
+  final bool showSyncStrip;
 
   @override
   ConsumerState<DashboardLayout> createState() => _DashboardLayoutState();
@@ -37,15 +46,13 @@ class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
     final t = context.pharmaTokens;
     final location = GoRouterState.of(context).uri.path;
     final access = ref.watch(sessionAccessProvider);
-    final navItems = visibleNavItemsForAccess(access);
+    final navItems =
+        widget.navItemsOverride ?? visibleNavItemsForAccess(access);
     final bp = ResponsiveBreakpoints.of(context);
     final isDesktop = bp.largerOrEqualTo(DESKTOP);
     final isTablet = bp.equals(TABLET);
     final isMobile = PharmaScreenLayout.isMobile(context);
-
-    if (!isDesktop) {
-      _sidebarExpanded = false;
-    }
+    final sidebarExpanded = isDesktop && _sidebarExpanded;
 
     Widget body = Padding(
       padding: PharmaScreenLayout.pagePadding(context),
@@ -74,7 +81,7 @@ class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
             _Sidebar(
               location: location,
               navItems: navItems,
-              expanded: _sidebarExpanded,
+              expanded: sidebarExpanded,
               onToggle: () =>
                   setState(() => _sidebarExpanded = !_sidebarExpanded),
               onLogout: () => _logout(context),
@@ -199,8 +206,9 @@ class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
   }
 
   void _logout(BuildContext context) {
-    ref.read(authSessionProvider.notifier).signOut();
-    context.go(AppRoutePaths.login);
+    ref.read(authSessionProvider.notifier).signOut().then((_) {
+      if (context.mounted) context.go(AppRoutePaths.login);
+    });
   }
 }
 
@@ -448,11 +456,12 @@ class _Sidebar extends StatelessWidget {
     final w = expanded
         ? AppDimensions.sidebarExpanded
         : AppDimensions.sidebarCollapsed;
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 280),
-      curve: Curves.easeOutCubic,
-      width: w,
-      child: DecoratedBox(
+    return ClipRect(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 280),
+        curve: Curves.easeOutCubic,
+        width: w,
+        child: DecoratedBox(
         decoration: BoxDecoration(
           color: t.bgSecondary,
           border: Border(
@@ -679,6 +688,7 @@ class _Sidebar extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }

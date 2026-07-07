@@ -137,6 +137,8 @@ abstract final class ApiConstants {
 
   static const tenantClientes = '/tenant/clientes';
   static const tenantClientesDashboard = '/tenant/clientes/dashboard';
+  static const tenantCotacoes = '/tenant/cotacoes';
+  static String tenantCotacao(String cotacaoId) => '/tenant/cotacoes/$cotacaoId';
   static String tenantCliente(String clienteId) => '/tenant/clientes/$clienteId';
   static String tenantClienteFaturas(String clienteId) =>
       '/tenant/clientes/$clienteId/faturas';

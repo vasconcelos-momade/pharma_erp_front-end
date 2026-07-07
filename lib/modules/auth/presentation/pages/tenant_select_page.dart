@@ -29,6 +29,12 @@ class _TenantSelectPageState extends ConsumerState<TenantSelectPage> {
     super.initState();
     final session = ref.read(authSessionProvider).session;
     if (session != null) {
+      if (session.isSuperAdmin) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) context.go(AppRoutePaths.platformDashboard);
+        });
+        return;
+      }
       _tenantId = session.tenantId ?? _firstTenantId(session.tenants);
       _branchId = session.branchId ?? _firstBranchId(session.tenants, _tenantId);
     }
@@ -268,6 +274,11 @@ class _TenantSelectPageState extends ConsumerState<TenantSelectPage> {
               onPressed: _tenantId != null && _branchId != null ? _continue : null,
               child: const Text('Continuar'),
             ),
+            if (ref.watch(authSessionProvider).session?.isSuperAdmin ?? false)
+              TextButton(
+                onPressed: () => context.go(AppRoutePaths.platformDashboard),
+                child: const Text('Painel da plataforma SaaS'),
+              ),
             TextButton(
               onPressed: () async {
                 await ref.read(authSessionProvider.notifier).signOut();

@@ -8,7 +8,6 @@ import '../../../../../shared/widgets/feedback/module_data_states.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../../../../shared/widgets/tables/table_typography.dart';
 import '../../../../pharmacy/products/domain/entities/product.dart';
-import '../../../../pharmacy/products/presentation/widgets/produto_categoria_chip.dart';
 import 'pdv_catalog_utils.dart';
 
 class PdvProductTable extends StatelessWidget {
@@ -29,7 +28,6 @@ class PdvProductTable extends StatelessWidget {
 
   static const _columns = [
     'PRODUTO',
-    'CATEGORIA',
     'PREÇO',
     'VALIDADE',
     'LOTE',
@@ -67,7 +65,7 @@ class PdvProductTable extends StatelessWidget {
         final product = items[index];
         final lineId = 'produto:${product.id}';
         final isAdding = addingProductId == lineId;
-        final canInteract = canAdd && !isAdding;
+        final canInteract = canAdd && !isAdding && product.estoqueAtual > 0;
 
         return DataRow(
           color: WidgetStateProperty.resolveWith((states) {
@@ -82,12 +80,6 @@ class PdvProductTable extends StatelessWidget {
           onSelectChanged: canInteract ? (_) => onAdd(product) : null,
           cells: [
             DataCell(_nameCell(context, product)),
-            DataCell(
-              ProdutoCategoriaChip(
-                label: product.categoriaNome ?? '—',
-                categoriaCodigo: product.categoriaCodigoFnm,
-              ),
-            ),
             DataCell(TableTypography.cellText(context, pdvFormatMoney(product.precoVenda))),
             DataCell(TableTypography.cellText(context, pdvFormatDate(product.dataValidade))),
             DataCell(

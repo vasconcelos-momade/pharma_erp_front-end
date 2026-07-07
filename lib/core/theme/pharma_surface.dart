@@ -221,6 +221,7 @@ class PharmaInstantDropdown<T> extends StatelessWidget {
         ),
       ),
       child: DropdownButtonFormField<T>(
+        key: ValueKey<Object?>('$value-${items.length}'),
         initialValue: value,
         isExpanded: true,
         items: items,

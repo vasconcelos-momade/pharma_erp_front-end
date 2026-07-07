@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../app/providers/auth_session_notifier.dart';
 import '../../../../../core/theme/extensions.dart';
+import '../../../../../core/theme/pharma_surface.dart';
 import '../../../categories/presentation/providers/category_provider.dart';
 
 /// Dropdown de categorias FNM (API) para filtros de catálogo.
@@ -22,55 +23,65 @@ class ProdutoCategoriaFilterDropdown extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final t = context.pharmaTokens;
+    final authReady = ref.watch(
+      authSessionProvider.select(
+        (session) => !session.isBootstrapping && session.hasTenantContext,
+      ),
+    );
     final categoriesAsync = ref.watch(activeCategoriesProvider);
+    final textTheme = Theme.of(context).textTheme;
+
+    DropdownMenuItem<String?> allItem() => DropdownMenuItem<String?>(
+          value: null,
+          child: Text('Todas', style: textTheme.erpSelectValue),
+        );
+
+    Widget buildDropdown({
+      required List<DropdownMenuItem<String?>> items,
+      required ValueChanged<String?>? onChanged,
+      String? currentValue,
+    }) {
+      return PharmaInstantDropdown<String?>(
+        label: 'Categoria',
+        width: width,
+        value: currentValue,
+        onChanged: onChanged,
+        items: items,
+      );
+    }
 
     return SizedBox(
       width: width,
-      child: categoriesAsync.when(
-        loading: () => DropdownButtonFormField<String?>(
-          initialValue: value,
-          decoration: _decoration(context, t, 'Categoria'),
-          style: Theme.of(context).textTheme.erpSelectValue.copyWith(color: t.textPrimary),
-          items: [
-            DropdownMenuItem<String?>(
-              value: null,
-              child: Text('Todas', style: Theme.of(context).textTheme.erpSelectValue),
-            ),
-          ],
+      child: !authReady || categoriesAsync.isLoading
+          ? buildDropdown(
+              currentValue: value,
+              items: [allItem()],
+              onChanged: null,
+            )
+          : categoriesAsync.when(
+        loading: () => buildDropdown(
+          currentValue: value,
+          items: [allItem()],
           onChanged: null,
         ),
-        error: (_, _) => DropdownButtonFormField<String?>(
-          initialValue: value,
-          decoration: _decoration(context, t, 'Categoria'),
-          style: Theme.of(context).textTheme.erpSelectValue.copyWith(color: t.textPrimary),
-          items: [
-            DropdownMenuItem<String?>(
-              value: null,
-              child: Text('Todas', style: Theme.of(context).textTheme.erpSelectValue),
-            ),
-          ],
+        error: (_, _) => buildDropdown(
+          currentValue: value,
+          items: [allItem()],
           onChanged: enabled ? onChanged : null,
-
         ),
-        data: (categories) => DropdownButtonFormField<String?>(
-          initialValue: value != null && categories.any((c) => c.id == value)
+        data: (categories) => buildDropdown(
+          currentValue: value != null && categories.any((c) => c.id == value)
               ? value
               : null,
-          decoration: _decoration(context, t, 'Categoria'),
-          style: Theme.of(context).textTheme.erpSelectValue.copyWith(color: t.textPrimary),
           items: [
-            DropdownMenuItem<String?>(
-              value: null,
-              child: Text('Todas', style: Theme.of(context).textTheme.erpSelectValue),
-            ),
+            allItem(),
             ...categories.map(
               (cat) => DropdownMenuItem<String?>(
                 value: cat.id,
                 child: Text(
                   cat.nome,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.erpSelectValue,
+                  style: textTheme.erpSelectValue,
                 ),
               ),
             ),
@@ -78,25 +89,6 @@ class ProdutoCategoriaFilterDropdown extends ConsumerWidget {
           onChanged: enabled ? onChanged : null,
         ),
       ),
-    );
-  }
-
-  InputDecoration _decoration(
-    BuildContext context,
-    PharmaTokens t,
-    String label,
-  ) {
-    return InputDecoration(
-      labelText: label,
-      labelStyle: Theme.of(context).textTheme.erpSelectLabel.copyWith(
-            color: t.textSecondary,
-          ),
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(t.radiusMd),
-        borderSide: BorderSide(color: t.border),
-      ),
-      filled: true,
-      fillColor: t.bgPrimary.withValues(alpha: 0.5),
     );
   }
 }

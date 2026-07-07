@@ -15,6 +15,7 @@ import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../domain/entities/category.dart';
+import '../../domain/fnm_categories.dart';
 import '../providers/category_provider.dart';
 import '../providers/category_stats_provider.dart';
 import '../../../presentation/widgets/pharmacy_report_exports.dart';
@@ -141,6 +142,11 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
                     ),
                   ),
                 ),
+                FilterChip(
+                  label: const Text('Mostrar inactivas'),
+                  selected: state.includeInactive,
+                  onSelected: controller.setIncludeInactive,
+                ),
               ],
             ),
             child: Column(
@@ -177,7 +183,7 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
                             final item = state.items[index];
                             return DataRow(
                               cells: [
-                                DataCell(Text(item.nome)),
+                                DataCell(Text(fnmCategoryLabel(item.nome))),
                                 DataCell(Text(item.descricao ?? '—')),
                                 DataCell(Text('${item.productCount}')),
                                 DataCell(_StatusChip(ativo: item.ativo)),
@@ -299,36 +305,53 @@ class _CategoryFormDialog extends StatefulWidget {
 
 class _CategoryFormDialogState extends State<_CategoryFormDialog> {
   final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _nome;
   late final TextEditingController _descricao;
+  late String? _nomeSelecionado;
   late bool _ativo;
 
   @override
   void initState() {
     super.initState();
-    _nome = TextEditingController(text: widget.category?.nome ?? '');
     _descricao = TextEditingController(text: widget.category?.descricao ?? '');
+    _nomeSelecionado = widget.category?.nome;
     _ativo = widget.category?.ativo ?? true;
   }
 
   @override
   void dispose() {
-    _nome.dispose();
     _descricao.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final nomeOptions = <String>[
+      ...kFnmCategories,
+      if (_nomeSelecionado != null &&
+          _nomeSelecionado!.trim().isNotEmpty &&
+          !kFnmCategories.contains(_nomeSelecionado)) _nomeSelecionado!,
+    ];
+
     final formFields = Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        TextFormField(
-          controller: _nome,
-          decoration: const InputDecoration(labelText: 'Nome *'),
-          validator: (v) =>
-              v == null || v.trim().isEmpty ? 'Nome obrigatório' : null,
+        DropdownButtonFormField<String>(
+          initialValue: nomeOptions.contains(_nomeSelecionado)
+              ? _nomeSelecionado
+              : null,
+          decoration: const InputDecoration(labelText: 'Categoria FNM *'),
+          items: nomeOptions
+              .map(
+                (nome) => DropdownMenuItem<String>(
+                  value: nome,
+                  child: Text(fnmCategoryLabel(nome)),
+                ),
+              )
+              .toList(growable: false),
+          onChanged: (value) => setState(() => _nomeSelecionado = value),
+          validator: (value) =>
+              value == null || value.trim().isEmpty ? 'Categoria obrigatória' : null,
         ),
         TextFormField(
           controller: _descricao,
@@ -352,7 +375,7 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
         onPressed: () {
           if (!_formKey.currentState!.validate()) return;
           AdaptiveNavigator.complete(context, {
-            'nome': _nome.text.trim(),
+            'nome': _nomeSelecionado!.trim(),
             'descricao': _descricao.text.trim().isEmpty
                 ? null
                 : _descricao.text.trim(),
@@ -559,7 +582,7 @@ class _CategoryMobileCard extends StatelessWidget {
     final descricao = category.descricao?.trim();
 
     return EnterpriseListCard(
-      title: category.nome,
+      title: fnmCategoryLabel(category.nome),
       subtitle: descricao != null && descricao.isNotEmpty ? descricao : null,
       leading: Icons.category_outlined,
       chip: EnterpriseStatusChip(

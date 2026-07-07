@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../../app/providers/auth_session_notifier.dart';
 import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/theme/design_tokens.dart';
@@ -50,7 +51,14 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
     final state = ref.watch(masterProductListProvider);
     final controller = ref.read(masterProductListProvider.notifier);
     final categoriesAsync = ref.watch(activeCategoriesProvider);
-    final categories = categoriesAsync.asData?.value ?? const <Category>[];
+    final authReady = ref.watch(
+      authSessionProvider.select(
+        (session) => !session.isBootstrapping && session.hasTenantContext,
+      ),
+    );
+    final categories = authReady
+        ? (categoriesAsync.asData?.value ?? const <Category>[])
+        : const <Category>[];
 
     if (_searchController.text != state.query) {
       _searchController.value = TextEditingValue(

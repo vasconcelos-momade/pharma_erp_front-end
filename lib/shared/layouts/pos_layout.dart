@@ -34,9 +34,7 @@ class PosLayout extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.pharmaTokens;
     final s = context.spacing;
-    final scheme = Theme.of(context).colorScheme;
     final width = MediaQuery.sizeOf(context).width;
-    final isMobile = width < 640;
     final caixaState = ref.watch(caixaSessaoProvider);
     final sessaoAtual = caixaState.sessaoAtual;
     final caixaAberto = sessaoAtual != null;
@@ -58,13 +56,6 @@ class PosLayout extends ConsumerWidget {
             decoration: BoxDecoration(
               color: t.bgSecondary,
               border: Border(bottom: BorderSide(color: t.border)),
-              boxShadow: [
-                BoxShadow(
-                  color: scheme.shadow.withValues(alpha: 0.35),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
             ),
             child: LayoutBuilder(
               builder: (context, bx) {
@@ -188,63 +179,6 @@ class PosLayout extends ConsumerWidget {
               padding: t.density.pageInsets,
               child: child,
             ),
-          ),
-          if (!isMobile)
-            Container(
-              height: AppDimensions.posFooter,
-              padding: EdgeInsets.symmetric(horizontal: s.xl),
-              decoration: BoxDecoration(
-                color: t.bgSecondary,
-                border: Border(top: BorderSide(color: t.border)),
-              ),
-              child: Row(
-                children: [
-                  _ShortcutChip(icon: Icons.search, label: 'F2 Busca'),
-                  SizedBox(width: s.md),
-                  _ShortcutChip(icon: Icons.qr_code_scanner, label: 'Scanner'),
-                  SizedBox(width: s.md),
-                  _ShortcutChip(
-                    icon: Icons.payments_outlined,
-                    label: 'F4 Pagamento',
-                  ),
-                  const Spacer(),
-                  Text(
-                    'Multi-caixa • Impressão térmica',
-                    style: Theme.of(context).textTheme.erpOverline.copyWith(color: t.textMuted),
-                  ),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ShortcutChip extends StatelessWidget {
-  const _ShortcutChip({required this.icon, required this.label});
-
-  final IconData icon;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
-    final s = context.spacing;
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: s.md, vertical: s.xs),
-      decoration: BoxDecoration(
-        color: t.card.withValues(alpha: 0.6),
-        borderRadius: BorderRadius.circular(t.radiusMd),
-        border: Border.all(color: t.border.withValues(alpha: 0.5)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: t.iconSm, color: t.brandBlue),
-          SizedBox(width: s.xs),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.erpOverline.copyWith(color: t.textSecondary),
           ),
         ],
       ),

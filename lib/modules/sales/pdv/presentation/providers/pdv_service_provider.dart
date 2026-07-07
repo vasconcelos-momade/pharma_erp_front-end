@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../../app/providers/auth_session_notifier.dart';
 import '../../../../../core/errors/api_failure.dart';
 import '../../data/repositories/pdv_service_repository_impl.dart';
 import '../../domain/entities/pdv_service.dart';
@@ -49,7 +50,39 @@ class PdvServiceListController extends Notifier<PdvServiceListState> {
     ref.onDispose(() {
       _debounce?.cancel();
     });
-    Future.microtask(fetchCurrentQuery);
+
+    final authReady = ref.watch(
+      authSessionProvider.select(
+        (session) => !session.isBootstrapping && session.hasTenantContext,
+      ),
+    );
+
+    ref.listen<AuthSessionState>(authSessionProvider, (previous, next) {
+      final previousSession = previous?.session;
+      final nextSession = next.session;
+      final wasReady =
+          previous != null && !previous.isBootstrapping && previous.hasTenantContext;
+      final isReady = !next.isBootstrapping && next.hasTenantContext;
+
+      if (!isReady) {
+        _cache.clear();
+        state = const PdvServiceListState();
+        return;
+      }
+
+      final tenantChanged =
+          previousSession?.tenantId != nextSession?.tenantId ||
+          previousSession?.branchId != nextSession?.branchId;
+
+      if (isReady && (!wasReady || tenantChanged)) {
+        _cache.clear();
+        unawaited(fetchCurrentQuery(force: true));
+      }
+    });
+
+    if (authReady) {
+      Future.microtask(fetchCurrentQuery);
+    }
     return const PdvServiceListState();
   }
 
@@ -76,6 +109,12 @@ class PdvServiceListController extends Notifier<PdvServiceListState> {
   }
 
   Future<void> fetchCurrentQuery({bool force = false}) async {
+    if (!ref.read(authSessionProvider).hasTenantContext) {
+      _cache.clear();
+      state = const PdvServiceListState();
+      return;
+    }
+
     final requestId = ++_requestId;
     final cacheKey = state.query.toLowerCase();
 

@@ -187,9 +187,22 @@ class EnterprisePagination extends StatelessWidget {
     }
 
     final totalPages = _totalPages;
+    if (totalPages <= 7) {
+      return List<Object>.generate(totalPages, (index) => index + 1);
+    }
+
     final items = <Object>[];
-    final pages = <int>{1, totalPages, page, page - 1, page + 1};
-    final sortedPages = pages.where((p) => p >= 1 && p <= totalPages).toList()..sort();
+    late final List<int> visiblePages;
+
+    if (page <= 4) {
+      visiblePages = [1, 2, 3, 4, 5, 6, totalPages];
+    } else if (page >= totalPages - 3) {
+      visiblePages = [1, totalPages - 5, totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    } else {
+      visiblePages = [1, page - 2, page - 1, page, page + 1, page + 2, totalPages];
+    }
+
+    final sortedPages = visiblePages.where((p) => p >= 1 && p <= totalPages).toSet().toList()..sort();
 
     int? lastPage;
     for (final p in sortedPages) {

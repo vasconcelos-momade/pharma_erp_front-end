@@ -25,7 +25,8 @@ class PdvProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
-    final canInteract = canAdd && !isAdding;
+    final hasStock = product.estoqueAtual > 0;
+    final canInteract = canAdd && !isAdding && hasStock;
     final metadataLine =
         'PV ${pdvFormatMoney(product.precoVenda)} • Val. ${pdvFormatDate(product.dataValidade)} • Lote ${product.lote ?? '—'} • Stock ${product.estoqueAtual.toInt()}';
 

@@ -2,67 +2,100 @@
 abstract final class AppRoutePaths {
   AppRoutePaths._();
 
+  static const String app = '/app';
+
   static const String login = '/login';
   static const String authForgotPassword = '/auth/forgot-password';
-  static const String authTenant = '/auth/tenant';
+  static const String authTenantSelection = '/auth/tenant-selection';
+  /// Legado — redirect para [authTenantSelection].
+  static const String authTenant = authTenantSelection;
 
-  static const String dashboard = '/dashboard';
-  static const String dashboardPharmacy = '/dashboard/pharmacy';
-  static const String dashboardFinance = '/dashboard/finance';
-  static const String dashboardStock = '/dashboard/stock';
+  static const String dashboard = '/app/dashboard';
+  static const String dashboardPharmacy = '/app/dashboard/pharmacy';
+  static const String dashboardFinance = '/app/dashboard/finance';
+  static const String dashboardStock = '/app/dashboard/stock';
 
-  static const String pos = '/pos';
+  static const String pharmacyStock = '/app/pharmacy/stock';
+  static const String regulatoryHub = '/app/regulatory';
+  static const String financeHub = '/app/financial';
+  static const String auditHub = '/app/audit';
+  static const String settingsHub = '/app/settings';
 
-  static const String products = '/products';
-  static const String pharmacyCategories = '/pharmacy/categories';
-  static const String pharmacyLots = '/pharmacy/lots';
-  static const String pharmacyExpiry = '/pharmacy/expiry';
-  static const String pharmacyFefo = '/pharmacy/fefo';
+  static const String pos = '/app/pos';
 
-  static const String regulatory = '/regulatory';
-  static const String psychotropics = '/psychotropics';
-  static const String recipes = '/recipes';
-  static const String recipesBook = '/recipes/book';
+  static const String products = '/app/products';
+  static const String pharmacyCategories = '/app/pharmacy/categories';
+  static const String pharmacyLots = '/app/pharmacy/lots';
+  static const String pharmacyExpiry = '/app/pharmacy/expiry';
+  static const String pharmacyFefo = '/app/pharmacy/fefo';
 
-  static const String financial = '/financial';
-  static const String financeCashflow = '/finance/cashflow';
-  static const String financeExpenses = '/finance/expenses';
+  static const String regulatory = '/app/regulatory';
+  static const String psychotropics = '/app/psychotropics';
+  static const String recipes = '/app/recipes';
+  static const String recipesBook = '/app/recipes/book';
 
-  static const String audit = '/audit';
-  static const String auditTimeline = '/audit/timeline';
-  static const String auditLogs = '/audit/logs';
-  static const String auditPsych = '/audit/psychotropics';
+  static const String financial = '/app/financial';
+  static const String financeCashflow = '/app/finance/cashflow';
+  static const String financeExpenses = '/app/finance/expenses';
 
-  /// Rota legada de compras — redireccionada para [stockRequisitions].
-  static const String purchasing = '/purchasing';
+  static const String audit = '/app/audit';
+  static const String auditTimeline = '/app/audit/timeline';
+  static const String auditLogs = '/app/audit/logs';
+  static const String auditPsych = '/app/audit/psychotropics';
 
-  /// Alias legado `/compras` — redireccionado para [stockRequisitions].
+  static const String purchasing = '/app/purchasing';
   static const String comprasLegacy = '/compras';
-  static const String reports = '/reports';
 
-  static const String stockMovements = '/stock/movements';
-  static const String stockRequisitions = '/stock/requests';
+  static const String reports = '/app/reports';
 
-  /// Rota legada PT — redireccionada para [stockRequisitions].
-  static const String stockRequisitionsLegacy = '/stock/requisicoes';
+  static const String stockMovements = '/app/stock/movements';
+  static const String stockRequisitions = '/app/stock/requests';
+  static const String stockRequisitionsLegacy = '/app/stock/requisicoes';
+  static const String stockTransfersLegacy = '/app/stock/transferencias';
+  static const String stockInventory = '/app/stock/inventory';
 
-  /// Rota legada — redireccionada para [stockRequisitions].
-  static const String stockTransfersLegacy = '/stock/transferencias';
-  static const String stockInventory = '/stock/inventory';
+  static const String salesCustomers = '/app/sales/customers';
+  static const String salesInvoices = '/app/sales/invoices';
+  static const String salesQuotations = '/app/sales/quotations';
+  static const String salesHistory = '/app/sales/history';
 
-  static const String salesCustomers = '/sales/customers';
-  static const String salesInvoices = '/sales/invoices';
-  static const String salesQuotations = '/sales/quotations';
-  static const String salesHistory = '/sales/history';
+  static const String users = '/app/users';
+  static const String userProfiles = '/app/users/profiles';
+  static const String userPermissions = '/app/users/permissions';
 
-  static const String users = '/users';
-  static const String userProfiles = '/users/profiles';
-  static const String userPermissions = '/users/permissions';
+  static const String settings = '/app/settings';
+  static const String settingsPrinters = '/app/settings/printers';
+  static const String settingsTerminals = '/app/settings/terminals';
+  static const String settingsSync = '/app/settings/sync';
 
-  static const String settings = '/settings';
-  static const String settingsPrinters = '/settings/printers';
-  static const String settingsTerminals = '/settings/terminals';
-  static const String settingsSync = '/settings/sync';
+  // Legado (redirect no router)
+  static const String legacyDashboard = '/dashboard';
+  static const String legacyPos = '/pos';
+  static const String legacyProducts = '/products';
+
+  // Painel administrativo SaaS (plataforma central)
+  /// Legado — redirect para [login].
+  static const String platformLogin = '/platform/login';
+  static const String platformDashboard = '/platform/dashboard';
+  static const String platformTenants = '/platform/tenants';
+  static const String platformTenantDetail = '/platform/tenants/:tenantId';
+  static const String platformBranches = '/platform/branches';
+  static const String platformPlans = '/platform/plans';
+  static const String platformSubscriptions = '/platform/subscriptions';
+  static const String platformInvoices = '/platform/invoices';
+  static const String platformPayments = '/platform/payments';
+  static const String platformDevices = '/platform/devices';
+  static const String platformSync = '/platform/sync';
+  static const String platformAudit = '/platform/audit';
+  static const String platformUsers = '/platform/users';
+  static const String platformSettings = '/platform/settings';
+
+  static String platformTenantDetailPath(String tenantId) =>
+      '/platform/tenants/$tenantId';
+
+  static bool isPlatformRoute(String path) => path.startsWith('/platform');
+  static bool isTenantAppRoute(String path) =>
+      path.startsWith(app) || path == legacyPos;
 }
 
 /// Títulos humanos para topbar / breadcrumbs.
@@ -73,7 +106,7 @@ abstract final class AppRouteTitles {
     return switch (path) {
       AppRoutePaths.login => 'Autenticação',
       AppRoutePaths.authForgotPassword => 'Recuperar palavra-passe',
-      AppRoutePaths.authTenant => 'Selecção de unidade',
+      AppRoutePaths.authTenantSelection => 'Selecção de unidade',
       AppRoutePaths.dashboard => 'Executivo',
       AppRoutePaths.dashboardPharmacy => 'Visão Farmácia',
       AppRoutePaths.dashboardFinance => 'Visão Financeira',
@@ -114,39 +147,46 @@ abstract final class AppRouteTitles {
       AppRoutePaths.settingsPrinters => 'Impressoras',
       AppRoutePaths.settingsTerminals => 'Terminais',
       AppRoutePaths.settingsSync => 'Sincronização',
+      AppRoutePaths.platformDashboard => 'Dashboard',
+      AppRoutePaths.platformTenants => 'Clientes',
       _ => path.replaceAll('/', ' ').trim(),
     };
   }
 
   static String sectionFor(String path) {
-    if (path.startsWith('/dashboard')) return 'Dashboard';
-    if (path.startsWith('/pharmacy') || path == AppRoutePaths.products) {
+    if (path.startsWith('/app/dashboard') || path == AppRoutePaths.legacyDashboard) {
+      return 'Dashboard';
+    }
+    if (path.startsWith('/app/pharmacy') || path == AppRoutePaths.products) {
       return 'Farmácia';
     }
-    if (path.startsWith('/sales') || path == AppRoutePaths.pos) {
+    if (path.startsWith('/app/sales') || path == AppRoutePaths.pos) {
       return 'Terminal';
     }
-    if (path.startsWith('/stock')) return 'Stock';
+    if (path.startsWith('/app/stock')) return 'Stock';
     if (path == AppRoutePaths.regulatory ||
         path == AppRoutePaths.psychotropics ||
         path == AppRoutePaths.recipes ||
         path == AppRoutePaths.recipesBook) {
       return 'Regulatório';
     }
-    if (path.startsWith('/finance') || path == AppRoutePaths.financial) {
+    if (path.startsWith('/app/finance') || path == AppRoutePaths.financial) {
       return 'Financeiro';
     }
-    if (path.startsWith('/audit') || path == AppRoutePaths.audit) {
+    if (path.startsWith('/app/audit') || path == AppRoutePaths.audit) {
       return 'Auditoria';
     }
-    if (path.startsWith('/users')) {
+    if (path.startsWith('/app/users')) {
       return 'Administração';
     }
-    if (path.startsWith('/settings')) {
+    if (path.startsWith('/app/settings')) {
       return 'Sistema';
     }
     if (path.startsWith('/auth')) {
       return 'Conta';
+    }
+    if (path.startsWith('/platform')) {
+      return 'Plataforma';
     }
     if (path == AppRoutePaths.purchasing) {
       return 'Stock';

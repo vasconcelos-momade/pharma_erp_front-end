@@ -38,13 +38,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final ok = await ref.read(authSessionProvider.notifier).login(
+    final redirect = await ref.read(authSessionProvider.notifier).login(
           email: _emailCtrl.text.trim(),
           password: _passCtrl.text,
         );
     if (!mounted) return;
 
-    if (!ok) {
+    if (redirect == null) {
       var msg = ref.read(authSessionProvider).errorMessage;
       if (msg != null) {
         if (msg.contains('Sem ligação ao servidor')) {
@@ -59,14 +59,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       return;
     }
 
-    final session = ref.read(authSessionProvider).session;
-    if (session == null) return;
-
-    if (session.hasTenantContext) {
-      context.go(AppRoutePaths.dashboard);
-    } else {
-      context.go(AppRoutePaths.authTenant);
-    }
+    context.go(redirect);
   }
 
   @override

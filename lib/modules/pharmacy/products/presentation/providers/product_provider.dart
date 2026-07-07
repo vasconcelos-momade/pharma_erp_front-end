@@ -77,7 +77,37 @@ class ProductListController extends Notifier<ProductListState> {
     ref.onDispose(() {
       _debounce?.cancel();
     });
-    Future.microtask(fetchCurrentPage);
+
+    final authReady = ref.watch(
+      authSessionProvider.select(
+        (session) => !session.isBootstrapping && session.hasTenantContext,
+      ),
+    );
+
+    ref.listen<AuthSessionState>(authSessionProvider, (previous, next) {
+      final previousSession = previous?.session;
+      final nextSession = next.session;
+      final wasReady =
+          previous != null && !previous.isBootstrapping && previous.hasTenantContext;
+      final isReady = !next.isBootstrapping && next.hasTenantContext;
+
+      if (!isReady) {
+        state = const ProductListState();
+        return;
+      }
+
+      final tenantChanged =
+          previousSession?.tenantId != nextSession?.tenantId ||
+          previousSession?.branchId != nextSession?.branchId;
+
+      if (isReady && (!wasReady || tenantChanged)) {
+        unawaited(fetchCurrentPage(force: true));
+      }
+    });
+
+    if (authReady) {
+      Future.microtask(fetchCurrentPage);
+    }
     return const ProductListState();
   }
 
@@ -149,6 +179,11 @@ class ProductListController extends Notifier<ProductListState> {
   }
 
   Future<void> fetchCurrentPage({bool force = false}) async {
+    if (!ref.read(authSessionProvider).hasTenantContext) {
+      state = const ProductListState();
+      return;
+    }
+
     final requestId = ++_requestId;
     final isBarcode = _looksLikeBarcode(state.query);
     final cacheKey = PdvCatalogCachePolicy.productPageKey(
@@ -245,7 +280,18 @@ final productListProvider =
 
 final productTaxRulesProvider =
     FutureProvider.autoDispose<List<ProductTaxRule>>((ref) async {
-  final repository = ref.watch(productRepositoryProvider);
+  final tenantId = ref.watch(
+    authSessionProvider.select(
+      (session) => !session.isBootstrapping && session.hasTenantContext
+          ? session.session?.tenantId
+          : null,
+    ),
+  );
+  if (tenantId == null) {
+    return const <ProductTaxRule>[];
+  }
+
+  final repository = ref.read(productRepositoryProvider);
   return repository.listTaxRules();
 });
 

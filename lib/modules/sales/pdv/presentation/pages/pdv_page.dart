@@ -11,6 +11,7 @@ import '../../../../../shared/widgets/feedback/module_data_states.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_search_bar.dart';
 import '../../../../../shared/widgets/tables/enterprise_pagination.dart';
+import '../../../../../platform/barcode/barcode_scanner.dart';
 import '../../../../pharmacy/products/presentation/widgets/produto_categoria_filter_dropdown.dart';
 import '../../../../pharmacy/products/domain/entities/product.dart';
 import '../../../../pharmacy/products/presentation/providers/product_provider.dart';
@@ -88,6 +89,18 @@ class _PdvPageState extends ConsumerState<PdvPage>
       return;
     }
     ref.read(pdvServiceListProvider.notifier).onSearchChanged(value);
+  }
+
+  Future<void> _scanBarcode() async {
+    final code = await BarcodeScanner.scan(context);
+    if (!mounted) return;
+    if (code == null || code.trim().isEmpty) return;
+    final value = code.trim();
+    _search.value = TextEditingValue(
+      text: value,
+      selection: TextSelection.collapsed(offset: value.length),
+    );
+    _onSearchChanged(value);
   }
 
   void _onCategoryChanged(String? categoriaId) {
@@ -528,84 +541,118 @@ class _PdvPageState extends ConsumerState<PdvPage>
             ),
           ),
         Material(
-          color: t.card,
-          borderRadius: BorderRadius.circular(t.radiusMd),
+          color: Colors.transparent,
           child: TabBar(
             controller: _catalogTabController,
             onTap: _onCatalogTabSelected,
             labelColor: t.textPrimary,
             unselectedLabelColor: t.textMuted,
             indicatorColor: t.brandBlue,
-            dividerColor: t.card,
+            dividerColor: Colors.transparent,
             tabs: const [
               Tab(text: 'Lista de Produtos'),
               Tab(text: 'Serviços'),
             ],
           ),
         ),
-        if (_isProductsTab)
-          Padding(
-            padding: EdgeInsets.only(bottom: s.xs),
-            child: Text(
-              'Preços e stock são indicativos; o total oficial é calculado no servidor ao finalizar.',
-              style: Theme.of(context).textTheme.erpCaption.copyWith(
-                    color: t.textMuted,
-                  ),
-            ),
-          ),
         SizedBox(height: isMobile ? s.sm : s.md),
-        if (_isProductsTab) ...[
-          Align(
-            alignment: Alignment.centerLeft,
-            child: ProdutoCategoriaFilterDropdown(
-              value: productState.categoriaId,
-              width: isMobile ? double.infinity : 260,
-              enabled: !productState.isLoading,
-              onChanged: _onCategoryChanged,
+        if (isMobile) ...[
+          EnterpriseModuleSearchBar(
+            controller: _search,
+            focusNode: _searchFocusNode,
+            autofocus: true,
+            hintText: _isProductsTab
+                ? 'Pesquisar ou escanear...'
+                : 'Pesquisar serviço...',
+            enabled: !activeIsLoading,
+            onSubmitted: (_) => _onSearchSubmitted(
+              products: productState.items,
+              services: serviceState.items,
+              accumulatedProducts: displayProducts,
             ),
+            onChanged: _onSearchChanged,
           ),
-          SizedBox(height: isMobile ? s.sm : s.md),
-        ],
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: EnterpriseModuleSearchBar(
-                controller: _search,
-                focusNode: _searchFocusNode,
-                autofocus: true,
-                hintText: _isProductsTab
-                    ? (isMobile
-                        ? 'Pesquisar produto...'
-                        : 'Pesquisar por código, nome ou EAN - F2')
-                    : (isMobile
-                        ? 'Pesquisar serviço...'
-                        : 'Pesquisar por nome do serviço - F2'),
-                enabled: !activeIsLoading,
-                onSubmitted: (_) => _onSearchSubmitted(
-                  products: productState.items,
-                  services: serviceState.items,
-                  accumulatedProducts: displayProducts,
+          if (_isProductsTab) ...[
+            SizedBox(height: s.sm),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: ProdutoCategoriaFilterDropdown(
+                    value: productState.categoriaId,
+                    width: double.infinity,
+                    enabled: !productState.isLoading,
+                    onChanged: _onCategoryChanged,
+                  ),
                 ),
-                onChanged: _onSearchChanged,
-              ),
+                SizedBox(width: s.sm),
+                IconButton(
+                  tooltip: 'Actualizar catálogo',
+                  onPressed: productState.isLoading
+                      ? null
+                      : () => unawaited(productController.refreshCatalogAndPage()),
+                  icon: Icon(Icons.refresh_rounded, color: t.brandBlue),
+                ),
+              ],
             ),
-            if (_isProductsTab) ...[
-              SizedBox(width: s.sm),
-              IconButton(
-                tooltip: 'Actualizar catálogo',
-                onPressed: productState.isLoading
-                    ? null
-                    : () => unawaited(productController.refreshCatalogAndPage()),
-                icon: Icon(
-                  Icons.refresh_rounded,
-                  color: t.brandBlue,
-                  size: isMobile ? t.iconSm : t.iconMd,
+          ],
+        ] else
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (_isProductsTab) ...[
+                SizedBox(
+                  width: 260,
+                  child: ProdutoCategoriaFilterDropdown(
+                    value: productState.categoriaId,
+                    width: 260,
+                    enabled: !productState.isLoading,
+                    onChanged: _onCategoryChanged,
+                  ),
+                ),
+                SizedBox(width: s.sm),
+              ],
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxWidth: _isProductsTab ? double.infinity : 720,
+                    ),
+                    child: EnterpriseModuleSearchBar(
+                      controller: _search,
+                      focusNode: _searchFocusNode,
+                      autofocus: true,
+                      hintText: _isProductsTab
+                          ? 'Pesquisar por código, nome ou EAN'
+                          : 'Pesquisar por nome do serviço',
+                      enabled: !activeIsLoading,
+                      onSubmitted: (_) => _onSearchSubmitted(
+                        products: productState.items,
+                        services: serviceState.items,
+                        accumulatedProducts: displayProducts,
+                      ),
+                      onChanged: _onSearchChanged,
+                    ),
+                  ),
                 ),
               ),
+              if (_isProductsTab) ...[
+                SizedBox(width: s.sm),
+                IconButton(
+                  tooltip: 'Actualizar catálogo',
+                  onPressed: productState.isLoading
+                      ? null
+                      : () => unawaited(productController.refreshCatalogAndPage()),
+                  icon: Icon(
+                    Icons.refresh_rounded,
+                    color: t.brandBlue,
+                    size: t.iconMd,
+                  ),
+                ),
+              ],
             ],
-          ],
-        ),
+          ),
         SizedBox(height: isMobile ? s.sm : s.md),
         Expanded(
           child: _isProductsTab
@@ -678,7 +725,7 @@ class _PdvPageState extends ConsumerState<PdvPage>
               Expanded(flex: 5, child: catalog),
               SizedBox(width: s.lg),
               SizedBox(
-                width: 480,
+                width: 560,
                 child: cartPane,
               ),
             ],
@@ -827,31 +874,12 @@ class _CartPane extends StatelessWidget {
     final s = context.spacing;
     final pad = compact ? EdgeInsets.all(s.md) : t.density.cardPadding;
     return Material(
-      color: t.card,
-      borderRadius: BorderRadius.circular(t.radiusMd),
+      color: Colors.transparent,
       child: Padding(
         padding: pad,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (!compact)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'CARRINHO ATUAL',
-                    style: Theme.of(context).textTheme.erpOverline.copyWith(
-                          color: t.textMuted,
-                        ),
-                  ),
-                  Icon(
-                    Icons.shopping_basket_rounded,
-                    color: t.brandBlue,
-                    size: t.iconMd,
-                  ),
-                ],
-              ),
-            Divider(height: compact ? s.md : s.xxl, color: t.border.withValues(alpha: 0.35)),
             Expanded(
               child: cart.isEmpty
                   ? const ModuleEmptyState(
@@ -1002,8 +1030,6 @@ class _CartPane extends StatelessWidget {
               padding: EdgeInsets.all(s.sm),
               decoration: BoxDecoration(
                 color: t.brandGreen.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(t.radiusMd),
-                border: Border.all(color: t.brandGreen.withValues(alpha: 0.3)),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1036,20 +1062,6 @@ class _CartPane extends StatelessWidget {
                 maxLines: 1,
               ),
             ),
-            if (!compact) ...[
-              SizedBox(height: s.sm),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.inventory_2_outlined, size: t.iconSm, color: t.textMuted),
-                  SizedBox(width: s.xs),
-                  Text(
-                    'FEFO automático aplicado na dispensa',
-                    style: Theme.of(context).textTheme.erpOverline.copyWith(color: t.textMuted),
-                  ),
-                ],
-              ),
-            ],
           ],
         ),
       ),

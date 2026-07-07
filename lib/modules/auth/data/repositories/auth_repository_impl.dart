@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../domain/entities/auth_session.dart';
+import '../../domain/entities/login_result.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_local_datasource.dart';
 import '../datasources/auth_remote_datasource.dart';
@@ -16,7 +17,7 @@ class AuthRepositoryImpl implements AuthRepository {
   final AuthLocalDataSource _local;
 
   @override
-  Future<AuthSession> login({
+  Future<LoginResult> login({
     required String email,
     required String password,
   }) async {
@@ -27,9 +28,16 @@ class AuthRepositoryImpl implements AuthRepository {
       refreshToken: response.refreshToken,
       user: response.user,
       tenants: response.tenants,
+      tenantId: response.tenantId,
+      branchId: response.branchId,
+      permissions: response.permissions,
     );
     await _local.saveSession(session);
-    return session;
+    return LoginResult(
+      session: session,
+      redirectTo: response.redirectTo,
+      permissions: response.permissions,
+    );
   }
 
   @override
@@ -48,6 +56,9 @@ class AuthRepositoryImpl implements AuthRepository {
       );
     }
   }
+
+  @override
+  Future<void> saveSession(AuthSession session) => _local.saveSession(session);
 
   @override
   Future<void> signOut() async {

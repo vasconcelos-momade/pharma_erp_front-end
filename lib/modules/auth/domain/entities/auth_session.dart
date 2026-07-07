@@ -1,6 +1,8 @@
 import 'auth_user.dart';
 import 'branch_access.dart';
 import 'tenant_access.dart';
+import 'central_role.dart';
+import '../../../admin/users/domain/entities/user_entities.dart';
 
 /// Estado de sessão central (pós-login, antes/durante a selecção de entidade/unidade).
 class AuthSession {
@@ -11,6 +13,7 @@ class AuthSession {
     this.refreshToken,
     this.tenantId,
     this.branchId,
+    this.permissions,
   });
 
   final String accessToken;
@@ -19,12 +22,20 @@ class AuthSession {
   final List<TenantAccess> tenants;
   final String? tenantId;
   final String? branchId;
+  final UserEffectivePermissions? permissions;
+
+  bool get isSuperAdmin => CentralRole.isSuperAdmin(user.role);
+  bool get isTenantRole => CentralRole.isTenantRole(user.role);
+  bool get isPlatformSession => isSuperAdmin && !hasTenantContext;
 
   bool get hasTenantContext =>
       tenantId != null &&
       tenantId!.isNotEmpty &&
       branchId != null &&
       branchId!.isNotEmpty;
+
+  bool get requiresTenantSelection =>
+      isTenantRole && !hasTenantContext && tenants.isNotEmpty;
 
   TenantAccess? get selectedTenant {
     if (tenantId == null) return null;
@@ -47,7 +58,9 @@ class AuthSession {
     String? refreshToken,
     String? tenantId,
     String? branchId,
+    UserEffectivePermissions? permissions,
     bool clearTenant = false,
+    bool clearPermissions = false,
   }) {
     return AuthSession(
       accessToken: accessToken,
@@ -56,6 +69,7 @@ class AuthSession {
       tenants: tenants,
       tenantId: clearTenant ? null : (tenantId ?? this.tenantId),
       branchId: clearTenant ? null : (branchId ?? this.branchId),
+      permissions: clearPermissions ? null : (permissions ?? this.permissions),
     );
   }
 }

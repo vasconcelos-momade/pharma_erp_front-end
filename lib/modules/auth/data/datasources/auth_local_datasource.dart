@@ -31,6 +31,9 @@ class AuthLocalDataSourceImpl implements AuthLocalDataSource {
         tenantId: session.tenantId!,
         branchId: session.branchId!,
       );
+    } else if (session.isSuperAdmin) {
+      await _secure.writeTenantId(null);
+      await _secure.writeBranchId(null);
     }
   }
 
