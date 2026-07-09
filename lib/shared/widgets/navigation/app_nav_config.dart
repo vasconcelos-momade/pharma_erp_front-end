@@ -96,10 +96,10 @@ const List<AppNavSection> kAppNavSections = <AppNavSection>[
         permissionModule: 'POS',
       ),
       AppNavItem(
-        label: 'Cotações',
-        path: AppRoutePaths.salesQuotations,
+        label: 'Faturas Proforma',
+        path: AppRoutePaths.salesProformaInvoices,
         icon: Icons.request_quote_outlined,
-        permissionModule: 'COTACOES',
+        permissionModule: 'PROFORMA_INVOICES',
       ),
       AppNavItem(
         label: 'Clientes',

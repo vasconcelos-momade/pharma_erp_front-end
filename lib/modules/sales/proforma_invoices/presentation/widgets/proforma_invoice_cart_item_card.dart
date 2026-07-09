@@ -6,10 +6,10 @@ import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/pharma_surface.dart';
 import '../../../../../shared/widgets/cards/enterprise_list_card.dart';
 import '../../../pdv/presentation/widgets/pdv_catalog_utils.dart';
-import '../../domain/entities/quotation_cart_line.dart';
+import '../../domain/entities/proforma_invoice_cart_line.dart';
 
-class QuotationCartItemCard extends StatefulWidget {
-  const QuotationCartItemCard({
+class ProformaInvoiceCartItemCard extends StatefulWidget {
+  const ProformaInvoiceCartItemCard({
     super.key,
     required this.line,
     required this.onChanged,
@@ -18,17 +18,19 @@ class QuotationCartItemCard extends StatefulWidget {
     required this.onRemove,
   });
 
-  final QuotationCartLine line;
-  final ValueChanged<QuotationCartLine> onChanged;
+  final ProformaInvoiceCartLine line;
+  final ValueChanged<ProformaInvoiceCartLine> onChanged;
   final VoidCallback onIncrement;
   final VoidCallback onDecrement;
   final VoidCallback onRemove;
 
   @override
-  State<QuotationCartItemCard> createState() => _QuotationCartItemCardState();
+  State<ProformaInvoiceCartItemCard> createState() =>
+      _ProformaInvoiceCartItemCardState();
 }
 
-class _QuotationCartItemCardState extends State<QuotationCartItemCard> {
+class _ProformaInvoiceCartItemCardState
+    extends State<ProformaInvoiceCartItemCard> {
   late TextEditingController _qtyController;
   late TextEditingController _priceController;
   late TextEditingController _discountController;
@@ -41,7 +43,7 @@ class _QuotationCartItemCardState extends State<QuotationCartItemCard> {
   }
 
   @override
-  void didUpdateWidget(covariant QuotationCartItemCard oldWidget) {
+  void didUpdateWidget(covariant ProformaInvoiceCartItemCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.line.id != widget.line.id) {
       _qtyController.text = _formatQty(widget.line.quantidade);
@@ -70,7 +72,7 @@ class _QuotationCartItemCardState extends State<QuotationCartItemCard> {
     super.dispose();
   }
 
-  void _initControllers(QuotationCartLine line) {
+  void _initControllers(ProformaInvoiceCartLine line) {
     _qtyController = TextEditingController(text: _formatQty(line.quantidade));
     _priceController =
         TextEditingController(text: line.precoUnitario.toStringAsFixed(2));
@@ -151,7 +153,7 @@ class _QuotationCartItemCardState extends State<QuotationCartItemCard> {
               ),
               IconButton(
                 tooltip: 'Remover',
-                onPressed: widget.onRemove,
+                onPressed: line.allowPriceEdit ? widget.onRemove : null,
                 icon: Icon(Icons.delete_outline_rounded, color: t.posDanger),
               ),
             ],
@@ -162,6 +164,7 @@ class _QuotationCartItemCardState extends State<QuotationCartItemCard> {
               Expanded(
                 child: TextField(
                   controller: _qtyController,
+                  enabled: line.allowPriceEdit,
                   decoration: const InputDecoration(
                     labelText: 'Qtd.',
                     isDense: true,
@@ -181,12 +184,12 @@ class _QuotationCartItemCardState extends State<QuotationCartItemCard> {
                 ),
               ),
               IconButton(
-                onPressed: widget.onDecrement,
+                onPressed: line.allowPriceEdit ? widget.onDecrement : null,
                 icon: const Icon(Icons.remove_circle_outline_rounded),
               ),
               Text(_formatQty(line.quantidade), style: textTheme.erpLabel),
               IconButton(
-                onPressed: widget.onIncrement,
+                onPressed: line.allowPriceEdit ? widget.onIncrement : null,
                 icon: const Icon(Icons.add_circle_outline_rounded),
               ),
             ],
@@ -217,6 +220,7 @@ class _QuotationCartItemCardState extends State<QuotationCartItemCard> {
               Expanded(
                 child: TextField(
                   controller: _discountController,
+                  enabled: line.allowPriceEdit,
                   decoration: const InputDecoration(
                     labelText: 'Desc. %',
                     isDense: true,
@@ -225,7 +229,7 @@ class _QuotationCartItemCardState extends State<QuotationCartItemCard> {
                   keyboardType:
                       const TextInputType.numberWithOptions(decimal: true),
                   onSubmitted: (value) {
-                    _commit(desconto: _parse(value).clamp(0, 100));
+                    _commit(desconto: _parse(value).clamp(0, 100).toDouble());
                   },
                 ),
               ),
@@ -252,8 +256,9 @@ class _QuotationCartItemCardState extends State<QuotationCartItemCard> {
           SizedBox(height: s.sm),
           TextField(
             controller: _obsController,
+            enabled: line.allowPriceEdit,
             decoration: const InputDecoration(
-              labelText: 'Observação',
+              labelText: 'Descrição',
               isDense: true,
               border: OutlineInputBorder(),
             ),

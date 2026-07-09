@@ -11,7 +11,6 @@ import '../../../../../shared/widgets/feedback/module_data_states.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_search_bar.dart';
 import '../../../../../shared/widgets/tables/enterprise_pagination.dart';
-import '../../../../../platform/barcode/barcode_scanner.dart';
 import '../../../../pharmacy/products/presentation/widgets/produto_categoria_filter_dropdown.dart';
 import '../../../../pharmacy/products/domain/entities/product.dart';
 import '../../../../pharmacy/products/presentation/providers/product_provider.dart';
@@ -89,18 +88,6 @@ class _PdvPageState extends ConsumerState<PdvPage>
       return;
     }
     ref.read(pdvServiceListProvider.notifier).onSearchChanged(value);
-  }
-
-  Future<void> _scanBarcode() async {
-    final code = await BarcodeScanner.scan(context);
-    if (!mounted) return;
-    if (code == null || code.trim().isEmpty) return;
-    final value = code.trim();
-    _search.value = TextEditingValue(
-      text: value,
-      selection: TextSelection.collapsed(offset: value.length),
-    );
-    _onSearchChanged(value);
   }
 
   void _onCategoryChanged(String? categoriaId) {

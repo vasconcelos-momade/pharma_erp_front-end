@@ -239,12 +239,14 @@ class _LotsPageState extends ConsumerState<LotsPage> {
                     : EnterpriseDataTable(
                         columns: const [
                           DataColumn(label: Text('PRODUTO')),
-                          DataColumn(label: Text('Nº LOTE')),
+                          DataColumn(label: Text('LOTE')),
                           DataColumn(label: Text('VALIDADE')),
+                          DataColumn(label: Text('DIAS RESTANTES')),
                           DataColumn(label: Text('STOCK')),
                           DataColumn(label: Text('P. COMPRA')),
                           DataColumn(label: Text('P. VENDA')),
                           DataColumn(label: Text('ESTADO')),
+                          DataColumn(label: Text('ALERTAS')),
                           DataColumn(label: Text('AÇÕES')),
                         ],
                         rowCount: current?.items.length ?? 0,
@@ -257,13 +259,25 @@ class _LotsPageState extends ConsumerState<LotsPage> {
                           );
                           final isBusy = current.actionLoteId == loteId;
                           return DataRow(
-                            onSelectChanged: (_) => _openLoteDetails(loteId),
+                            onSelectChanged: null,
                             cells: [
                               DataCell(
                                 Text(item['produtoNomeComercial']?.toString() ?? item['produtoNome']?.toString() ?? '—'),
                               ),
                               DataCell(
-                                Text(item['numeroLote']?.toString() ?? '—'),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(item['numeroLote']?.toString() ?? '—'),
+                                    Text(
+                                      _loteSecondaryStatus(item),
+                                      style: Theme.of(context).textTheme.erpCaption.copyWith(
+                                            color: t.textMuted,
+                                          ),
+                                    ),
+                                  ],
+                                ),
                               ),
                               DataCell(
                                 Text(
@@ -276,6 +290,9 @@ class _LotsPageState extends ConsumerState<LotsPage> {
                                     context,
                                   ).textTheme.erpLabel.copyWith(color: color),
                                 ),
+                              ),
+                              DataCell(
+                                Text(_diasRestantesLabel(item['dataValidade'])),
                               ),
                               DataCell(
                                 Text(LoteStockUtils.formatDisponivel(item)),
@@ -292,6 +309,9 @@ class _LotsPageState extends ConsumerState<LotsPage> {
                                 ),
                               ),
                               DataCell(
+                                Text(_alertaLabel(item)),
+                              ),
+                              DataCell(
                                 isBusy
                                     ? const SizedBox(
                                         width: 24,
@@ -305,6 +325,14 @@ class _LotsPageState extends ConsumerState<LotsPage> {
                                         onSelected: (action) =>
                                             _handleAction(action, item),
                                         itemBuilder: (context) => [
+                                          const PopupMenuItem(
+                                            value: 'editar_precos',
+                                            child: Text('Editar preços do lote'),
+                                          ),
+                                          const PopupMenuItem(
+                                            value: 'editar_info',
+                                            child: Text('Editar informações do lote'),
+                                          ),
                                           if (LotActionsHelper.canMoveToQuarentena(
                                             item,
                                           ))
@@ -325,7 +353,15 @@ class _LotsPageState extends ConsumerState<LotsPage> {
                                             ),
                                           const PopupMenuItem(
                                             value: 'historico',
-                                            child: Text('Visualizar histórico'),
+                                            child: Text('Visualizar histórico do lote'),
+                                          ),
+                                          const PopupMenuItem(
+                                            value: 'recall',
+                                            child: Text('Executar Recall'),
+                                          ),
+                                          const PopupMenuItem(
+                                            value: 'devolver_fornecedor',
+                                            child: Text('Devolver lote ao fornecedor'),
                                           ),
                                         ],
                                         icon: const Icon(Icons.more_vert),
@@ -358,10 +394,18 @@ class _LotsPageState extends ConsumerState<LotsPage> {
     if (loteId.isEmpty) return;
 
     switch (action) {
+      case 'editar_precos':
+      case 'editar_info':
+      case 'recall':
+      case 'devolver_fornecedor':
+        _showActionPendingMessage(action);
+        return;
       case 'quarentena':
         await LotActionsHelper.moveToQuarentena(context, ref, lote);
+        return;
       case 'reverter':
         await LotActionsHelper.revertQuarentena(context, ref, lote);
+        return;
       case 'historico':
         await LotActionsHelper.showHistory(
           context,
@@ -369,7 +413,61 @@ class _LotsPageState extends ConsumerState<LotsPage> {
           loteId,
           numeroLote: lote['numeroLote']?.toString(),
         );
+        return;
     }
+  }
+
+  void _showActionPendingMessage(String action) {
+    final label = switch (action) {
+      'editar_precos' => 'Editar preços do lote',
+      'editar_info' => 'Editar informações do lote',
+      'recall' => 'Executar Recall',
+      'devolver_fornecedor' => 'Devolver lote ao fornecedor',
+      _ => action,
+    };
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('$label será integrado com o fluxo backend existente.'),
+      ),
+    );
+  }
+
+  String _loteSecondaryStatus(Map<String, dynamic> item) {
+    final estado = item['estadoSanitario']?.toString().toUpperCase();
+    if (estado == 'EXPIRADO') return 'EXPIRADO';
+    if (estado == 'QUARENTENA') return 'BLOQUEADO';
+    final dias = _diasRestantes(item['dataValidade']);
+    if (dias == null) return 'Sem validade';
+    if (dias < 0) return 'EXPIRADO';
+    return 'Expira em $dias dias';
+  }
+
+  int? _diasRestantes(dynamic dataValidade) {
+    if (dataValidade == null) return null;
+    final parsed = DateTime.tryParse(dataValidade.toString());
+    if (parsed == null) return null;
+    final today = DateTime.now();
+    final end = DateTime(parsed.year, parsed.month, parsed.day);
+    final start = DateTime(today.year, today.month, today.day);
+    return end.difference(start).inDays;
+  }
+
+  String _diasRestantesLabel(dynamic dataValidade) {
+    final dias = _diasRestantes(dataValidade);
+    if (dias == null) return '—';
+    if (dias < 0) return 'Vencido';
+    return '$dias';
+  }
+
+  String _alertaLabel(Map<String, dynamic> item) {
+    final indicador = item['indicadorValidade']?.toString().toUpperCase();
+    final estado = item['estadoSanitario']?.toString().toUpperCase();
+    if (estado == 'QUARENTENA') return 'Quarentena';
+    if (estado == 'RECALL') return 'Recall';
+    if (indicador == 'EXPIRADO' || estado == 'EXPIRADO') return 'Expirado';
+    if (indicador == '30_DIAS') return 'Validade crítica';
+    if (indicador == '60_DIAS') return 'Próximo da validade';
+    return 'Sem alerta';
   }
 
   Future<void> _openLoteDetails(String loteId) =>
@@ -844,7 +942,7 @@ class _LoteMobileCard extends StatelessWidget {
                         ),
                         SizedBox(height: s.xxs),
                         Text(
-                          'Lote: ${lote['numeroLote']?.toString() ?? '—'}',
+                          'Lote: ${lote['numeroLote']?.toString() ?? '—'} • ${_secondaryStatus(lote)}',
                           style: theme.textTheme.erpBodySecondary.copyWith(
                             color: t.textSecondary,
                           ),
@@ -878,6 +976,14 @@ class _LoteMobileCard extends StatelessWidget {
                       ),
                       onSelected: onAction,
                       itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'editar_precos',
+                          child: Text('Editar preços do lote'),
+                        ),
+                        const PopupMenuItem(
+                          value: 'editar_info',
+                          child: Text('Editar informações do lote'),
+                        ),
                         if (LotActionsHelper.canMoveToQuarentena(lote))
                           const PopupMenuItem(
                             value: 'quarentena',
@@ -890,7 +996,15 @@ class _LoteMobileCard extends StatelessWidget {
                           ),
                         const PopupMenuItem(
                           value: 'historico',
-                          child: Text('Visualizar histórico'),
+                          child: Text('Visualizar histórico do lote'),
+                        ),
+                        const PopupMenuItem(
+                          value: 'recall',
+                          child: Text('Executar Recall'),
+                        ),
+                        const PopupMenuItem(
+                          value: 'devolver_fornecedor',
+                          child: Text('Devolver lote ao fornecedor'),
                         ),
                       ],
                     ),
@@ -910,12 +1024,19 @@ class _LoteMobileCard extends StatelessWidget {
                   ),
                   SizedBox(width: s.sm),
                   Text(
-                    'Stock: ${LoteStockUtils.formatDisponivel(lote)}',
+                    'Qtd: ${LoteStockUtils.formatDisponivel(lote)}',
                     style: theme.textTheme.erpCaption.copyWith(
                       color: t.textMuted,
                     ),
                   ),
                 ],
+              ),
+              SizedBox(height: s.xxs),
+              Text(
+                'Dias restantes: ${_daysRemainingLabel(lote['dataValidade'])} • Alerta: ${_alertLabel(lote)}',
+                style: theme.textTheme.erpCaption.copyWith(color: t.textMuted),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
               SizedBox(height: s.xxs),
               Row(
@@ -956,6 +1077,43 @@ class _LoteMobileCard extends StatelessWidget {
     final text = value?.toString();
     if (text == null || text.isEmpty) return '—';
     return text.length >= 10 ? text.substring(0, 10) : text;
+  }
+
+  static int? _daysRemaining(dynamic value) {
+    final parsed = DateTime.tryParse(value?.toString() ?? '');
+    if (parsed == null) return null;
+    final today = DateTime.now();
+    final end = DateTime(parsed.year, parsed.month, parsed.day);
+    final start = DateTime(today.year, today.month, today.day);
+    return end.difference(start).inDays;
+  }
+
+  static String _daysRemainingLabel(dynamic value) {
+    final days = _daysRemaining(value);
+    if (days == null) return '—';
+    if (days < 0) return 'Vencido';
+    return '$days';
+  }
+
+  static String _secondaryStatus(Map<String, dynamic> lote) {
+    final estado = lote['estadoSanitario']?.toString().toUpperCase();
+    if (estado == 'EXPIRADO') return 'EXPIRADO';
+    if (estado == 'QUARENTENA') return 'BLOQUEADO';
+    final days = _daysRemaining(lote['dataValidade']);
+    if (days == null) return 'Sem validade';
+    if (days < 0) return 'EXPIRADO';
+    return 'Expira em $days dias';
+  }
+
+  static String _alertLabel(Map<String, dynamic> lote) {
+    final indicador = lote['indicadorValidade']?.toString().toUpperCase();
+    final estado = lote['estadoSanitario']?.toString().toUpperCase();
+    if (estado == 'QUARENTENA') return 'Quarentena';
+    if (estado == 'RECALL') return 'Recall';
+    if (indicador == 'EXPIRADO' || estado == 'EXPIRADO') return 'Expirado';
+    if (indicador == '30_DIAS') return 'Validade crítica';
+    if (indicador == '60_DIAS') return 'Próximo da validade';
+    return 'Sem alerta';
   }
 }
 

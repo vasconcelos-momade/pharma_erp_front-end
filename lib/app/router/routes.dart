@@ -56,7 +56,7 @@ abstract final class AppRoutePaths {
 
   static const String salesCustomers = '/app/sales/customers';
   static const String salesInvoices = '/app/sales/invoices';
-  static const String salesQuotations = '/app/sales/quotations';
+  static const String salesProformaInvoices = '/app/sales/proforma-invoices';
   static const String salesHistory = '/app/sales/history';
 
   static const String users = '/app/users';
@@ -138,7 +138,7 @@ abstract final class AppRouteTitles {
       AppRoutePaths.stockInventory => 'Inventário',
       AppRoutePaths.salesCustomers => 'Clientes',
       AppRoutePaths.salesInvoices => 'Faturas',
-      AppRoutePaths.salesQuotations => 'Cotações',
+      AppRoutePaths.salesProformaInvoices => 'Faturas Proforma',
       AppRoutePaths.salesHistory => 'Histórico de Vendas',
       AppRoutePaths.users => 'Utilizadores',
       AppRoutePaths.userProfiles => 'Perfis',

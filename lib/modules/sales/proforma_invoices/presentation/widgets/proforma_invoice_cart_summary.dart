@@ -4,8 +4,8 @@ import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
 import '../../../pdv/presentation/widgets/pdv_catalog_utils.dart';
 
-class QuotationCartSummary extends StatelessWidget {
-  const QuotationCartSummary({
+class ProformaInvoiceCartSummary extends StatelessWidget {
+  const ProformaInvoiceCartSummary({
     super.key,
     required this.itemCount,
     required this.subtotal,

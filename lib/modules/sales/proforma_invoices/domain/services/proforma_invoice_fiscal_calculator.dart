@@ -1,7 +1,7 @@
 import '../../../../pharmacy/products/domain/entities/product_tax_rule.dart';
 
-class QuotationFiscalResult {
-  const QuotationFiscalResult({
+class ProformaInvoiceFiscalResult {
+  const ProformaInvoiceFiscalResult({
     required this.baseBruta,
     required this.descontoValor,
     required this.baseCalculo,
@@ -20,8 +20,8 @@ class QuotationFiscalResult {
   final String ivaLabel;
 }
 
-abstract final class QuotationFiscalCalculator {
-  QuotationFiscalCalculator._();
+abstract final class ProformaInvoiceFiscalCalculator {
+  ProformaInvoiceFiscalCalculator._();
 
   static double normalizeTaxRate(double taxa) {
     if (!taxa.isFinite || taxa <= 0) {
@@ -30,7 +30,7 @@ abstract final class QuotationFiscalCalculator {
     return taxa > 1 ? taxa / 100 : taxa;
   }
 
-  static QuotationFiscalResult calculate({
+  static ProformaInvoiceFiscalResult calculate({
     required double quantidade,
     required double precoUnitario,
     double descontoPercent = 0,
@@ -50,7 +50,7 @@ abstract final class QuotationFiscalCalculator {
     final total = baseCalculo + valorIva;
     final taxaPercentual = taxRate * 100;
 
-    return QuotationFiscalResult(
+    return ProformaInvoiceFiscalResult(
       baseBruta: baseBruta,
       descontoValor: descontoValor,
       baseCalculo: baseCalculo,

@@ -8,7 +8,7 @@ abstract final class ReportPaths {
   static const invoices = '/reports/invoices';
   static const salesHistory = '/reports/sales-history';
   static const customers = '/reports/customers';
-  static const quotations = '/reports/quotations';
+  static const proformaInvoices = '/reports/proforma-invoices';
   static const dashboardExecutive = '/reports/dashboards/executive';
   static const dashboardFinance = '/reports/dashboards/finance';
   static const dashboardPharmacy = '/reports/dashboards/pharmacy';
@@ -68,7 +68,8 @@ abstract final class ReportPaths {
   static const adminRoles = '/reports/admin/roles';
 
   static String invoice(String invoiceId) => '/reports/invoices/$invoiceId';
-  static String quotation(String quotationId) => '/reports/quotations/$quotationId';
+  static String proformaInvoice(String proformaInvoiceId) =>
+      '/reports/proforma-invoices/$proformaInvoiceId';
   static String stockInventory(String inventarioId) =>
       '/reports/stock/inventories/$inventarioId';
   static String stockRequisition(String requisicaoId) =>
@@ -80,8 +81,8 @@ abstract final class ReportPaths {
     ReportKeys.invoiceList: invoices,
     ReportKeys.salesHistory: salesHistory,
     ReportKeys.customers: customers,
-    ReportKeys.quotation: quotations,
-    ReportKeys.quotationList: quotations,
+    ReportKeys.proformaInvoice: proformaInvoices,
+    ReportKeys.proformaInvoiceList: proformaInvoices,
     ReportKeys.dashboardExecutive: dashboardExecutive,
     ReportKeys.dashboardFinance: dashboardFinance,
     ReportKeys.dashboardPharmacy: dashboardPharmacy,

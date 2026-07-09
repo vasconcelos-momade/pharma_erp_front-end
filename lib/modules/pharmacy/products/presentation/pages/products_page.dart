@@ -34,7 +34,6 @@ class ProductsPage extends ConsumerStatefulWidget {
 }
 
 class _ProductsPageState extends ConsumerState<ProductsPage> {
-  final Set<String> _selectedIds = {};
   final TextEditingController _searchController = TextEditingController();
   List<Product> _accumulatedItems = [];
 
@@ -191,35 +190,15 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
                                   sortBy: state.sortBy,
                                   sortOrder: state.sortOrder,
                                   onSort: controller.setSort,
-                                  onSelect: (p) => _openDetails(context, p),
                                   onAction: (p, action) =>
                                       _handleAction(context, ref, p, action),
-                                  selectedIds: _selectedIds,
-                                  onToggleSelect: (id, selected) {
-                                    setState(() {
-                                      if (selected) {
-                                        _selectedIds.add(id);
-                                      } else {
-                                        _selectedIds.remove(id);
-                                      }
-                                    });
-                                  },
-                                  onToggleSelectAll: (selected) {
-                                    setState(() {
-                                      if (selected) {
-                                        _selectedIds.addAll(state.items.map((e) => e.id));
-                                      } else {
-                                        _selectedIds.clear();
-                                      }
-                                    });
-                                  },
                                 )
                               : ProdutoList(
                                   items: _accumulatedItems,
                                   hasMore: state.hasMore,
                                   isLoading: state.isLoading,
                                   onLoadMore: () => controller.goToPage(state.page + 1),
-                                  onItemTap: (p) => _openDetails(context, p),
+                                  onItemTap: (_) {},
                                   onItemAction: (p, action) =>
                                       _handleAction(context, ref, p, action),
                                 ),
@@ -266,40 +245,13 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
 
   void _handleAction(BuildContext context, WidgetRef ref, Product product, String action) {
     switch (action) {
-      case 'detalhes':
-        _openDetails(context, product);
-        break;
       case 'editar':
         _openEditDialog(context, ref, product);
-        break;
-      case 'historico':
-        break;
-      case 'duplicar':
         break;
       case 'excluir':
         _confirmDeleteProduct(context, ref, product);
         break;
     }
-  }
-
-  Future<void> _openDetails(BuildContext context, Product product) async {
-    await AdaptiveNavigator.openPanel<void>(
-      context: context,
-      sideSheetWidth: 720,
-      routeSettings: RouteSettings(name: '/produtos/${product.id}'),
-      builder: (detailContext) => ProdutoDetailPanel(
-        product: product,
-        onClose: () => AdaptiveNavigator.close(detailContext),
-        onEdit: () {
-          AdaptiveNavigator.close(detailContext);
-          _openEditDialog(context, ref, product);
-        },
-        onDelete: () {
-          AdaptiveNavigator.close(detailContext);
-          _confirmDeleteProduct(context, ref, product);
-        },
-      ),
-    );
   }
 
   Future<void> _openCreateDialog(BuildContext context, WidgetRef ref) async {

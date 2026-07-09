@@ -34,7 +34,6 @@ class PosLayout extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = context.pharmaTokens;
     final s = context.spacing;
-    final width = MediaQuery.sizeOf(context).width;
     final caixaState = ref.watch(caixaSessaoProvider);
     final sessaoAtual = caixaState.sessaoAtual;
     final caixaAberto = sessaoAtual != null;

@@ -15,22 +15,14 @@ class ProdutoTable extends StatelessWidget {
     required this.sortBy,
     required this.sortOrder,
     required this.onSort,
-    required this.onSelect,
     required this.onAction,
-    required this.selectedIds,
-    required this.onToggleSelect,
-    required this.onToggleSelectAll,
   });
 
   final List<Product> items;
   final String sortBy;
   final String sortOrder;
   final void Function(String column, String order) onSort;
-  final void Function(Product) onSelect;
   final void Function(Product, String) onAction;
-  final Set<String> selectedIds;
-  final void Function(String id, bool selected) onToggleSelect;
-  final void Function(bool selected) onToggleSelectAll;
 
   static const _columnLabels = [
     'Nome',
@@ -48,10 +40,9 @@ class ProdutoTable extends StatelessWidget {
 
     return EnterpriseDataTable(
       adaptive: false,
-      showCheckboxColumn: true,
+      showCheckboxColumn: false,
       sortColumnIndex: _sortColumnIndex(),
       sortAscending: sortOrder == 'asc',
-      onSelectAll: (selected) => onToggleSelectAll(selected ?? false),
       dataRowMinHeight: 72,
       dataRowMaxHeight: 92,
       columnSpacing: s.xxl,
@@ -69,16 +60,11 @@ class ProdutoTable extends StatelessWidget {
       rowCount: items.length,
       rowBuilder: (context, index) {
         final product = items[index];
-        final isSelected = selectedIds.contains(product.id);
         final isCriticalStock =
             product.estoqueMinimo > 0 && product.estoqueAtual <= product.estoqueMinimo;
 
         return DataRow(
-          selected: isSelected,
           color: WidgetStateProperty.resolveWith((states) {
-            if (states.contains(WidgetState.selected)) {
-              return tableTheme.selectedColor;
-            }
             if (states.contains(WidgetState.hovered)) {
               return tableTheme.hoverColor;
             }
@@ -87,30 +73,21 @@ class ProdutoTable extends StatelessWidget {
             }
             return null;
           }),
-          onSelectChanged: (selected) {
-            if (selected != null) {
-              onToggleSelect(product.id, selected);
-            }
-          },
           cells: [
             DataCell(
               _nameCell(context, product),
-              onTap: () => onSelect(product),
             ),
             DataCell(
               ProdutoCategoriaChip(
                 label: product.categoriaNome ?? '—',
                 categoriaCodigo: product.categoriaCodigoFnm,
               ),
-              onTap: () => onSelect(product),
             ),
             DataCell(
               _stockCell(context, product, isCriticalStock),
-              onTap: () => onSelect(product),
             ),
             DataCell(
               _statusCell(context, product.ativo),
-              onTap: () => onSelect(product),
             ),
             DataCell(
               Align(
@@ -120,7 +97,6 @@ class ProdutoTable extends StatelessWidget {
                   tooltip: 'Acções',
                   onSelected: (action) => onAction(product, action),
                   itemBuilder: (context) => const [
-                    PopupMenuItem(value: 'detalhes', child: Text('Ver detalhes')),
                     PopupMenuItem(value: 'editar', child: Text('Editar')),
                     PopupMenuItem(value: 'excluir', child: Text('Eliminar')),
                   ],

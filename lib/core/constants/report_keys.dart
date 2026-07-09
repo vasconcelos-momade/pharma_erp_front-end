@@ -6,8 +6,8 @@ abstract final class ReportKeys {
   static const invoiceList = 'invoice-list';
   static const salesHistory = 'sales-history';
   static const customers = 'customers';
-  static const quotation = 'quotation';
-  static const quotationList = 'quotation-list';
+  static const proformaInvoice = 'proforma-invoice';
+  static const proformaInvoiceList = 'proforma-invoice-list';
   static const dashboardExecutive = 'dashboard-executive';
   static const dashboardFinance = 'dashboard-finance';
   static const dashboardPharmacy = 'dashboard-pharmacy';

@@ -383,11 +383,11 @@ class _LeftPaneState extends State<_LeftPane>
               const Tab(text: 'Produtos'),
               Tab(
                 text:
-                    'Pendentes (${widget.inventoryState.pendingInventories.length})',
+                    'Em contagem (${widget.inventoryState.pendingInventories.length})',
               ),
               Tab(
                 text:
-                    'Concluidos (${widget.inventoryState.completedInventories.length})',
+                    'Conciliados (${widget.inventoryState.completedInventories.length})',
               ),
             ],
           ),
@@ -401,9 +401,9 @@ class _LeftPaneState extends State<_LeftPane>
               onSelectProduct: widget.onSelectProduct,
             ),
             InventarioTab.pendentes => _InventariosTab(
-              title: 'Inventarios Pendentes',
+              title: 'Inventarios em contagem',
               subtitle:
-                  'Seleccione um inventario pendente para carregar os itens e voltar automaticamente para a tab Produtos.',
+                  'Seleccione um inventario em contagem para carregar os itens e voltar automaticamente para a tab Produtos.',
               isLoading: widget.inventoryState.isLoadingLists,
               inventories: widget.inventoryState.pendingInventories,
               activeInventoryId: widget.inventoryState.activeInventory?.id,
@@ -413,7 +413,7 @@ class _LeftPaneState extends State<_LeftPane>
               onSelect: widget.onSelectPendingInventory,
             ),
             InventarioTab.concluidos => _InventariosTab(
-              title: 'Inventarios Concluidos',
+              title: 'Inventarios conciliados',
               subtitle:
                   'Apenas visualizacao. Abra um card para consultar o inventario no painel da direita.',
               isLoading: widget.inventoryState.isLoadingLists,

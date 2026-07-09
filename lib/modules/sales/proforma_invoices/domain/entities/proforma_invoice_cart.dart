@@ -1,9 +1,9 @@
-import 'quotation_cart_line.dart';
+import 'proforma_invoice_cart_line.dart';
 
-class QuotationCart {
-  const QuotationCart({this.lines = const <QuotationCartLine>[]});
+class ProformaInvoiceCart {
+  const ProformaInvoiceCart({this.lines = const <ProformaInvoiceCartLine>[]});
 
-  final List<QuotationCartLine> lines;
+  final List<ProformaInvoiceCartLine> lines;
 
   int get itemCount => lines.length;
 
@@ -23,7 +23,7 @@ class QuotationCart {
 
   bool get isEmpty => lines.isEmpty;
 
-  QuotationCart copyWith({List<QuotationCartLine>? lines}) {
-    return QuotationCart(lines: lines ?? this.lines);
+  ProformaInvoiceCart copyWith({List<ProformaInvoiceCartLine>? lines}) {
+    return ProformaInvoiceCart(lines: lines ?? this.lines);
   }
 }

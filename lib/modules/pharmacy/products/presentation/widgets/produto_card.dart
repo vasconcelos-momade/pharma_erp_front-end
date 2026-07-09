@@ -42,7 +42,9 @@ class ProdutoCard extends StatelessWidget {
         alignEnd: true,
         emphasized: true,
       ),
-      onTap: onTap,
+      // Para seguir o requisito de interagir apenas via menu de ações,
+      // o toque no card não abre mais o painel lateral de detalhes.
+      onTap: null,
       actions: PopupMenuButton<String>(
         padding: EdgeInsets.zero,
         constraints: BoxConstraints(
@@ -52,7 +54,6 @@ class ProdutoCard extends StatelessWidget {
         icon: Icon(Icons.more_vert, size: t.iconSm, color: t.textMuted),
         onSelected: onAction,
         itemBuilder: (context) => const [
-          PopupMenuItem(value: 'detalhes', child: Text('Ver detalhes')),
           PopupMenuItem(value: 'editar', child: Text('Editar')),
           PopupMenuItem(value: 'excluir', child: Text('Excluir')),
         ],

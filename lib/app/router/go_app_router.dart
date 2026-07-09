@@ -19,7 +19,7 @@ import '../../modules/pharmacy/presentation/pages/pharmacy_stock_hub_page.dart';
 import '../../modules/pharmacy/presentation/pages/regulatory_hub_page.dart';
 import '../../modules/pharmacy/products/presentation/pages/products_page.dart';
 import '../../modules/pharmacy/categories/presentation/pages/categories_page.dart';
-import '../../modules/sales/quotations/presentation/pages/quotations_page.dart';
+import '../../modules/sales/proforma_invoices/presentation/pages/proforma_invoices_page.dart';
 import '../../modules/sales/invoices/presentation/pages/invoices_page.dart';
 import '../../modules/sales/pdv/presentation/pages/pdv_page.dart';
 import '../../modules/stock/presentation/pages/inventory_hub_page.dart';
@@ -431,9 +431,9 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const SalesInvoicesPage(),
           ),
           GoRoute(
-            path: AppRoutePaths.salesQuotations,
-            name: 'sales-quotations',
-            builder: (context, state) => const SalesQuotationsPage(),
+            path: AppRoutePaths.salesProformaInvoices,
+            name: 'sales-proforma-invoices',
+            builder: (context, state) => const SalesProformaInvoicesPage(),
           ),
           GoRoute(
             path: AppRoutePaths.salesHistory,
