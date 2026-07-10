@@ -40,9 +40,14 @@ abstract final class ApiConstants {
   static const tenantPosTaxRules = '/tenant/pos/tax-rules';
   static const tenantProdutosTaxRules = '/tenant/produtos/tax-rules';
   static const tenantFornecedores = '/tenant/fornecedores';
+  static String tenantFornecedor(String fornecedorId) =>
+      '/tenant/fornecedores/$fornecedorId';
+  static const tenantFornecedoresSearch = '/tenant/fornecedores/search';
+  static const tenantComprasSugestoes = '/tenant/compras/sugestoes';
   static const tenantCompras = '/tenant/compras';
   static const tenantDashboardProdutos = '/tenant/dashboard/produtos';
   static const tenantDashboardLotes = '/tenant/dashboard/lotes';
+  static const tenantDashboardEstoque = '/tenant/dashboard/estoque';
   static const tenantDashboardValidades = '/tenant/dashboard/validades';
   static const tenantDashboardFefo = '/tenant/dashboard/fefo';
   static const tenantDashboardExecutivo = '/tenant/dashboard/executivo';
@@ -94,6 +99,7 @@ abstract final class ApiConstants {
   static String tenantRequisicaoCancelar(String requisicaoId) =>
       '/tenant/requisicoes/$requisicaoId/cancelar';
   static const tenantLotes = '/tenant/lotes';
+  static const tenantEstoque = '/tenant/estoque';
   static String tenantLote(String loteId) => '/tenant/lotes/$loteId';
   static String tenantLoteMovimentos(String loteId) =>
       '/tenant/lotes/$loteId/movimentos';
@@ -107,6 +113,11 @@ abstract final class ApiConstants {
       '/tenant/lotes/$loteId/quarentena';
   static String tenantLoteLiberarQuarentena(String loteId) =>
       '/tenant/lotes/$loteId/liberar-quarentena';
+  static String tenantLotePrecos(String loteId) =>
+      '/tenant/lotes/$loteId/precos';
+  static String tenantLoteMovimentacaoSanitaria(String loteId) =>
+      '/tenant/lotes/$loteId/movimentacao-sanitaria';
+  static const tenantStockAdjust = '/tenant/stock/adjust';
   static String tenantLoteSanitarioHistorico(String loteId) =>
       '/tenant/regulatory/sanitario/lotes/$loteId/historico';
   static const tenantValidadesDashboard = '/tenant/validades/dashboard';

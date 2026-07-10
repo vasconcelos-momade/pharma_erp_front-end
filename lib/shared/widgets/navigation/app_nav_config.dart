@@ -131,7 +131,7 @@ const List<AppNavSection> kAppNavSections = <AppNavSection>[
         permissionModule: 'PRODUTOS',
       ),
       AppNavItem(
-        label: 'Stock & Lotes',
+        label: 'Estoque',
         path: AppRoutePaths.pharmacyStock,
         icon: Icons.layers_outlined,
         permissionModule: 'LOTES',
@@ -159,6 +159,18 @@ const List<AppNavSection> kAppNavSections = <AppNavSection>[
         icon: Icons.assignment_outlined,
         permissionModule: 'REQUISICOES',
       ),
+      AppNavItem(
+        label: 'Fornecedores',
+        path: AppRoutePaths.stockSuppliers,
+        icon: Icons.local_shipping_outlined,
+        permissionModule: 'FORNECEDORES',
+      ),
+      AppNavItem(
+        label: 'Sugestão de Compras',
+        path: AppRoutePaths.stockPurchaseSuggestions,
+        icon: Icons.shopping_cart_outlined,
+        permissionModule: 'COMPRAS',
+      ),
     ],
   ),
   AppNavSection(
@@ -168,6 +180,12 @@ const List<AppNavSection> kAppNavSections = <AppNavSection>[
         label: 'Financeiro',
         path: AppRoutePaths.financeHub,
         icon: Icons.payments_outlined,
+        permissionModule: 'RELATORIOS',
+      ),
+      AppNavItem(
+        label: 'Fluxo de Caixa',
+        path: AppRoutePaths.financeCashflow,
+        icon: Icons.stacked_line_chart,
         permissionModule: 'RELATORIOS',
       ),
     ],

@@ -383,7 +383,7 @@ class _LeftPaneState extends State<_LeftPane>
               const Tab(text: 'Produtos'),
               Tab(
                 text:
-                    'Em contagem (${widget.inventoryState.pendingInventories.length})',
+                    'Em Contagem (${widget.inventoryState.pendingInventories.length})',
               ),
               Tab(
                 text:

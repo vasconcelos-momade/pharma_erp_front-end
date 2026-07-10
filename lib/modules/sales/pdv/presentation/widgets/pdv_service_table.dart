@@ -58,7 +58,7 @@ class PdvServiceTable extends StatelessWidget {
             DataCell(
               FilledButton.tonalIcon(
                 onPressed: canAdd ? () => onAdd(service) : null,
-                icon: const Icon(Icons.add_shopping_cart_rounded),
+                icon: const Icon(Icons.add_rounded),
                 label: const Text('Add'),
               ),
             ),

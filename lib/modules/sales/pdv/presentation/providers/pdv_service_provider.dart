@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../app/providers/auth_session_notifier.dart';
+import '../../../../../core/contracts/pagination_response.dart';
 import '../../../../../core/errors/api_failure.dart';
 import '../../data/repositories/pdv_service_repository_impl.dart';
 import '../../domain/entities/pdv_service.dart';
@@ -11,6 +12,10 @@ class PdvServiceListState {
   const PdvServiceListState({
     this.items = const <PdvService>[],
     this.query = '',
+    this.page = 1,
+    this.pageSize = 10,
+    this.hasMore = false,
+    this.totalCount,
     this.isLoading = false,
     this.isInitialized = false,
     this.errorMessage,
@@ -18,6 +23,10 @@ class PdvServiceListState {
 
   final List<PdvService> items;
   final String query;
+  final int page;
+  final int pageSize;
+  final bool hasMore;
+  final int? totalCount;
   final bool isLoading;
   final bool isInitialized;
   final String? errorMessage;
@@ -25,6 +34,10 @@ class PdvServiceListState {
   PdvServiceListState copyWith({
     List<PdvService>? items,
     String? query,
+    int? page,
+    int? pageSize,
+    bool? hasMore,
+    int? totalCount,
     bool? isLoading,
     bool? isInitialized,
     String? errorMessage,
@@ -33,6 +46,10 @@ class PdvServiceListState {
     return PdvServiceListState(
       items: items ?? this.items,
       query: query ?? this.query,
+      page: page ?? this.page,
+      pageSize: pageSize ?? this.pageSize,
+      hasMore: hasMore ?? this.hasMore,
+      totalCount: totalCount ?? this.totalCount,
       isLoading: isLoading ?? this.isLoading,
       isInitialized: isInitialized ?? this.isInitialized,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
@@ -41,7 +58,8 @@ class PdvServiceListState {
 }
 
 class PdvServiceListController extends Notifier<PdvServiceListState> {
-  final Map<String, List<PdvService>> _cache = <String, List<PdvService>>{};
+  final Map<String, PaginationResponse<PdvService>> _cache =
+      <String, PaginationResponse<PdvService>>{};
   Timer? _debounce;
   int _requestId = 0;
 
@@ -76,15 +94,18 @@ class PdvServiceListController extends Notifier<PdvServiceListState> {
 
       if (isReady && (!wasReady || tenantChanged)) {
         _cache.clear();
-        unawaited(fetchCurrentQuery(force: true));
+        unawaited(fetchCurrentPage(force: true));
       }
     });
 
     if (authReady) {
-      Future.microtask(fetchCurrentQuery);
+      Future.microtask(fetchCurrentPage);
     }
     return const PdvServiceListState();
   }
+
+  String _cacheKey() =>
+      '${state.query.toLowerCase()}|${state.page}|${state.pageSize}';
 
   void onSearchChanged(String value) {
     final normalized = value.trim();
@@ -95,20 +116,41 @@ class PdvServiceListController extends Notifier<PdvServiceListState> {
     _debounce?.cancel();
     state = state.copyWith(
       query: normalized,
-      isLoading: true,
+      page: 1,
       clearError: true,
     );
 
     _debounce = Timer(const Duration(milliseconds: 350), () {
-      fetchCurrentQuery();
+      fetchCurrentPage();
     });
   }
 
-  Future<void> refreshCurrentQuery() async {
-    await fetchCurrentQuery(force: true);
+  Future<void> goToPage(int page) async {
+    if (page < 1 || page == state.page) {
+      return;
+    }
+    state = state.copyWith(page: page, isLoading: true, clearError: true);
+    await fetchCurrentPage();
   }
 
-  Future<void> fetchCurrentQuery({bool force = false}) async {
+  Future<void> setPageSize(int pageSize) async {
+    if (pageSize < 1 || pageSize == state.pageSize) {
+      return;
+    }
+    state = state.copyWith(
+      pageSize: pageSize,
+      page: 1,
+      isLoading: true,
+      clearError: true,
+    );
+    await fetchCurrentPage();
+  }
+
+  Future<void> refreshCurrentQuery() async {
+    await fetchCurrentPage(force: true);
+  }
+
+  Future<void> fetchCurrentPage({bool force = false}) async {
     if (!ref.read(authSessionProvider).hasTenantContext) {
       _cache.clear();
       state = const PdvServiceListState();
@@ -116,11 +158,16 @@ class PdvServiceListController extends Notifier<PdvServiceListState> {
     }
 
     final requestId = ++_requestId;
-    final cacheKey = state.query.toLowerCase();
+    final cacheKey = _cacheKey();
 
     if (!force && _cache.containsKey(cacheKey)) {
+      final cached = _cache[cacheKey]!;
       state = state.copyWith(
-        items: _cache[cacheKey]!,
+        items: cached.items,
+        page: cached.page,
+        pageSize: cached.pageSize,
+        hasMore: cached.hasMore,
+        totalCount: cached.totalCount,
         isLoading: false,
         isInitialized: true,
         clearError: true,
@@ -132,7 +179,11 @@ class PdvServiceListController extends Notifier<PdvServiceListState> {
 
     try {
       final repository = ref.read(pdvServiceRepositoryProvider);
-      final response = await repository.searchServices(query: state.query);
+      final response = await repository.searchServices(
+        query: state.query,
+        page: state.page,
+        pageSize: state.pageSize,
+      );
 
       if (requestId != _requestId) {
         return;
@@ -140,7 +191,11 @@ class PdvServiceListController extends Notifier<PdvServiceListState> {
 
       _cache[cacheKey] = response;
       state = state.copyWith(
-        items: response,
+        items: response.items,
+        page: response.page,
+        pageSize: response.pageSize,
+        hasMore: response.hasMore,
+        totalCount: response.totalCount,
         isLoading: false,
         isInitialized: true,
         clearError: true,

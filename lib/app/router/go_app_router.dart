@@ -14,6 +14,7 @@ import '../../modules/central/presentation/pages/platform_tenant_detail_page.dar
 import '../../modules/central/presentation/pages/platform_tenants_page.dart';
 import '../../modules/central/presentation/shell/platform_main_shell.dart';
 import '../../modules/dashboard/presentation/pages/dashboard_hub_page.dart';
+import '../../modules/finance/presentation/pages/cashflow_page.dart';
 import '../../modules/finance/presentation/pages/finance_hub_page.dart';
 import '../../modules/pharmacy/presentation/pages/pharmacy_stock_hub_page.dart';
 import '../../modules/pharmacy/presentation/pages/regulatory_hub_page.dart';
@@ -22,7 +23,9 @@ import '../../modules/pharmacy/categories/presentation/pages/categories_page.dar
 import '../../modules/sales/proforma_invoices/presentation/pages/proforma_invoices_page.dart';
 import '../../modules/sales/invoices/presentation/pages/invoices_page.dart';
 import '../../modules/sales/pdv/presentation/pages/pdv_page.dart';
+import '../../modules/stock/presentation/pages/fornecedores_page.dart';
 import '../../modules/stock/presentation/pages/inventory_hub_page.dart';
+import '../../modules/stock/presentation/pages/purchase_suggestions_page.dart';
 import '../../modules/stock/presentation/pages/movimentacoes_hub_page.dart';
 import '../../modules/stock/presentation/pages/requisicao_hub_page.dart';
 import '../../modules/settings/presentation/pages/settings_hub_page.dart';
@@ -358,7 +361,8 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: AppRoutePaths.financeCashflow,
-            redirect: (context, state) => AppRoutePaths.financeHub,
+            name: 'finance-cashflow',
+            builder: (context, state) => const CashflowPage(),
           ),
           GoRoute(
             path: AppRoutePaths.financeExpenses,
@@ -419,6 +423,16 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             path: AppRoutePaths.stockInventory,
             name: 'stock-inventory',
             builder: (context, state) => const InventoryHubPage(),
+          ),
+          GoRoute(
+            path: AppRoutePaths.stockSuppliers,
+            name: 'stock-suppliers',
+            builder: (context, state) => const FornecedoresPage(),
+          ),
+          GoRoute(
+            path: AppRoutePaths.stockPurchaseSuggestions,
+            name: 'stock-purchase-suggestions',
+            builder: (context, state) => const PurchaseSuggestionsPage(),
           ),
           GoRoute(
             path: AppRoutePaths.salesCustomers,

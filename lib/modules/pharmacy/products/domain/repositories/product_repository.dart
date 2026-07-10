@@ -30,7 +30,7 @@ abstract class ProductRepository {
     String? barcode,
     String? categoriaId,
     int page = 1,
-    int pageSize = 20,
+    int pageSize = 10,
   });
 
   Future<PaginationResponse<Product>> searchRequisitionProducts({

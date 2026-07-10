@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/design_metrics.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/theme/extensions.dart';
 import '../../../core/theme/pharma_surface.dart';
@@ -70,7 +69,7 @@ class EnterprisePagination extends StatelessWidget {
     if (context.isMobile) {
       return const SizedBox.shrink();
     }
-    if (_hasKnownTotal && _totalPages <= 1 && totalCount == 0) {
+    if (_hasKnownTotal && totalCount == 0 && (itemsOnPage ?? 0) == 0) {
       return const SizedBox.shrink();
     }
     if (!_hasKnownTotal && page == 1 && hasMore != true && (itemsOnPage ?? 0) == 0) {
@@ -114,46 +113,44 @@ class EnterprisePagination extends StatelessWidget {
           final pagination = Align(
             alignment: Alignment.centerRight,
             child: PharmaSurface(
-              color: scheme.surfaceContainerHighest,
+              color: scheme.surfaceContainerHighest.withValues(alpha: isDark ? 0.3 : 0.5),
               borderRadius: BorderRadius.circular(t.radius3xl),
               border: Border.all(
                 color: scheme.outline.withValues(alpha: isDark ? 0.6 : 0.8),
               ),
-              clipBehavior: Clip.antiAlias,
-              child: IntrinsicHeight(
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _PaginationSegmentButton(
-                      icon: Icons.chevron_left_rounded,
-                      enabled: _canGoBack,
-                      onPressed: _canGoBack ? () => onPageChanged(page - 1) : null,
-                    ),
-                    for (final item in _buildPageItems()) ...[
-                      _PaginationDivider(color: scheme.outline.withValues(alpha: 0.18)),
-                      if (item is int)
-                        _PaginationSegmentButton(
-                          label: '$item',
-                          selected: item == page,
-                          enabled: !isBusy,
-                          onPressed: item == page || isBusy
-                              ? null
-                              : () => onPageChanged(item),
-                        )
-                      else
-                        _PaginationGap(
-                          label: item as String,
-                          textColor: t.textMuted,
-                        ),
-                    ],
-                    _PaginationDivider(color: scheme.outline.withValues(alpha: 0.18)),
-                    _PaginationSegmentButton(
-                      icon: Icons.chevron_right_rounded,
-                      enabled: _canGoForward,
-                      onPressed: _canGoForward ? () => onPageChanged(page + 1) : null,
-                    ),
+              padding: EdgeInsets.symmetric(horizontal: s.xs, vertical: s.xxs),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _PaginationSegmentButton(
+                    icon: Icons.chevron_left_rounded,
+                    enabled: _canGoBack,
+                    onPressed: _canGoBack ? () => onPageChanged(page - 1) : null,
+                  ),
+                  SizedBox(width: s.xs),
+                  for (final item in _buildPageItems()) ...[
+                    if (item is int)
+                      _PaginationSegmentButton(
+                        label: '$item',
+                        selected: item == page,
+                        enabled: !isBusy,
+                        onPressed: item == page || isBusy
+                            ? null
+                            : () => onPageChanged(item),
+                      )
+                    else
+                      _PaginationGap(
+                        label: item as String,
+                        textColor: t.textMuted,
+                      ),
+                    SizedBox(width: s.xs),
                   ],
-                ),
+                  _PaginationSegmentButton(
+                    icon: Icons.chevron_right_rounded,
+                    enabled: _canGoForward,
+                    onPressed: _canGoForward ? () => onPageChanged(page + 1) : null,
+                  ),
+                ],
               ),
             ),
           );
@@ -280,17 +277,6 @@ class _PageSizeSelector extends StatelessWidget {
   }
 }
 
-class _PaginationDivider extends StatelessWidget {
-  const _PaginationDivider({required this.color});
-
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return VerticalDivider(width: 1, thickness: 1, color: color);
-  }
-}
-
 class _PaginationGap extends StatelessWidget {
   const _PaginationGap({
     required this.label,
@@ -303,7 +289,8 @@ class _PaginationGap extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: DesignMetrics.minTouchTarget,
+      width: 40,
+      height: 40,
       child: Center(
         child: Text(
           label,
@@ -333,30 +320,43 @@ class _PaginationSegmentButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
     final scheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final activeBackground = scheme.primary.withValues(alpha: isDark ? 0.22 : 0.12);
-    final resolvedForeground = selected
-        ? scheme.primary.withValues(alpha: isDark ? 0.9 : 0.82)
-        : enabled
-            ? t.textMuted
-            : t.textMuted.withValues(alpha: 0.5);
 
     return SizedBox(
-      width: DesignMetrics.minTouchTarget,
-      height: DesignMetrics.minTouchTarget,
+      width: 40,
+      height: 40,
       child: TextButton(
         onPressed: enabled ? onPressed : null,
         style: pharmaInstantButtonStyle(
-          TextButton.styleFrom(
-            padding: EdgeInsets.zero,
-            minimumSize: Size.square(DesignMetrics.minTouchTarget),
-            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(t.radiusMd),
-            ),
-            backgroundColor: selected ? activeBackground : scheme.surface.withValues(alpha: 0),
-            foregroundColor: resolvedForeground,
-            disabledForegroundColor: t.textMuted.withValues(alpha: 0.5),
+          ButtonStyle(
+            padding: WidgetStateProperty.all(EdgeInsets.zero),
+            minimumSize: WidgetStateProperty.all(const Size(40, 40)),
+            maximumSize: WidgetStateProperty.all(const Size(40, 40)),
+            shape: WidgetStateProperty.all(const CircleBorder()),
+            backgroundColor: WidgetStateProperty.resolveWith((states) {
+              if (!enabled) return scheme.surface.withValues(alpha: 0);
+              if (selected) {
+                final isDark = Theme.of(context).brightness == Brightness.dark;
+                return scheme.primary.withValues(alpha: isDark ? 0.25 : 0.15);
+              }
+              if (states.contains(WidgetState.pressed)) return scheme.onSurface.withValues(alpha: 0.12);
+              if (states.contains(WidgetState.hovered)) return scheme.onSurface.withValues(alpha: 0.08);
+              if (states.contains(WidgetState.focused)) return scheme.onSurface.withValues(alpha: 0.12);
+              return scheme.surface.withValues(alpha: 0);
+            }),
+            foregroundColor: WidgetStateProperty.resolveWith((states) {
+              if (!enabled) return t.textMuted.withValues(alpha: 0.5);
+              if (selected) {
+                final isDark = Theme.of(context).brightness == Brightness.dark;
+                return scheme.primary.withValues(alpha: isDark ? 0.9 : 0.85);
+              }
+              return t.textPrimary;
+            }),
+            overlayColor: WidgetStateProperty.resolveWith((states) {
+              if (states.contains(WidgetState.pressed)) return scheme.onSurface.withValues(alpha: 0.12);
+              if (states.contains(WidgetState.hovered)) return scheme.onSurface.withValues(alpha: 0.08);
+              if (states.contains(WidgetState.focused)) return scheme.onSurface.withValues(alpha: 0.12);
+              return null;
+            }),
           ),
         ),
         child: icon != null
@@ -364,7 +364,6 @@ class _PaginationSegmentButton extends StatelessWidget {
             : Text(
                 label!,
                 style: Theme.of(context).textTheme.erpTableSecondary.copyWith(
-                      color: resolvedForeground,
                       fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
                     ),
               ),

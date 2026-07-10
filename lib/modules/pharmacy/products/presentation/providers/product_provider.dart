@@ -16,7 +16,7 @@ class ProductListState {
     this.query = '',
     this.categoriaId,
     this.page = 1,
-    this.pageSize = 50,
+    this.pageSize = 10,
     this.hasMore = false,
     this.totalCount,
     this.isLoading = false,
@@ -121,7 +121,6 @@ class ProductListController extends Notifier<ProductListState> {
     state = state.copyWith(
       query: normalized,
       page: 1,
-      isLoading: true,
       clearError: true,
     );
 

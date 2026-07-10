@@ -53,6 +53,8 @@ abstract final class AppRoutePaths {
   static const String stockRequisitionsLegacy = '/app/stock/requisicoes';
   static const String stockTransfersLegacy = '/app/stock/transferencias';
   static const String stockInventory = '/app/stock/inventory';
+  static const String stockSuppliers = '/app/stock/suppliers';
+  static const String stockPurchaseSuggestions = '/app/stock/purchase-suggestions';
 
   static const String salesCustomers = '/app/sales/customers';
   static const String salesInvoices = '/app/sales/invoices';
@@ -114,7 +116,7 @@ abstract final class AppRouteTitles {
       AppRoutePaths.pos => 'POS / Caixa',
       AppRoutePaths.products => 'Produtos',
       AppRoutePaths.pharmacyCategories => 'Categorias',
-      AppRoutePaths.pharmacyLots => 'Lotes',
+      AppRoutePaths.pharmacyLots => 'Estoque',
       AppRoutePaths.pharmacyExpiry => 'Validades',
       AppRoutePaths.pharmacyFefo => 'FEFO',
       AppRoutePaths.regulatory => 'Sanitário / Alertas',
@@ -136,6 +138,8 @@ abstract final class AppRouteTitles {
       AppRoutePaths.stockRequisitionsLegacy => 'Requisições',
       AppRoutePaths.stockTransfersLegacy => 'Requisições',
       AppRoutePaths.stockInventory => 'Inventário',
+      AppRoutePaths.stockSuppliers => 'Fornecedores',
+      AppRoutePaths.stockPurchaseSuggestions => 'Sugestão de Compras',
       AppRoutePaths.salesCustomers => 'Clientes',
       AppRoutePaths.salesInvoices => 'Faturas',
       AppRoutePaths.salesProformaInvoices => 'Faturas Proforma',

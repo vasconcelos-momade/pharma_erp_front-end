@@ -106,7 +106,7 @@ class PdvProductTable extends StatelessWidget {
                       )
                     : FilledButton.tonalIcon(
                         onPressed: canInteract ? () => onAdd(product) : null,
-                        icon: const Icon(Icons.add_shopping_cart_rounded),
+                        icon: const Icon(Icons.add_rounded),
                         label: const Text('Add'),
                       ),
               ),

@@ -278,6 +278,7 @@ class _PdvPageState extends ConsumerState<PdvPage>
         MaterialPageRoute(
           builder: (_) => _MobileCartScreen(
             onCharge: _handleCheckout,
+            onCancelCart: _handleCancelCart,
             onAdd: _addLine,
             onRemove: _removeLine,
             onDelete: _deleteLine,
@@ -285,6 +286,40 @@ class _PdvPageState extends ConsumerState<PdvPage>
         ),
       ),
     );
+  }
+
+  Future<void> _handleCancelCart() async {
+    if (!_ensureCaixaAberto()) {
+      return;
+    }
+
+    final cartState = ref.read(pdvCartProvider);
+    if (cartState.lines.isEmpty) {
+      return;
+    }
+
+    final confirm = await PharmaFeedback.confirm(
+      context: context,
+      title: 'Cancelar Venda',
+      message: 'Tem certeza que deseja cancelar a venda atual e limpar o carrinho?',
+      confirmText: 'Sim, Cancelar',
+      cancelText: 'Não, Continuar',
+      destructive: true,
+    );
+
+    if (confirm != true || !mounted) {
+      return;
+    }
+
+    try {
+      ref.read(pdvCartProvider.notifier).clear();
+      // O carrinho local é limpo imediatamente. Opcionalmente, pode notificar o backend para limpar o idempotencyKey ativo
+      PharmaFeedback.success(context, 'Venda cancelada e carrinho limpo.');
+    } catch (_) {
+      if (mounted) {
+        PharmaFeedback.error(context, 'Falha ao cancelar venda.');
+      }
+    }
   }
 
   Future<void> _handleCheckout() async {
@@ -404,6 +439,7 @@ class _PdvPageState extends ConsumerState<PdvPage>
     final isDesktop = w > 1200;
     final isTablet = w > 700 && w <= 1200;
     final isMobile = w <= 700;
+    final showCatalogPagination = !context.isMobile;
     final productState = ref.watch(productListProvider);
     final productController = ref.read(productListProvider.notifier);
     final serviceState = ref.watch(pdvServiceListProvider);
@@ -469,19 +505,22 @@ class _PdvPageState extends ConsumerState<PdvPage>
       );
     }
 
-    final catalogFooter = _isProductsTab
-        ? EnterprisePagination(
-            page: productState.page,
-            pageSize: productState.pageSize,
-            totalCount: productState.totalCount,
-            hasMore: productState.totalCount == null ? productState.hasMore : null,
-            itemsOnPage: productState.items.length,
-            isBusy: productState.isLoading,
-            itemLabel: 'produtos',
-            onPageChanged: productController.goToPage,
-            onPageSizeChanged: productController.setPageSize,
-          )
-        : null;
+    final catalogFooter = EnterprisePagination(
+      page: _isProductsTab ? productState.page : serviceState.page,
+      pageSize: _isProductsTab ? productState.pageSize : serviceState.pageSize,
+      totalCount: _isProductsTab ? productState.totalCount : serviceState.totalCount,
+      hasMore: _isProductsTab ? productState.hasMore : serviceState.hasMore,
+      itemsOnPage:
+          _isProductsTab ? productState.items.length : serviceState.items.length,
+      isBusy: _isProductsTab ? productState.isLoading : serviceState.isLoading,
+      itemLabel: _isProductsTab ? 'produtos' : 'serviços',
+      onPageChanged: _isProductsTab
+          ? productController.goToPage
+          : serviceController.goToPage,
+      onPageSizeChanged: _isProductsTab
+          ? productController.setPageSize
+          : serviceController.setPageSize,
+    );
 
     final catalog = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -551,7 +590,7 @@ class _PdvPageState extends ConsumerState<PdvPage>
             hintText: _isProductsTab
                 ? 'Pesquisar ou escanear...'
                 : 'Pesquisar serviço...',
-            enabled: !activeIsLoading,
+            enabled: true,
             onSubmitted: (_) => _onSearchSubmitted(
               products: productState.items,
               services: serviceState.items,
@@ -568,7 +607,7 @@ class _PdvPageState extends ConsumerState<PdvPage>
                   child: ProdutoCategoriaFilterDropdown(
                     value: productState.categoriaId,
                     width: double.infinity,
-                    enabled: !productState.isLoading,
+                    enabled: true,
                     onChanged: _onCategoryChanged,
                   ),
                 ),
@@ -593,7 +632,7 @@ class _PdvPageState extends ConsumerState<PdvPage>
                   child: ProdutoCategoriaFilterDropdown(
                     value: productState.categoriaId,
                     width: 260,
-                    enabled: !productState.isLoading,
+                    enabled: true,
                     onChanged: _onCategoryChanged,
                   ),
                 ),
@@ -613,7 +652,7 @@ class _PdvPageState extends ConsumerState<PdvPage>
                       hintText: _isProductsTab
                           ? 'Pesquisar por código, nome ou EAN'
                           : 'Pesquisar por nome do serviço',
-                      enabled: !activeIsLoading,
+                      enabled: true,
                       onSubmitted: (_) => _onSearchSubmitted(
                         products: productState.items,
                         services: serviceState.items,
@@ -678,7 +717,7 @@ class _PdvPageState extends ConsumerState<PdvPage>
                       onAdd: (service) => unawaited(_addService(service)),
                     ),
         ),
-        if (!isMobile && catalogFooter != null) ...[
+        if (showCatalogPagination) ...[
           SizedBox(height: s.sm),
           catalogFooter,
         ],
@@ -698,6 +737,7 @@ class _PdvPageState extends ConsumerState<PdvPage>
       caixaAberto: caixaAberto,
       isCartBusy: cartState.isMutating || cartState.isLoading,
       onCharge: (!caixaAberto || cart.isEmpty) ? null : _handleCheckout,
+      onCancelCart: (!caixaAberto || cart.isEmpty) ? null : _handleCancelCart,
       onAdd: (line) => unawaited(_addLine(line)),
       onRemove: (line) => unawaited(_removeLine(line)),
       onDelete: (line) => unawaited(_deleteLine(line)),
@@ -765,12 +805,14 @@ class _PdvPageState extends ConsumerState<PdvPage>
 class _MobileCartScreen extends ConsumerWidget {
   const _MobileCartScreen({
     required this.onCharge,
+    required this.onCancelCart,
     required this.onAdd,
     required this.onRemove,
     required this.onDelete,
   });
 
   final Future<void> Function() onCharge;
+  final Future<void> Function() onCancelCart;
   final Future<void> Function(PdvCartLine line) onAdd;
   final Future<void> Function(PdvCartLine line) onRemove;
   final Future<void> Function(PdvCartLine line) onDelete;
@@ -810,6 +852,11 @@ class _MobileCartScreen extends ConsumerWidget {
                 : () {
                     unawaited(onCharge());
                   },
+            onCancelCart: (!caixaAberto || cart.isEmpty)
+                ? null
+                : () {
+                    unawaited(onCancelCart());
+                  },
             onAdd: (line) => unawaited(onAdd(line)),
             onRemove: (line) => unawaited(onRemove(line)),
             onDelete: (line) => unawaited(onDelete(line)),
@@ -834,6 +881,7 @@ class _CartPane extends StatelessWidget {
     required this.caixaAberto,
     required this.isCartBusy,
     required this.onCharge,
+    this.onCancelCart,
     required this.onAdd,
     required this.onRemove,
     required this.onDelete,
@@ -851,6 +899,7 @@ class _CartPane extends StatelessWidget {
   final bool caixaAberto;
   final bool isCartBusy;
   final VoidCallback? onCharge;
+  final VoidCallback? onCancelCart;
   final void Function(PdvCartLine) onAdd;
   final void Function(PdvCartLine) onRemove;
   final void Function(PdvCartLine) onDelete;
@@ -1038,16 +1087,25 @@ class _CartPane extends StatelessWidget {
             ),
             SizedBox(height: compact ? s.sm : s.md),
             
-            FilledButton.icon(
-              onPressed: onCharge,
-              icon: Icon(
-                Icons.point_of_sale_rounded,
-                size: compact ? t.iconSm : t.iconMd,
-              ),
-              label: Text(
-                compact ? 'Finalizar' : 'Finalizar Venda',
-                maxLines: 1,
-              ),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: onCancelCart,
+                    child: const Text('Cancelar'),
+                  ),
+                ),
+                SizedBox(width: s.sm),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: onCharge,
+                    child: Text(
+                      compact ? 'Finalizar' : 'Finalizar Venda',
+                      maxLines: 1,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),

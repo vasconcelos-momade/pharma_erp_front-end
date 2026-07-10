@@ -81,7 +81,7 @@ class ProductRepositoryImpl implements ProductRepository {
     String? barcode,
     String? categoriaId,
     int page = 1,
-    int pageSize = 20,
+    int pageSize = 10,
   }) async {
     final response = await _remoteDataSource.searchProducts(
       query: query,
@@ -95,6 +95,7 @@ class ProductRepositoryImpl implements ProductRepository {
       page: response.page,
       pageSize: response.pageSize,
       hasMore: response.hasMore,
+      totalCount: response.totalCount,
     );
   }
 

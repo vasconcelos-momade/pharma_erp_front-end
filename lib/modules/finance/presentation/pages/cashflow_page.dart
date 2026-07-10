@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../../app/router/routes.dart';
 
 import '../../../../core/constants/report_paths.dart';
 import '../../../../core/extensions/async_value_extensions.dart';
@@ -40,6 +43,21 @@ class _CashflowPageState extends ConsumerState<CashflowPage> {
       scrollable: true,
       mobileKpisHorizontalScroll: true,
       actions: [
+        OutlinedButton.icon(
+          onPressed: () => context.push(AppRoutePaths.pos),
+          icon: const Icon(Icons.remove_circle_outline),
+          label: const Text('Saída'),
+        ),
+        OutlinedButton.icon(
+          onPressed: () => context.push(AppRoutePaths.pos),
+          icon: const Icon(Icons.add_circle_outline),
+          label: const Text('Suprimento'),
+        ),
+        OutlinedButton.icon(
+          onPressed: () => context.push(AppRoutePaths.pos),
+          icon: const Icon(Icons.savings_outlined),
+          label: const Text('Sangria'),
+        ),
         ...financeReportActions(
           ref: ref,
           enabled: !reportState.isSubmitting,

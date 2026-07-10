@@ -150,7 +150,6 @@ class _FinalizarVendaDialogState
       controller: _nomeController,
       decoration: const InputDecoration(
         labelText: 'Nome do paciente',
-        prefixIcon: Icon(Icons.person_outline_rounded),
       ),
       validator: (value) {
         if (!widget.requiresPatientDetails) {
@@ -171,7 +170,6 @@ class _FinalizarVendaDialogState
       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
       decoration: const InputDecoration(
         labelText: 'Idade',
-        prefixIcon: Icon(Icons.cake_outlined),
       ),
       validator: (value) {
         if (!widget.requiresPatientDetails) {
@@ -190,7 +188,6 @@ class _FinalizarVendaDialogState
       controller: _nidController,
       decoration: const InputDecoration(
         labelText: 'NID da receita/doente',
-        prefixIcon: Icon(Icons.badge_outlined),
       ),
       validator: (value) {
         if (!widget.requiresPatientDetails) {
@@ -209,7 +206,6 @@ class _FinalizarVendaDialogState
       controller: _prescritorController,
       decoration: const InputDecoration(
         labelText: 'Prescritor',
-        prefixIcon: Icon(Icons.medical_information_outlined),
       ),
       validator: (value) {
         if (!widget.requiresPatientDetails) {
@@ -228,7 +224,6 @@ class _FinalizarVendaDialogState
       controller: _unidadeSanitariaController,
       decoration: const InputDecoration(
         labelText: 'Unidade Sanitaria',
-        prefixIcon: Icon(Icons.local_hospital_outlined),
       ),
       validator: (value) {
         if (!widget.requiresPatientDetails) {
@@ -252,7 +247,6 @@ class _FinalizarVendaDialogState
       ],
       decoration: const InputDecoration(
         labelText: 'Valor recebido',
-        prefixIcon: Icon(Icons.payments_outlined),
         suffixText: 'MT',
       ),
       validator: (value) {
@@ -273,19 +267,31 @@ class _FinalizarVendaDialogState
     PdvCheckoutState checkoutState,
     FinalizarVendaPresentation presentation,
   ) {
-    final confirmButton = FilledButton.icon(
+    final cancelButton = OutlinedButton(
+      onPressed: checkoutState.isSubmitting
+          ? null
+          : () => AdaptiveNavigator.cancel(context),
+      child: const Text('Cancelar'),
+    );
+
+    final confirmButton = FilledButton(
       onPressed: checkoutState.isSubmitting ? null : _submit,
-      icon: checkoutState.isSubmitting
+      child: checkoutState.isSubmitting
           ? const PharmaButtonLoader()
-          : const Icon(Icons.check_circle_outline_rounded),
-      label: const Text('Confirmar Pagamento'),
+          : const Text('Finalizar venda'),
     );
 
     if (widget.embedded) {
       return [
         SizedBox(
           width: double.infinity,
-          child: confirmButton,
+          child: Row(
+            children: [
+              Expanded(child: cancelButton),
+              const SizedBox(width: 16),
+              Expanded(child: confirmButton),
+            ],
+          ),
         ),
       ];
     }
@@ -294,18 +300,19 @@ class _FinalizarVendaDialogState
       return [
         SizedBox(
           width: double.infinity,
-          child: confirmButton,
+          child: Row(
+            children: [
+              Expanded(child: cancelButton),
+              const SizedBox(width: 16),
+              Expanded(child: confirmButton),
+            ],
+          ),
         ),
       ];
     }
 
     return [
-      TextButton(
-        onPressed: checkoutState.isSubmitting
-            ? null
-            : () => AdaptiveNavigator.cancel(context),
-        child: const Text('Cancelar'),
-      ),
+      cancelButton,
       confirmButton,
     ];
   }

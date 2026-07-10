@@ -348,7 +348,7 @@ class _LotsPageState extends ConsumerState<LotsPage> {
                                             const PopupMenuItem(
                                               value: 'reverter',
                                               child: Text(
-                                                'Reverter Quarentena',
+                                                'Liberar lote',
                                               ),
                                             ),
                                           const PopupMenuItem(
@@ -992,7 +992,7 @@ class _LoteMobileCard extends StatelessWidget {
                         if (LotActionsHelper.canRevertQuarentena(lote))
                           const PopupMenuItem(
                             value: 'reverter',
-                            child: Text('Reverter Quarentena'),
+                            child: Text('Liberar lote'),
                           ),
                         const PopupMenuItem(
                           value: 'historico',

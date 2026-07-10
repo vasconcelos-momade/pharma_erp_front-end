@@ -50,7 +50,7 @@ abstract class ProductRemoteDataSource {
     String? barcode,
     String? categoriaId,
     int page = 1,
-    int pageSize = 20,
+    int pageSize = 10,
   });
 
   Future<PaginationResponse<ProductModel>> searchRequisitionProducts({
@@ -382,7 +382,7 @@ class ProductRemoteDataSourceImpl implements ProductRemoteDataSource {
     String? barcode,
     String? categoriaId,
     int page = 1,
-    int pageSize = 20,
+    int pageSize = 10,
   }) async {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
