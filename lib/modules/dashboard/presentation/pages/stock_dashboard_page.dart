@@ -33,13 +33,12 @@ class _StockDashboardPageState extends ConsumerState<StockDashboardPage> {
     final charts = dashMap(async.valueOrNull?['charts']);
     final statusOptions = dashboardUniqueOptions([
       ...dashList(tables?['inventarios']).map((row) => row['status']),
-      ...dashList(tables?['requisicoes']).map((row) => row['status']),
+      ...dashList(tables?['compras']).map((row) => row['status']),
     ]);
     final movementTypeOptions = dashboardUniqueOptions(
       [
         ...dashList(charts?['entradasSaidas']).map((row) => row['tipo']),
         ...dashList(tables?['ultimosMovimentos']).map((row) => row['tipo']),
-        ...dashList(tables?['requisicoes']).map((row) => row['tipo']),
       ],
       labels: const {
         'ENTRADA': 'Entrada',
@@ -243,12 +242,12 @@ class _StockDashboardPageState extends ConsumerState<StockDashboardPage> {
               ),
               const SizedBox(height: AppSpacing.lg),
               DashboardPaginatedTable(
-                title: 'Requisições recentes',
-                headers: const ['Documento', 'Tipo', 'Estado'],
-                reloadKey: '${_query.reloadKey}-req',
+                title: 'Compras recentes',
+                headers: const ['Documento', 'Fornecedor', 'Estado'],
+                reloadKey: '${_query.reloadKey}-compras',
                 loadPage: (page, pageSize, sortBy, sortDir) async {
                   final result = await dataSource.stockDashboardTable(
-                    table: 'requisicoes',
+                    table: 'compras',
                     query: _query.copyWith(
                       sortBy: sortBy,
                       sortDir: sortDir,
@@ -261,7 +260,7 @@ class _StockDashboardPageState extends ConsumerState<StockDashboardPage> {
                 },
                 rowBuilder: (row) => [
                   row['numeroDocumento']?.toString() ?? '—',
-                  row['tipo']?.toString() ?? '—',
+                  row['fornecedorNome']?.toString() ?? '—',
                   row['status']?.toString() ?? '—',
                 ],
               ),
@@ -375,9 +374,9 @@ List<EnterpriseStatCard> _stockSecondaryKpis(Map<String, dynamic>? kpis) {
       icon: Icons.fact_check_outlined,
     ),
     dashboardKpiCard(
-      title: 'Requisições',
-      value: dashKpi(kpis, 'requisicoesPendentes'),
-      icon: Icons.assignment_outlined,
+      title: 'Compras pendentes',
+      value: dashKpi(kpis, 'comprasPendentes'),
+      icon: Icons.receipt_long_outlined,
     ),
     dashboardKpiCard(
       title: 'Incinerações',

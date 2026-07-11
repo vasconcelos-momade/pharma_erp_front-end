@@ -10,8 +10,6 @@ abstract final class ApiConstants {
   static const tenantPosProdutosCatalogVersion =
       '/tenant/pos/produtos/catalog-version';
   static const tenantPosProdutosSearch = '/tenant/pos/produtos/search';
-  static const tenantRequisicoesProdutosSearch =
-      '/tenant/requisicoes/produtos/search';
   static const tenantPosServicosSearch = '/tenant/pos/servicos/search';
   static const tenantPosValidarDispensacao = '/tenant/pos/validar-dispensacao';
   static const tenantPosDraftSale = '/tenant/pos/sales/draft';
@@ -44,6 +42,7 @@ abstract final class ApiConstants {
       '/tenant/fornecedores/$fornecedorId';
   static const tenantFornecedoresSearch = '/tenant/fornecedores/search';
   static const tenantComprasSugestoes = '/tenant/compras/sugestoes';
+  static const tenantComprasFromSuggestions = '/tenant/compras/from-suggestions';
   static const tenantCompras = '/tenant/compras';
   static const tenantDashboardProdutos = '/tenant/dashboard/produtos';
   static const tenantDashboardLotes = '/tenant/dashboard/lotes';
@@ -85,19 +84,6 @@ abstract final class ApiConstants {
   static String tenantInventarioCancelar(String inventarioId) =>
       '/tenant/inventarios/$inventarioId/cancelar';
 
-  static const tenantRequisicoes = '/tenant/requisicoes';
-  static String tenantRequisicaoDetalhe(String requisicaoId) =>
-      '/tenant/requisicoes/$requisicaoId';
-  static String tenantRequisicaoItens(String requisicaoId) =>
-      '/tenant/requisicoes/$requisicaoId/items';
-  static String tenantRequisicaoAprovar(String requisicaoId) =>
-      '/tenant/requisicoes/$requisicaoId/aprovar';
-  static String tenantRequisicaoRejeitar(String requisicaoId) =>
-      '/tenant/requisicoes/$requisicaoId/rejeitar';
-  static String tenantRequisicaoConfirmar(String requisicaoId) =>
-      tenantRequisicaoAprovar(requisicaoId);
-  static String tenantRequisicaoCancelar(String requisicaoId) =>
-      '/tenant/requisicoes/$requisicaoId/cancelar';
   static const tenantLotes = '/tenant/lotes';
   static const tenantEstoque = '/tenant/estoque';
   static String tenantLote(String loteId) => '/tenant/lotes/$loteId';
@@ -140,11 +126,6 @@ abstract final class ApiConstants {
       '/tenant/produtos/$produtoId/historico';
   static String tenantProdutoAuditoria(String produtoId) =>
       '/tenant/produtos/$produtoId/auditoria';
-  static String tenantRequisicaoItem(
-    String requisicaoId,
-    String itemId,
-  ) =>
-      '/tenant/requisicoes/$requisicaoId/items/$itemId';
 
   static const tenantClientes = '/tenant/clientes';
   static const tenantClientesDashboard = '/tenant/clientes/dashboard';

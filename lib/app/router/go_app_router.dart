@@ -25,9 +25,9 @@ import '../../modules/sales/invoices/presentation/pages/invoices_page.dart';
 import '../../modules/sales/pdv/presentation/pages/pdv_page.dart';
 import '../../modules/stock/presentation/pages/fornecedores_page.dart';
 import '../../modules/stock/presentation/pages/inventory_hub_page.dart';
+import '../../modules/stock/presentation/pages/compras_page.dart';
 import '../../modules/stock/presentation/pages/purchase_suggestions_page.dart';
 import '../../modules/stock/presentation/pages/movimentacoes_hub_page.dart';
-import '../../modules/stock/presentation/pages/requisicao_hub_page.dart';
 import '../../modules/settings/presentation/pages/settings_hub_page.dart';
 import '../../shared/layouts/app_main_shell.dart';
 import '../../shared/layouts/pos_shell_layout.dart';
@@ -391,11 +391,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: AppRoutePaths.purchasing,
-            redirect: (context, state) => AppRoutePaths.stockRequisitions,
+            redirect: (context, state) => AppRoutePaths.stockPurchases,
           ),
           GoRoute(
             path: AppRoutePaths.comprasLegacy,
-            redirect: (context, state) => AppRoutePaths.stockRequisitions,
+            redirect: (context, state) => AppRoutePaths.stockPurchases,
           ),
           GoRoute(
             path: AppRoutePaths.reports,
@@ -408,16 +408,15 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: AppRoutePaths.stockRequisitions,
-            name: 'stock-requests',
-            builder: (context, state) => const RequisicaoHubPage(),
+            redirect: (context, state) => AppRoutePaths.stockPurchases,
           ),
           GoRoute(
             path: AppRoutePaths.stockRequisitionsLegacy,
-            redirect: (context, state) => AppRoutePaths.stockRequisitions,
+            redirect: (context, state) => AppRoutePaths.stockPurchases,
           ),
           GoRoute(
             path: AppRoutePaths.stockTransfersLegacy,
-            redirect: (context, state) => AppRoutePaths.stockRequisitions,
+            redirect: (context, state) => AppRoutePaths.stockPurchases,
           ),
           GoRoute(
             path: AppRoutePaths.stockInventory,
@@ -428,6 +427,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
             path: AppRoutePaths.stockSuppliers,
             name: 'stock-suppliers',
             builder: (context, state) => const FornecedoresPage(),
+          ),
+          GoRoute(
+            path: AppRoutePaths.stockPurchases,
+            name: 'stock-purchases',
+            builder: (context, state) => const ComprasPage(),
           ),
           GoRoute(
             path: AppRoutePaths.stockPurchaseSuggestions,

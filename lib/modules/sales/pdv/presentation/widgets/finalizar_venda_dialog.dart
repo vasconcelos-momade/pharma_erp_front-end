@@ -57,6 +57,8 @@ class FinalizarVendaDialog extends ConsumerStatefulWidget {
 
 class _FinalizarVendaDialogState
     extends ConsumerState<FinalizarVendaDialog> {
+  static const int _maxPatientAge = 130;
+
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nomeController;
   late final TextEditingController _idadeController;
@@ -157,6 +159,10 @@ class _FinalizarVendaDialogState
         }
         if (value == null || value.trim().isEmpty) {
           return 'Campo obrigatório.';
+        }
+        final idade = int.tryParse(value.trim());
+        if (idade == null || idade <= 0 || idade > _maxPatientAge) {
+          return 'Informe uma idade entre 1 e $_maxPatientAge anos.';
         }
         return null;
       },

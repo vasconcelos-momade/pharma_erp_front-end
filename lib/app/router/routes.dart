@@ -54,6 +54,7 @@ abstract final class AppRoutePaths {
   static const String stockTransfersLegacy = '/app/stock/transferencias';
   static const String stockInventory = '/app/stock/inventory';
   static const String stockSuppliers = '/app/stock/suppliers';
+  static const String stockPurchases = '/app/stock/purchases';
   static const String stockPurchaseSuggestions = '/app/stock/purchase-suggestions';
 
   static const String salesCustomers = '/app/sales/customers';
@@ -130,15 +131,16 @@ abstract final class AppRouteTitles {
       AppRoutePaths.auditTimeline => 'Cronologia',
       AppRoutePaths.auditLogs => 'Logs',
       AppRoutePaths.auditPsych => 'Auditoria de Psicotrópicos',
-      AppRoutePaths.purchasing => 'Requisições',
-      AppRoutePaths.comprasLegacy => 'Requisições',
+      AppRoutePaths.purchasing => 'Compras',
+      AppRoutePaths.comprasLegacy => 'Compras',
       AppRoutePaths.reports => 'Relatórios',
       AppRoutePaths.stockMovements => 'Movimentos',
-      AppRoutePaths.stockRequisitions => 'Requisições',
-      AppRoutePaths.stockRequisitionsLegacy => 'Requisições',
-      AppRoutePaths.stockTransfersLegacy => 'Requisições',
+      AppRoutePaths.stockRequisitions => 'Compras',
+      AppRoutePaths.stockRequisitionsLegacy => 'Compras',
+      AppRoutePaths.stockTransfersLegacy => 'Compras',
       AppRoutePaths.stockInventory => 'Inventário',
       AppRoutePaths.stockSuppliers => 'Fornecedores',
+      AppRoutePaths.stockPurchases => 'Compras',
       AppRoutePaths.stockPurchaseSuggestions => 'Sugestão de Compras',
       AppRoutePaths.salesCustomers => 'Clientes',
       AppRoutePaths.salesInvoices => 'Faturas',

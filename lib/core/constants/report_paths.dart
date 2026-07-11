@@ -34,11 +34,6 @@ abstract final class ReportPaths {
   static const stockMovementsSaida = '/reports/stock/movements/saida';
   static const stockMovementsAjuste = '/reports/stock/movements/ajuste';
   static const stockInventories = '/reports/stock/inventories';
-  static const stockRequisitions = '/reports/stock/requisitions';
-  static const stockRequisitionsCompra = '/reports/stock/requisitions/compra';
-  static const stockRequisitionsEntrada = '/reports/stock/requisitions/entrada';
-  static const stockRequisitionsSaida = '/reports/stock/requisitions/saida';
-  static const stockRequisitionsTransfer = '/reports/stock/requisitions/transfer';
 
   static const financeCashflow = '/reports/finance/cashflow';
   static const financeExpenses = '/reports/finance/expenses';
@@ -72,8 +67,6 @@ abstract final class ReportPaths {
       '/reports/proforma-invoices/$proformaInvoiceId';
   static String stockInventory(String inventarioId) =>
       '/reports/stock/inventories/$inventarioId';
-  static String stockRequisition(String requisicaoId) =>
-      '/reports/stock/requisitions/$requisicaoId';
 
   static const Map<String, String> byKey = {
     ReportKeys.expiry: expiry,
@@ -106,11 +99,6 @@ abstract final class ReportPaths {
     ReportKeys.stockMovementsSaida: stockMovementsSaida,
     ReportKeys.stockMovementsAjuste: stockMovementsAjuste,
     ReportKeys.inventories: stockInventories,
-    ReportKeys.requisitions: stockRequisitions,
-    ReportKeys.requisitionsCompra: stockRequisitionsCompra,
-    ReportKeys.requisitionsEntrada: stockRequisitionsEntrada,
-    ReportKeys.requisitionsSaida: stockRequisitionsSaida,
-    ReportKeys.requisitionsTransfer: stockRequisitionsTransfer,
     ReportKeys.financeCashflow: financeCashflow,
     ReportKeys.financeExpenses: financeExpenses,
     ReportKeys.financeAccountsReceivable: financeAccountsReceivable,

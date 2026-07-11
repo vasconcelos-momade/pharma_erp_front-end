@@ -32,11 +32,4 @@ abstract class ProductRepository {
     int page = 1,
     int pageSize = 10,
   });
-
-  Future<PaginationResponse<Product>> searchRequisitionProducts({
-    String? query,
-    String? categoriaId,
-    int page = 1,
-    int pageSize = 20,
-  });
 }

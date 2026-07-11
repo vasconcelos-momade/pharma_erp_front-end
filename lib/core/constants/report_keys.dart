@@ -32,12 +32,6 @@ abstract final class ReportKeys {
   static const stockMovementsAjuste = 'stock-movements-ajuste';
   static const inventories = 'inventories';
   static const inventoryDetail = 'inventory-detail';
-  static const requisitions = 'requisitions';
-  static const requisitionsCompra = 'requisitions-compra';
-  static const requisitionsEntrada = 'requisitions-entrada';
-  static const requisitionsSaida = 'requisitions-saida';
-  static const requisitionsTransfer = 'requisitions-transfer';
-  static const requisitionDetail = 'requisition-detail';
   static const financeCashflow = 'finance-cashflow';
   static const financeExpenses = 'finance-expenses';
   static const financeAccountsReceivable = 'finance-accounts-receivable';
