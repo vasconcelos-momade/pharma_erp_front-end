@@ -69,7 +69,6 @@ class _EnterpriseModuleSearchBarState extends State<EnterpriseModuleSearchBar> {
       style: Theme.of(context).textTheme.erpBody.copyWith(color: t.textPrimary),
       decoration: InputDecoration(
         hintText: widget.hintText,
-        hintStyle: Theme.of(context).textTheme.erpBody.copyWith(color: t.textMuted),
         prefixIcon: Icon(Icons.search_rounded, color: t.textMuted, size: t.iconSm),
         suffixIcon: widget.controller.text.isNotEmpty
             ? IconButton(
@@ -82,22 +81,6 @@ class _EnterpriseModuleSearchBarState extends State<EnterpriseModuleSearchBar> {
                     : null,
               )
             : null,
-        filled: true,
-        fillColor: t.card,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(t.radiusXl),
-          borderSide: BorderSide(color: t.border.withValues(alpha: 0.45)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(t.radiusXl),
-          borderSide: BorderSide(color: t.border.withValues(alpha: 0.45)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(t.radiusXl),
-          borderSide: BorderSide(color: t.brandBlue, width: 2),
-        ),
-        isDense: true,
-        contentPadding: t.density.inputPadding,
       ),
     );
 
@@ -107,23 +90,4 @@ class _EnterpriseModuleSearchBarState extends State<EnterpriseModuleSearchBar> {
       child: field,
     );
   }
-}
-
-InputDecoration enterpriseDropdownDecoration(BuildContext context, String label) {
-  final t = context.pharmaTokens;
-  return InputDecoration(
-    labelText: label,
-    filled: true,
-    fillColor: t.card,
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(t.radiusMd),
-      borderSide: BorderSide(color: t.border.withValues(alpha: 0.45)),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(t.radiusMd),
-      borderSide: BorderSide(color: t.border.withValues(alpha: 0.45)),
-    ),
-    isDense: true,
-    contentPadding: t.density.inputPadding,
-  );
 }

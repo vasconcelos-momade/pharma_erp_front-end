@@ -160,10 +160,6 @@ class _FinalizarVendaDialogState
         if (value == null || value.trim().isEmpty) {
           return 'Campo obrigatório.';
         }
-        final idade = int.tryParse(value.trim());
-        if (idade == null || idade <= 0 || idade > _maxPatientAge) {
-          return 'Informe uma idade entre 1 e $_maxPatientAge anos.';
-        }
         return null;
       },
     );
@@ -183,6 +179,10 @@ class _FinalizarVendaDialogState
         }
         if (value == null || value.trim().isEmpty) {
           return 'Campo obrigatório.';
+        }
+        final idade = int.tryParse(value.trim());
+        if (idade == null || idade <= 0 || idade > _maxPatientAge) {
+          return 'Informe uma idade entre 1 e $_maxPatientAge anos.';
         }
         return null;
       },

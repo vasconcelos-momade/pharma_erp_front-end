@@ -30,6 +30,7 @@ abstract final class ReportKeys {
   static const stockMovementsEntrada = 'stock-movements-entrada';
   static const stockMovementsSaida = 'stock-movements-saida';
   static const stockMovementsAjuste = 'stock-movements-ajuste';
+  static const purchaseSuggestions = 'purchase-suggestions';
   static const inventories = 'inventories';
   static const inventoryDetail = 'inventory-detail';
   static const financeCashflow = 'finance-cashflow';

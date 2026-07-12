@@ -63,7 +63,6 @@ class _EstoqueFiltersBottomSheetState extends State<EstoqueFiltersBottomSheet> {
               initialValue: _categoriaId,
               decoration: const InputDecoration(
                 labelText: 'Categoria',
-                border: OutlineInputBorder(),
               ),
               items: [
                 const DropdownMenuItem<String?>(value: null, child: Text('Todas')),
@@ -79,7 +78,6 @@ class _EstoqueFiltersBottomSheetState extends State<EstoqueFiltersBottomSheet> {
               initialValue: _fornecedorId,
               decoration: const InputDecoration(
                 labelText: 'Fornecedor',
-                border: OutlineInputBorder(),
               ),
               items: [
                 const DropdownMenuItem<String?>(value: null, child: Text('Todos')),
@@ -95,7 +93,6 @@ class _EstoqueFiltersBottomSheetState extends State<EstoqueFiltersBottomSheet> {
               initialValue: _estadoSanitario,
               decoration: const InputDecoration(
                 labelText: 'Estado sanitário',
-                border: OutlineInputBorder(),
               ),
               items: const [
                 DropdownMenuItem<String?>(value: null, child: Text('Todos')),
@@ -112,7 +109,6 @@ class _EstoqueFiltersBottomSheetState extends State<EstoqueFiltersBottomSheet> {
               initialValue: _disponibilidade,
               decoration: const InputDecoration(
                 labelText: 'Disponibilidade',
-                border: OutlineInputBorder(),
               ),
               items: const [
                 DropdownMenuItem<String?>(value: null, child: Text('Todas')),

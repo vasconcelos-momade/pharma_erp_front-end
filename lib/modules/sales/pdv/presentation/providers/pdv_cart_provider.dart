@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../app/providers/auth_session_notifier.dart';
+import '../../../../../app/providers/app_theme_mode_provider.dart';
 import '../../../../../core/errors/api_failure.dart';
 import '../../../../pharmacy/products/domain/entities/product.dart';
 import '../../data/repositories/pdv_cart_repository_impl.dart';
@@ -8,6 +9,7 @@ import '../../domain/repositories/pdv_cart_repository.dart';
 import '../../domain/entities/pdv_cart.dart';
 import '../../domain/entities/pdv_cart_line.dart';
 import '../../domain/entities/pdv_service.dart';
+import '../../services/pdv_session_service.dart';
 import 'caixa_sessao_provider.dart';
 
 class PdvCartState {
@@ -57,23 +59,99 @@ class PdvCartState {
 
 class PdvCartController extends Notifier<PdvCartState> {
   bool _didLoadForSession = false;
+  String? _activeSessionId;
 
   @override
   PdvCartState build() {
     ref.listen(caixaSessaoProvider, (previous, next) {
       if (previous?.hasSessaoAberta == true && !next.hasSessaoAberta) {
+        _clearPersistedCartKey();
         state = PdvCartState.initial;
         _didLoadForSession = false;
-      } else if (next.hasSessaoAberta && next.isInitialized) {
-        Future.microtask(loadFromServer);
+        _activeSessionId = null;
+        return;
       }
+      _maybeLoadFromServer();
     });
 
-    if (ref.read(caixaSessaoProvider).hasSessaoAberta && !_didLoadForSession) {
-      Future.microtask(loadFromServer);
+    ref.listen(authSessionProvider, (_, _) => _maybeLoadFromServer());
+
+    _maybeLoadFromServer();
+    return PdvCartState.initial;
+  }
+
+  bool get _canSyncCart {
+    final caixa = ref.read(caixaSessaoProvider);
+    final auth = ref.read(authSessionProvider);
+    final userId = auth.session?.user.id;
+    return caixa.hasSessaoAberta &&
+        caixa.isInitialized &&
+        !auth.isBootstrapping &&
+        userId != null &&
+        userId.isNotEmpty;
+  }
+
+  void _maybeLoadFromServer() {
+    if (!_canSyncCart || _didLoadForSession || state.isLoading) {
+      return;
     }
 
-    return PdvCartState.initial;
+    state = state.copyWith(isLoading: true, clearBusyLineId: true);
+    Future.microtask(loadFromServer);
+  }
+
+  String? _resolveIdempotencyKey() {
+    final sessao = ref.read(caixaSessaoProvider).sessaoAtual;
+    if (sessao == null) {
+      return null;
+    }
+
+    final userId = sessao.userId;
+    if (userId.isEmpty) {
+      return null;
+    }
+
+    _activeSessionId = sessao.id;
+
+    final inMemoryKey = state.cart.idempotencyKey;
+    if (inMemoryKey != null && inMemoryKey.isNotEmpty) {
+      return inMemoryKey;
+    }
+
+    final prefs = ref.read(sharedPreferencesProvider);
+    final persistedKey = prefs.getString(
+      PdvSessionService.cartIdempotencyStorageKey(userId, sessao.id),
+    );
+    if (persistedKey != null && persistedKey.isNotEmpty) {
+      return persistedKey;
+    }
+
+    return PdvSessionService.defaultCartIdempotencyKey(userId, sessao.id);
+  }
+
+  void _persistIdempotencyKey(String key) {
+    final sessaoId = _activeSessionId ?? ref.read(caixaSessaoProvider).sessaoAtual?.id;
+    final userId = ref.read(caixaSessaoProvider).sessaoAtual?.userId;
+    if (userId == null || userId.isEmpty || sessaoId == null || sessaoId.isEmpty) {
+      return;
+    }
+
+    ref.read(sharedPreferencesProvider).setString(
+          PdvSessionService.cartIdempotencyStorageKey(userId, sessaoId),
+          key,
+        );
+  }
+
+  void _clearPersistedCartKey() {
+    final sessaoId = _activeSessionId ?? ref.read(caixaSessaoProvider).sessaoAtual?.id;
+    final userId = ref.read(caixaSessaoProvider).sessaoAtual?.userId;
+    if (userId == null || userId.isEmpty || sessaoId == null || sessaoId.isEmpty) {
+      return;
+    }
+
+    ref.read(sharedPreferencesProvider).remove(
+          PdvSessionService.cartIdempotencyStorageKey(userId, sessaoId),
+        );
   }
 
   ({String userId, String idempotencyKey})? _mutationContext() {
@@ -81,17 +159,25 @@ class PdvCartController extends Notifier<PdvCartState> {
       return null;
     }
 
-    final userId = ref.read(authSessionProvider).session?.user.id;
     final sessao = ref.read(caixaSessaoProvider).sessaoAtual;
-    if (userId == null || userId.isEmpty || sessao == null) {
+    if (sessao == null || sessao.userId.isEmpty) {
       return null;
     }
 
-    final key = state.cart.idempotencyKey ?? 'pdv-$userId-${sessao.id}';
-    return (userId: userId, idempotencyKey: key);
+    final key = _resolveIdempotencyKey();
+    if (key == null || key.isEmpty) {
+      return null;
+    }
+
+    return (userId: sessao.userId, idempotencyKey: key);
   }
 
   void _applyCart(PdvCart cart) {
+    final key = cart.idempotencyKey;
+    if (key != null && key.isNotEmpty) {
+      _persistIdempotencyKey(key);
+    }
+
     state = state.copyWith(
       cart: cart,
       isLoading: false,
@@ -103,6 +189,7 @@ class PdvCartController extends Notifier<PdvCartState> {
   Future<void> loadFromServer() async {
     final ctx = _mutationContext();
     if (ctx == null) {
+      state = state.copyWith(isLoading: false, clearBusyLineId: true);
       return;
     }
 
@@ -114,7 +201,7 @@ class PdvCartController extends Notifier<PdvCartState> {
             idempotencyKey: ctx.idempotencyKey,
           );
       _didLoadForSession = true;
-      _applyCart(cart.copyWith(idempotencyKey: ctx.idempotencyKey));
+      _applyCart(cart);
     } on ApiFailure {
       state = state.copyWith(isLoading: false, clearBusyLineId: true);
       rethrow;
@@ -122,6 +209,13 @@ class PdvCartController extends Notifier<PdvCartState> {
       state = state.copyWith(isLoading: false, clearBusyLineId: true);
       rethrow;
     }
+  }
+
+  /// Garante recarga do carrinho após hot reload ou reentrada na página PDV.
+  void ensureLoaded() {
+    _didLoadForSession = false;
+    state = state.copyWith(isLoading: false, clearBusyLineId: true);
+    _maybeLoadFromServer();
   }
 
   Future<bool> addProduct(Product product) async {
@@ -139,7 +233,7 @@ class PdvCartController extends Notifier<PdvCartState> {
             idempotencyKey: ctx.idempotencyKey,
             product: product,
           );
-      _applyCart(cart.copyWith(idempotencyKey: ctx.idempotencyKey));
+      _applyCart(cart);
       return true;
     } on ApiFailure {
       state = state.copyWith(isMutating: false, clearBusyLineId: true);
@@ -165,7 +259,7 @@ class PdvCartController extends Notifier<PdvCartState> {
             idempotencyKey: ctx.idempotencyKey,
             service: service,
           );
-      _applyCart(cart.copyWith(idempotencyKey: ctx.idempotencyKey));
+      _applyCart(cart);
       return true;
     } on ApiFailure {
       state = state.copyWith(isMutating: false, clearBusyLineId: true);
@@ -225,7 +319,7 @@ class PdvCartController extends Notifier<PdvCartState> {
 
     try {
       final cart = await mutate(ref.read(pdvCartRepositoryProvider), ctx);
-      _applyCart(cart.copyWith(idempotencyKey: ctx.idempotencyKey));
+      _applyCart(cart);
       return true;
     } on ApiFailure {
       state = state.copyWith(isMutating: false, clearBusyLineId: true);
@@ -237,6 +331,7 @@ class PdvCartController extends Notifier<PdvCartState> {
   }
 
   void clear() {
+    _clearPersistedCartKey();
     state = PdvCartState.initial;
     _didLoadForSession = false;
   }
@@ -247,30 +342,13 @@ class PdvCartController extends Notifier<PdvCartState> {
       return;
     }
 
+    _persistIdempotencyKey(nextCartIdempotencyKey);
     state = PdvCartState(
       cart: PdvCart(idempotencyKey: nextCartIdempotencyKey),
       isLoading: false,
       isMutating: false,
     );
     _didLoadForSession = true;
-  }
-}
-
-extension on PdvCart {
-  PdvCart copyWith({
-    String? idempotencyKey,
-  }) {
-    return PdvCart(
-      draftFaturaId: draftFaturaId,
-      idempotencyKey: idempotencyKey ?? this.idempotencyKey,
-      lines: lines,
-      subtotal: subtotal,
-      tax: tax,
-      discount: discount,
-      total: total,
-      taxLabel: taxLabel,
-      requiresPatientDetails: requiresPatientDetails,
-    );
   }
 }
 

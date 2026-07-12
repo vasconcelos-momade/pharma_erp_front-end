@@ -13,10 +13,12 @@ class EstoqueMobileList extends StatelessWidget {
     super.key,
     required this.items,
     required this.actionLoteId,
+    this.fornecedores = const [],
   });
 
   final List<EstoqueItem> items;
   final String? actionLoteId;
+  final List<({String id, String nome})> fornecedores;
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +31,7 @@ class EstoqueMobileList extends StatelessWidget {
         return EstoqueMobileCard(
           item: item,
           isBusy: actionLoteId == item.id,
+          fornecedores: fornecedores,
         );
       },
     );
@@ -40,10 +43,12 @@ class EstoqueMobileCard extends StatelessWidget {
     super.key,
     required this.item,
     required this.isBusy,
+    this.fornecedores = const [],
   });
 
   final EstoqueItem item;
   final bool isBusy;
+  final List<({String id, String nome})> fornecedores;
 
   static final _dateFormat = DateFormat('dd/MM/yyyy');
 
@@ -94,7 +99,12 @@ class EstoqueMobileCard extends StatelessWidget {
                       ],
                     ),
                   ),
-                  EstoqueActionsMenu(item: item, isBusy: isBusy, compact: true),
+                  EstoqueActionsMenu(
+                    item: item,
+                    isBusy: isBusy,
+                    compact: true,
+                    fornecedores: fornecedores,
+                  ),
                 ],
               ),
               SizedBox(height: s.xs),

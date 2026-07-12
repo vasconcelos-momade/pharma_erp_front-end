@@ -42,8 +42,11 @@ abstract final class ApiConstants {
       '/tenant/fornecedores/$fornecedorId';
   static const tenantFornecedoresSearch = '/tenant/fornecedores/search';
   static const tenantComprasSugestoes = '/tenant/compras/sugestoes';
-  static const tenantComprasFromSuggestions = '/tenant/compras/from-suggestions';
-  static const tenantCompras = '/tenant/compras';
+  static String tenantCompraSugestao(String produtoId) =>
+      '/tenant/compras/sugestoes/$produtoId';
+  static const tenantEstoqueEntradaCompra = '/tenant/estoque/entrada-compra';
+  static const tenantEstoqueMovimentos = '/tenant/estoque/movimentos';
+  static const tenantStockProdutosSearch = '/tenant/stock/produtos/search';
   static const tenantDashboardProdutos = '/tenant/dashboard/produtos';
   static const tenantDashboardLotes = '/tenant/dashboard/lotes';
   static const tenantDashboardEstoque = '/tenant/dashboard/estoque';
@@ -60,14 +63,6 @@ abstract final class ApiConstants {
       '/tenant/dashboard/farmacia/tables';
   static const tenantDashboardStock = '/tenant/dashboard/stock';
   static const tenantDashboardStockTables = '/tenant/dashboard/stock/tables';
-  static String tenantCompraDetalhe(String compraId) => '/tenant/compras/$compraId';
-  static String tenantCompraItens(String compraId) => '/tenant/compras/$compraId/items';
-  static String tenantCompraItem(String compraId, String itemId) =>
-      '/tenant/compras/$compraId/items/$itemId';
-  static String tenantCompraItemRemover(String compraId, String itemId) =>
-      tenantCompraItem(compraId, itemId);
-  static String tenantCompraConfirmar(String compraId) =>
-      '/tenant/compras/$compraId/confirmar';
 
   static const tenantInventarios = '/tenant/inventarios';
   static const tenantStockMovements = '/tenant/stock/movements';

@@ -160,12 +160,6 @@ const List<AppNavSection> kAppNavSections = <AppNavSection>[
         permissionModule: 'FORNECEDORES',
       ),
       AppNavItem(
-        label: 'Compras',
-        path: AppRoutePaths.stockPurchases,
-        icon: Icons.receipt_long_outlined,
-        permissionModule: 'COMPRAS',
-      ),
-      AppNavItem(
         label: 'Sugestão de Compras',
         path: AppRoutePaths.stockPurchaseSuggestions,
         icon: Icons.shopping_cart_outlined,

@@ -6,6 +6,8 @@ import '../../../../../core/contracts/api_envelope.dart';
 import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/network/dio/dio_provider.dart';
 
+enum PurchaseSuggestionOriginFilter { todas, automatica, manual }
+
 class PurchaseSuggestionDashboard {
   const PurchaseSuggestionDashboard({
     this.produtosAbaixoMinimo = 0,
@@ -35,15 +37,12 @@ class PurchaseSuggestionDashboard {
 
 class PurchaseSuggestionItem {
   const PurchaseSuggestionItem({
-    required this.loteId,
-    required this.numeroLote,
+    required this.id,
     required this.produtoId,
     required this.produtoNome,
     required this.categoriaNome,
     required this.fornecedorNome,
     required this.consumoMedioDiario,
-    required this.consumoUltimosDias,
-    required this.quantidadeDisponivel,
     required this.estoqueAtual,
     required this.estoqueMinimo,
     required this.coberturaDias,
@@ -52,21 +51,19 @@ class PurchaseSuggestionItem {
     required this.ultimoPreco,
     required this.valorEstimado,
     required this.unidade,
+    required this.origem,
     this.fornecedorId,
-    this.dataValidade,
+    this.observacao,
     this.selected = true,
   });
 
-  final String loteId;
-  final String numeroLote;
+  final String id;
   final String produtoId;
   final String produtoNome;
   final String categoriaNome;
   final String? fornecedorId;
   final String fornecedorNome;
   final num consumoMedioDiario;
-  final num consumoUltimosDias;
-  final num quantidadeDisponivel;
   final num estoqueAtual;
   final num estoqueMinimo;
   final int coberturaDias;
@@ -75,8 +72,13 @@ class PurchaseSuggestionItem {
   final num ultimoPreco;
   final num valorEstimado;
   final String unidade;
-  final String? dataValidade;
+  final String origem;
+  final String? observacao;
   final bool selected;
+
+  bool get isManual => origem == 'MANUAL';
+
+  String get origemLabel => isManual ? 'Manual' : 'Automática';
 
   num get subtotalAprovado => quantidadeAprovada * ultimoPreco;
 
@@ -86,16 +88,13 @@ class PurchaseSuggestionItem {
   }) {
     final approved = quantidadeAprovada ?? this.quantidadeAprovada;
     return PurchaseSuggestionItem(
-      loteId: loteId,
-      numeroLote: numeroLote,
+      id: id,
       produtoId: produtoId,
       produtoNome: produtoNome,
       categoriaNome: categoriaNome,
       fornecedorId: fornecedorId,
       fornecedorNome: fornecedorNome,
       consumoMedioDiario: consumoMedioDiario,
-      consumoUltimosDias: consumoUltimosDias,
-      quantidadeDisponivel: quantidadeDisponivel,
       estoqueAtual: estoqueAtual,
       estoqueMinimo: estoqueMinimo,
       coberturaDias: coberturaDias,
@@ -104,7 +103,8 @@ class PurchaseSuggestionItem {
       ultimoPreco: ultimoPreco,
       valorEstimado: valorEstimado,
       unidade: unidade,
-      dataValidade: dataValidade,
+      origem: origem,
+      observacao: observacao,
       selected: selected ?? this.selected,
     );
   }
@@ -118,16 +118,13 @@ class PurchaseSuggestionItem {
   factory PurchaseSuggestionItem.fromJson(Map<String, dynamic> json) {
     final quantidadeSugerida = _readNum(json['quantidadeSugerida']);
     return PurchaseSuggestionItem(
-      loteId: json['loteId']?.toString() ?? '',
-      numeroLote: json['numeroLote']?.toString() ?? '—',
+      id: json['id']?.toString() ?? '',
       produtoId: json['produtoId']?.toString() ?? '',
       produtoNome: json['produtoNome']?.toString() ?? '—',
       categoriaNome: json['categoriaNome']?.toString() ?? '—',
       fornecedorId: json['fornecedorId']?.toString(),
       fornecedorNome: json['fornecedorNome']?.toString() ?? 'Sem fornecedor',
       consumoMedioDiario: _readNum(json['consumoMedioDiario']),
-      consumoUltimosDias: _readNum(json['consumoUltimosDias'] ?? json['consumo']),
-      quantidadeDisponivel: _readNum(json['quantidadeDisponivel'] ?? json['estoqueAtual']),
       estoqueAtual: _readNum(json['estoqueAtual']),
       estoqueMinimo: _readNum(json['estoqueMinimo']),
       coberturaDias: json['coberturaDias'] as int? ?? 30,
@@ -136,7 +133,8 @@ class PurchaseSuggestionItem {
       ultimoPreco: _readNum(json['ultimoPreco']),
       valorEstimado: _readNum(json['valorEstimado']),
       unidade: json['unidade']?.toString() ?? 'un',
-      dataValidade: json['dataValidade']?.toString(),
+      origem: json['origem']?.toString() ?? 'AUTOMATICA',
+      observacao: json['observacao']?.toString(),
     );
   }
 
@@ -155,13 +153,15 @@ class PurchaseSuggestionsState {
     this.items = const <PurchaseSuggestionItem>[],
     this.selectedCatalog = const <String, PurchaseSuggestionItem>{},
     this.dashboard = const PurchaseSuggestionDashboard(),
-    this.days = 30,
+    this.search = '',
+    this.originFilter = PurchaseSuggestionOriginFilter.todas,
     this.page = 1,
     this.pageSize = 20,
     this.totalCount,
     this.hasMore = false,
     this.isLoading = false,
     this.isCreating = false,
+    this.isMutating = false,
     this.errorMessage,
     this.successMessage,
   });
@@ -169,13 +169,15 @@ class PurchaseSuggestionsState {
   final List<PurchaseSuggestionItem> items;
   final Map<String, PurchaseSuggestionItem> selectedCatalog;
   final PurchaseSuggestionDashboard dashboard;
-  final int days;
+  final String search;
+  final PurchaseSuggestionOriginFilter originFilter;
   final int page;
   final int pageSize;
   final int? totalCount;
   final bool hasMore;
   final bool isLoading;
   final bool isCreating;
+  final bool isMutating;
   final String? errorMessage;
   final String? successMessage;
 
@@ -191,13 +193,15 @@ class PurchaseSuggestionsState {
     List<PurchaseSuggestionItem>? items,
     Map<String, PurchaseSuggestionItem>? selectedCatalog,
     PurchaseSuggestionDashboard? dashboard,
-    int? days,
+    String? search,
+    PurchaseSuggestionOriginFilter? originFilter,
     int? page,
     int? pageSize,
     int? totalCount,
     bool? hasMore,
     bool? isLoading,
     bool? isCreating,
+    bool? isMutating,
     String? errorMessage,
     String? successMessage,
     bool clearMessages = false,
@@ -206,13 +210,15 @@ class PurchaseSuggestionsState {
       items: items ?? this.items,
       selectedCatalog: selectedCatalog ?? this.selectedCatalog,
       dashboard: dashboard ?? this.dashboard,
-      days: days ?? this.days,
+      search: search ?? this.search,
+      originFilter: originFilter ?? this.originFilter,
       page: page ?? this.page,
       pageSize: pageSize ?? this.pageSize,
       totalCount: totalCount ?? this.totalCount,
       hasMore: hasMore ?? this.hasMore,
       isLoading: isLoading ?? this.isLoading,
       isCreating: isCreating ?? this.isCreating,
+      isMutating: isMutating ?? this.isMutating,
       errorMessage: clearMessages ? null : (errorMessage ?? this.errorMessage),
       successMessage: clearMessages ? null : (successMessage ?? this.successMessage),
     );
@@ -226,8 +232,27 @@ class PurchaseSuggestionsController extends Notifier<PurchaseSuggestionsState> {
     return const PurchaseSuggestionsState(isLoading: true);
   }
 
-  Future<void> setDays(int days) async {
-    state = state.copyWith(days: days, page: 1, isLoading: true, clearMessages: true);
+  Map<String, dynamic> _queryParams() {
+    return <String, dynamic>{
+      if (state.search.trim().isNotEmpty) 'q': state.search.trim(),
+      if (state.originFilter != PurchaseSuggestionOriginFilter.todas)
+        'origem': switch (state.originFilter) {
+          PurchaseSuggestionOriginFilter.automatica => 'AUTOMATICA',
+          PurchaseSuggestionOriginFilter.manual => 'MANUAL',
+          PurchaseSuggestionOriginFilter.todas => 'TODAS',
+        },
+      'page': state.page,
+      'pageSize': state.pageSize,
+    };
+  }
+
+  Future<void> setSearch(String value) async {
+    state = state.copyWith(search: value, page: 1, isLoading: true, clearMessages: true);
+    await load();
+  }
+
+  Future<void> setOriginFilter(PurchaseSuggestionOriginFilter filter) async {
+    state = state.copyWith(originFilter: filter, page: 1, isLoading: true, clearMessages: true);
     await load();
   }
 
@@ -249,11 +274,7 @@ class PurchaseSuggestionsController extends Notifier<PurchaseSuggestionsState> {
       final dio = ref.read(dioProvider);
       final response = await dio.get<Map<String, dynamic>>(
         ApiConstants.tenantComprasSugestoes,
-        queryParameters: <String, dynamic>{
-          'days': state.days,
-          'page': state.page,
-          'pageSize': state.pageSize,
-        },
+        queryParameters: _queryParams(),
       );
       final payload = ApiEnvelope.unwrapMap(response.data ?? {});
       final catalog = Map<String, PurchaseSuggestionItem>.from(state.selectedCatalog);
@@ -341,39 +362,84 @@ class PurchaseSuggestionsController extends Notifier<PurchaseSuggestionsState> {
     state = state.copyWith(items: items, selectedCatalog: catalog, clearMessages: true);
   }
 
-  Future<void> createPurchases() async {
-    final selected = state.selectedItems;
-    if (selected.isEmpty) {
-      state = state.copyWith(
-        errorMessage: 'Selecione pelo menos um produto com quantidade aprovada.',
-      );
-      return;
-    }
-
-    state = state.copyWith(isCreating: true, clearMessages: true);
+  Future<void> addManualSuggestion({
+    required String produtoId,
+    required num quantidadeSugerida,
+    String? observacao,
+  }) async {
+    state = state.copyWith(isMutating: true, clearMessages: true);
     try {
       final dio = ref.read(dioProvider);
       final response = await dio.post<Map<String, dynamic>>(
-        ApiConstants.tenantComprasFromSuggestions,
+        ApiConstants.tenantComprasSugestoes,
         data: <String, dynamic>{
-          'items': selected.map((item) => item.toCreatePayload()).toList(),
+          'produtoId': produtoId,
+          'quantidadeSugerida': quantidadeSugerida,
+          if (observacao != null && observacao.trim().isNotEmpty) 'observacao': observacao.trim(),
         },
       );
       final payload = ApiEnvelope.unwrapMap(response.data ?? {});
-      final message = payload['message']?.toString() ?? 'Compra(s) criada(s) com sucesso';
       state = state.copyWith(
-        isCreating: false,
-        successMessage: message,
-        selectedCatalog: const {},
+        isMutating: false,
+        successMessage: payload['message']?.toString() ?? 'Produto adicionado',
       );
       await load();
     } on DioException catch (e) {
       state = state.copyWith(
-        isCreating: false,
+        isMutating: false,
         errorMessage: ApiFailure.fromDio(e).message,
       );
     } catch (e) {
-      state = state.copyWith(isCreating: false, errorMessage: e.toString());
+      state = state.copyWith(isMutating: false, errorMessage: e.toString());
+    }
+  }
+
+  Future<void> removeSuggestion(String produtoId) async {
+    state = state.copyWith(isMutating: true, clearMessages: true);
+    try {
+      final dio = ref.read(dioProvider);
+      await dio.delete<Map<String, dynamic>>(
+        ApiConstants.tenantCompraSugestao(produtoId),
+      );
+      final catalog = Map<String, PurchaseSuggestionItem>.from(state.selectedCatalog)
+        ..remove(produtoId);
+      state = state.copyWith(
+        isMutating: false,
+        selectedCatalog: catalog,
+        successMessage: 'Sugestão removida',
+      );
+      await load();
+    } on DioException catch (e) {
+      state = state.copyWith(
+        isMutating: false,
+        errorMessage: ApiFailure.fromDio(e).message,
+      );
+    } catch (e) {
+      state = state.copyWith(isMutating: false, errorMessage: e.toString());
+    }
+  }
+
+  Future<void> clearSuggestions() async {
+    state = state.copyWith(isMutating: true, clearMessages: true);
+    try {
+      final dio = ref.read(dioProvider);
+      final response = await dio.delete<Map<String, dynamic>>(
+        ApiConstants.tenantComprasSugestoes,
+      );
+      final payload = ApiEnvelope.unwrapMap(response.data ?? {});
+      state = state.copyWith(
+        isMutating: false,
+        selectedCatalog: const {},
+        successMessage: payload['message']?.toString() ?? 'Lista limpa',
+      );
+      await load();
+    } on DioException catch (e) {
+      state = state.copyWith(
+        isMutating: false,
+        errorMessage: ApiFailure.fromDio(e).message,
+      );
+    } catch (e) {
+      state = state.copyWith(isMutating: false, errorMessage: e.toString());
     }
   }
 }

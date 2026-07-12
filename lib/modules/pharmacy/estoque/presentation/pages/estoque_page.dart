@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import '../../../../../app/providers/auth_session_notifier.dart';
 import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/theme/design_tokens.dart';
-import '../../../../../core/theme/extensions.dart';
 import '../../../../../shared/responsive/responsive_builder.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../../shared/widgets/feedback/module_data_states.dart';
@@ -22,6 +21,7 @@ import '../widgets/estoque_filters_bottom_sheet.dart';
 import '../widgets/estoque_loading.dart';
 import '../widgets/estoque_mobile_list.dart';
 import '../widgets/estoque_pagination.dart';
+import '../widgets/estoque_stock_entry_helper.dart';
 import '../widgets/estoque_table.dart';
 import '../widgets/estoque_toolbar.dart';
 
@@ -66,7 +66,6 @@ class _EstoquePageState extends ConsumerState<EstoquePage> {
 
   @override
   Widget build(BuildContext context) {
-    final s = context.spacing;
     final t = context.pharmaTokens;
     final state = ref.watch(estoqueListProvider);
     final controller = ref.read(estoqueListProvider.notifier);
@@ -163,120 +162,130 @@ class _EstoquePageState extends ConsumerState<EstoquePage> {
 
         return Scaffold(
           backgroundColor: t.bgPrimary,
+          floatingActionButton: isMobile
+              ? FloatingActionButton(
+                  onPressed: state.isLoading
+                      ? null
+                      : () => EstoqueStockEntryHelper.novoLote(
+                            context,
+                            ref,
+                            _fornecedores,
+                          ),
+                  child: const Icon(Icons.add),
+                )
+              : null,
           body: EnterpriseModuleHub(
             title: 'Estoque',
             subtitle: 'Gestão unificada de stock e lotes com validades, sanidade e disponibilidade.',
             mobileKpisHorizontalScroll: true,
-            kpis: kpis,
-            filters: isMobile
-                ? null
-                : EstoqueToolbar(
-                    searchController: _searchController,
-                    state: state,
-                    controller: controller,
-                    categories: categories,
-                    fornecedores: _fornecedores,
-                    onSearchChanged: controller.onSearchChanged,
-                    onOpenMobileFilters: () => _openFilters(context, controller, state, categories),
-                  ),
+            kpis: isMobile ? null : kpis,
+            filters: null,
             actions: isMobile
                 ? null
                 : [
-                    OutlinedButton.icon(
-                      onPressed: state.isLoading ? null : controller.refreshCurrentPage,
-                      icon: const Icon(Icons.refresh_rounded),
-                      label: const Text('Atualizar'),
-                    ),
-                    ...pharmacyReportActions(
-                      ref: ref,
-                      enabled: !state.isLoading,
-                      path: state.expirado == true
-                          ? ReportPaths.pharmacyLotsExpired
-                          : ReportPaths.pharmacyLotsActive,
-                      queryParameters: reportQuery,
-                      isIconButton: false,
+                    FilledButton.icon(
+                      onPressed: state.isLoading
+                          ? null
+                          : () => EstoqueStockEntryHelper.novoLote(
+                                context,
+                                ref,
+                                _fornecedores,
+                              ),
+                      icon: const Icon(Icons.add),
+                      label: const Text('Novo Lote'),
                     ),
                   ],
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                if (isMobile) ...[
-                  EstoqueMobileToolbar(
-                    searchController: _searchController,
-                    state: state,
-                    controller: controller,
-                    onSearchChanged: controller.onSearchChanged,
-                    onOpenFilters: () => _openFilters(context, controller, state, categories),
-                    reportAction: pharmacyReportActions(
-                      ref: ref,
-                      enabled: !state.isLoading,
-                      path: state.expirado == true
-                          ? ReportPaths.pharmacyLotsExpired
-                          : ReportPaths.pharmacyLotsActive,
-                      queryParameters: reportQuery,
-                      expandChild: true,
-                      buttonLabel: 'Exportar..',
-                    ).single,
+            child: EnterpriseAdaptiveListBody(
+              isMobile: isMobile,
+              isLoading: !state.isInitialized && state.isLoading,
+              errorText: state.errorMessage != null && state.items.isEmpty ? state.errorMessage : null,
+              desktopToolbar: EstoqueToolbar(
+                searchController: _searchController,
+                state: state,
+                controller: controller,
+                categories: categories,
+                fornecedores: _fornecedores,
+                onSearchChanged: controller.onSearchChanged,
+                onOpenMobileFilters: () => _openFilters(context, controller, state, categories),
+                trailingActions: [
+                  OutlinedButton.icon(
+                    onPressed: state.isLoading ? null : controller.refreshCurrentPage,
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text('Atualizar'),
                   ),
-                  SizedBox(height: s.sm),
+                  ...pharmacyReportActions(
+                    ref: ref,
+                    enabled: !state.isLoading,
+                    path: state.expirado == true
+                        ? ReportPaths.pharmacyLotsExpired
+                        : ReportPaths.pharmacyLotsActive,
+                    queryParameters: reportQuery,
+                    isIconButton: false,
+                  ),
                 ],
-                if (!isMobile && state.isLoading && !state.isInitialized)
-                  const LinearProgressIndicator(),
-                if (state.errorMessage != null)
-                  Padding(
-                    padding: EdgeInsets.only(bottom: s.sm),
-                    child: Text(
-                      state.errorMessage!,
-                      style: Theme.of(context).textTheme.erpBody.copyWith(color: t.posDanger),
-                    ),
-                  ),
-                Expanded(
-                  child: !state.isInitialized && state.isLoading
-                      ? EstoqueLoading(isDesktop: isDesktop)
-                      : state.errorMessage != null && state.items.isEmpty
-                          ? ModuleErrorState(
-                              title: 'Erro ao carregar estoque',
-                              message: state.errorMessage!,
-                              onRetry: () => controller.refreshCurrentPage(),
-                            )
+              ),
+              desktopContent: !state.isInitialized && state.isLoading
+                  ? EstoqueLoading(isDesktop: isDesktop)
+                  : state.errorMessage != null && state.items.isEmpty
+                      ? ModuleErrorState(
+                          title: 'Erro ao carregar estoque',
+                          message: state.errorMessage!,
+                          onRetry: () => controller.refreshCurrentPage(),
+                        )
                       : (isDesktop ? state.items.isEmpty : _accumulatedItems.isEmpty)
                           ? const EstoqueEmptyState()
-                          : isMobile
-                              ? EnterpriseMobileScrollList(
-                                  kpis: kpis,
-                                  stickyHeader: const SizedBox.shrink(),
-                                  itemCount: _accumulatedItems.length,
-                                  itemBuilder: (context, index) {
-                                    final item = _accumulatedItems[index];
-                                    return EstoqueMobileCard(
-                                      item: item,
-                                      isBusy: state.actionLoteId == item.id,
-                                    );
-                                  },
-                                  hasMore: state.hasMore,
-                                  isLoading: state.isLoading,
-                                  onLoadMore: () => controller.goToPage(state.page + 1),
-                                  emptyMessage: 'Nenhum lote encontrado',
-                                  totalCount: state.totalCount,
-                                  totalCountLabel: state.totalCount != null
-                                      ? 'Total: ${state.totalCount} lote(s)'
-                                      : null,
-                                )
-                              : EstoqueTable(
-                                  items: state.items,
-                                  actionLoteId: state.actionLoteId,
-                                ),
+                          : EstoqueTable(
+                              items: state.items,
+                              actionLoteId: state.actionLoteId,
+                              fornecedores: _fornecedores,
+                            ),
+              desktopPagination: state.isInitialized && state.totalCount != null
+                  ? EstoquePagination(
+                      page: state.page,
+                      pageSize: state.pageSize,
+                      totalCount: state.totalCount!,
+                      isBusy: state.isLoading,
+                      onPageChanged: controller.goToPage,
+                      onPageSizeChanged: controller.setPageSize,
+                    )
+                  : null,
+              mobileList: EnterpriseMobileScrollList(
+                kpis: kpis,
+                stickyHeader: EstoqueMobileToolbar(
+                  searchController: _searchController,
+                  state: state,
+                  controller: controller,
+                  onSearchChanged: controller.onSearchChanged,
+                  onOpenFilters: () => _openFilters(context, controller, state, categories),
+                  reportAction: pharmacyReportActions(
+                    ref: ref,
+                    enabled: !state.isLoading,
+                    path: state.expirado == true
+                        ? ReportPaths.pharmacyLotsExpired
+                        : ReportPaths.pharmacyLotsActive,
+                    queryParameters: reportQuery,
+                    expandChild: true,
+                    buttonLabel: 'Exportar..',
+                  ).single,
                 ),
-                if (isDesktop && state.isInitialized && state.totalCount != null)
-                  EstoquePagination(
-                    page: state.page,
-                    pageSize: state.pageSize,
-                    totalCount: state.totalCount!,
-                    isBusy: state.isLoading,
-                    onPageChanged: controller.goToPage,
-                    onPageSizeChanged: controller.setPageSize,
-                  ),
-              ],
+                itemCount: _accumulatedItems.length,
+                itemBuilder: (context, index) {
+                  final item = _accumulatedItems[index];
+                  return EstoqueMobileCard(
+                    item: item,
+                    isBusy: state.actionLoteId == item.id,
+                    fornecedores: _fornecedores,
+                  );
+                },
+                hasMore: state.hasMore,
+                isLoading: state.isLoading,
+                onLoadMore: () => controller.goToPage(state.page + 1),
+                emptyMessage: 'Nenhum lote encontrado',
+                totalCount: state.totalCount,
+                totalCountLabel: state.totalCount != null
+                    ? 'Total: ${state.totalCount} lote(s)'
+                    : null,
+              ),
             ),
           ),
         );

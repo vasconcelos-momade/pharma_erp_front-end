@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
-import '../../../../../core/theme/extensions.dart';
 import '../../../../../shared/responsive/pharma_screen_layout.dart';
 import '../../../../../shared/widgets/layout/enterprise_mobile_toolbar.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_search_bar.dart';
@@ -18,6 +17,7 @@ class EstoqueToolbar extends StatefulWidget {
     required this.fornecedores,
     required this.onSearchChanged,
     required this.onOpenMobileFilters,
+    this.trailingActions = const [],
   });
 
   final TextEditingController searchController;
@@ -27,6 +27,7 @@ class EstoqueToolbar extends StatefulWidget {
   final List<({String id, String nome})> fornecedores;
   final ValueChanged<String> onSearchChanged;
   final VoidCallback onOpenMobileFilters;
+  final List<Widget> trailingActions;
 
   @override
   State<EstoqueToolbar> createState() => _EstoqueToolbarState();
@@ -71,64 +72,24 @@ class _EstoqueToolbarState extends State<EstoqueToolbar> {
       );
     }
 
-    final t = context.pharmaTokens;
-    final s = context.spacing;
     final state = widget.state;
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          flex: 3,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 520),
-            child: TextField(
-              controller: widget.searchController,
-              onChanged: widget.onSearchChanged,
-              style: Theme.of(context).textTheme.erpBody.copyWith(color: t.textPrimary),
-              decoration: InputDecoration(
-                hintText: 'Pesquisar produto, código de barras ou lote...',
-                hintStyle: Theme.of(context).textTheme.erpBody.copyWith(color: t.textMuted),
-                prefixIcon: Icon(Icons.search_rounded, color: t.textMuted, size: t.iconSm),
-                suffixIcon: widget.searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: Icon(Icons.clear_rounded, color: t.textMuted, size: t.iconSm),
-                        onPressed: widget.state.isLoading
-                            ? null
-                            : () {
-                                widget.searchController.clear();
-                                widget.onSearchChanged('');
-                              },
-                      )
-                    : null,
-                filled: true,
-                fillColor: t.card,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(t.radiusXl),
-                  borderSide: BorderSide(color: t.border.withValues(alpha: 0.45)),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(t.radiusXl),
-                  borderSide: BorderSide(color: t.border.withValues(alpha: 0.45)),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(t.radiusXl),
-                  borderSide: BorderSide(color: t.brandBlue, width: 2),
-                ),
-                isDense: true,
-                contentPadding: t.density.inputPadding,
-              ),
-            ),
-          ),
-        ),
-        SizedBox(width: s.md),
+    return EnterpriseDesktopListToolbar(
+      searchController: widget.searchController,
+      searchHint: 'Pesquisar produto, código de barras ou lote...',
+      isLoading: widget.state.isLoading,
+      onSearchSubmitted: widget.onSearchChanged,
+      hasFilters: widget.state.hasFilters,
+      onClearFilters: widget.state.isLoading ? null : widget.controller.clearFilters,
+      trailingActions: widget.trailingActions,
+      filterWidgets: [
         SizedBox(
           width: 170,
           child: DropdownButtonFormField<String?>(
             key: ValueKey('estoque-cat-${state.categoriaId}'),
             isExpanded: true,
             initialValue: state.categoriaId,
-            decoration: _dropdownDecoration(context, 'Categoria'),
+            decoration: const InputDecoration(labelText: 'Categoria'),
             items: [
               const DropdownMenuItem<String?>(value: null, child: Text('Todas')),
               ...widget.categories.map(
@@ -140,14 +101,13 @@ class _EstoqueToolbarState extends State<EstoqueToolbar> {
                 : widget.controller.setCategoriaFilter,
           ),
         ),
-        SizedBox(width: s.md),
         SizedBox(
           width: 170,
           child: DropdownButtonFormField<String?>(
             key: ValueKey('estoque-forn-${state.fornecedorId}'),
             isExpanded: true,
             initialValue: state.fornecedorId,
-            decoration: _dropdownDecoration(context, 'Fornecedor'),
+            decoration: const InputDecoration(labelText: 'Fornecedor'),
             items: [
               const DropdownMenuItem<String?>(value: null, child: Text('Todos')),
               ...widget.fornecedores.map(
@@ -159,14 +119,13 @@ class _EstoqueToolbarState extends State<EstoqueToolbar> {
                 : widget.controller.setFornecedorFilter,
           ),
         ),
-        SizedBox(width: s.md),
         SizedBox(
           width: 160,
           child: DropdownButtonFormField<String?>(
             key: ValueKey('estoque-estado-${state.estadoSanitario}'),
             isExpanded: true,
             initialValue: state.estadoSanitario,
-            decoration: _dropdownDecoration(context, 'Estado sanitário'),
+            decoration: const InputDecoration(labelText: 'Estado sanitário'),
             items: const [
               DropdownMenuItem<String?>(value: null, child: Text('Todos')),
               DropdownMenuItem<String?>(value: 'VALIDO', child: Text('Válido')),
@@ -179,14 +138,13 @@ class _EstoqueToolbarState extends State<EstoqueToolbar> {
                 : widget.controller.setEstadoSanitarioFilter,
           ),
         ),
-        SizedBox(width: s.md),
         SizedBox(
           width: 150,
           child: DropdownButtonFormField<String?>(
             key: ValueKey('estoque-disp-${state.disponibilidade}'),
             isExpanded: true,
             initialValue: state.disponibilidade,
-            decoration: _dropdownDecoration(context, 'Disponibilidade'),
+            decoration: const InputDecoration(labelText: 'Disponibilidade'),
             items: const [
               DropdownMenuItem<String?>(value: null, child: Text('Todas')),
               DropdownMenuItem<String?>(value: 'DISPONIVEL', child: Text('Disponível')),
@@ -198,34 +156,7 @@ class _EstoqueToolbarState extends State<EstoqueToolbar> {
                 : widget.controller.setDisponibilidadeFilter,
           ),
         ),
-        if (state.hasFilters) ...[
-          SizedBox(width: s.sm),
-          TextButton.icon(
-            onPressed: widget.state.isLoading ? null : widget.controller.clearFilters,
-            icon: Icon(Icons.filter_alt_off_outlined, size: t.iconSm),
-            label: const Text('Limpar'),
-          ),
-        ],
       ],
-    );
-  }
-
-  InputDecoration _dropdownDecoration(BuildContext context, String label) {
-    final t = context.pharmaTokens;
-    return InputDecoration(
-      labelText: label,
-      filled: true,
-      fillColor: t.card,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(t.radiusMd),
-        borderSide: BorderSide(color: t.border.withValues(alpha: 0.45)),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(t.radiusMd),
-        borderSide: BorderSide(color: t.border.withValues(alpha: 0.45)),
-      ),
-      isDense: true,
-      contentPadding: t.density.inputPadding,
     );
   }
 }

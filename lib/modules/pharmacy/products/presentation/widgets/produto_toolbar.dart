@@ -76,7 +76,7 @@ class _ProdutoToolbarState extends State<ProdutoToolbar> {
       key: ValueKey('produto-status-${state.ativoFilter}'),
       isExpanded: true,
       initialValue: state.ativoFilter,
-      decoration: enterpriseDropdownDecoration(context, 'Status'),
+      decoration: const InputDecoration(labelText: 'Status'),
       items: const [
         DropdownMenuItem<bool?>(value: null, child: Text('Todos')),
         DropdownMenuItem<bool?>(value: true, child: Text('Activos')),
@@ -89,7 +89,7 @@ class _ProdutoToolbarState extends State<ProdutoToolbar> {
       key: ValueKey('produto-categoria-${state.categoriaId}-${widget.categories.length}'),
       isExpanded: true,
       initialValue: state.categoriaId,
-      decoration: enterpriseDropdownDecoration(context, 'Categoria'),
+      decoration: const InputDecoration(labelText: 'Categoria'),
       items: [
         const DropdownMenuItem<String?>(value: null, child: Text('Todas')),
         ...widget.categories.map(

@@ -8,7 +8,10 @@ import '../../../../../app/router/routes.dart';
 import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/utils/lote_stock_utils.dart';
+import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
+import '../../../../../shared/widgets/inputs/formatters/date_input_formatter.dart';
+import '../../../../../shared/widgets/layout/adaptive_side_sheet.dart';
 import '../../../lots/presentation/widgets/lot_actions_helper.dart';
 import '../../data/datasources/estoque_remote_datasource.dart';
 import '../../domain/entities/estoque_item.dart';
@@ -22,93 +25,16 @@ abstract final class EstoqueLoteActionsHelper {
     WidgetRef ref,
     EstoqueItem item,
   ) async {
-    final numeroController = TextEditingController(text: item.numeroLote);
-    final validadeController = TextEditingController(
-      text: item.dataValidade != null
-          ? DateFormat('yyyy-MM-dd').format(item.dataValidade!.toLocal())
-          : '',
-    );
-    final fabricacaoController = TextEditingController();
-
-    final confirmed = await showDialog<bool>(
+    await _openLoteActionPanel(
       context: context,
-      builder: (dialogContext) {
-        final s = dialogContext.spacing;
-        return AlertDialog(
-          title: const Text('Editar lote'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: numeroController,
-                  decoration: const InputDecoration(
-                    labelText: 'Número do lote',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: s.sm),
-                TextField(
-                  controller: validadeController,
-                  decoration: const InputDecoration(
-                    labelText: 'Data de validade (AAAA-MM-DD)',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: s.sm),
-                TextField(
-                  controller: fabricacaoController,
-                  decoration: const InputDecoration(
-                    labelText: 'Data de fabricação (opcional)',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Cancelar'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('Guardar'),
-            ),
-          ],
-        );
-      },
+      routeName: '/estoque/lotes/${item.id}/editar',
+      title: 'Editar lote',
+      builder: (detailContext, showHeader, onClose) => _EditarLoteFormContent(
+        item: item,
+        showHeader: showHeader,
+        onClose: onClose,
+      ),
     );
-
-    if (confirmed != true || !context.mounted) return;
-
-    final numeroLote = numeroController.text.trim();
-    final dataValidade = validadeController.text.trim();
-    final dataFabricacao = fabricacaoController.text.trim();
-
-    numeroController.dispose();
-    validadeController.dispose();
-    fabricacaoController.dispose();
-
-    final controller = ref.read(estoqueListProvider.notifier);
-    controller.setActionLoteId(item.id);
-    try {
-      await ref.read(estoqueRemoteDataSourceProvider).updateLote(
-            item.id,
-            numeroLote: numeroLote,
-            dataValidade: dataValidade,
-            dataFabricacao: dataFabricacao.isEmpty ? null : dataFabricacao,
-          );
-      if (!context.mounted) return;
-      PharmaFeedback.success(context, 'Lote actualizado com sucesso');
-      await controller.refreshCurrentPage();
-    } on ApiFailure catch (e) {
-      if (context.mounted) PharmaFeedback.error(context, e.message);
-    } catch (e) {
-      if (context.mounted) PharmaFeedback.error(context, e.toString());
-    } finally {
-      controller.setActionLoteId(null);
-    }
   }
 
   static Future<void> alterarPreco(
@@ -116,107 +42,16 @@ abstract final class EstoqueLoteActionsHelper {
     WidgetRef ref,
     EstoqueItem item,
   ) async {
-    final compraController =
-        TextEditingController(text: item.precoCompra.toString());
-    final vendaController = TextEditingController(
-      text: item.precoVenda?.toString() ?? '',
-    );
-    final motivoController = TextEditingController();
-
-    final confirmed = await showDialog<bool>(
+    await _openLoteActionPanel(
       context: context,
-      builder: (dialogContext) {
-        final s = dialogContext.spacing;
-        return AlertDialog(
-          title: const Text('Alterar preço do lote'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextField(
-                  controller: compraController,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-                  ],
-                  decoration: const InputDecoration(
-                    labelText: 'Preço de compra',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: s.sm),
-                TextField(
-                  controller: vendaController,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
-                  ],
-                  decoration: const InputDecoration(
-                    labelText: 'Preço de venda',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: s.sm),
-                TextField(
-                  controller: motivoController,
-                  decoration: const InputDecoration(
-                    labelText: 'Motivo da alteração (opcional)',
-                    border: OutlineInputBorder(),
-                  ),
-                  maxLines: 2,
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Cancelar'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('Confirmar'),
-            ),
-          ],
-        );
-      },
+      routeName: '/estoque/lotes/${item.id}/preco',
+      title: 'Alterar preço do lote',
+      builder: (detailContext, showHeader, onClose) => _AlterarPrecoFormContent(
+        item: item,
+        showHeader: showHeader,
+        onClose: onClose,
+      ),
     );
-
-    final precoCompra =
-        num.tryParse(compraController.text.replaceAll(',', '.')) ?? item.precoCompra;
-    final precoVendaRaw = vendaController.text.trim();
-    final precoVenda = precoVendaRaw.isEmpty
-        ? null
-        : num.tryParse(precoVendaRaw.replaceAll(',', '.'));
-    final motivo = motivoController.text.trim();
-
-    compraController.dispose();
-    vendaController.dispose();
-    motivoController.dispose();
-
-    if (confirmed != true || !context.mounted) return;
-
-    final controller = ref.read(estoqueListProvider.notifier);
-    controller.setActionLoteId(item.id);
-    try {
-      await ref.read(estoqueRemoteDataSourceProvider).updateLotePrecos(
-            item.id,
-            precoCompra: precoCompra,
-            precoVenda: precoVenda,
-            motivo: motivo.isEmpty ? null : motivo,
-          );
-      if (!context.mounted) return;
-      PharmaFeedback.success(context, 'Preços actualizados com sucesso');
-      await controller.refreshCurrentPage();
-    } on ApiFailure catch (e) {
-      if (context.mounted) PharmaFeedback.error(context, e.message);
-    } catch (e) {
-      if (context.mounted) PharmaFeedback.error(context, e.toString());
-    } finally {
-      controller.setActionLoteId(null);
-    }
   }
 
   static Future<void> ajustarStock(
@@ -224,95 +59,16 @@ abstract final class EstoqueLoteActionsHelper {
     WidgetRef ref,
     EstoqueItem item,
   ) async {
-    final quantidadeController = TextEditingController();
-    final motivoController = TextEditingController();
-
-    final confirmed = await showDialog<bool>(
+    await _openLoteActionPanel(
       context: context,
-      builder: (dialogContext) {
-        final s = dialogContext.spacing;
-        return AlertDialog(
-          title: const Text('Ajustar stock'),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Stock actual: ${LoteStockUtils.formatDisponivelFromNum(item.quantidadeDisponivel)}',
-                  style: Theme.of(dialogContext).textTheme.erpBodySecondary,
-                ),
-                SizedBox(height: s.sm),
-                TextField(
-                  controller: quantidadeController,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true, signed: true),
-                  decoration: const InputDecoration(
-                    labelText: 'Quantidade (+ entrada / − saída)',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                SizedBox(height: s.sm),
-                TextField(
-                  controller: motivoController,
-                  decoration: const InputDecoration(
-                    labelText: 'Motivo',
-                    border: OutlineInputBorder(),
-                  ),
-                  maxLines: 2,
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              child: const Text('Cancelar'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.pop(dialogContext, true),
-              child: const Text('Confirmar'),
-            ),
-          ],
-        );
-      },
+      routeName: '/estoque/lotes/${item.id}/ajustar-stock',
+      title: 'Ajustar stock',
+      builder: (detailContext, showHeader, onClose) => _AjustarStockFormContent(
+        item: item,
+        showHeader: showHeader,
+        onClose: onClose,
+      ),
     );
-
-    final quantidade =
-        num.tryParse(quantidadeController.text.replaceAll(',', '.'));
-    final motivo = motivoController.text.trim();
-    quantidadeController.dispose();
-    motivoController.dispose();
-
-    if (confirmed != true || !context.mounted) return;
-    if (quantidade == null || quantidade == 0) {
-      PharmaFeedback.error(context, 'Indique uma quantidade válida');
-      return;
-    }
-    if (motivo.isEmpty) {
-      PharmaFeedback.error(context, 'Motivo é obrigatório');
-      return;
-    }
-
-    final controller = ref.read(estoqueListProvider.notifier);
-    controller.setActionLoteId(item.id);
-    try {
-      await ref.read(estoqueRemoteDataSourceProvider).adjustStock(
-            produtoId: item.produtoId,
-            loteId: item.id,
-            quantidade: quantidade,
-            motivo: motivo,
-          );
-      if (!context.mounted) return;
-      PharmaFeedback.success(context, 'Stock ajustado com sucesso');
-      await controller.refreshCurrentPage();
-    } on ApiFailure catch (e) {
-      if (context.mounted) PharmaFeedback.error(context, e.message);
-    } catch (e) {
-      if (context.mounted) PharmaFeedback.error(context, e.toString());
-    } finally {
-      controller.setActionLoteId(null);
-    }
   }
 
   static Future<void> movimentacaoSanitaria(
@@ -320,142 +76,17 @@ abstract final class EstoqueLoteActionsHelper {
     WidgetRef ref,
     EstoqueItem item,
   ) async {
-    String tipo = 'QUARENTENA';
-    final quantidadeController = TextEditingController();
-    final motivoController = TextEditingController();
-    final documentoController = TextEditingController();
-
-    final confirmed = await showDialog<bool>(
+    await _openLoteActionPanel(
       context: context,
-      builder: (dialogContext) {
-        final s = dialogContext.spacing;
-        return StatefulBuilder(
-          builder: (context, setState) {
-            final requiresQty = tipo != 'RECALL';
-            return AlertDialog(
-              title: const Text('Movimentação sanitária'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    DropdownButtonFormField<String>(
-                      key: ValueKey('sanitaria-tipo-$tipo'),
-                      initialValue: tipo,
-                      decoration: const InputDecoration(
-                        labelText: 'Tipo de movimentação',
-                        border: OutlineInputBorder(),
-                      ),
-                      items: const [
-                        DropdownMenuItem(
-                          value: 'QUARENTENA',
-                          child: Text('Quarentena'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'LIBERACAO',
-                          child: Text('Liberação'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'INCINERACAO',
-                          child: Text('Incineração'),
-                        ),
-                        DropdownMenuItem(value: 'RECALL', child: Text('Recall')),
-                        DropdownMenuItem(
-                          value: 'DEVOLUCAO_FORNECEDOR',
-                          child: Text('Devolução ao fornecedor'),
-                        ),
-                      ],
-                      onChanged: (value) {
-                        if (value == null) return;
-                        setState(() => tipo = value);
-                      },
-                    ),
-                    if (requiresQty) ...[
-                      SizedBox(height: s.sm),
-                      TextField(
-                        controller: quantidadeController,
-                        keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true,
-                        ),
-                        decoration: const InputDecoration(
-                          labelText: 'Quantidade',
-                          border: OutlineInputBorder(),
-                        ),
-                      ),
-                    ],
-                    SizedBox(height: s.sm),
-                    TextField(
-                      controller: motivoController,
-                      decoration: const InputDecoration(
-                        labelText: 'Motivo',
-                        border: OutlineInputBorder(),
-                      ),
-                      maxLines: 2,
-                    ),
-                    SizedBox(height: s.sm),
-                    TextField(
-                      controller: documentoController,
-                      decoration: const InputDecoration(
-                        labelText: 'Documento de referência (opcional)',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(dialogContext, false),
-                  child: const Text('Cancelar'),
-                ),
-                FilledButton(
-                  onPressed: () => Navigator.pop(dialogContext, true),
-                  child: const Text('Confirmar'),
-                ),
-              ],
-            );
-          },
-        );
-      },
+      routeName: '/estoque/lotes/${item.id}/movimentacao-sanitaria',
+      title: 'Movimentação sanitária',
+      builder: (detailContext, showHeader, onClose) =>
+          _MovimentacaoSanitariaFormContent(
+        item: item,
+        showHeader: showHeader,
+        onClose: onClose,
+      ),
     );
-
-    final motivo = motivoController.text.trim();
-    final documento = documentoController.text.trim();
-    final quantidade =
-        num.tryParse(quantidadeController.text.replaceAll(',', '.'));
-    quantidadeController.dispose();
-    motivoController.dispose();
-    documentoController.dispose();
-
-    if (confirmed != true || !context.mounted) return;
-    if (motivo.length < 3) {
-      PharmaFeedback.error(context, 'Motivo é obrigatório');
-      return;
-    }
-    if (tipo != 'RECALL' && (quantidade == null || quantidade <= 0)) {
-      PharmaFeedback.error(context, 'Quantidade inválida');
-      return;
-    }
-
-    final controller = ref.read(estoqueListProvider.notifier);
-    controller.setActionLoteId(item.id);
-    try {
-      await ref.read(estoqueRemoteDataSourceProvider).movimentacaoSanitaria(
-            item.id,
-            tipo: tipo,
-            motivo: motivo,
-            quantidade: tipo == 'RECALL' ? null : quantidade,
-            documentoReferencia: documento.isEmpty ? null : documento,
-          );
-      if (!context.mounted) return;
-      PharmaFeedback.success(context, 'Movimentação sanitária registada');
-      await controller.refreshCurrentPage();
-    } on ApiFailure catch (e) {
-      if (context.mounted) PharmaFeedback.error(context, e.message);
-    } catch (e) {
-      if (context.mounted) PharmaFeedback.error(context, e.toString());
-    } finally {
-      controller.setActionLoteId(null);
-    }
   }
 
   static Future<void> bloquearLote(
@@ -490,5 +121,740 @@ abstract final class EstoqueLoteActionsHelper {
 
   static void adicionarAoInventario(BuildContext context) {
     context.push(AppRoutePaths.stockInventory);
+  }
+}
+
+Future<void> _openLoteActionPanel({
+  required BuildContext context,
+  required String routeName,
+  required String title,
+  required Widget Function(
+    BuildContext detailContext,
+    bool showHeader,
+    VoidCallback? onClose,
+  ) builder,
+}) async {
+  final width = AdaptiveNavigator.widthOf(context);
+  final panelWidth = width >= AdaptiveSideSheetMetrics.desktopBreakpoint
+      ? 520.0
+      : 480.0;
+
+  await AdaptiveNavigator.openPanel<void>(
+    context: context,
+    sideSheetWidth: panelWidth,
+    routeSettings: RouteSettings(name: routeName),
+    builder: (detailContext) {
+      if (AdaptiveNavigator.isMobile(detailContext)) {
+        return Scaffold(
+          appBar: AppBar(title: Text(title)),
+          body: builder(detailContext, false, null),
+        );
+      }
+      return builder(
+        detailContext,
+        true,
+        () => AdaptiveNavigator.close(detailContext),
+      );
+    },
+  );
+}
+
+class _EstoqueActionFormShell extends StatelessWidget {
+  const _EstoqueActionFormShell({
+    required this.title,
+    required this.showHeader,
+    this.onClose,
+    required this.form,
+    required this.submitLabel,
+    required this.onSubmit,
+    this.isSubmitting = false,
+  });
+
+  final String title;
+  final bool showHeader;
+  final VoidCallback? onClose;
+  final Widget form;
+  final String submitLabel;
+  final VoidCallback onSubmit;
+  final bool isSubmitting;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (showHeader) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 8, 8),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.erpCardTitle,
+                  ),
+                ),
+                if (onClose != null)
+                  IconButton(
+                    onPressed: onClose,
+                    icon: const Icon(Icons.close),
+                  ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+        ],
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: form,
+          ),
+        ),
+        if (showHeader) const Divider(height: 1),
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: isSubmitting
+                    ? null
+                    : (onClose ?? () => AdaptiveNavigator.close(context)),
+                child: const Text('Cancelar'),
+              ),
+              const SizedBox(width: 8),
+              FilledButton(
+                onPressed: isSubmitting ? null : onSubmit,
+                child: isSubmitting
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(submitLabel),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _EditarLoteFormContent extends ConsumerStatefulWidget {
+  const _EditarLoteFormContent({
+    required this.item,
+    required this.showHeader,
+    this.onClose,
+  });
+
+  final EstoqueItem item;
+  final bool showHeader;
+  final VoidCallback? onClose;
+
+  @override
+  ConsumerState<_EditarLoteFormContent> createState() =>
+      _EditarLoteFormContentState();
+}
+
+class _EditarLoteFormContentState extends ConsumerState<_EditarLoteFormContent> {
+  late final TextEditingController _numeroController;
+  late final TextEditingController _validadeController;
+  late final TextEditingController _fabricacaoController;
+  bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _numeroController = TextEditingController(text: widget.item.numeroLote);
+    _validadeController = TextEditingController(
+      text: widget.item.dataValidade != null
+          ? DateFormat('dd/MM/yyyy').format(widget.item.dataValidade!.toLocal())
+          : '',
+    );
+    _fabricacaoController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _numeroController.dispose();
+    _validadeController.dispose();
+    _fabricacaoController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final numeroLote = _numeroController.text.trim();
+    final dataValidadeRaw = _validadeController.text.trim();
+    final dataFabricacaoRaw = _fabricacaoController.text.trim();
+
+    final dataValidade = _normalizeDateForApi(dataValidadeRaw);
+    final dataFabricacao = dataFabricacaoRaw.isEmpty
+        ? null
+        : _normalizeDateForApi(dataFabricacaoRaw);
+
+    if (dataValidade == null) {
+      PharmaFeedback.error(context, 'Informe a validade no formato DD/MM/AAAA');
+      return;
+    }
+
+    if (dataFabricacaoRaw.isNotEmpty && dataFabricacao == null) {
+      PharmaFeedback.error(context, 'Informe a fabricação no formato DD/MM/AAAA');
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+    final controller = ref.read(estoqueListProvider.notifier);
+    controller.setActionLoteId(widget.item.id);
+    try {
+      await ref.read(estoqueRemoteDataSourceProvider).updateLote(
+            widget.item.id,
+            numeroLote: numeroLote,
+            dataValidade: dataValidade,
+            dataFabricacao: dataFabricacao,
+          );
+      if (!mounted) return;
+      PharmaFeedback.success(context, 'Lote actualizado com sucesso');
+      await controller.refreshCurrentPage();
+      if (!mounted) return;
+      if (widget.onClose != null) {
+        widget.onClose!();
+      } else {
+        AdaptiveNavigator.close(context);
+      }
+    } on ApiFailure catch (e) {
+      if (mounted) PharmaFeedback.error(context, e.message);
+    } catch (e) {
+      if (mounted) PharmaFeedback.error(context, e.toString());
+    } finally {
+      controller.setActionLoteId(null);
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.spacing;
+
+    return _EstoqueActionFormShell(
+      title: 'Editar lote',
+      showHeader: widget.showHeader,
+      onClose: widget.onClose,
+      submitLabel: 'Guardar',
+      onSubmit: _submit,
+      isSubmitting: _isSubmitting,
+      form: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            controller: _numeroController,
+            decoration: const InputDecoration(
+              labelText: 'Número do lote',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          SizedBox(height: s.sm),
+          TextField(
+            controller: _validadeController,
+            keyboardType: TextInputType.number,
+            maxLength: 10,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              DateInputFormatter(),
+            ],
+            decoration: InputDecoration(
+              labelText: 'Data de validade',
+              hintText: 'DD/MM/AAAA',
+              counterText: '',
+              border: const OutlineInputBorder(),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.calendar_today_outlined),
+                onPressed: () => _selectDate(context, _validadeController),
+              ),
+            ),
+          ),
+          SizedBox(height: s.sm),
+          TextField(
+            controller: _fabricacaoController,
+            keyboardType: TextInputType.number,
+            maxLength: 10,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              DateInputFormatter(),
+            ],
+            decoration: InputDecoration(
+              labelText: 'Data de fabricação (opcional)',
+              hintText: 'DD/MM/AAAA',
+              counterText: '',
+              border: const OutlineInputBorder(),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.calendar_today_outlined),
+                onPressed: () => _selectDate(context, _fabricacaoController),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AlterarPrecoFormContent extends ConsumerStatefulWidget {
+  const _AlterarPrecoFormContent({
+    required this.item,
+    required this.showHeader,
+    this.onClose,
+  });
+
+  final EstoqueItem item;
+  final bool showHeader;
+  final VoidCallback? onClose;
+
+  @override
+  ConsumerState<_AlterarPrecoFormContent> createState() =>
+      _AlterarPrecoFormContentState();
+}
+
+class _AlterarPrecoFormContentState extends ConsumerState<_AlterarPrecoFormContent> {
+  late final TextEditingController _compraController;
+  late final TextEditingController _vendaController;
+  late final TextEditingController _motivoController;
+  bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _compraController =
+        TextEditingController(text: widget.item.precoCompra.toString());
+    _vendaController = TextEditingController(
+      text: widget.item.precoVenda?.toString() ?? '',
+    );
+    _motivoController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _compraController.dispose();
+    _vendaController.dispose();
+    _motivoController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final precoCompra =
+        num.tryParse(_compraController.text.replaceAll(',', '.')) ??
+            widget.item.precoCompra;
+    final precoVendaRaw = _vendaController.text.trim();
+    final precoVenda = precoVendaRaw.isEmpty
+        ? null
+        : num.tryParse(precoVendaRaw.replaceAll(',', '.'));
+    final motivo = _motivoController.text.trim();
+
+    setState(() => _isSubmitting = true);
+    final controller = ref.read(estoqueListProvider.notifier);
+    controller.setActionLoteId(widget.item.id);
+    try {
+      await ref.read(estoqueRemoteDataSourceProvider).updateLotePrecos(
+            widget.item.id,
+            precoCompra: precoCompra,
+            precoVenda: precoVenda,
+            motivo: motivo.isEmpty ? null : motivo,
+          );
+      if (!mounted) return;
+      PharmaFeedback.success(context, 'Preços actualizados com sucesso');
+      await controller.refreshCurrentPage();
+      if (!mounted) return;
+      if (widget.onClose != null) {
+        widget.onClose!();
+      } else {
+        AdaptiveNavigator.close(context);
+      }
+    } on ApiFailure catch (e) {
+      if (mounted) PharmaFeedback.error(context, e.message);
+    } catch (e) {
+      if (mounted) PharmaFeedback.error(context, e.toString());
+    } finally {
+      controller.setActionLoteId(null);
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.spacing;
+
+    return _EstoqueActionFormShell(
+      title: 'Alterar preço do lote',
+      showHeader: widget.showHeader,
+      onClose: widget.onClose,
+      submitLabel: 'Confirmar',
+      onSubmit: _submit,
+      isSubmitting: _isSubmitting,
+      form: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            controller: _compraController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+            ],
+            decoration: const InputDecoration(
+              labelText: 'Preço de compra',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          SizedBox(height: s.sm),
+          TextField(
+            controller: _vendaController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
+            ],
+            decoration: const InputDecoration(
+              labelText: 'Preço de venda',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          SizedBox(height: s.sm),
+          TextField(
+            controller: _motivoController,
+            decoration: const InputDecoration(
+              labelText: 'Motivo da alteração (opcional)',
+              border: OutlineInputBorder(),
+            ),
+            maxLines: 2,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AjustarStockFormContent extends ConsumerStatefulWidget {
+  const _AjustarStockFormContent({
+    required this.item,
+    required this.showHeader,
+    this.onClose,
+  });
+
+  final EstoqueItem item;
+  final bool showHeader;
+  final VoidCallback? onClose;
+
+  @override
+  ConsumerState<_AjustarStockFormContent> createState() =>
+      _AjustarStockFormContentState();
+}
+
+class _AjustarStockFormContentState extends ConsumerState<_AjustarStockFormContent> {
+  late final TextEditingController _quantidadeController;
+  late final TextEditingController _motivoController;
+  bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _quantidadeController = TextEditingController();
+    _motivoController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _quantidadeController.dispose();
+    _motivoController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final quantidade =
+        num.tryParse(_quantidadeController.text.replaceAll(',', '.'));
+    final motivo = _motivoController.text.trim();
+
+    if (quantidade == null || quantidade == 0) {
+      PharmaFeedback.error(context, 'Indique uma quantidade válida');
+      return;
+    }
+    if (motivo.isEmpty) {
+      PharmaFeedback.error(context, 'Motivo é obrigatório');
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+    final controller = ref.read(estoqueListProvider.notifier);
+    controller.setActionLoteId(widget.item.id);
+    try {
+      await ref.read(estoqueRemoteDataSourceProvider).adjustStock(
+            produtoId: widget.item.produtoId,
+            loteId: widget.item.id,
+            quantidade: quantidade,
+            motivo: motivo,
+          );
+      if (!mounted) return;
+      PharmaFeedback.success(context, 'Stock ajustado com sucesso');
+      await controller.refreshCurrentPage();
+      if (!mounted) return;
+      if (widget.onClose != null) {
+        widget.onClose!();
+      } else {
+        AdaptiveNavigator.close(context);
+      }
+    } on ApiFailure catch (e) {
+      if (mounted) PharmaFeedback.error(context, e.message);
+    } catch (e) {
+      if (mounted) PharmaFeedback.error(context, e.toString());
+    } finally {
+      controller.setActionLoteId(null);
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.spacing;
+
+    return _EstoqueActionFormShell(
+      title: 'Ajustar stock',
+      showHeader: widget.showHeader,
+      onClose: widget.onClose,
+      submitLabel: 'Confirmar',
+      onSubmit: _submit,
+      isSubmitting: _isSubmitting,
+      form: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'Stock actual: ${LoteStockUtils.formatDisponivelFromNum(widget.item.quantidadeDisponivel)}',
+            style: Theme.of(context).textTheme.erpBodySecondary,
+          ),
+          SizedBox(height: s.sm),
+          TextField(
+            controller: _quantidadeController,
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true, signed: true),
+            decoration: const InputDecoration(
+              labelText: 'Quantidade (+ entrada / − saída)',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          SizedBox(height: s.sm),
+          TextField(
+            controller: _motivoController,
+            decoration: const InputDecoration(
+              labelText: 'Motivo',
+              border: OutlineInputBorder(),
+            ),
+            maxLines: 2,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MovimentacaoSanitariaFormContent extends ConsumerStatefulWidget {
+  const _MovimentacaoSanitariaFormContent({
+    required this.item,
+    required this.showHeader,
+    this.onClose,
+  });
+
+  final EstoqueItem item;
+  final bool showHeader;
+  final VoidCallback? onClose;
+
+  @override
+  ConsumerState<_MovimentacaoSanitariaFormContent> createState() =>
+      _MovimentacaoSanitariaFormContentState();
+}
+
+class _MovimentacaoSanitariaFormContentState
+    extends ConsumerState<_MovimentacaoSanitariaFormContent> {
+  String _tipo = 'QUARENTENA';
+  late final TextEditingController _quantidadeController;
+  late final TextEditingController _motivoController;
+  late final TextEditingController _documentoController;
+  bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _quantidadeController = TextEditingController();
+    _motivoController = TextEditingController();
+    _documentoController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _quantidadeController.dispose();
+    _motivoController.dispose();
+    _documentoController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final motivo = _motivoController.text.trim();
+    final documento = _documentoController.text.trim();
+    final quantidade =
+        num.tryParse(_quantidadeController.text.replaceAll(',', '.'));
+
+    if (motivo.length < 3) {
+      PharmaFeedback.error(context, 'Motivo é obrigatório');
+      return;
+    }
+    if (_tipo != 'RECALL' && (quantidade == null || quantidade <= 0)) {
+      PharmaFeedback.error(context, 'Quantidade inválida');
+      return;
+    }
+
+    setState(() => _isSubmitting = true);
+    final controller = ref.read(estoqueListProvider.notifier);
+    controller.setActionLoteId(widget.item.id);
+    try {
+      await ref.read(estoqueRemoteDataSourceProvider).movimentacaoSanitaria(
+            widget.item.id,
+            tipo: _tipo,
+            motivo: motivo,
+            quantidade: _tipo == 'RECALL' ? null : quantidade,
+            documentoReferencia: documento.isEmpty ? null : documento,
+          );
+      if (!mounted) return;
+      PharmaFeedback.success(context, 'Movimentação sanitária registada');
+      await controller.refreshCurrentPage();
+      if (!mounted) return;
+      if (widget.onClose != null) {
+        widget.onClose!();
+      } else {
+        AdaptiveNavigator.close(context);
+      }
+    } on ApiFailure catch (e) {
+      if (mounted) PharmaFeedback.error(context, e.message);
+    } catch (e) {
+      if (mounted) PharmaFeedback.error(context, e.toString());
+    } finally {
+      controller.setActionLoteId(null);
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.spacing;
+    final requiresQty = _tipo != 'RECALL';
+
+    return _EstoqueActionFormShell(
+      title: 'Movimentação sanitária',
+      showHeader: widget.showHeader,
+      onClose: widget.onClose,
+      submitLabel: 'Confirmar',
+      onSubmit: _submit,
+      isSubmitting: _isSubmitting,
+      form: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          DropdownButtonFormField<String>(
+            key: ValueKey('sanitaria-tipo-$_tipo'),
+            initialValue: _tipo,
+            decoration: const InputDecoration(
+              labelText: 'Tipo de movimentação',
+              border: OutlineInputBorder(),
+            ),
+            items: const [
+              DropdownMenuItem(
+                value: 'QUARENTENA',
+                child: Text('Quarentena'),
+              ),
+              DropdownMenuItem(
+                value: 'LIBERACAO',
+                child: Text('Liberação'),
+              ),
+              DropdownMenuItem(
+                value: 'INCINERACAO',
+                child: Text('Incineração'),
+              ),
+              DropdownMenuItem(value: 'RECALL', child: Text('Recall')),
+              DropdownMenuItem(
+                value: 'DEVOLUCAO_FORNECEDOR',
+                child: Text('Devolução ao fornecedor'),
+              ),
+            ],
+            onChanged: (value) {
+              if (value == null) return;
+              setState(() => _tipo = value);
+            },
+          ),
+          if (requiresQty) ...[
+            SizedBox(height: s.sm),
+            TextField(
+              controller: _quantidadeController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Quantidade',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+          SizedBox(height: s.sm),
+          TextField(
+            controller: _motivoController,
+            decoration: const InputDecoration(
+              labelText: 'Motivo',
+              border: OutlineInputBorder(),
+            ),
+            maxLines: 2,
+          ),
+          SizedBox(height: s.sm),
+          TextField(
+            controller: _documentoController,
+            decoration: const InputDecoration(
+              labelText: 'Documento de referência (opcional)',
+              border: OutlineInputBorder(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+String? _normalizeDateForApi(String rawValue) {
+  final digits = rawValue.replaceAll(RegExp(r'[^0-9]'), '');
+  if (digits.length != 8) return null;
+
+  final formatted =
+      '${digits.substring(0, 2)}/${digits.substring(2, 4)}/${digits.substring(4, 8)}';
+
+  try {
+    final parsed = DateFormat('dd/MM/yyyy').parseStrict(formatted);
+    return DateFormat('yyyy-MM-dd').format(parsed);
+  } catch (_) {
+    return null;
+  }
+}
+
+Future<void> _selectDate(
+  BuildContext context,
+  TextEditingController controller,
+) async {
+  FocusScope.of(context).unfocus();
+
+  DateTime initialDate = DateTime.now();
+  if (controller.text.length == 10) {
+    try {
+      initialDate = DateFormat('dd/MM/yyyy').parseStrict(controller.text);
+    } catch (_) {}
+  }
+
+  final navigatorContext = Navigator.of(context, rootNavigator: false).context;
+  final picked = await showDatePicker(
+    context: navigatorContext,
+    initialDate: initialDate,
+    firstDate: DateTime(2000),
+    lastDate: DateTime(2100),
+    useRootNavigator: false,
+  );
+
+  if (picked != null) {
+    controller.text = DateFormat('dd/MM/yyyy').format(picked);
   }
 }

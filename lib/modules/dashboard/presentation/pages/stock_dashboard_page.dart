@@ -33,7 +33,7 @@ class _StockDashboardPageState extends ConsumerState<StockDashboardPage> {
     final charts = dashMap(async.valueOrNull?['charts']);
     final statusOptions = dashboardUniqueOptions([
       ...dashList(tables?['inventarios']).map((row) => row['status']),
-      ...dashList(tables?['compras']).map((row) => row['status']),
+      ...dashList(tables?['entradasCompra']).map((row) => row['fornecedorNome']),
     ]);
     final movementTypeOptions = dashboardUniqueOptions(
       [
@@ -42,6 +42,7 @@ class _StockDashboardPageState extends ConsumerState<StockDashboardPage> {
       ],
       labels: const {
         'ENTRADA': 'Entrada',
+        'COMPRA': 'Compra',
         'SAIDA': 'Saída',
         'AJUSTE': 'Ajuste',
       },
@@ -242,12 +243,12 @@ class _StockDashboardPageState extends ConsumerState<StockDashboardPage> {
               ),
               const SizedBox(height: AppSpacing.lg),
               DashboardPaginatedTable(
-                title: 'Compras recentes',
-                headers: const ['Documento', 'Fornecedor', 'Estado'],
-                reloadKey: '${_query.reloadKey}-compras',
+                title: 'Entradas de compra',
+                headers: const ['Produto', 'Lote', 'Fornecedor', 'Valor'],
+                reloadKey: '${_query.reloadKey}-entradas-compra',
                 loadPage: (page, pageSize, sortBy, sortDir) async {
                   final result = await dataSource.stockDashboardTable(
-                    table: 'compras',
+                    table: 'entradasCompra',
                     query: _query.copyWith(
                       sortBy: sortBy,
                       sortDir: sortDir,
@@ -259,9 +260,10 @@ class _StockDashboardPageState extends ConsumerState<StockDashboardPage> {
                   return DashboardPagedTableResult.fromMap(result);
                 },
                 rowBuilder: (row) => [
-                  row['numeroDocumento']?.toString() ?? '—',
+                  row['produtoNomeComercial']?.toString() ?? '—',
+                  row['numeroLote']?.toString() ?? '—',
                   row['fornecedorNome']?.toString() ?? '—',
-                  row['status']?.toString() ?? '—',
+                  '${row['valorCompra'] ?? 0}',
                 ],
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -374,9 +376,9 @@ List<EnterpriseStatCard> _stockSecondaryKpis(Map<String, dynamic>? kpis) {
       icon: Icons.fact_check_outlined,
     ),
     dashboardKpiCard(
-      title: 'Compras pendentes',
-      value: dashKpi(kpis, 'comprasPendentes'),
-      icon: Icons.receipt_long_outlined,
+      title: 'Sugestões compra',
+      value: dashKpi(kpis, 'sugestoesCompra'),
+      icon: Icons.shopping_cart_outlined,
     ),
     dashboardKpiCard(
       title: 'Incinerações',

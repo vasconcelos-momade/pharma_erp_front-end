@@ -132,13 +132,13 @@ abstract final class PharmaComponentTheme {
   }) {
     final theme = textTheme ?? ThemeData().textTheme;
     final border = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(tokens.radiusMd),
-      borderSide: BorderSide(color: tokens.border),
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: tokens.border, width: 1),
     );
 
     return InputDecorationTheme(
       filled: true,
-      fillColor: isDark ? tokens.card.withValues(alpha: 0.35) : tokens.card,
+      fillColor: isDark ? tokens.card.withValues(alpha: 0.35) : Colors.white,
       constraints: const BoxConstraints(
         minHeight: DesignMetrics.fieldHeightMin,
       ),
@@ -146,15 +146,19 @@ abstract final class PharmaComponentTheme {
       border: border,
       enabledBorder: border,
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(tokens.radiusMd),
+        borderRadius: BorderRadius.circular(12),
         borderSide: BorderSide(
-          color: tokens.brandGreen.withValues(alpha: isDark ? 0.55 : 0.65),
+          color: scheme.primary,
           width: 2,
         ),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(tokens.radiusMd),
-        borderSide: BorderSide(color: tokens.posDanger),
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: tokens.posDanger, width: 1),
+      ),
+      focusedErrorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: tokens.posDanger, width: 2),
       ),
       labelStyle: theme.erpSelectLabel.copyWith(color: tokens.textSecondary),
       hintStyle: theme.erpBody.copyWith(color: tokens.textMuted),

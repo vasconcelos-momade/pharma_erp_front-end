@@ -166,9 +166,8 @@ class _FefoPageState extends ConsumerState<FefoPage> with SingleTickerProviderSt
                         width: 220,
                         child: DropdownButtonFormField<String?>(
                           initialValue: state?.situacao,
-                          decoration: enterpriseDropdownDecoration(
-                            context,
-                            'Situação auditoria',
+                          decoration: const InputDecoration(
+                            labelText: 'Situação auditoria',
                           ),
                           items: const [
                             DropdownMenuItem<String?>(value: null, child: Text('Todas')),

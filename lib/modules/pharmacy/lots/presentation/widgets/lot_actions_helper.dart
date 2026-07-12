@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/errors/api_failure.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/utils/lote_stock_utils.dart';
 import '../../../../../shared/widgets/layout/adaptive_side_sheet.dart';
 import '../../../../../shared/navigation/adaptive_navigator.dart';
@@ -98,28 +99,32 @@ abstract final class LotActionsHelper {
     final maxQty = isRevert
         ? _num(lote['quantidadeQuarentena'])
         : LoteStockUtils.readDisponivel(lote);
-    final title = Text(
-      isRevert ? 'Reverter quarentena' : 'Mover para quarentena',
-    );
+    final title =
+        isRevert ? 'Reverter quarentena' : 'Mover para quarentena';
+    final width = AdaptiveNavigator.widthOf(context);
+    final panelWidth = width >= AdaptiveSideSheetMetrics.desktopBreakpoint
+        ? 520.0
+        : 480.0;
 
-    return AdaptiveNavigator.openForm<LoteQuarentenaFormData>(
+    return AdaptiveNavigator.openPanel<LoteQuarentenaFormData>(
       context: context,
-      title: title,
+      sideSheetWidth: panelWidth,
       routeSettings: RouteSettings(
         name: isRevert
             ? '/lotes/$loteId/liberar-quarentena'
             : '/lotes/$loteId/quarentena',
       ),
-      contentBuilder: (formContext) {
-        if (AdaptiveNavigator.isMobile(formContext)) {
+      builder: (detailContext) {
+        if (AdaptiveNavigator.isMobile(detailContext)) {
           return LoteQuarentenaPage(lote: lote, isRevert: isRevert);
         }
-        return LoteQuarentenaFormContent(
+        return _LoteQuarentenaPanelContent(
           lote: lote,
           maxQuantidade: maxQty,
           isRevert: isRevert,
-          onSubmit: (data) => AdaptiveNavigator.complete(formContext, data),
-          onCancel: () => AdaptiveNavigator.cancel(formContext),
+          title: title,
+          onClose: () => AdaptiveNavigator.close(detailContext),
+          onSubmit: (data) => AdaptiveNavigator.close(detailContext, data),
         );
       },
     );
@@ -193,5 +198,62 @@ abstract final class LotActionsHelper {
       PharmaFeedback.dismiss(context);
       PharmaFeedback.error(context, e.toString());
     }
+  }
+}
+
+class _LoteQuarentenaPanelContent extends StatelessWidget {
+  const _LoteQuarentenaPanelContent({
+    required this.lote,
+    required this.maxQuantidade,
+    required this.isRevert,
+    required this.title,
+    required this.onClose,
+    required this.onSubmit,
+  });
+
+  final Map<String, dynamic> lote;
+  final num maxQuantidade;
+  final bool isRevert;
+  final String title;
+  final VoidCallback onClose;
+  final ValueChanged<LoteQuarentenaFormData> onSubmit;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 8, 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: Theme.of(context).textTheme.erpCardTitle,
+                ),
+              ),
+              IconButton(
+                onPressed: onClose,
+                icon: const Icon(Icons.close),
+              ),
+            ],
+          ),
+        ),
+        const Divider(height: 1),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: LoteQuarentenaFormContent(
+              lote: lote,
+              maxQuantidade: maxQuantidade,
+              isRevert: isRevert,
+              onSubmit: onSubmit,
+              onCancel: onClose,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }

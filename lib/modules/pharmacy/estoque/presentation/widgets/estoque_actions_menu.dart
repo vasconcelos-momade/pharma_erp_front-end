@@ -6,6 +6,7 @@ import '../../../../../core/theme/design_tokens.dart';
 import '../../../lots/presentation/widgets/lot_actions_helper.dart';
 import '../../domain/entities/estoque_item.dart';
 import 'estoque_lote_actions_helper.dart';
+import 'estoque_stock_entry_helper.dart';
 
 class EstoqueActionsMenu extends ConsumerWidget {
   const EstoqueActionsMenu({
@@ -13,11 +14,13 @@ class EstoqueActionsMenu extends ConsumerWidget {
     required this.item,
     required this.isBusy,
     this.compact = false,
+    this.fornecedores = const [],
   });
 
   final EstoqueItem item;
   final bool isBusy;
   final bool compact;
+  final List<({String id, String nome})> fornecedores;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -51,7 +54,7 @@ class EstoqueActionsMenu extends ConsumerWidget {
         size: compact ? t.iconSm : t.iconMd,
         color: t.textMuted,
       ),
-      onSelected: (action) => _handleAction(context, ref, action, item),
+      onSelected: (action) => _handleAction(context, ref, action, item, fornecedores),
       itemBuilder: (context) => actions,
     );
   }
@@ -66,6 +69,9 @@ class EstoqueActionsMenu extends ConsumerWidget {
       entries.add(PopupMenuItem(value: value, child: Text(label)));
     }
 
+    if (access.can('LOTES', 'CREATE_LOTE')) {
+      add('entrada', 'Entrada');
+    }
     if (access.can('LOTES', 'UPDATE')) {
       add('editar', 'Editar lote');
       add('preco', 'Alterar preço do lote');
@@ -92,8 +98,16 @@ class EstoqueActionsMenu extends ConsumerWidget {
     WidgetRef ref,
     String action,
     EstoqueItem item,
+    List<({String id, String nome})> fornecedores,
   ) async {
     switch (action) {
+      case 'entrada':
+        await EstoqueStockEntryHelper.entradaCompra(
+          context,
+          ref,
+          item,
+          fornecedores,
+        );
       case 'editar':
         await EstoqueLoteActionsHelper.editarLote(context, ref, item);
       case 'ajustar':

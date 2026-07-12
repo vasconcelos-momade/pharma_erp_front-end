@@ -350,6 +350,92 @@ class EstoqueRemoteDataSource {
       throw ApiFailure.fromDio(e);
     }
   }
+
+  Future<void> entradaCompra({
+    required String produtoId,
+    required String fornecedorId,
+    required String numeroLote,
+    required String dataValidade,
+    required num quantidade,
+    required num precoCompra,
+    required num precoVenda,
+  }) async {
+    try {
+      await _dio.post<Map<String, dynamic>>(
+        ApiConstants.tenantEstoqueEntradaCompra,
+        data: <String, dynamic>{
+          'produtoId': produtoId,
+          'fornecedorId': fornecedorId,
+          'numeroLote': numeroLote,
+          'dataValidade': dataValidade,
+          'quantidade': quantidade,
+          'precoCompra': precoCompra,
+          'precoVenda': precoVenda,
+        },
+      );
+    } on DioException catch (e) {
+      throw ApiFailure.fromDio(e);
+    }
+  }
+
+  Future<void> createLote({
+    required String produtoId,
+    required String fornecedorId,
+    required String numeroLote,
+    required String dataValidade,
+    required num quantidadeInicial,
+    required num precoCompra,
+    required num precoVenda,
+  }) async {
+    try {
+      await _dio.post<Map<String, dynamic>>(
+        ApiConstants.tenantLotes,
+        data: <String, dynamic>{
+          'produtoId': produtoId,
+          'fornecedorId': fornecedorId,
+          'numeroLote': numeroLote,
+          'dataValidade': dataValidade,
+          'quantidadeInicial': quantidadeInicial,
+          'precoCompra': precoCompra,
+          'precoVenda': precoVenda,
+        },
+      );
+    } on DioException catch (e) {
+      throw ApiFailure.fromDio(e);
+    }
+  }
+
+  Future<List<ProdutoSearchResult>> searchProdutos({required String query}) async {
+    try {
+      final response = await _dio.get<Map<String, dynamic>>(
+        ApiConstants.tenantStockProdutosSearch,
+        queryParameters: <String, dynamic>{'q': query, 'pageSize': 10},
+      );
+      final payload = ApiEnvelope.unwrapMap(response.data!);
+      final items = (payload['items'] as List<dynamic>? ?? <dynamic>[])
+          .whereType<Map<String, dynamic>>();
+      return items
+          .map(
+            (item) => ProdutoSearchResult(
+              id: item['id']?.toString() ?? '',
+              nome: item['nomeComercial']?.toString() ??
+                  item['nome']?.toString() ??
+                  'Produto',
+            ),
+          )
+          .where((item) => item.id.isNotEmpty)
+          .toList();
+    } on DioException catch (e) {
+      throw ApiFailure.fromDio(e);
+    }
+  }
+}
+
+class ProdutoSearchResult {
+  const ProdutoSearchResult({required this.id, required this.nome});
+
+  final String id;
+  final String nome;
 }
 
 final estoqueRemoteDataSourceProvider = Provider<EstoqueRemoteDataSource>(

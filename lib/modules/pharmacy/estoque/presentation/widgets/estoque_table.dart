@@ -14,10 +14,12 @@ class EstoqueTable extends StatelessWidget {
     super.key,
     required this.items,
     required this.actionLoteId,
+    this.fornecedores = const [],
   });
 
   final List<EstoqueItem> items;
   final String? actionLoteId;
+  final List<({String id, String nome})> fornecedores;
 
   static final _dateFormat = DateFormat('dd/MM/yyyy');
   static const _columnLabels = [
@@ -87,6 +89,7 @@ class EstoqueTable extends StatelessWidget {
               EstoqueActionsMenu(
                 item: item,
                 isBusy: actionLoteId == item.id,
+                fornecedores: fornecedores,
               ),
             ),
           ],

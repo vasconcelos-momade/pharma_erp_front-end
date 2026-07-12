@@ -50,6 +50,12 @@ class _PdvPageState extends ConsumerState<PdvPage>
     super.initState();
     _catalogTabController = TabController(length: 2, vsync: this);
     _search.text = ref.read(productListProvider).query;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+      ref.read(pdvCartProvider.notifier).ensureLoaded();
+    });
   }
 
   @override

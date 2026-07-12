@@ -33,6 +33,7 @@ abstract final class ReportPaths {
   static const stockMovementsEntrada = '/reports/stock/movements/entrada';
   static const stockMovementsSaida = '/reports/stock/movements/saida';
   static const stockMovementsAjuste = '/reports/stock/movements/ajuste';
+  static const stockPurchaseSuggestions = '/reports/stock/purchase-suggestions';
   static const stockInventories = '/reports/stock/inventories';
 
   static const financeCashflow = '/reports/finance/cashflow';
@@ -98,6 +99,7 @@ abstract final class ReportPaths {
     ReportKeys.stockMovementsEntrada: stockMovementsEntrada,
     ReportKeys.stockMovementsSaida: stockMovementsSaida,
     ReportKeys.stockMovementsAjuste: stockMovementsAjuste,
+    ReportKeys.purchaseSuggestions: stockPurchaseSuggestions,
     ReportKeys.inventories: stockInventories,
     ReportKeys.financeCashflow: financeCashflow,
     ReportKeys.financeExpenses: financeExpenses,
