@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../../core/contracts/pagination_response.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
 import '../../../../../shared/navigation/adaptive_navigator.dart';
@@ -29,7 +30,7 @@ class _PsychotropicsBookPageState extends ConsumerState<PsychotropicsBookPage> {
   Map<String, dynamic>? _dashboard;
   List<Map<String, dynamic>> _items = <Map<String, dynamic>>[];
   int _page = 1;
-  int _pageSize = 20;
+  int _pageSize = PaginationDefaults.pageSize;
   bool _hasMore = false;
   int _total = 0;
   String _search = '';
@@ -338,18 +339,10 @@ class _PsychotropicsBookPageState extends ConsumerState<PsychotropicsBookPage> {
             isBusy: _loading,
             totalCount: _total,
             itemsOnPage: _items.length,
-            onPrev: _page > 1
-                ? () {
-                    setState(() => _page -= 1);
-                    _load();
-                  }
-                : null,
-            onNext: _hasMore
-                ? () {
-                    setState(() => _page += 1);
-                    _load();
-                  }
-                : null,
+            onPageChanged: (nextPage) {
+              setState(() => _page = nextPage);
+              _load();
+            },
             onPageSizeChanged: (value) {
               setState(() {
                 _pageSize = value;

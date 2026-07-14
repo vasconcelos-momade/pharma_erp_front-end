@@ -46,7 +46,7 @@ abstract final class PharmaAlertDialog {
             ],
           ),
           actions: [
-            TextButton(
+            OutlinedButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
               child: Text(cancelText),
             ),

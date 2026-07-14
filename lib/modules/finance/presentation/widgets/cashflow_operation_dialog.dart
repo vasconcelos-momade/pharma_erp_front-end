@@ -3,41 +3,42 @@ import 'package:flutter/material.dart';
 import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
 import '../../../../../shared/widgets/layout/adaptive_side_sheet.dart';
-import '../../domain/entities/fornecedor.dart';
 
-class FornecedorFormResult {
-  const FornecedorFormResult({required this.payload});
+class CashflowOperationResult {
+  const CashflowOperationResult({required this.payload});
 
   final Map<String, dynamic> payload;
 }
 
-Future<FornecedorFormResult?> showFornecedorFormDialog(
+Future<CashflowOperationResult?> showCashflowOperationDialog(
   BuildContext context, {
-  FornecedorDetalhe? fornecedor,
+  required String operationType,
 }) {
-  final title = Text(fornecedor == null ? 'Novo fornecedor' : 'Editar fornecedor');
+  final title = Text('Fluxo de Caixa - $operationType');
   final width = AdaptiveNavigator.widthOf(context);
-  // Default to 480 or 520 as in categories
   final panelWidth = width >= AdaptiveSideSheetMetrics.desktopBreakpoint ? 520.0 : 480.0;
 
-  return AdaptiveNavigator.openPanel<FornecedorFormResult>(
+  return AdaptiveNavigator.openPanel<CashflowOperationResult>(
     context: context,
     sideSheetWidth: panelWidth,
-    routeSettings: RouteSettings(
-      name: fornecedor == null ? '/fornecedores/novo' : '/fornecedores/${fornecedor.id}',
-    ),
+    routeSettings: RouteSettings(name: '/finance/operation/${operationType.toLowerCase()}'),
     builder: (detailContext) {
       if (AdaptiveNavigator.isMobile(detailContext)) {
         return Scaffold(
           appBar: AppBar(title: title),
           body: SafeArea(
-            child: _FornecedorFormDialog(fornecedor: fornecedor, embedded: true),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16.0),
+              child: _CashflowOperationDialog(
+                operationType: operationType,
+                embedded: true,
+              ),
+            ),
           ),
         );
       }
-      // On SideSheet (desktop/tablet), we need the pinned header and footer like in Categories
-      return _FornecedorFormDialog(
-        fornecedor: fornecedor,
+      return _CashflowOperationDialog(
+        operationType: operationType,
         embedded: true,
         showHeader: true,
         onClose: () => AdaptiveNavigator.cancel(detailContext),
@@ -46,52 +47,45 @@ Future<FornecedorFormResult?> showFornecedorFormDialog(
   );
 }
 
-class _FornecedorFormDialog extends StatefulWidget {
-  const _FornecedorFormDialog({
-    this.fornecedor,
+class _CashflowOperationDialog extends StatefulWidget {
+  const _CashflowOperationDialog({
+    required this.operationType,
     this.embedded = false,
     this.showHeader = false,
     this.onClose,
   });
 
-  final FornecedorDetalhe? fornecedor;
+  final String operationType;
   final bool embedded;
   final bool showHeader;
   final VoidCallback? onClose;
 
   @override
-  State<_FornecedorFormDialog> createState() => _FornecedorFormDialogState();
+  State<_CashflowOperationDialog> createState() => _CashflowOperationDialogState();
 }
 
-class _FornecedorFormDialogState extends State<_FornecedorFormDialog> {
+class _CashflowOperationDialogState extends State<_CashflowOperationDialog> {
   final _formKey = GlobalKey<FormState>();
-  late final TextEditingController _nome;
-  late final TextEditingController _nuit;
-  late final TextEditingController _email;
-  late final TextEditingController _telefone;
-  late final TextEditingController _cidade;
-  late final TextEditingController _contato;
+  late final TextEditingController _saldoController;
+  late final TextEditingController _valorController;
+  late final TextEditingController _destinoOrigemController;
+  late final TextEditingController _descricaoController;
 
   @override
   void initState() {
     super.initState();
-    final f = widget.fornecedor;
-    _nome = TextEditingController(text: f?.nome ?? '');
-    _nuit = TextEditingController(text: f?.nuit ?? '');
-    _email = TextEditingController(text: f?.email ?? '');
-    _telefone = TextEditingController(text: f?.telefone ?? '');
-    _cidade = TextEditingController(text: f?.cidade ?? '');
-    _contato = TextEditingController(text: f?.contatoNome ?? '');
+    _saldoController = TextEditingController();
+    _valorController = TextEditingController();
+    _destinoOrigemController = TextEditingController();
+    _descricaoController = TextEditingController();
   }
 
   @override
   void dispose() {
-    _nome.dispose();
-    _nuit.dispose();
-    _email.dispose();
-    _telefone.dispose();
-    _cidade.dispose();
-    _contato.dispose();
+    _saldoController.dispose();
+    _valorController.dispose();
+    _destinoOrigemController.dispose();
+    _descricaoController.dispose();
     super.dispose();
   }
 
@@ -99,14 +93,13 @@ class _FornecedorFormDialogState extends State<_FornecedorFormDialog> {
     if (_formKey.currentState?.validate() != true) return;
     AdaptiveNavigator.complete(
       context,
-      FornecedorFormResult(
+      CashflowOperationResult(
         payload: <String, dynamic>{
-          'nome': _nome.text.trim(),
-          if (_nuit.text.trim().isNotEmpty) 'nuit': _nuit.text.trim(),
-          if (_email.text.trim().isNotEmpty) 'email': _email.text.trim(),
-          if (_telefone.text.trim().isNotEmpty) 'telefone': _telefone.text.trim(),
-          if (_cidade.text.trim().isNotEmpty) 'cidade': _cidade.text.trim(),
-          if (_contato.text.trim().isNotEmpty) 'contatoNome': _contato.text.trim(),
+          'operation': widget.operationType,
+          'saldo': _saldoController.text.trim(),
+          'valor': _valorController.text.trim(),
+          'destinoOrigem': _destinoOrigemController.text.trim(),
+          'descricao': _descricaoController.text.trim(),
         },
       ),
     );
@@ -118,55 +111,47 @@ class _FornecedorFormDialogState extends State<_FornecedorFormDialog> {
       key: _formKey,
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Text(
+            'Caixa Ativo',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 16),
           TextFormField(
-            controller: _nome,
+            controller: _saldoController,
             decoration: const InputDecoration(
-              labelText: 'Nome',
+              labelText: 'Saldo',
               border: OutlineInputBorder(),
             ),
+          ),
+          const SizedBox(height: 12),
+          TextFormField(
+            controller: _valorController,
+            decoration: const InputDecoration(
+              labelText: 'Valor',
+              border: OutlineInputBorder(),
+            ),
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
             validator: (value) =>
-                value == null || value.trim().length < 2 ? 'Nome obrigatório' : null,
+                value == null || value.trim().isEmpty ? 'Valor obrigatório' : null,
           ),
           const SizedBox(height: 12),
           TextFormField(
-            controller: _nuit,
+            controller: _destinoOrigemController,
             decoration: const InputDecoration(
-              labelText: 'NUIT',
+              labelText: 'Destino ou Origem',
               border: OutlineInputBorder(),
             ),
           ),
           const SizedBox(height: 12),
           TextFormField(
-            controller: _email,
+            controller: _descricaoController,
             decoration: const InputDecoration(
-              labelText: 'Email',
+              labelText: 'Descrição',
               border: OutlineInputBorder(),
             ),
-          ),
-          const SizedBox(height: 12),
-          TextFormField(
-            controller: _telefone,
-            decoration: const InputDecoration(
-              labelText: 'Telefone',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextFormField(
-            controller: _cidade,
-            decoration: const InputDecoration(
-              labelText: 'Cidade',
-              border: OutlineInputBorder(),
-            ),
-          ),
-          const SizedBox(height: 12),
-          TextFormField(
-            controller: _contato,
-            decoration: const InputDecoration(
-              labelText: 'Contacto',
-              border: OutlineInputBorder(),
-            ),
+            maxLines: 3,
           ),
         ],
       ),
@@ -180,7 +165,7 @@ class _FornecedorFormDialogState extends State<_FornecedorFormDialog> {
       const SizedBox(width: 8),
       FilledButton(
         onPressed: _submit,
-        child: Text(widget.fornecedor == null ? 'Criar' : 'Guardar'),
+        child: const Text('Confirmar'),
       ),
     ];
 
@@ -195,7 +180,7 @@ class _FornecedorFormDialogState extends State<_FornecedorFormDialog> {
                 children: [
                   Expanded(
                     child: Text(
-                      widget.fornecedor == null ? 'Novo fornecedor' : 'Editar fornecedor',
+                      'Fluxo de Caixa - ${widget.operationType}',
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                   ),
@@ -228,7 +213,7 @@ class _FornecedorFormDialogState extends State<_FornecedorFormDialog> {
     }
 
     return PharmaResponsiveDialog(
-      title: Text(widget.fornecedor == null ? 'Novo fornecedor' : 'Editar fornecedor'),
+      title: Text('Fluxo de Caixa - ${widget.operationType}'),
       content: form,
       actions: actions,
     );

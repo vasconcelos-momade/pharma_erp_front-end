@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/constants/api_constants.dart';
 import '../../../../../core/contracts/api_envelope.dart';
+import '../../../../../core/contracts/pagination_response.dart';
 import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/network/dio/dio_provider.dart';
 
@@ -156,7 +157,7 @@ class PurchaseSuggestionsState {
     this.search = '',
     this.originFilter = PurchaseSuggestionOriginFilter.todas,
     this.page = 1,
-    this.pageSize = 20,
+    this.pageSize = PaginationDefaults.pageSize,
     this.totalCount,
     this.hasMore = false,
     this.isLoading = false,

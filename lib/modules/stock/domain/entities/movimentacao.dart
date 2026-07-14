@@ -1,5 +1,6 @@
 enum MovimentacaoTipo {
   entrada,
+  compra,
   saida,
   ajuste,
   devolucao,
@@ -12,6 +13,8 @@ extension MovimentacaoTipoX on MovimentacaoTipo {
     switch (this) {
       case MovimentacaoTipo.entrada:
         return 'ENTRADA';
+      case MovimentacaoTipo.compra:
+        return 'COMPRA';
       case MovimentacaoTipo.saida:
         return 'SAIDA';
       case MovimentacaoTipo.ajuste:
@@ -29,6 +32,8 @@ extension MovimentacaoTipoX on MovimentacaoTipo {
     switch (value?.trim().toUpperCase()) {
       case 'ENTRADA':
         return MovimentacaoTipo.entrada;
+      case 'COMPRA':
+        return MovimentacaoTipo.compra;
       case 'SAIDA':
         return MovimentacaoTipo.saida;
       case 'AJUSTE':
@@ -172,7 +177,7 @@ class MovimentacaoQuery {
     this.dataFim,
     this.quickFilter = MovimentacaoQuickFilter.none,
     this.page = 1,
-    this.pageSize = 20,
+    this.pageSize = 10,
   });
 
   final String search;

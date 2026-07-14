@@ -45,6 +45,8 @@ class EstoqueItemModel {
     required this.produtoId,
     this.produtoNomeComercial,
     this.produtoNomeGenerico,
+    this.produtoDosagem,
+    this.produtoFormaFarmaceutica,
     this.produtoBarcode,
     this.categoriaId,
     this.categoriaNome,
@@ -74,6 +76,8 @@ class EstoqueItemModel {
       produtoNomeComercial: json['produtoNomeComercial']?.toString() ??
           json['produtoNome']?.toString(),
       produtoNomeGenerico: json['produtoNomeGenerico']?.toString(),
+      produtoDosagem: json['produtoDosagem']?.toString(),
+      produtoFormaFarmaceutica: json['produtoFormaFarmaceutica']?.toString(),
       produtoBarcode: json['produtoBarcode']?.toString(),
       categoriaId: json['categoriaId']?.toString(),
       categoriaNome: json['categoriaNome']?.toString(),
@@ -101,6 +105,8 @@ class EstoqueItemModel {
   final String produtoId;
   final String? produtoNomeComercial;
   final String? produtoNomeGenerico;
+  final String? produtoDosagem;
+  final String? produtoFormaFarmaceutica;
   final String? produtoBarcode;
   final String? categoriaId;
   final String? categoriaNome;
@@ -127,6 +133,8 @@ class EstoqueItemModel {
         produtoId: produtoId,
         produtoNomeComercial: produtoNomeComercial,
         produtoNomeGenerico: produtoNomeGenerico,
+        produtoDosagem: produtoDosagem,
+        produtoFormaFarmaceutica: produtoFormaFarmaceutica,
         produtoBarcode: produtoBarcode,
         categoriaId: categoriaId,
         categoriaNome: categoriaNome,

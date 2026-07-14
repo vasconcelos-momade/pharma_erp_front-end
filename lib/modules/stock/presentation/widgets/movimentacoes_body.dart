@@ -55,14 +55,10 @@ class MovimentacoesBody extends ConsumerWidget {
         MovimentacoesPagination(
           page: query.page,
           pageSize: query.pageSize,
+          totalCount: listState.overview.totalMovimentos,
           hasMore: listState.hasMore,
           isBusy: listState.isBusy,
-          onPrev: query.page > 1
-              ? () => notifier.goToPage(query.page - 1)
-              : null,
-          onNext: listState.hasMore
-              ? () => notifier.goToPage(query.page + 1)
-              : null,
+          onPageChanged: notifier.goToPage,
           onPageSizeChanged: notifier.setPageSize,
         ),
       ],
@@ -118,14 +114,10 @@ class _MovimentacoesMobileBody extends ConsumerWidget {
           child: MovimentacoesPagination(
             page: query.page,
             pageSize: query.pageSize,
+            totalCount: listState.overview.totalMovimentos,
             hasMore: listState.hasMore,
             isBusy: listState.isBusy,
-            onPrev: query.page > 1
-                ? () => notifier.goToPage(query.page - 1)
-                : null,
-            onNext: listState.hasMore
-                ? () => notifier.goToPage(query.page + 1)
-                : null,
+            onPageChanged: notifier.goToPage,
             onPageSizeChanged: notifier.setPageSize,
           ),
         ),

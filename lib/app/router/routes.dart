@@ -117,7 +117,7 @@ abstract final class AppRouteTitles {
       AppRoutePaths.pos => 'POS / Caixa',
       AppRoutePaths.products => 'Produtos',
       AppRoutePaths.pharmacyCategories => 'Categorias',
-      AppRoutePaths.pharmacyLots => 'Estoque',
+      AppRoutePaths.pharmacyLots => 'Estoque & Lotes',
       AppRoutePaths.pharmacyExpiry => 'Validades',
       AppRoutePaths.pharmacyFefo => 'FEFO',
       AppRoutePaths.regulatory => 'Sanitário / Alertas',
@@ -141,7 +141,7 @@ abstract final class AppRouteTitles {
       AppRoutePaths.stockInventory => 'Inventário',
       AppRoutePaths.stockSuppliers => 'Fornecedores',
       AppRoutePaths.stockPurchases => 'Compras',
-      AppRoutePaths.stockPurchaseSuggestions => 'Sugestão de Compras',
+      AppRoutePaths.stockPurchaseSuggestions => 'Sugestão de Compra',
       AppRoutePaths.salesCustomers => 'Clientes',
       AppRoutePaths.salesInvoices => 'Faturas',
       AppRoutePaths.salesProformaInvoices => 'Faturas Proforma',
@@ -169,7 +169,7 @@ abstract final class AppRouteTitles {
     if (path.startsWith('/app/sales') || path == AppRoutePaths.pos) {
       return 'Terminal';
     }
-    if (path.startsWith('/app/stock')) return 'Stock';
+    if (path.startsWith('/app/stock')) return 'Farmácia';
     if (path == AppRoutePaths.regulatory ||
         path == AppRoutePaths.psychotropics ||
         path == AppRoutePaths.recipes ||
@@ -195,7 +195,7 @@ abstract final class AppRouteTitles {
       return 'Plataforma';
     }
     if (path == AppRoutePaths.purchasing) {
-      return 'Stock';
+      return 'Farmácia';
     }
     return 'Pharma ERP';
   }

@@ -10,6 +10,7 @@ import '../../../../../shared/widgets/inputs/async_type_ahead_field.dart';
 import '../../domain/entities/estoque_item.dart';
 import '../providers/estoque_provider.dart';
 import '../../data/datasources/estoque_remote_datasource.dart';
+import '../../../../stock/presentation/providers/movimentacao_provider.dart';
 
 import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/widgets/layout/adaptive_side_sheet.dart';
@@ -186,8 +187,13 @@ class _EntradaCompraFormContentState extends ConsumerState<_EntradaCompraFormCon
             precoVenda: precoVenda,
           );
       if (!mounted) return;
+      controller.applyLoteStockDelta(
+        loteId: widget.item.id,
+        delta: quantidade,
+      );
       PharmaFeedback.success(context, 'Entrada registada com sucesso');
-      await controller.refreshCurrentPage();
+      await controller.syncAfterMutation();
+      ref.invalidate(movimentacaoListProvider);
       if (!mounted) return;
       if (widget.onClose != null) {
         widget.onClose!();
@@ -431,7 +437,8 @@ class _NovoLoteFormContentState extends ConsumerState<_NovoLoteFormContent> {
           );
       if (!mounted) return;
       PharmaFeedback.success(context, 'Lote criado com sucesso');
-      await controller.refreshCurrentPage();
+      await controller.syncAfterMutation();
+      ref.invalidate(movimentacaoListProvider);
       if (!mounted) return;
       if (widget.onClose != null) {
         widget.onClose!();

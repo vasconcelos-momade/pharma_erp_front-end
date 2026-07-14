@@ -13,7 +13,7 @@ class CategoryListState {
     this.query = '',
     this.includeInactive = true,
     this.page = 1,
-    this.pageSize = 20,
+    this.pageSize = 10,
     this.hasMore = false,
     this.totalCount,
     this.isLoading = false,
@@ -77,6 +77,12 @@ class CategoryListController extends Notifier<CategoryListState> {
 
   void setIncludeInactive(bool value) {
     state = state.copyWith(includeInactive: value, page: 1, isLoading: true, clearError: true);
+    unawaited(load());
+  }
+
+  void setPageSize(int size) {
+    if (size == state.pageSize) return;
+    state = state.copyWith(pageSize: size, page: 1, isLoading: true, clearError: true);
     unawaited(load());
   }
 

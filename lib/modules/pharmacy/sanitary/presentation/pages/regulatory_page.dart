@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../../core/contracts/pagination_response.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/utils/lote_stock_utils.dart';
@@ -39,14 +40,14 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
   List<Map<String, dynamic>> _accumulatedSanitario = <Map<String, dynamic>>[];
   List<Map<String, dynamic>> _reports = <Map<String, dynamic>>[];
   int _page = 1;
-  int _pageSize = 20;
+  int _pageSize = PaginationDefaults.pageSize;
   bool _hasMore = false;
   int _total = 0;
   String _search = '';
   String? _estado;
   String? _alertaTipo;
   int _reportsPage = 1;
-  int _reportsPageSize = 10;
+  int _reportsPageSize = PaginationDefaults.pageSize;
   bool _reportsHasMore = false;
   int _reportsTotal = 0;
   String? _reportTipo;
@@ -619,18 +620,10 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
           totalCount: _total,
           itemsOnPage: _items.length,
           itemLabel: 'lotes',
-          onPrev: _page > 1
-              ? () {
-                  setState(() => _page -= 1);
-                  _loadSanitario();
-                }
-              : null,
-          onNext: _hasMore
-              ? () {
-                  setState(() => _page += 1);
-                  _loadSanitario();
-                }
-              : null,
+          onPageChanged: (nextPage) {
+            setState(() => _page = nextPage);
+            _loadSanitario();
+          },
           onPageSizeChanged: (value) {
             setState(() {
               _pageSize = value;
@@ -706,18 +699,10 @@ class _RegulatoryPageState extends ConsumerState<RegulatoryPage>
           totalCount: _reportsTotal,
           itemsOnPage: _reports.length,
           itemLabel: 'relatórios',
-          onPrev: _reportsPage > 1
-              ? () {
-                  setState(() => _reportsPage -= 1);
-                  _loadReports();
-                }
-              : null,
-          onNext: _reportsHasMore
-              ? () {
-                  setState(() => _reportsPage += 1);
-                  _loadReports();
-                }
-              : null,
+          onPageChanged: (nextPage) {
+            setState(() => _reportsPage = nextPage);
+            _loadReports();
+          },
           onPageSizeChanged: (value) {
             setState(() {
               _reportsPageSize = value;

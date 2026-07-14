@@ -77,8 +77,11 @@ class EstoqueMobileCard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          item.produtoNomeComercial ?? '—',
-                          style: theme.textTheme.erpCardTitle.copyWith(color: t.textPrimary),
+                          item.produtoDisplayLabel,
+                          style: theme.textTheme.erpCardTitle.copyWith(
+                            color: t.textPrimary,
+                            fontWeight: FontWeight.w700,
+                          ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),

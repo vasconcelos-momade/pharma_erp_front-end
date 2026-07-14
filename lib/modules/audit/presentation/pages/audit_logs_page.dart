@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../shared/widgets/cards/enterprise_list_card.dart';
+import '../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../domain/entities/audit_entities.dart';
 import '../providers/audit_providers.dart';
@@ -37,7 +38,9 @@ class _AuditLogsPageState extends ConsumerState<AuditLogsPage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(auditLogsProvider);
+    final dashboardState = ref.watch(auditDashboardProvider);
     final notifier = ref.read(auditLogsProvider.notifier);
+    final dashboard = dashboardState.dashboard;
 
     ref.listen(auditLogsProvider, (previous, next) {
       if (previous?.query.page != next.query.page ||
@@ -68,11 +71,34 @@ class _AuditLogsPageState extends ConsumerState<AuditLogsPage> {
     }
 
     return EnterpriseModuleHub(
-      title: 'Logs de auditoria',
+      title: 'Logs',
       subtitle: 'Registo imutável de alterações com encadeamento criptográfico.',
       tag: 'Auditoria',
       actions: null,
       filters: null,
+      kpis: [
+        EnterpriseStatCard(
+          title: 'Total de Logs',
+          value: dashboard.totalLogs.toString(),
+          icon: Icons.history,
+          accent: StatCardAccent.info,
+          subtitle: 'Registos capturados',
+        ),
+        EnterpriseStatCard(
+          title: 'Últimas 24h',
+          value: dashboard.logsLast24h.toString(),
+          icon: Icons.schedule,
+          accent: StatCardAccent.positive,
+          subtitle: 'Actividade recente',
+        ),
+        EnterpriseStatCard(
+          title: 'Eventos Críticos',
+          value: dashboard.criticalEventsLast7d.toString(),
+          icon: Icons.warning_amber_rounded,
+          accent: StatCardAccent.warning,
+          subtitle: 'Últimos 7 dias',
+        ),
+      ],
       child: AuditAdaptiveListBody<AuditLogEntry>(
         state: state,
         searchController: _searchController,

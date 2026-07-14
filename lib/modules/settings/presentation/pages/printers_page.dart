@@ -12,6 +12,7 @@ import '../../../../shared/widgets/cards/enterprise_list_card.dart';
 import '../../../../shared/widgets/feedback/module_data_states.dart';
 import '../../../../shared/widgets/layout/enterprise_mobile_scroll_list.dart';
 import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
+import '../../../../shared/widgets/navigation/app_nav_config.dart';
 import '../../../../shared/widgets/tables/enterprise_data_table.dart';
 
 class PrintersPage extends ConsumerStatefulWidget {
@@ -76,9 +77,9 @@ class _PrintersPageState extends ConsumerState<PrintersPage> {
   @override
   Widget build(BuildContext context) {
     return EnterpriseModuleHub(
-      title: 'Impressoras térmicas',
+      title: 'Impressoras',
       subtitle: 'ESC/POS, largura 58/80mm, cópias e vias.',
-      tag: 'Sistema',
+      tag: AppNavSections.system,
       actions: [
         OutlinedButton.icon(
           onPressed: _loading ? null : _load,

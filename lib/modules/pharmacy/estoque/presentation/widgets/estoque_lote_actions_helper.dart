@@ -16,6 +16,7 @@ import '../../../lots/presentation/widgets/lot_actions_helper.dart';
 import '../../data/datasources/estoque_remote_datasource.dart';
 import '../../domain/entities/estoque_item.dart';
 import '../providers/estoque_provider.dart';
+import '../../../../stock/presentation/providers/movimentacao_provider.dart';
 
 abstract final class EstoqueLoteActionsHelper {
   EstoqueLoteActionsHelper._();
@@ -98,7 +99,8 @@ abstract final class EstoqueLoteActionsHelper {
     controller.setActionLoteId(item.id);
     try {
       await LotActionsHelper.moveToQuarentena(context, ref, item.toActionMap());
-      await controller.refreshCurrentPage();
+      await controller.syncAfterMutation();
+      ref.invalidate(movimentacaoListProvider);
     } finally {
       controller.setActionLoteId(null);
     }
@@ -113,7 +115,8 @@ abstract final class EstoqueLoteActionsHelper {
     controller.setActionLoteId(item.id);
     try {
       await LotActionsHelper.revertQuarentena(context, ref, item.toActionMap());
-      await controller.refreshCurrentPage();
+      await controller.syncAfterMutation();
+      ref.invalidate(movimentacaoListProvider);
     } finally {
       controller.setActionLoteId(null);
     }
@@ -315,7 +318,8 @@ class _EditarLoteFormContentState extends ConsumerState<_EditarLoteFormContent> 
           );
       if (!mounted) return;
       PharmaFeedback.success(context, 'Lote actualizado com sucesso');
-      await controller.refreshCurrentPage();
+      await controller.syncAfterMutation();
+      ref.invalidate(movimentacaoListProvider);
       if (!mounted) return;
       if (widget.onClose != null) {
         widget.onClose!();
@@ -462,7 +466,8 @@ class _AlterarPrecoFormContentState extends ConsumerState<_AlterarPrecoFormConte
           );
       if (!mounted) return;
       PharmaFeedback.success(context, 'Preços actualizados com sucesso');
-      await controller.refreshCurrentPage();
+      await controller.syncAfterMutation();
+      ref.invalidate(movimentacaoListProvider);
       if (!mounted) return;
       if (widget.onClose != null) {
         widget.onClose!();
@@ -592,7 +597,8 @@ class _AjustarStockFormContentState extends ConsumerState<_AjustarStockFormConte
           );
       if (!mounted) return;
       PharmaFeedback.success(context, 'Stock ajustado com sucesso');
-      await controller.refreshCurrentPage();
+      await controller.syncAfterMutation();
+      ref.invalidate(movimentacaoListProvider);
       if (!mounted) return;
       if (widget.onClose != null) {
         widget.onClose!();
@@ -720,7 +726,8 @@ class _MovimentacaoSanitariaFormContentState
           );
       if (!mounted) return;
       PharmaFeedback.success(context, 'Movimentação sanitária registada');
-      await controller.refreshCurrentPage();
+      await controller.syncAfterMutation();
+      ref.invalidate(movimentacaoListProvider);
       if (!mounted) return;
       if (widget.onClose != null) {
         widget.onClose!();

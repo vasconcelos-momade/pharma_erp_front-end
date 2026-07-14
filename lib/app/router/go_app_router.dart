@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../modules/admin/users/presentation/pages/users_page.dart';
 import '../../modules/audit/presentation/pages/audit_hub_page.dart';
+import '../../modules/audit/presentation/pages/audit_logs_page.dart';
 import '../../modules/sales/customers/presentation/pages/customers_page.dart';
 import '../../modules/sales/history/presentation/pages/sales_history_page.dart';
 import '../../modules/auth/presentation/pages/forgot_password_page.dart';
@@ -18,6 +19,9 @@ import '../../modules/finance/presentation/pages/cashflow_page.dart';
 import '../../modules/finance/presentation/pages/finance_hub_page.dart';
 import '../../modules/pharmacy/presentation/pages/pharmacy_stock_hub_page.dart';
 import '../../modules/pharmacy/presentation/pages/regulatory_hub_page.dart';
+import '../../modules/pharmacy/prescriptions/presentation/pages/recipes_book_page.dart';
+import '../../modules/pharmacy/psychotropics/presentation/pages/psychotropics_book_page.dart';
+import '../../modules/pharmacy/sanitary/presentation/pages/regulatory_page.dart';
 import '../../modules/pharmacy/products/presentation/pages/products_page.dart';
 import '../../modules/pharmacy/categories/presentation/pages/categories_page.dart';
 import '../../modules/sales/proforma_invoices/presentation/pages/proforma_invoices_page.dart';
@@ -27,7 +31,9 @@ import '../../modules/stock/presentation/pages/fornecedores_page.dart';
 import '../../modules/stock/presentation/pages/inventory_hub_page.dart';
 import '../../modules/stock/presentation/pages/purchase_suggestions_page.dart';
 import '../../modules/stock/presentation/pages/movimentacoes_hub_page.dart';
+import '../../modules/settings/presentation/pages/printers_page.dart';
 import '../../modules/settings/presentation/pages/settings_hub_page.dart';
+import '../../modules/settings/presentation/pages/terminals_page.dart';
 import '../../shared/layouts/app_main_shell.dart';
 import '../../shared/layouts/pos_shell_layout.dart';
 import '../app_observer.dart';
@@ -335,19 +341,22 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: AppRoutePaths.regulatory,
-            redirect: (context, state) => AppRoutePaths.regulatoryHub,
+            name: 'regulatory',
+            builder: (context, state) => const RegulatoryPage(),
           ),
           GoRoute(
             path: AppRoutePaths.psychotropics,
-            redirect: (context, state) => AppRoutePaths.regulatoryHub,
+            name: 'psychotropics',
+            builder: (context, state) => const PsychotropicsBookPage(),
           ),
           GoRoute(
             path: AppRoutePaths.recipes,
-            redirect: (context, state) => AppRoutePaths.regulatoryHub,
+            redirect: (context, state) => AppRoutePaths.recipesBook,
           ),
           GoRoute(
             path: AppRoutePaths.recipesBook,
-            redirect: (context, state) => AppRoutePaths.regulatoryHub,
+            name: 'recipes-book',
+            builder: (context, state) => const RecipesBookPage(),
           ),
           GoRoute(
             path: AppRoutePaths.financeHub,
@@ -356,7 +365,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: AppRoutePaths.financial,
-            redirect: (context, state) => AppRoutePaths.financeHub,
+            redirect: (context, state) => AppRoutePaths.financeCashflow,
           ),
           GoRoute(
             path: AppRoutePaths.financeCashflow,
@@ -382,7 +391,8 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: AppRoutePaths.auditLogs,
-            redirect: (context, state) => AppRoutePaths.auditHub,
+            name: 'audit-logs',
+            builder: (context, state) => const AuditLogsPage(),
           ),
           GoRoute(
             path: AppRoutePaths.auditPsych,
@@ -480,11 +490,13 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: AppRoutePaths.settingsPrinters,
-            redirect: (context, state) => AppRoutePaths.settingsHub,
+            name: 'settings-printers',
+            builder: (context, state) => const PrintersPage(),
           ),
           GoRoute(
             path: AppRoutePaths.settingsTerminals,
-            redirect: (context, state) => AppRoutePaths.settingsHub,
+            name: 'settings-terminals',
+            builder: (context, state) => const TerminalsPage(),
           ),
           GoRoute(
             path: AppRoutePaths.settingsSync,

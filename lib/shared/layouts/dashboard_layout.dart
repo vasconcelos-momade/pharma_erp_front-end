@@ -132,7 +132,7 @@ class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
                       context.go(AppRoutePaths.products);
                       break;
                     case 3:
-                      context.go(AppRoutePaths.financial);
+                      context.go(AppRoutePaths.financeCashflow);
                       break;
                   }
                 },
@@ -196,7 +196,8 @@ class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
     if (path == AppRoutePaths.products || path.startsWith('/pharmacy')) {
       return 2;
     }
-    if (path == AppRoutePaths.financial || path.startsWith('/finance')) {
+    if (path == AppRoutePaths.financeCashflow ||
+        path.startsWith('/app/finance')) {
       return 3;
     }
     if (path.startsWith('/stock')) {

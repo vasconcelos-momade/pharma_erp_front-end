@@ -17,6 +17,7 @@ class UserListState {
     this.viewState = UserViewState.loading,
     this.errorMessage,
     this.hasMore = false,
+    this.totalCount,
     this.isInitialized = false,
   });
 
@@ -26,6 +27,7 @@ class UserListState {
   final UserViewState viewState;
   final String? errorMessage;
   final bool hasMore;
+  final int? totalCount;
   final bool isInitialized;
 
   bool get isBusy =>
@@ -38,8 +40,10 @@ class UserListState {
     UserViewState? viewState,
     String? errorMessage,
     bool? hasMore,
+    int? totalCount,
     bool? isInitialized,
     bool clearError = false,
+    bool clearTotalCount = false,
   }) {
     return UserListState(
       items: items ?? this.items,
@@ -48,6 +52,7 @@ class UserListState {
       viewState: viewState ?? this.viewState,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       hasMore: hasMore ?? this.hasMore,
+      totalCount: clearTotalCount ? null : (totalCount ?? this.totalCount),
       isInitialized: isInitialized ?? this.isInitialized,
     );
   }
@@ -163,6 +168,7 @@ class UserListController extends Notifier<UserListState> {
         query: nextQuery.copyWith(page: response.page, pageSize: response.pageSize),
         dashboard: dashboard,
         hasMore: response.hasMore,
+        totalCount: response.totalCount,
         viewState: response.items.isEmpty ? UserViewState.empty : UserViewState.loaded,
         isInitialized: true,
         clearError: true,

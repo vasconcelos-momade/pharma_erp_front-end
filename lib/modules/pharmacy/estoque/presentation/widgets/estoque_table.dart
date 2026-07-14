@@ -100,19 +100,25 @@ class EstoqueTable extends StatelessWidget {
 
   Widget _produtoCell(BuildContext context, EstoqueItem item) {
     final t = context.pharmaTokens;
+    final textTheme = Theme.of(context).textTheme;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment: MainAxisAlignment.center,
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          item.produtoNomeComercial ?? '—',
-          style: Theme.of(context).textTheme.erpLabel,
+          item.produtoDisplayLabel,
+          style: textTheme.erpTablePrimary.copyWith(color: t.textPrimary),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
         ),
         if ((item.produtoNomeGenerico ?? '').isNotEmpty)
           Text(
             item.produtoNomeGenerico!,
-            style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
+            style: textTheme.erpCaption.copyWith(color: t.textMuted),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
       ],
     );

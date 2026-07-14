@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
+import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
+import '../../../../shared/widgets/navigation/app_nav_config.dart';
 import '../providers/movimentacao_provider.dart';
 import '../widgets/movimentacoes_body.dart';
 
@@ -49,7 +50,7 @@ class _MovimentacoesHubPageState extends ConsumerState<MovimentacoesHubPage> {
     return EnterpriseModuleHub(
       title: 'Movimentos de stock',
       subtitle: 'Entradas, saídas, ajustes e trilho de auditoria.',
-      tag: 'Stock',
+      tag: AppNavSections.pharmacy,
       actions: [],
       child: Column(
         children: [

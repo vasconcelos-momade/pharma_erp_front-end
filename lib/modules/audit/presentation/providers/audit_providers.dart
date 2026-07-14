@@ -71,6 +71,7 @@ class AuditListState<T> {
     this.viewState = AuditViewState.loading,
     this.errorMessage,
     this.hasMore = false,
+    this.totalCount,
     this.isInitialized = false,
   });
 
@@ -79,6 +80,7 @@ class AuditListState<T> {
   final AuditViewState viewState;
   final String? errorMessage;
   final bool hasMore;
+  final int? totalCount;
   final bool isInitialized;
 
   bool get isBusy =>
@@ -90,8 +92,10 @@ class AuditListState<T> {
     AuditViewState? viewState,
     String? errorMessage,
     bool? hasMore,
+    int? totalCount,
     bool? isInitialized,
     bool clearError = false,
+    bool clearTotalCount = false,
   }) {
     return AuditListState<T>(
       items: items ?? this.items,
@@ -99,6 +103,7 @@ class AuditListState<T> {
       viewState: viewState ?? this.viewState,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       hasMore: hasMore ?? this.hasMore,
+      totalCount: clearTotalCount ? null : (totalCount ?? this.totalCount),
       isInitialized: isInitialized ?? this.isInitialized,
     );
   }
@@ -155,6 +160,7 @@ class AuditLogsController extends Notifier<AuditListState<AuditLogEntry>> {
         items: response.items,
         query: nextQuery.copyWith(page: response.page, pageSize: response.pageSize),
         hasMore: response.hasMore,
+        totalCount: response.totalCount,
         viewState: response.items.isEmpty ? AuditViewState.empty : AuditViewState.loaded,
         isInitialized: true,
         clearError: true,
@@ -233,6 +239,7 @@ class AuditEventsController extends Notifier<AuditListState<AuditEventSummary>> 
         items: response.items,
         query: nextQuery.copyWith(page: response.page, pageSize: response.pageSize),
         hasMore: response.hasMore,
+        totalCount: response.totalCount,
         viewState: response.items.isEmpty ? AuditViewState.empty : AuditViewState.loaded,
         isInitialized: true,
         clearError: true,

@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/contracts/pagination_response.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/extensions.dart';
 import '../../../../core/theme/pharma_surface.dart';
@@ -817,7 +818,7 @@ class DashboardPaginatedTable extends StatefulWidget {
     required this.reloadKey,
     this.headers = const [],
     this.columns,
-    this.initialPageSize = 10,
+    this.initialPageSize = PaginationDefaults.pageSize,
     this.initialSortBy,
     this.initialSortDir = 'desc',
     this.emptySubtitle = 'Sem resultados para os filtros selecionados.',
@@ -1004,20 +1005,13 @@ class _DashboardPaginatedTableState extends State<DashboardPaginatedTable> {
         MovimentacoesPagination(
           page: result.page,
           pageSize: result.pageSize,
+          totalCount: result.totalCount,
           hasMore: result.hasMore,
           isBusy: _loading,
-          onPrev: result.hasPrevious
-              ? () {
-                  _page = result.page - 1;
-                  _fetch();
-                }
-              : null,
-          onNext: result.hasMore
-              ? () {
-                  _page = result.page + 1;
-                  _fetch();
-                }
-              : null,
+          onPageChanged: (nextPage) {
+            _page = nextPage;
+            _fetch();
+          },
           onPageSizeChanged: (value) {
             _page = 1;
             _pageSize = value;

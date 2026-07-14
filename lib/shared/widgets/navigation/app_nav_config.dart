@@ -10,7 +10,6 @@ abstract final class AppNavSections {
   static const dashboard = 'Dashboard';
   static const terminal = 'Terminal';
   static const pharmacy = 'Farmácia';
-  static const stock = 'Stock';
   static const finance = 'Financeiro';
   static const regulatory = 'Regulatório';
   static const audit = 'Auditoria';
@@ -131,16 +130,11 @@ const List<AppNavSection> kAppNavSections = <AppNavSection>[
         permissionModule: 'PRODUTOS',
       ),
       AppNavItem(
-        label: 'Estoque',
+        label: 'Estoque & Lotes',
         path: AppRoutePaths.pharmacyStock,
         icon: Icons.layers_outlined,
         permissionModule: 'LOTES',
       ),
-    ],
-  ),
-  AppNavSection(
-    title: AppNavSections.stock,
-    items: <AppNavItem>[
       AppNavItem(
         label: 'Inventário',
         path: AppRoutePaths.stockInventory,
@@ -148,7 +142,13 @@ const List<AppNavSection> kAppNavSections = <AppNavSection>[
         permissionModule: 'INVENTARIO',
       ),
       AppNavItem(
-        label: 'Movimentos',
+        label: 'Sugestão de Compras',
+        path: AppRoutePaths.stockPurchaseSuggestions,
+        icon: Icons.auto_awesome_outlined,
+        permissionModule: 'COMPRAS',
+      ),
+      AppNavItem(
+        label: 'Movimentações',
         path: AppRoutePaths.stockMovements,
         icon: Icons.swap_horiz,
         permissionModule: 'INVENTARIO',
@@ -159,23 +159,11 @@ const List<AppNavSection> kAppNavSections = <AppNavSection>[
         icon: Icons.local_shipping_outlined,
         permissionModule: 'FORNECEDORES',
       ),
-      AppNavItem(
-        label: 'Sugestão de Compras',
-        path: AppRoutePaths.stockPurchaseSuggestions,
-        icon: Icons.shopping_cart_outlined,
-        permissionModule: 'COMPRAS',
-      ),
     ],
   ),
   AppNavSection(
     title: AppNavSections.finance,
     items: <AppNavItem>[
-      AppNavItem(
-        label: 'Financeiro',
-        path: AppRoutePaths.financeHub,
-        icon: Icons.payments_outlined,
-        permissionModule: 'RELATORIOS',
-      ),
       AppNavItem(
         label: 'Fluxo de Caixa',
         path: AppRoutePaths.financeCashflow,
@@ -188,8 +176,20 @@ const List<AppNavSection> kAppNavSections = <AppNavSection>[
     title: AppNavSections.regulatory,
     items: <AppNavItem>[
       AppNavItem(
-        label: 'Regulatório',
-        path: AppRoutePaths.regulatoryHub,
+        label: 'Livro de Receitas',
+        path: AppRoutePaths.recipesBook,
+        icon: Icons.menu_book_outlined,
+        permissionModule: 'RELATORIOS',
+      ),
+      AppNavItem(
+        label: 'Psicotrópicos',
+        path: AppRoutePaths.psychotropics,
+        icon: Icons.medication_outlined,
+        permissionModule: 'RELATORIOS',
+      ),
+      AppNavItem(
+        label: 'Sanitário',
+        path: AppRoutePaths.regulatory,
         icon: Icons.health_and_safety_outlined,
         permissionModule: 'RELATORIOS',
       ),
@@ -199,9 +199,9 @@ const List<AppNavSection> kAppNavSections = <AppNavSection>[
     title: AppNavSections.audit,
     items: <AppNavItem>[
       AppNavItem(
-        label: 'Auditoria',
-        path: AppRoutePaths.auditHub,
-        icon: Icons.gavel_outlined,
+        label: 'Logs',
+        path: AppRoutePaths.auditLogs,
+        icon: Icons.history_outlined,
         permissionModule: 'RELATORIOS',
       ),
     ],
@@ -221,9 +221,15 @@ const List<AppNavSection> kAppNavSections = <AppNavSection>[
     title: AppNavSections.system,
     items: <AppNavItem>[
       AppNavItem(
-        label: 'Sistema',
-        path: AppRoutePaths.settingsHub,
-        icon: Icons.settings_outlined,
+        label: 'Terminais',
+        path: AppRoutePaths.settingsTerminals,
+        icon: Icons.computer_outlined,
+        permissionModule: 'CONFIGURACOES',
+      ),
+      AppNavItem(
+        label: 'Impressoras',
+        path: AppRoutePaths.settingsPrinters,
+        icon: Icons.print_outlined,
         permissionModule: 'CONFIGURACOES',
       ),
     ],

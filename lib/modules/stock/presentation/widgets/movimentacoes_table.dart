@@ -104,6 +104,7 @@ class MovimentacoesTable extends StatelessWidget {
   Color _tipoColor(PharmaTokens t, MovimentacaoTipo? tipo) {
     return switch (tipo) {
       MovimentacaoTipo.entrada => t.brandGreen,
+      MovimentacaoTipo.compra => t.brandGreen,
       MovimentacaoTipo.saida => t.posDanger,
       MovimentacaoTipo.ajuste => t.brandBlue,
       MovimentacaoTipo.devolucao => t.posWarning,

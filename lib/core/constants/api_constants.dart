@@ -58,6 +58,12 @@ abstract final class ApiConstants {
   static const tenantDashboardFinanceiro = '/tenant/dashboard/financeiro';
   static const tenantDashboardFinanceiroTables =
       '/tenant/dashboard/financeiro/tables';
+  static const tenantFinanceCashflowContext = '/tenant/finance/cashflow/context';
+  static const tenantFinanceCashflowSaida = '/tenant/finance/cashflow/saida';
+  static const tenantFinanceCashflowSuprimento =
+      '/tenant/finance/cashflow/suprimento';
+  static const tenantFinanceCashflowSangria = '/tenant/finance/cashflow/sangria';
+  static const tenantFinanceCashflowEstorno = '/tenant/finance/cashflow/estorno';
   static const tenantDashboardFarmacia = '/tenant/dashboard/farmacia';
   static const tenantDashboardFarmaciaTables =
       '/tenant/dashboard/farmacia/tables';
@@ -167,6 +173,10 @@ abstract final class ApiConstants {
   static const tenantAuditoriaDashboard = '/tenant/auditoria/dashboard';
   static const tenantAuditoriaLogs = '/tenant/auditoria/logs';
   static const tenantAuditoriaEventos = '/tenant/auditoria/eventos';
+
+  static const tenantTerminais = '/tenant/terminais';
+  static String tenantTerminal(String terminalId) => '/tenant/terminais/$terminalId';
+  static const tenantTerminaisSearch = '/tenant/terminais/search';
 
   static const headerAuthorization = 'Authorization';
   static const headerTenantId = 'x-tenant-id';

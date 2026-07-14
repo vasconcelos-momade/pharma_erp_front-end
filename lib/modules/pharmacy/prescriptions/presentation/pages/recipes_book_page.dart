@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../../app/router/routes.dart';
+import '../../../../../core/contracts/pagination_response.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
 import '../../../../../shared/navigation/adaptive_navigator.dart';
@@ -41,7 +42,7 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
   Map<String, dynamic>? _receitasDashboard;
   List<Map<String, dynamic>> _receitasItems = <Map<String, dynamic>>[];
   int _receitasPage = 1;
-  int _receitasPageSize = 20;
+  int _receitasPageSize = PaginationDefaults.pageSize;
   bool _receitasHasMore = false;
   int _receitasTotal = 0;
   String _receitasSearch = '';
@@ -53,7 +54,7 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
   Map<String, dynamic>? _livroDashboard;
   List<Map<String, dynamic>> _livroItems = <Map<String, dynamic>>[];
   int _livroPage = 1;
-  int _livroPageSize = 20;
+  int _livroPageSize = PaginationDefaults.pageSize;
   bool _livroHasMore = false;
   int _livroTotal = 0;
   String _livroSearch = '';
@@ -834,18 +835,10 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
           isBusy: _loadingReceitas,
           totalCount: _receitasTotal,
           itemsOnPage: _receitasItems.length,
-          onPrev: _receitasPage > 1
-              ? () {
-                  setState(() => _receitasPage -= 1);
-                  _loadReceitas();
-                }
-              : null,
-          onNext: _receitasHasMore
-              ? () {
-                  setState(() => _receitasPage += 1);
-                  _loadReceitas();
-                }
-              : null,
+          onPageChanged: (nextPage) {
+            setState(() => _receitasPage = nextPage);
+            _loadReceitas();
+          },
           onPageSizeChanged: (value) {
             setState(() {
               _receitasPageSize = value;
@@ -929,18 +922,10 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
           isBusy: _loadingLivro,
           totalCount: _livroTotal,
           itemsOnPage: _livroItems.length,
-          onPrev: _livroPage > 1
-              ? () {
-                  setState(() => _livroPage -= 1);
-                  _loadLivro();
-                }
-              : null,
-          onNext: _livroHasMore
-              ? () {
-                  setState(() => _livroPage += 1);
-                  _loadLivro();
-                }
-              : null,
+          onPageChanged: (nextPage) {
+            setState(() => _livroPage = nextPage);
+            _loadLivro();
+          },
           onPageSizeChanged: (value) {
             setState(() {
               _livroPageSize = value;

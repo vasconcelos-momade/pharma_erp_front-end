@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import '../../../../../shared/widgets/layout/enterprise_mobile_scroll_list.dart';
+import '../../../../../shared/widgets/layout/enterprise_mobile_toolbar.dart';
+import '../../../../../shared/widgets/tables/enterprise_pagination.dart';
+
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/extensions/async_value_extensions.dart';
@@ -10,6 +15,7 @@ import '../../../../../shared/responsive/responsive_builder.dart';
 import '../../../../../shared/widgets/cards/enterprise_list_card.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../../shared/navigation/adaptive_navigator.dart';
+import '../../../../../shared/widgets/layout/adaptive_side_sheet.dart';
 import '../../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
@@ -75,6 +81,32 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
       builder: (context, constraints) {
         final isMobile = !constraints.isTabletOrWider;
 
+        final statsList = statsAsync.valueOrNull == null
+            ? null
+            : <EnterpriseStatCard>[
+                EnterpriseStatCard(
+                  title: 'Categorias',
+                  value: '${statsAsync.valueOrNull?['totalCategorias'] ?? 0}',
+                  icon: Icons.category_outlined,
+                ),
+                EnterpriseStatCard(
+                  title: 'Produtos',
+                  value: '${statsAsync.valueOrNull?['totalProdutos'] ?? 0}',
+                  icon: Icons.inventory_2_outlined,
+                ),
+                EnterpriseStatCard(
+                  title: 'Activas/Inactivas',
+                  value:
+                      '${statsAsync.valueOrNull?['categoriasActivas'] ?? 0}/${statsAsync.valueOrNull?['categoriasInactivas'] ?? 0}',
+                  icon: Icons.toggle_on_outlined,
+                ),
+                EnterpriseStatCard(
+                  title: 'Stock',
+                  value: '${statsAsync.valueOrNull?['stockDisponivel'] ?? 0}',
+                  icon: Icons.stacked_bar_chart_outlined,
+                ),
+              ];
+
         return Scaffold(
           backgroundColor: t.bgPrimary,
           floatingActionButton: isMobile
@@ -85,129 +117,174 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
               : null,
           body: EnterpriseModuleHub(
             mobileKpisHorizontalScroll: true,
-            kpis: statsAsync.valueOrNull == null
+            kpis: isMobile ? null : statsList,
+            actions: isMobile
                 ? null
                 : [
-                    EnterpriseStatCard(
-                      title: 'Categorias',
-                      value: '${statsAsync.valueOrNull?['totalCategorias'] ?? 0}',
-                      icon: Icons.category_outlined,
-                    ),
-                    EnterpriseStatCard(
-                      title: 'Produtos',
-                      value: '${statsAsync.valueOrNull?['totalProdutos'] ?? 0}',
-                      icon: Icons.inventory_2_outlined,
-                    ),
-                    EnterpriseStatCard(
-                      title: 'Activas/Inactivas',
-                      value:
-                          '${statsAsync.valueOrNull?['categoriasActivas'] ?? 0}/${statsAsync.valueOrNull?['categoriasInactivas'] ?? 0}',
-                      icon: Icons.toggle_on_outlined,
-                    ),
-                    EnterpriseStatCard(
-                      title: 'Stock',
-                      value: '${statsAsync.valueOrNull?['stockDisponivel'] ?? 0}',
-                      icon: Icons.stacked_bar_chart_outlined,
+                    FilledButton.icon(
+                      onPressed: state.isLoading ? null : () => _openForm(context),
+                      icon: const Icon(Icons.add),
+                      label: const Text('Nova categoria'),
                     ),
                   ],
-            actions: [
-              if (!isMobile)
-                FilledButton.icon(
-                  onPressed: state.isLoading ? null : () => _openForm(context),
-                  icon: const Icon(Icons.add),
-                  label: const Text('Nova categoria'),
+            filters: null,
+            child: EnterpriseAdaptiveListBody(
+              isMobile: isMobile,
+              isLoading: state.isLoading && state.items.isEmpty,
+              errorText: state.errorMessage != null && state.items.isEmpty ? state.errorMessage : null,
+              desktopToolbar: EnterpriseDesktopListToolbar(
+                searchController: _searchController,
+                searchHint: 'Pesquisar por nome...',
+                isLoading: state.isLoading,
+                onSearchSubmitted: controller.onSearchChanged,
+                hasFilters: state.includeInactive,
+                onClearFilters: state.isLoading ? null : () => controller.setIncludeInactive(false),
+                trailingActions: pharmacyReportActions(
+                  ref: ref,
+                  enabled: !state.isLoading,
+                  path: ReportPaths.pharmacyCategories,
+                  queryParameters: reportQuery,
+                  isIconButton: false,
                 ),
-            ],
-            filters: Wrap(
-              spacing: s.sm,
-              runSpacing: s.sm,
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                SizedBox(
-                  width: isMobile ? double.infinity : 280,
-                  child: TextField(
-                    controller: _searchController,
-                    onChanged: controller.onSearchChanged,
-                    decoration: InputDecoration(
-                      hintText: 'Pesquisar por nome...',
-                      prefixIcon: const Icon(Icons.search),
-                      suffixIcon: pharmacyReportActions(
-                        ref: ref,
-                        enabled: !state.isLoading,
-                        path: ReportPaths.pharmacyCategories,
-                        queryParameters: reportQuery,
-                        isIconButton: true,
-                      ).single,
-                      border: const OutlineInputBorder(),
+                filterWidgets: [
+                  SizedBox(
+                    width: 170,
+                    child: DropdownButtonFormField<bool>(
+                      isExpanded: true,
+                      initialValue: state.includeInactive,
+                      decoration: const InputDecoration(labelText: 'Mostrar inactivas'),
+                      items: const [
+                        DropdownMenuItem(value: false, child: Text('Não')),
+                        DropdownMenuItem(value: true, child: Text('Sim')),
+                      ],
+                      onChanged: state.isLoading ? null : (val) => controller.setIncludeInactive(val ?? false),
                     ),
                   ),
-                ),
-                FilterChip(
-                  label: const Text('Mostrar inactivas'),
-                  selected: state.includeInactive,
-                  onSelected: controller.setIncludeInactive,
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                if (state.isLoading) const LinearProgressIndicator(),
-                if (state.errorMessage != null)
-                  Padding(
-                    padding: EdgeInsets.only(bottom: s.sm),
-                    child: Text(
-                      state.errorMessage!,
-                      style: Theme.of(context).textTheme.erpBody.copyWith(color: t.posDanger),
-                    ),
-                  ),
-                Expanded(
-                  child: isMobile
-                      ? _CategoryMobileList(
-                          items: _accumulatedItems,
-                          hasMore: state.hasMore,
-                          isLoading: state.isLoading,
-                          onLoadMore: () => controller.goToPage(state.page + 1),
-                          onEdit: (category) => _openForm(context, category: category),
-                          onDelete: (category) => _confirmDelete(context, category),
-                        )
-                      : EnterpriseDataTable(
-                          columns: const [
-                            DataColumn(label: Text('NOME')),
-                            DataColumn(label: Text('DESCRIÇÃO')),
-                            DataColumn(label: Text('PRODUTOS')),
-                            DataColumn(label: Text('ESTADO')),
-                            DataColumn(label: Text('AÇÕES')),
-                          ],
-                          rowCount: state.items.length,
-                          rowBuilder: (context, index) {
-                            final item = state.items[index];
-                            return DataRow(
-                              cells: [
-                                DataCell(Text(fnmCategoryLabel(item.nome))),
-                                DataCell(Text(item.descricao ?? '—')),
-                                DataCell(Text('${item.productCount}')),
-                                DataCell(_StatusChip(ativo: item.ativo)),
-                                DataCell(Row(
-                                  children: [
-                                    IconButton(
-                                      tooltip: 'Editar',
-                                      onPressed: () => _openForm(context, category: item),
-                                      icon: const Icon(Icons.edit_outlined),
-                                    ),
-                                    IconButton(
-                                      tooltip: 'Excluir',
-                                      onPressed: () => _confirmDelete(context, item),
-                                      icon: Icon(Icons.delete_outline, color: t.posDanger),
-                                    ),
-                                  ],
-                                )),
+                ],
+              ),
+              desktopContent: state.items.isEmpty && !state.isLoading
+                  ? Center(
+                      child: Text(
+                        'Nenhuma categoria encontrada',
+                        style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
+                      ),
+                    )
+                  : EnterpriseDataTable(
+                      columns: const [
+                        DataColumn(label: Text('NOME')),
+                        DataColumn(label: Text('DESCRIÇÃO')),
+                        DataColumn(label: Text('PRODUTOS')),
+                        DataColumn(label: Text('ESTADO')),
+                        DataColumn(label: Text('AÇÕES')),
+                      ],
+                      rowCount: state.items.length,
+                      rowBuilder: (context, index) {
+                        final item = state.items[index];
+                        return DataRow(
+                          cells: [
+                            DataCell(Text(fnmCategoryLabel(item.nome))),
+                            DataCell(Text(item.descricao ?? '—')),
+                            DataCell(Text('${item.productCount}')),
+                            DataCell(_StatusChip(ativo: item.ativo)),
+                            DataCell(Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                OutlinedButton.icon(
+                                  onPressed: () => _openForm(context, category: item),
+                                  icon: const Icon(Icons.edit_outlined, size: 18),
+                                  label: const Text('Editar'),
+                                ),
+                                SizedBox(width: s.sm),
+                                OutlinedButton.icon(
+                                  onPressed: () => _confirmDelete(context, item),
+                                  icon: const Icon(Icons.delete_outline, size: 18),
+                                  label: const Text('Excluir'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: t.posDanger,
+                                    side: BorderSide(color: t.posDanger.withValues(alpha: 0.5)),
+                                  ),
+                                ),
                               ],
-                            );
-                          },
+                            )),
+                          ],
+                        );
+                      },
+                    ),
+              desktopPagination: state.totalCount != null
+                  ? EnterprisePagination(
+                      page: state.page,
+                      pageSize: state.pageSize,
+                      totalCount: state.totalCount!,
+                      isBusy: state.isLoading,
+                      itemLabel: 'categorias',
+                      onPageChanged: controller.goToPage,
+                      onPageSizeChanged: controller.setPageSize,
+                    )
+                  : null,
+              mobileList: EnterpriseMobileScrollList(
+                kpis: statsList,
+                stickyHeader: EnterpriseMobileToolbar(
+                  searchController: _searchController,
+                  searchHint: 'Pesquisar por nome...',
+                  enabled: !state.isLoading,
+                  isLoading: state.isLoading,
+                  hasFilters: state.includeInactive,
+                  reportAction: pharmacyReportActions(
+                    ref: ref,
+                    enabled: !state.isLoading,
+                    path: ReportPaths.pharmacyCategories,
+                    queryParameters: reportQuery,
+                    expandChild: true,
+                    buttonLabel: 'Exportar..',
+                  ).single,
+                  onSearchSubmitted: controller.onSearchChanged,
+                  onOpenFilters: () {
+                    showModalBottomSheet<void>(
+                      context: context,
+                      builder: (_) => SafeArea(
+                        child: Padding(
+                          padding: EdgeInsets.all(s.md),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text('Filtros', style: Theme.of(context).textTheme.titleLarge),
+                              SizedBox(height: s.md),
+                              SwitchListTile(
+                                title: const Text('Mostrar inactivas'),
+                                value: state.includeInactive,
+                                onChanged: (val) {
+                                  controller.setIncludeInactive(val);
+                                  Navigator.of(context).pop();
+                                },
+                              ),
+                            ],
+                          ),
                         ),
+                      ),
+                    );
+                  },
+                  onClearFilters: () async => controller.setIncludeInactive(false),
+                  onRefresh: () async => controller.goToPage(1),
                 ),
-                if (!isMobile) _PaginationBar(state: state, onPage: controller.goToPage),
-              ],
+                itemCount: _accumulatedItems.length,
+                itemBuilder: (context, index) {
+                  final category = _accumulatedItems[index];
+                  return _CategoryMobileCard(
+                    category: category,
+                    onTap: () => _openForm(context, category: category),
+                    onEdit: () => _openForm(context, category: category),
+                    onDelete: () => _confirmDelete(context, category),
+                  );
+                },
+                hasMore: state.hasMore,
+                isLoading: state.isLoading,
+                onLoadMore: () => controller.goToPage(state.page + 1),
+                emptyMessage: 'Nenhuma categoria encontrada',
+                totalCount: state.totalCount,
+                totalCountLabel: state.totalCount != null
+                    ? 'Total: ${state.totalCount} categoria(s)'
+                    : null,
+              ),
             ),
           ),
         );
@@ -224,31 +301,41 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
           ? '/categorias/nova'
           : '/categorias/${category.id}/editar',
     );
-    final result = AdaptiveNavigator.isMobile(context)
-        ? await AdaptiveNavigator.open<Map<String, dynamic>>(
-            context: context,
-            routeSettings: routeSettings,
-            builder: (pageContext) => Scaffold(
-              appBar: AppBar(title: title),
-              body: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: _CategoryFormDialog(
-                    category: category,
-                    embedded: true,
-                    pinnedFooter: true,
-                  ),
-                ),
+    
+    final width = AdaptiveNavigator.widthOf(context);
+    final panelWidth = width >= AdaptiveSideSheetMetrics.desktopBreakpoint
+        ? 520.0
+        : 480.0;
+
+    final result = await AdaptiveNavigator.openPanel<Map<String, dynamic>>(
+      context: context,
+      sideSheetWidth: panelWidth,
+      routeSettings: routeSettings,
+      builder: (detailContext) {
+        if (AdaptiveNavigator.isMobile(detailContext)) {
+          return Scaffold(
+            appBar: AppBar(title: title),
+            body: SafeArea(
+              child: _CategoryFormDialog(
+                category: category,
+                embedded: true,
+                pinnedFooter: true,
+                showHeader: false,
+                onClose: () => AdaptiveNavigator.cancel(detailContext),
               ),
             ),
-          )
-        : await AdaptiveNavigator.openEmbeddedForm<Map<String, dynamic>>(
-            context: context,
-            title: title,
-            routeSettings: routeSettings,
-            formBuilder: (ctx, {required embedded}) =>
-                _CategoryFormDialog(category: category, embedded: embedded),
           );
+        }
+        return _CategoryFormDialog(
+          category: category,
+          embedded: true,
+          pinnedFooter: true,
+          showHeader: true,
+          onClose: () => AdaptiveNavigator.cancel(detailContext),
+        );
+      },
+    );
+    
     if (result == null || !context.mounted) return;
     final notifier = ref.read(categoryListProvider.notifier);
     try {
@@ -276,6 +363,7 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
       title: 'Excluir categoria',
       message:
           'A categoria «${category.nome}» será desactivada. Não é possível excluir se existirem produtos vinculados.',
+      destructive: true,
     );
     if (!confirmed || !context.mounted) return;
     try {
@@ -294,10 +382,14 @@ class _CategoryFormDialog extends StatefulWidget {
     this.category,
     this.embedded = false,
     this.pinnedFooter = false,
+    this.showHeader = false,
+    this.onClose,
   });
   final Category? category;
   final bool embedded;
   final bool pinnedFooter;
+  final bool showHeader;
+  final VoidCallback? onClose;
 
   @override
   State<_CategoryFormDialog> createState() => _CategoryFormDialogState();
@@ -325,6 +417,7 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final s = context.spacing;
     final nomeOptions = <String>[
       ...kFnmCategories,
       if (_nomeSelecionado != null &&
@@ -353,24 +446,28 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
           validator: (value) =>
               value == null || value.trim().isEmpty ? 'Categoria obrigatória' : null,
         ),
+        SizedBox(height: s.md),
         TextFormField(
           controller: _descricao,
           decoration: const InputDecoration(labelText: 'Descrição'),
           maxLines: 2,
         ),
+        SizedBox(height: s.md),
         SwitchListTile(
           title: const Text('Activa'),
           value: _ativo,
           onChanged: (v) => setState(() => _ativo = v),
+          contentPadding: EdgeInsets.zero,
         ),
       ],
     );
 
     final actions = [
-      TextButton(
+      OutlinedButton(
         onPressed: () => AdaptiveNavigator.cancel(context),
         child: const Text('Cancelar'),
       ),
+      SizedBox(width: s.sm),
       FilledButton(
         onPressed: () {
           if (!_formKey.currentState!.validate()) return;
@@ -392,15 +489,40 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                if (widget.showHeader) ...[
+                  Padding(
+                    padding: EdgeInsets.fromLTRB(s.md, s.md, s.sm, s.sm),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            widget.category == null ? 'Nova categoria' : 'Editar categoria',
+                            style: Theme.of(context).textTheme.erpCardTitle,
+                          ),
+                        ),
+                        if (widget.onClose != null)
+                          IconButton(
+                            onPressed: widget.onClose,
+                            icon: const Icon(Icons.close),
+                          ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+                ],
                 Expanded(
                   child: SingleChildScrollView(
+                    padding: EdgeInsets.all(s.md),
                     child: formFields,
                   ),
                 ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: actions,
+                if (widget.showHeader) const Divider(height: 1),
+                Padding(
+                  padding: EdgeInsets.all(s.md),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: actions,
+                  ),
                 ),
               ],
             )
@@ -408,20 +530,7 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
     );
 
     if (widget.embedded) {
-      if (widget.pinnedFooter) {
-        return form;
-      }
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          form,
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: actions,
-          ),
-        ],
-      );
+      return form;
     }
 
     return PharmaResponsiveDialog(
@@ -439,9 +548,10 @@ class _StatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
+    final s = context.spacing;
     final color = ativo ? t.brandGreen : t.textMuted;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: EdgeInsets.symmetric(horizontal: s.sm, vertical: s.xs),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(999),
@@ -453,112 +563,6 @@ class _StatusChip extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
       ),
-    );
-  }
-}
-
-class _CategoryMobileList extends StatefulWidget {
-  const _CategoryMobileList({
-    required this.items,
-    required this.hasMore,
-    required this.isLoading,
-    required this.onLoadMore,
-    required this.onEdit,
-    required this.onDelete,
-  });
-
-  final List<Category> items;
-  final bool hasMore;
-  final bool isLoading;
-  final VoidCallback onLoadMore;
-  final ValueChanged<Category> onEdit;
-  final ValueChanged<Category> onDelete;
-
-  @override
-  State<_CategoryMobileList> createState() => _CategoryMobileListState();
-}
-
-class _CategoryMobileListState extends State<_CategoryMobileList> {
-  final ScrollController _scrollController = ScrollController();
-
-  @override
-  void initState() {
-    super.initState();
-    _scrollController.addListener(_onScroll);
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
-
-  void _onScroll() {
-    if (!widget.hasMore || widget.isLoading) return;
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent * 0.8) {
-      widget.onLoadMore();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
-
-    if (widget.items.isEmpty && !widget.isLoading) {
-      return Center(
-        child: Text(
-          'Nenhuma categoria encontrada',
-          style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
-        ),
-      );
-    }
-
-    return ListView.separated(
-      controller: _scrollController,
-      padding: EdgeInsets.zero,
-      itemCount: widget.items.length + 1,
-      separatorBuilder: (_, index) {
-        if (index >= widget.items.length - 1) {
-          return const SizedBox.shrink();
-        }
-        return const EnterpriseListDivider();
-      },
-      itemBuilder: (context, index) {
-        if (index == widget.items.length) {
-          if (widget.isLoading) {
-            return const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: Center(
-                child: SizedBox(
-                  width: 24,
-                  height: 24,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-              ),
-            );
-          }
-          if (!widget.hasMore && widget.items.isNotEmpty) {
-            return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              child: Center(
-                child: Text(
-                  'Fim da lista',
-                  style: Theme.of(context).textTheme.erpCaption.copyWith(color: t.textMuted),
-                ),
-              ),
-            );
-          }
-          return const SizedBox.shrink();
-        }
-
-        final category = widget.items[index];
-        return _CategoryMobileCard(
-          category: category,
-          onTap: () => widget.onEdit(category),
-          onEdit: () => widget.onEdit(category),
-          onDelete: () => widget.onDelete(category),
-        );
-      },
     );
   }
 }
@@ -617,32 +621,6 @@ class _CategoryMobileCard extends StatelessWidget {
           PopupMenuItem(value: 'excluir', child: Text('Excluir')),
         ],
       ),
-    );
-  }
-}
-
-class _PaginationBar extends StatelessWidget {
-  const _PaginationBar({required this.state, required this.onPage});
-  final CategoryListState state;
-  final ValueChanged<int> onPage;
-
-  @override
-  Widget build(BuildContext context) {
-    final start = state.items.isEmpty ? 0 : (state.page - 1) * state.pageSize + 1;
-    final end = (state.page - 1) * state.pageSize + state.items.length;
-    return Row(
-      children: [
-        Text('Mostrando $start–$end • Página ${state.page}'),
-        const Spacer(),
-        IconButton(
-          onPressed: state.page > 1 ? () => onPage(state.page - 1) : null,
-          icon: const Icon(Icons.chevron_left),
-        ),
-        IconButton(
-          onPressed: state.hasMore ? () => onPage(state.page + 1) : null,
-          icon: const Icon(Icons.chevron_right),
-        ),
-      ],
     );
   }
 }

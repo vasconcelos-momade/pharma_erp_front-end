@@ -104,7 +104,7 @@ class _EstoquePageState extends ConsumerState<EstoquePage> {
               .toList();
           _accumulatedItems.addAll(newItems);
         }
-      } else if (prev?.items != next.items && next.page == 1) {
+      } else if (!identical(prev?.items, next.items) && next.page == 1) {
         _accumulatedItems = List.of(next.items);
       }
     });

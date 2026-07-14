@@ -2,14 +2,14 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../../core/contracts/pagination_response.dart';
-import '../../../../../core/errors/api_failure.dart';
-import '../../data/datasources/fornecedor_remote_datasource.dart';
-import '../../domain/entities/fornecedor.dart';
+import '../../../../core/contracts/pagination_response.dart';
+import '../../../../core/errors/api_failure.dart';
+import '../../data/datasources/terminal_remote_datasource.dart';
+import '../../domain/entities/terminal.dart';
 
-class FornecedorListState {
-  const FornecedorListState({
-    this.items = const <FornecedorDetalhe>[],
+class TerminalListState {
+  const TerminalListState({
+    this.items = const <TerminalDetalhe>[],
     this.query = '',
     this.page = 1,
     this.pageSize = PaginationDefaults.pageSize,
@@ -20,7 +20,7 @@ class FornecedorListState {
     this.errorMessage,
   });
 
-  final List<FornecedorDetalhe> items;
+  final List<TerminalDetalhe> items;
   final String query;
   final int page;
   final int pageSize;
@@ -30,8 +30,8 @@ class FornecedorListState {
   final bool isInitialized;
   final String? errorMessage;
 
-  FornecedorListState copyWith({
-    List<FornecedorDetalhe>? items,
+  TerminalListState copyWith({
+    List<TerminalDetalhe>? items,
     String? query,
     int? page,
     int? pageSize,
@@ -43,7 +43,7 @@ class FornecedorListState {
     bool clearError = false,
     bool clearTotalCount = false,
   }) {
-    return FornecedorListState(
+    return TerminalListState(
       items: items ?? this.items,
       query: query ?? this.query,
       page: page ?? this.page,
@@ -57,15 +57,15 @@ class FornecedorListState {
   }
 }
 
-class FornecedorListController extends Notifier<FornecedorListState> {
+class TerminalListController extends Notifier<TerminalListState> {
   Timer? _debounce;
   int _requestId = 0;
 
   @override
-  FornecedorListState build() {
+  TerminalListState build() {
     ref.onDispose(() => _debounce?.cancel());
     Future.microtask(fetchCurrentPage);
-    return const FornecedorListState(isLoading: true);
+    return const TerminalListState(isLoading: true);
   }
 
   void onSearchChanged(String value) {
@@ -102,10 +102,11 @@ class FornecedorListController extends Notifier<FornecedorListState> {
     state = state.copyWith(isLoading: true, clearError: true);
 
     try {
-      final response = await ref.read(fornecedorRemoteDataSourceProvider).search(
+      final response = await ref.read(terminalRemoteDataSourceProvider).search(
             query: state.query,
             page: state.page,
             pageSize: state.pageSize,
+            includeInactive: true,
           );
 
       if (requestId != _requestId) return;
@@ -138,22 +139,22 @@ class FornecedorListController extends Notifier<FornecedorListState> {
   }
 
   Future<void> create(Map<String, dynamic> payload) async {
-    await ref.read(fornecedorRemoteDataSourceProvider).create(payload);
+    await ref.read(terminalRemoteDataSourceProvider).create(payload);
     await fetchCurrentPage(force: true);
   }
 
   Future<void> update(String id, Map<String, dynamic> payload) async {
-    await ref.read(fornecedorRemoteDataSourceProvider).update(id, payload);
+    await ref.read(terminalRemoteDataSourceProvider).update(id, payload);
     await fetchCurrentPage(force: true);
   }
 
   Future<void> delete(String id) async {
-    await ref.read(fornecedorRemoteDataSourceProvider).delete(id);
+    await ref.read(terminalRemoteDataSourceProvider).delete(id);
     await fetchCurrentPage(force: true);
   }
 }
 
-final fornecedorListProvider =
-    NotifierProvider.autoDispose<FornecedorListController, FornecedorListState>(
-  FornecedorListController.new,
+final terminalListProvider =
+    NotifierProvider.autoDispose<TerminalListController, TerminalListState>(
+  TerminalListController.new,
 );

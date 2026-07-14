@@ -144,6 +144,51 @@ class EstoqueListController extends Notifier<EstoqueListState> {
   int _requestId = 0;
   static final Map<String, _EstoqueCacheEntry> _cache = {};
 
+  /// Aplica delta de stock a um lote visível na lista (feedback imediato na UI).
+  void applyLoteStockDelta({required String loteId, required num delta}) {
+    if (delta == 0) return;
+
+    final items = state.items.map((item) {
+      if (item.id != loteId) return item;
+      return EstoqueItem(
+        id: item.id,
+        produtoId: item.produtoId,
+        produtoNomeComercial: item.produtoNomeComercial,
+        produtoNomeGenerico: item.produtoNomeGenerico,
+        produtoBarcode: item.produtoBarcode,
+        categoriaId: item.categoriaId,
+        categoriaNome: item.categoriaNome,
+        fornecedorId: item.fornecedorId,
+        fornecedorNome: item.fornecedorNome,
+        numeroLote: item.numeroLote,
+        dataValidade: item.dataValidade,
+        diasRestantes: item.diasRestantes,
+        indicadorValidade: item.indicadorValidade,
+        indicadorStock: item.indicadorStock,
+        quantidadeDisponivel: item.quantidadeDisponivel + delta,
+        quantidadeTotal: item.quantidadeTotal + delta,
+        quantidadeInicial: item.quantidadeInicial,
+        quantidadeQuarentena: item.quantidadeQuarentena,
+        precoCompra: item.precoCompra,
+        precoVenda: item.precoVenda,
+        estadoSanitario: item.estadoSanitario,
+        disponibilidade: item.disponibilidade,
+        ultimaAtualizacao: item.ultimaAtualizacao,
+        estoqueMinimo: item.estoqueMinimo,
+      );
+    }).toList();
+
+    state = state.copyWith(items: items);
+  }
+
+  /// Limpa cache local e força recarregamento.
+  ///
+  /// Usar após mutations (criar lote, entrada, ajustes) para evitar UI stale.
+  Future<void> syncAfterMutation() async {
+    _cache.clear();
+    await load(force: true);
+  }
+
   @override
   EstoqueListState build() {
     ref.onDispose(() => _debounce?.cancel());
@@ -368,7 +413,7 @@ class EstoqueListController extends Notifier<EstoqueListState> {
           if (requestId != _requestId) return;
           state = state.copyWith(
             dashboard: dashboardResult,
-            items: cached.response.items,
+            items: List<EstoqueItem>.of(cached.response.items),
             page: cached.response.page,
             pageSize: cached.response.pageSize,
             hasMore: cached.response.hasMore,
@@ -419,7 +464,7 @@ class EstoqueListController extends Notifier<EstoqueListState> {
 
       state = state.copyWith(
         dashboard: dashboardResult,
-        items: response.items,
+        items: List<EstoqueItem>.of(response.items),
         page: response.page,
         pageSize: response.pageSize,
         hasMore: response.hasMore,

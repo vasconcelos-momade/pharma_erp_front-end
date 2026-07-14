@@ -6,6 +6,7 @@ import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/extensions.dart';
 import '../../../../shared/responsive/responsive_builder.dart';
 import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
+import '../../../../shared/widgets/navigation/app_nav_config.dart';
 import '../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../../../shared/widgets/tables/enterprise_pagination.dart';
 import '../../../pharmacy/products/data/datasources/product_remote_datasource.dart';
@@ -27,10 +28,10 @@ class PurchaseSuggestionsPage extends ConsumerWidget {
     return ResponsiveBuilder(
       builder: (context, constraints) {
         return EnterpriseModuleHub(
-          title: 'Sugestão de Compras',
+          title: 'Sugestão de Compra',
           subtitle:
               'Lista consolidada de produtos para reposição — automáticos e manuais.',
-          tag: 'Compras',
+          tag: AppNavSections.pharmacy,
           actions: [
             OutlinedButton.icon(
               onPressed: state.isLoading || state.isMutating

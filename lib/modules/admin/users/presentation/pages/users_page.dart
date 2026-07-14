@@ -320,6 +320,7 @@ class _UsersPageState extends ConsumerState<UsersPage> {
           EnterprisePagination(
             page: state.query.page,
             pageSize: state.query.pageSize,
+            totalCount: state.totalCount,
             hasMore: state.hasMore,
             itemsOnPage: state.items.length,
             isBusy: state.isBusy,

@@ -4,6 +4,8 @@ class EstoqueItem {
     required this.produtoId,
     this.produtoNomeComercial,
     this.produtoNomeGenerico,
+    this.produtoDosagem,
+    this.produtoFormaFarmaceutica,
     this.produtoBarcode,
     this.categoriaId,
     this.categoriaNome,
@@ -30,6 +32,8 @@ class EstoqueItem {
   final String produtoId;
   final String? produtoNomeComercial;
   final String? produtoNomeGenerico;
+  final String? produtoDosagem;
+  final String? produtoFormaFarmaceutica;
   final String? produtoBarcode;
   final String? categoriaId;
   final String? categoriaNome;
@@ -56,6 +60,8 @@ class EstoqueItem {
         'produtoId': produtoId,
         'produtoNomeComercial': produtoNomeComercial,
         'produtoNome': produtoNomeComercial,
+        'produtoDosagem': produtoDosagem,
+        'produtoFormaFarmaceutica': produtoFormaFarmaceutica,
         'numeroLote': numeroLote,
         'quantidadeDisponivel': quantidadeDisponivel,
         'quantidadeTotal': quantidadeTotal,
@@ -66,4 +72,26 @@ class EstoqueItem {
         'precoCompra': precoCompra,
         'precoVenda': precoVenda,
       };
+}
+
+/// Ex.: `Aminofilina 500mg Cápsulas`
+String formatEstoqueProdutoLabel({
+  String? nomeComercial,
+  String? dosagem,
+  String? forma,
+}) {
+  final parts = <String>[
+    if ((nomeComercial ?? '').trim().isNotEmpty) nomeComercial!.trim(),
+    if ((dosagem ?? '').trim().isNotEmpty) dosagem!.trim(),
+    if ((forma ?? '').trim().isNotEmpty) forma!.trim(),
+  ];
+  return parts.isEmpty ? '—' : parts.join(' ');
+}
+
+extension EstoqueItemDisplayX on EstoqueItem {
+  String get produtoDisplayLabel => formatEstoqueProdutoLabel(
+        nomeComercial: produtoNomeComercial,
+        dosagem: produtoDosagem,
+        forma: produtoFormaFarmaceutica,
+      );
 }

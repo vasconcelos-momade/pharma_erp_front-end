@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/contracts/pagination_response.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/theme/extensions.dart';
 import '../../../core/theme/pharma_surface.dart';
@@ -29,6 +30,7 @@ class EnterprisePagination extends StatelessWidget {
   final ValueChanged<int> onPageChanged;
   final ValueChanged<int> onPageSizeChanged;
 
+  static const defaultPageSize = PaginationDefaults.pageSize;
   static const pageSizeOptions = [10, 20, 50, 100];
 
   bool get _hasKnownTotal => totalCount != null;
@@ -183,33 +185,7 @@ class EnterprisePagination extends StatelessWidget {
       return [page];
     }
 
-    final totalPages = _totalPages;
-    if (totalPages <= 7) {
-      return List<Object>.generate(totalPages, (index) => index + 1);
-    }
-
-    final items = <Object>[];
-    late final List<int> visiblePages;
-
-    if (page <= 4) {
-      visiblePages = [1, 2, 3, 4, 5, 6, totalPages];
-    } else if (page >= totalPages - 3) {
-      visiblePages = [1, totalPages - 5, totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
-    } else {
-      visiblePages = [1, page - 2, page - 1, page, page + 1, page + 2, totalPages];
-    }
-
-    final sortedPages = visiblePages.where((p) => p >= 1 && p <= totalPages).toSet().toList()..sort();
-
-    int? lastPage;
-    for (final p in sortedPages) {
-      if (lastPage != null && p - lastPage > 1) {
-        items.add('...');
-      }
-      items.add(p);
-      lastPage = p;
-    }
-    return items;
+    return buildEnterprisePageItems(page: page, totalPages: _totalPages);
   }
 }
 

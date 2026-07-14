@@ -6,9 +6,10 @@ import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/extensions.dart';
 import '../../../../shared/responsive/responsive_builder.dart';
 import '../../../../shared/widgets/feedback/pharma_feedback.dart';
+import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../../shared/widgets/layout/enterprise_mobile_scroll_list.dart';
 import '../../../../shared/widgets/layout/enterprise_mobile_toolbar.dart';
-import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
+import '../../../../shared/widgets/navigation/app_nav_config.dart';
 import '../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../../../shared/widgets/tables/enterprise_pagination.dart';
 import '../../domain/entities/fornecedor.dart';
@@ -63,7 +64,6 @@ class _FornecedoresPageState extends ConsumerState<FornecedoresPage> {
     return ResponsiveBuilder(
       builder: (context, constraints) {
         final isMobile = !constraints.isTabletOrWider;
-        final isDesktop = constraints.isDesktopOrWider;
 
         return Scaffold(
           backgroundColor: t.bgPrimary,
@@ -76,7 +76,7 @@ class _FornecedoresPageState extends ConsumerState<FornecedoresPage> {
           body: EnterpriseModuleHub(
             title: 'Fornecedores',
             subtitle: 'Gestão de fornecedores e contactos comerciais.',
-            tag: 'Stock',
+            tag: AppNavSections.pharmacy,
             actions: isMobile
                 ? null
                 : [
@@ -156,19 +156,25 @@ class _FornecedoresPageState extends ConsumerState<FornecedoresPage> {
                                 DataCell(Text(item.email ?? '—')),
                                 DataCell(Text(item.cidade ?? '—')),
                                 DataCell(
-                                  PopupMenuButton<String>(
-                                    onSelected: (action) {
-                                      if (action == 'editar') {
-                                        _openEdit(context, item);
-                                      } else if (action == 'excluir') {
-                                        _confirmDelete(context, item);
-                                      }
-                                    },
-                                    itemBuilder: (context) => const [
-                                      PopupMenuItem(value: 'editar', child: Text('Editar')),
-                                      PopupMenuItem(value: 'excluir', child: Text('Eliminar')),
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      OutlinedButton.icon(
+                                        onPressed: () => _openEdit(context, item),
+                                        icon: const Icon(Icons.edit_outlined, size: 18),
+                                        label: const Text('Editar'),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      OutlinedButton.icon(
+                                        onPressed: () => _confirmDelete(context, item),
+                                        icon: const Icon(Icons.delete_outline, size: 18),
+                                        label: const Text('Excluir'),
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: t.posDanger,
+                                          side: BorderSide(color: t.posDanger.withValues(alpha: 0.5)),
+                                        ),
+                                      ),
                                     ],
-                                    icon: const Icon(Icons.more_vert),
                                   ),
                                 ),
                               ],
@@ -176,7 +182,7 @@ class _FornecedoresPageState extends ConsumerState<FornecedoresPage> {
                           },
                         ),
                 ),
-                if (isDesktop && state.totalCount != null)
+                if (!isMobile && state.totalCount != null)
                   EnterprisePagination(
                     page: state.page,
                     pageSize: state.pageSize,
@@ -251,24 +257,42 @@ class _FornecedorCard extends StatelessWidget {
     final s = context.spacing;
     return Card(
       margin: EdgeInsets.only(bottom: s.sm),
-      child: ListTile(
-        title: Text(fornecedor.nome),
-        subtitle: Text(
-          [
-            if (fornecedor.nuit != null) 'NUIT: ${fornecedor.nuit}',
-            if (fornecedor.telefone != null) fornecedor.telefone,
-            if (fornecedor.email != null) fornecedor.email,
-          ].whereType<String>().join(' • '),
-          style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
-        ),
-        trailing: PopupMenuButton<String>(
-          onSelected: (action) {
-            if (action == 'editar') onEdit();
-            if (action == 'excluir') onDelete();
-          },
-          itemBuilder: (context) => const [
-            PopupMenuItem(value: 'editar', child: Text('Editar')),
-            PopupMenuItem(value: 'excluir', child: Text('Eliminar')),
+      child: Padding(
+        padding: EdgeInsets.all(s.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(fornecedor.nome, style: Theme.of(context).textTheme.titleMedium),
+            SizedBox(height: s.xs),
+            Text(
+              [
+                if (fornecedor.nuit != null) 'NUIT: ${fornecedor.nuit}',
+                if (fornecedor.telefone != null) fornecedor.telefone,
+                if (fornecedor.email != null) fornecedor.email,
+              ].whereType<String>().join(' • '),
+              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
+            ),
+            SizedBox(height: s.md),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: onEdit,
+                  icon: const Icon(Icons.edit_outlined, size: 18),
+                  label: const Text('Editar'),
+                ),
+                SizedBox(width: s.sm),
+                OutlinedButton.icon(
+                  onPressed: onDelete,
+                  icon: const Icon(Icons.delete_outline, size: 18),
+                  label: const Text('Excluir'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: t.posDanger,
+                    side: BorderSide(color: t.posDanger.withValues(alpha: 0.5)),
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),

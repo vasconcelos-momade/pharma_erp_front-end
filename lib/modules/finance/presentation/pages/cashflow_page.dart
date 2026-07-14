@@ -1,22 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
-
-import '../../../../app/router/routes.dart';
 
 import '../../../../core/constants/report_paths.dart';
 import '../../../../core/extensions/async_value_extensions.dart';
-import '../../../../core/theme/spacing.dart';
 import '../../../../shared/widgets/cards/enterprise_kpi_grid.dart';
 import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../../shared/widgets/navigation/app_nav_config.dart';
 import '../../../dashboard/data/datasources/dashboard_remote_datasource.dart';
 import '../../../dashboard/domain/dashboard_query.dart';
 import '../../../dashboard/presentation/providers/dashboard_providers.dart';
-import '../../../dashboard/presentation/widgets/dashboard_charts_section.dart';
 import '../../../dashboard/presentation/widgets/dashboard_period_filters.dart';
 import '../../../dashboard/presentation/widgets/dashboard_widgets.dart';
 import '../../../reports/presentation/controllers/report_controller.dart';
+import '../widgets/cashflow_operation_dialog.dart';
 import '../widgets/finance_report_exports.dart';
 
 class CashflowPage extends ConsumerStatefulWidget {
@@ -44,19 +40,24 @@ class _CashflowPageState extends ConsumerState<CashflowPage> {
       mobileKpisHorizontalScroll: true,
       actions: [
         OutlinedButton.icon(
-          onPressed: () => context.push(AppRoutePaths.pos),
+          onPressed: () => showCashflowOperationDialog(context, operationType: 'Saída'),
           icon: const Icon(Icons.remove_circle_outline),
           label: const Text('Saída'),
         ),
         OutlinedButton.icon(
-          onPressed: () => context.push(AppRoutePaths.pos),
+          onPressed: () => showCashflowOperationDialog(context, operationType: 'Suprimento'),
           icon: const Icon(Icons.add_circle_outline),
           label: const Text('Suprimento'),
         ),
         OutlinedButton.icon(
-          onPressed: () => context.push(AppRoutePaths.pos),
+          onPressed: () => showCashflowOperationDialog(context, operationType: 'Sangria'),
           icon: const Icon(Icons.savings_outlined),
           label: const Text('Sangria'),
+        ),
+        OutlinedButton.icon(
+          onPressed: () => showCashflowOperationDialog(context, operationType: 'Extorno'),
+          icon: const Icon(Icons.settings_backup_restore_outlined),
+          label: const Text('Extorno'),
         ),
         ...financeReportActions(
           ref: ref,
@@ -106,51 +107,9 @@ class _CashflowPageState extends ConsumerState<CashflowPage> {
         async: async,
         onRetry: () => ref.invalidate(financeDashboardProvider(_query)),
         builder: (data) {
-          final chartData = dashMap(data['charts']);
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              DashboardChartsSection(
-                charts: [
-                  DashboardChartSlot(
-                    fullWidth: true,
-                    child: dashboardChartCard(
-                      context: context,
-                      title: 'Fluxo diário',
-                      child: dashboardLineChart(
-                        context: context,
-                        points: dashList(chartData?['fluxoDiario']),
-                        valueKey: 'saldo',
-                        labelKey: 'data',
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                    ),
-                  ),
-                  DashboardChartSlot(
-                    fullWidth: true,
-                    child: dashboardChartCard(
-                      context: context,
-                      title: 'Fluxo mensal',
-                      child: dashboardLineChart(
-                        context: context,
-                        points: dashList(chartData?['fluxoMensal']),
-                        valueKey: 'saldo',
-                        labelKey: 'mes',
-                        color: Theme.of(context).colorScheme.secondary,
-                      ),
-                    ),
-                  ),
-                  dashboardChartCard(
-                    context: context,
-                    title: 'Receitas x despesas',
-                    child: dashboardDualLineChart(
-                      context: context,
-                      points: dashList(chartData?['receitasDespesas']),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.lg),
               DashboardPaginatedTable(
                 title: 'Movimentos financeiros',
                 headers: const ['Data', 'Tipo', 'Referência', 'Valor (MZN)'],
