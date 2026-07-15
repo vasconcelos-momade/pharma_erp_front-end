@@ -7,19 +7,16 @@ import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
 import '../../../../reports/presentation/controllers/report_controller.dart';
-import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../../shared/widgets/feedback/module_data_states.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../../../../shared/widgets/tables/table_typography.dart';
-import '../../../../stock/presentation/widgets/movimentacoes_pagination.dart';
 import '../../domain/entities/customer.dart';
 import '../providers/customer_list_provider.dart';
 import '../../data/repositories/customer_repository_impl.dart';
-import '../widgets/customer_detail_panel.dart';
-import '../widgets/customer_form_dialog.dart';
+import '../widgets/customer_form_sheet.dart';
 
 class CustomersPage extends ConsumerStatefulWidget {
   const CustomersPage({super.key});
@@ -100,7 +97,7 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
           label: const Text('Atualizar'),
         ),
         FilledButton.icon(
-          onPressed: state.isBusy ? null : () => _openCreateDialog(context),
+          onPressed: state.isBusy ? null : () => _openCreateSheet(context),
           icon: const Icon(Icons.person_add_outlined),
           label: const Text('Novo cliente'),
         ),
@@ -233,6 +230,7 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
                 'Saldo',
                 'Faturas',
                 'Registo',
+                'Ações',
               ])
                 DataColumn(
                   label: Text(
@@ -245,7 +243,6 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
             rowBuilder: (context, index) {
               final c = state.items[index];
               return DataRow(
-                onSelectChanged: (_) => _openDetails(context, c),
                 cells: [
                   DataCell(
                     Text(c.nome, style: TableTypography.primary(context)),
@@ -290,24 +287,38 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
                       ).textTheme.erpCaption.copyWith(color: t.textMuted),
                     ),
                   ),
+                  DataCell(
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert),
+                      tooltip: 'Ações',
+                      onSelected: (value) {
+                        if (value == 'edit') {
+                          _openEditSheet(context, c);
+                        } else if (value == 'contas') {
+                          // TODO: Navigate to Contas a Pagar or perform related action
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: Text('Editar'),
+                        ),
+                        if (c.tipo == 'EMPRESA' || c.tipo == 'FIADO')
+                          const PopupMenuItem(
+                            value: 'contas',
+                            child: Text('Contas a Pagar'),
+                          ),
+                      ],
+                    ),
+                  ),
                 ],
               );
             },
+            hasMore: state.hasMore,
+            isLoading: state.isBusy,
+            onLoadMore: () => notifier.goToPage(state.query.page + 1),
+            onRefresh: notifier.refresh,
           ),
-        ),
-        SizedBox(height: s.md),
-        MovimentacoesPagination(
-          page: state.query.page,
-          pageSize: state.query.pageSize,
-          hasMore: state.hasMore,
-          isBusy: state.isBusy,
-          onPrev: state.query.page > 1
-              ? () => notifier.goToPage(state.query.page - 1)
-              : null,
-          onNext: state.hasMore
-              ? () => notifier.goToPage(state.query.page + 1)
-              : null,
-          onPageSizeChanged: notifier.setPageSize,
         ),
       ],
     );
@@ -319,65 +330,30 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
     _ => 'Paciente',
   };
 
-  Future<void> _openDetails(
+  Future<void> _openEditSheet(
     BuildContext context,
     CustomerSummary customer,
   ) async {
-    Future<void> onEdit() async {
-      final detail = await ref
-          .read(customerRepositoryProvider)
-          .getCustomer(customer.id);
-      if (!context.mounted) return;
-      final result = await showCustomerFormDialog(context, customer: detail);
-      if (result == null || !context.mounted) return;
-      try {
-        await ref
-            .read(customerListProvider.notifier)
-            .updateCustomer(customer.id, result.toPayload());
-        if (context.mounted) {
-          PharmaFeedback.success(context, 'Cliente actualizado');
-        }
-      } on ApiFailure catch (e) {
-        if (context.mounted) PharmaFeedback.error(context, e.message);
+    final detail = await ref
+        .read(customerRepositoryProvider)
+        .getCustomer(customer.id);
+    if (!context.mounted) return;
+    final result = await showCustomerFormSheet(context, customer: detail);
+    if (result == null || !context.mounted) return;
+    try {
+      await ref
+          .read(customerListProvider.notifier)
+          .updateCustomer(customer.id, result.toPayload());
+      if (context.mounted) {
+        PharmaFeedback.success(context, 'Cliente actualizado');
       }
+    } on ApiFailure catch (e) {
+      if (context.mounted) PharmaFeedback.error(context, e.message);
     }
-
-    Future<void> onDelete() async {
-      final confirmed = await PharmaFeedback.confirm(
-        context: context,
-        title: 'Excluir cliente',
-        message: 'Deseja excluir «${customer.nome}»?',
-        confirmText: 'Excluir',
-      );
-      if (!context.mounted || confirmed != true) return;
-      try {
-        await ref
-            .read(customerListProvider.notifier)
-            .deleteCustomer(customer.id);
-        if (context.mounted) {
-          PharmaFeedback.success(context, 'Cliente excluído');
-          AdaptiveNavigator.close(context);
-        }
-      } on ApiFailure catch (e) {
-        if (context.mounted) PharmaFeedback.error(context, e.message);
-      }
-    }
-
-    await AdaptiveNavigator.openDetail(
-      context: context,
-      title: customer.nome,
-      routeSettings: RouteSettings(name: '/clientes/${customer.id}'),
-      builder: (detailContext, onClose) => CustomerDetailPanel(
-        customerId: customer.id,
-        onClose: onClose,
-        onEdit: onEdit,
-        onDelete: onDelete,
-      ),
-    );
   }
 
-  Future<void> _openCreateDialog(BuildContext context) async {
-    final result = await showCustomerFormDialog(context);
+  Future<void> _openCreateSheet(BuildContext context) async {
+    final result = await showCustomerFormSheet(context);
     if (result == null || !context.mounted) return;
     try {
       await ref

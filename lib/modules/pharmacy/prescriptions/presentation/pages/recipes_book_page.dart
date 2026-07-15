@@ -9,9 +9,13 @@ import '../../../../../core/contracts/pagination_response.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
 import '../../../../../shared/navigation/adaptive_navigator.dart';
+import '../../../../../shared/responsive/responsive_builder.dart';
+import '../../../../../shared/widgets/cards/enterprise_list_card.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
+import '../../../../../shared/widgets/layout/enterprise_mobile_scroll_list.dart';
+import '../../../../../shared/widgets/layout/enterprise_mobile_toolbar.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../../../stock/presentation/widgets/movimentacoes_pagination.dart';
 import '../../../regulatory/data/datasources/regulatory_remote_datasource.dart';
@@ -495,106 +499,137 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
 
   @override
   Widget build(BuildContext context) {
-    final currentDash = _tabController.index == 0
-        ? _receitasDashboard
-        : _livroDashboard;
     final showingLivro = _tabController.index == 1;
-    return EnterpriseModuleHub(
-      title: showingLivro ? 'Livro de Receitas' : 'Receitas',
-      subtitle: showingLivro
-          ? 'Movimentos oficiais de livro de receitas com rastreio, auditoria e exportação.'
-          : 'Receitas reais do backend com dispensa rastreável, conformidade e histórico clínico.',
-      tag: 'Regulatório',
-      actions: [
-        IconButton(
-          onPressed: () => _reloadCurrentTab(),
-          icon: const Icon(Icons.refresh),
-        ),
-        if (_tabController.index == 0)
-          FilledButton.icon(
-            onPressed: _openReceitaForm,
-            icon: const Icon(Icons.add),
-            label: const Text('Nova receita'),
-          ),
-      ],
-      kpis: currentDash == null
-          ? null
-          : _tabController.index == 0
-          ? [
-              EnterpriseStatCard(
-                title: 'Emitidas',
-                value: '${currentDash['kpis']?['emitidas'] ?? 0}',
-                icon: Icons.description_outlined,
-              ),
-              EnterpriseStatCard(
-                title: 'Utilizadas',
-                value: '${currentDash['kpis']?['utilizadas'] ?? 0}',
-                icon: Icons.check_circle_outline,
-              ),
-              EnterpriseStatCard(
-                title: 'Pendentes',
-                value: '${currentDash['kpis']?['pendentes'] ?? 0}',
-                icon: Icons.pending_actions_outlined,
-              ),
-              EnterpriseStatCard(
-                title: 'Expiradas',
-                value: '${currentDash['kpis']?['expiradas'] ?? 0}',
-                icon: Icons.event_busy_outlined,
-              ),
-            ]
-          : [
-              EnterpriseStatCard(
-                title: 'Movimentos',
-                value: '${currentDash['kpis']?['totalMovimentos'] ?? 0}',
-                icon: Icons.menu_book_outlined,
-              ),
-              EnterpriseStatCard(
-                title: 'Entradas',
-                value: '${currentDash['kpis']?['entradas'] ?? 0}',
-                icon: Icons.call_received_outlined,
-              ),
-              EnterpriseStatCard(
-                title: 'Saídas',
-                value: '${currentDash['kpis']?['saidas'] ?? 0}',
-                icon: Icons.call_made_outlined,
-              ),
-              EnterpriseStatCard(
-                title: 'Pacientes',
-                value: '${currentDash['kpis']?['pacientesUnicos'] ?? 0}',
-                icon: Icons.people_outline,
-              ),
-            ],
-      filters: _tabController.index == 0
-          ? _buildReceitasFilters(context)
-          : _buildLivroFilters(context),
-      child: Column(
-        children: [
-          TabBar(
-            controller: _tabController,
-            onTap: (index) {
-              final targetPath = index == 0
-                  ? AppRoutePaths.recipes
-                  : AppRoutePaths.recipesBook;
-              if (GoRouterState.of(context).uri.path != targetPath) {
-                context.go(targetPath);
-              } else {
-                setState(() {});
-              }
-            },
-            tabs: const [
-              Tab(text: 'Receitas'),
-              Tab(text: 'Livro de receitas'),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [_buildReceitasTab(context), _buildLivroTab(context)],
+    final receitasKpis = _receitasDashboard == null
+        ? <EnterpriseStatCard>[]
+        : [
+            EnterpriseStatCard(
+              title: 'Emitidas',
+              value: '${_receitasDashboard!['kpis']?['emitidas'] ?? 0}',
+              icon: Icons.description_outlined,
+              density: StatCardDensity.compact,
             ),
+            EnterpriseStatCard(
+              title: 'Utilizadas',
+              value: '${_receitasDashboard!['kpis']?['utilizadas'] ?? 0}',
+              icon: Icons.check_circle_outline,
+              density: StatCardDensity.compact,
+            ),
+            EnterpriseStatCard(
+              title: 'Pendentes',
+              value: '${_receitasDashboard!['kpis']?['pendentes'] ?? 0}',
+              icon: Icons.pending_actions_outlined,
+              density: StatCardDensity.compact,
+            ),
+            EnterpriseStatCard(
+              title: 'Expiradas',
+              value: '${_receitasDashboard!['kpis']?['expiradas'] ?? 0}',
+              icon: Icons.event_busy_outlined,
+              density: StatCardDensity.compact,
+            ),
+          ];
+    final livroKpis = _livroDashboard == null
+        ? <EnterpriseStatCard>[]
+        : [
+            EnterpriseStatCard(
+              title: 'Movimentos',
+              value: '${_livroDashboard!['kpis']?['totalMovimentos'] ?? 0}',
+              icon: Icons.menu_book_outlined,
+              density: StatCardDensity.compact,
+            ),
+            EnterpriseStatCard(
+              title: 'Entradas',
+              value: '${_livroDashboard!['kpis']?['entradas'] ?? 0}',
+              icon: Icons.call_received_outlined,
+              density: StatCardDensity.compact,
+            ),
+            EnterpriseStatCard(
+              title: 'Saídas',
+              value: '${_livroDashboard!['kpis']?['saidas'] ?? 0}',
+              icon: Icons.call_made_outlined,
+              density: StatCardDensity.compact,
+            ),
+            EnterpriseStatCard(
+              title: 'Pacientes',
+              value: '${_livroDashboard!['kpis']?['pacientesUnicos'] ?? 0}',
+              icon: Icons.people_outline,
+              density: StatCardDensity.compact,
+            ),
+          ];
+    final hubKpis = showingLivro ? livroKpis : receitasKpis;
+
+    return ResponsiveBuilder(
+      builder: (context, constraints) {
+        final isMobile = !constraints.isTabletOrWider;
+
+        return EnterpriseModuleHub(
+          title: showingLivro ? 'Livro de Receitas' : 'Receitas',
+          subtitle: showingLivro
+              ? 'Movimentos oficiais de livro de receitas com rastreio, auditoria e exportação.'
+              : 'Receitas reais do backend com dispensa rastreável, conformidade e histórico clínico.',
+          tag: 'Regulatório',
+          mobileKpisHorizontalScroll: true,
+          actions: isMobile
+              ? null
+              : [
+                  IconButton(
+                    onPressed: () => _reloadCurrentTab(),
+                    icon: const Icon(Icons.refresh),
+                  ),
+                  if (_tabController.index == 0)
+                    FilledButton.icon(
+                      onPressed: _openReceitaForm,
+                      icon: const Icon(Icons.add),
+                      label: const Text('Nova receita'),
+                    ),
+                ],
+          kpis: isMobile ? null : (hubKpis.isEmpty ? null : hubKpis),
+          filters: isMobile
+              ? null
+              : (_tabController.index == 0
+                    ? _buildReceitasFilters(context)
+                    : _buildLivroFilters(context)),
+          child: Column(
+            children: [
+              TabBar(
+                controller: _tabController,
+                onTap: (index) {
+                  final targetPath = index == 0
+                      ? AppRoutePaths.recipes
+                      : AppRoutePaths.recipesBook;
+                  if (GoRouterState.of(context).uri.path != targetPath) {
+                    context.go(targetPath);
+                  } else {
+                    setState(() {});
+                  }
+                },
+                tabs: const [
+                  Tab(text: 'Receitas'),
+                  Tab(text: 'Livro de receitas'),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildReceitasTab(
+                      context,
+                      isMobile: isMobile,
+                      kpis: receitasKpis,
+                    ),
+                    _buildLivroTab(
+                      context,
+                      isMobile: isMobile,
+                      kpis: livroKpis,
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -753,8 +788,85 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
     );
   }
 
-  Widget _buildReceitasTab(BuildContext context) {
+  Widget _buildReceitasTab(
+    BuildContext context, {
+    bool isMobile = false,
+    List<EnterpriseStatCard>? kpis,
+  }) {
     final t = context.pharmaTokens;
+
+    if (isMobile) {
+      return EnterpriseMobileScrollList(
+        kpis: kpis,
+        errorText: _receitasError,
+        stickyHeader: EnterpriseMobileToolbar(
+          searchController: _receitasSearchController,
+          searchHint: 'Receita, paciente, médico...',
+          enabled: !_loadingReceitas,
+          isLoading: _loadingReceitas,
+          hasFilters: _receitasStatus != null ||
+              _receitasOrigem != null ||
+              _receitasSearch.isNotEmpty,
+          onSearchSubmitted: (value) {
+            setState(() {
+              _receitasSearch = value.trim();
+              _receitasPage = 1;
+            });
+            _loadReceitas();
+          },
+          onOpenFilters: () {},
+          onClearFilters: () async {
+            setState(() {
+              _receitasSearch = '';
+              _receitasStatus = null;
+              _receitasOrigem = null;
+              _receitasPage = 1;
+              _receitasSearchController.clear();
+            });
+            await _loadReceitas();
+          },
+          onRefresh: _loadReceitas,
+        ),
+        itemCount: _receitasItems.length,
+        itemBuilder: (context, index) {
+          final item = _receitasItems[index];
+          return EnterpriseListCard(
+            leading: Icons.description_outlined,
+            title: item['numeroReceita']?.toString() ?? '—',
+            subtitle: item['cliente']?['nome']?.toString() ?? '—',
+            chip: EnterpriseStatusChip(
+              label: item['status']?.toString() ?? '—',
+            ),
+            metadata: [
+              EnterpriseListCardMeta(
+                label: 'Médico: ${item['medicoNome']?.toString() ?? '—'}',
+              ),
+              EnterpriseListCardMeta(
+                label:
+                    'Data: ${item['dataReceita']?.toString().substring(0, 10) ?? '—'}',
+              ),
+            ],
+            onTap: () => _openReceitaDetail(item['id'].toString()),
+            actions: PopupMenuButton<String>(
+              onSelected: (value) {
+                if (value == 'edit') _openReceitaForm(item);
+                if (value == 'delete') _deleteReceita(item);
+              },
+              itemBuilder: (context) => const [
+                PopupMenuItem(value: 'edit', child: Text('Editar')),
+                PopupMenuItem(value: 'delete', child: Text('Remover')),
+              ],
+            ),
+          );
+        },
+        hasMore: false,
+        isLoading: _loadingReceitas,
+        emptyMessage: 'Sem resultados para os filtros selecionados.',
+        totalCount: _receitasTotal,
+        totalCountLabel: 'receitas',
+      );
+    }
+
     return Column(
       children: [
         if (_loadingReceitas) const LinearProgressIndicator(),
@@ -857,8 +969,76 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
     );
   }
 
-  Widget _buildLivroTab(BuildContext context) {
+  Widget _buildLivroTab(
+    BuildContext context, {
+    bool isMobile = false,
+    List<EnterpriseStatCard>? kpis,
+  }) {
     final t = context.pharmaTokens;
+
+    if (isMobile) {
+      return EnterpriseMobileScrollList(
+        kpis: kpis,
+        errorText: _livroError,
+        stickyHeader: EnterpriseMobileToolbar(
+          searchController: _livroSearchController,
+          searchHint: 'Receita, paciente, produto...',
+          enabled: !_loadingLivro,
+          isLoading: _loadingLivro,
+          hasFilters: _livroOrigem != null ||
+              _livroTipoMovimento != null ||
+              _livroSearch.isNotEmpty,
+          onSearchSubmitted: (value) {
+            setState(() {
+              _livroSearch = value.trim();
+              _livroPage = 1;
+            });
+            _loadLivro();
+          },
+          onOpenFilters: () {},
+          onClearFilters: () async {
+            setState(() {
+              _livroSearch = '';
+              _livroOrigem = null;
+              _livroTipoMovimento = null;
+              _livroPage = 1;
+              _livroSearchController.clear();
+            });
+            await _loadLivro();
+          },
+          onRefresh: _loadLivro,
+        ),
+        itemCount: _livroItems.length,
+        itemBuilder: (context, index) {
+          final item = _livroItems[index];
+          return EnterpriseListCard(
+            leading: Icons.menu_book_outlined,
+            title: item['produto']?['nome']?.toString() ?? '—',
+            subtitle: item['numeroReceita']?.toString() ?? '—',
+            chip: EnterpriseStatusChip(
+              label: item['tipoMovimento']?.toString() ?? '—',
+            ),
+            metadata: [
+              EnterpriseListCardMeta(
+                label: 'Paciente: ${item['cliente']?['nome']?.toString() ?? '—'}',
+              ),
+              EnterpriseListCardMeta(
+                label:
+                    'Qtd: ${item['quantidade'] ?? 0} · Saldo: ${item['saldoAtual'] ?? 0}',
+                emphasized: true,
+              ),
+            ],
+            onTap: () => _openLivroDetail(item['id'].toString()),
+          );
+        },
+        hasMore: false,
+        isLoading: _loadingLivro,
+        emptyMessage: 'Sem resultados para os filtros selecionados.',
+        totalCount: _livroTotal,
+        totalCountLabel: 'movimentos',
+      );
+    }
+
     return Column(
       children: [
         if (_loadingLivro) const LinearProgressIndicator(),

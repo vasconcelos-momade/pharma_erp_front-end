@@ -4,214 +4,231 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/report_paths.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/extensions.dart';
-import '../../../../shared/responsive/responsive_builder.dart';
+import '../../../../shared/navigation/adaptive_navigator.dart';
+import '../../../../shared/responsive/pharma_screen_layout.dart';
+import '../../../../shared/widgets/cards/enterprise_stat_card.dart';
+import '../../../../shared/widgets/inputs/async_type_ahead_field.dart';
+import '../../../../shared/widgets/layout/enterprise_mobile_toolbar.dart';
 import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../../shared/widgets/navigation/app_nav_config.dart';
 import '../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../../../shared/widgets/tables/enterprise_pagination.dart';
-import '../../../pharmacy/products/data/datasources/product_remote_datasource.dart';
+import '../../../pharmacy/estoque/data/datasources/estoque_remote_datasource.dart';
 import '../../../reports/presentation/controllers/report_controller.dart';
+import '../../data/datasources/fornecedor_remote_datasource.dart';
+import '../../data/models/fornecedor_model.dart';
 import '../providers/purchase_suggestions_provider.dart';
 
-class PurchaseSuggestionsPage extends ConsumerWidget {
+class PurchaseSuggestionsPage extends ConsumerStatefulWidget {
   const PurchaseSuggestionsPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<PurchaseSuggestionsPage> createState() =>
+      _PurchaseSuggestionsPageState();
+}
+
+class _PurchaseSuggestionsPageState
+    extends ConsumerState<PurchaseSuggestionsPage> {
+  late final TextEditingController _searchController;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController = TextEditingController(
+      text: ref.read(purchaseSuggestionsProvider).search,
+    );
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final s = context.spacing;
     final t = context.pharmaTokens;
+    final screen = context.pharmaScreen;
+    final isMobile = screen == PharmaScreenSize.mobile;
     final state = ref.watch(purchaseSuggestionsProvider);
     final controller = ref.read(purchaseSuggestionsProvider.notifier);
     final reportBusy = ref.watch(reportControllerProvider).isSubmitting;
     final totalLabel = state.totalCount ?? state.items.length;
 
-    return ResponsiveBuilder(
-      builder: (context, constraints) {
-        return EnterpriseModuleHub(
-          title: 'Sugestão de Compra',
-          subtitle:
-              'Lista consolidada de produtos para reposição — automáticos e manuais.',
-          tag: AppNavSections.pharmacy,
-          actions: [
-            OutlinedButton.icon(
-              onPressed: state.isLoading || state.isMutating
-                  ? null
-                  : () => _showAddProductDialog(context, ref),
-              icon: const Icon(Icons.add_rounded),
-              label: const Text('Adicionar Produto'),
-            ),
-            PopupMenuButton<String>(
-              tooltip: 'Exportar',
-              enabled: !state.isLoading && !reportBusy,
-              icon: const Icon(Icons.file_download_outlined),
-              onSelected: (format) => _exportReport(ref, format, state),
-              itemBuilder: (context) => [
-                const PopupMenuItem(value: 'print', child: Text('Imprimir')),
-                const PopupMenuItem(value: 'pdf', child: Text('Exportar PDF')),
-                const PopupMenuItem(value: 'excel', child: Text('Exportar Excel')),
-              ],
-            ),
-            OutlinedButton.icon(
-              onPressed: state.isLoading ? null : controller.load,
-              icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Atualizar'),
-            ),
-          ],
-          filters: Wrap(
-            spacing: s.sm,
-            runSpacing: s.sm,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              SizedBox(
-                width: 220,
-                child: TextField(
-                  decoration: const InputDecoration(
-                    labelText: 'Pesquisar produto',
-                    prefixIcon: Icon(Icons.search_rounded),
-                    isDense: true,
-                  ),
-                  onSubmitted: controller.setSearch,
-                  onChanged: (value) {
-                    if (value.isEmpty) controller.setSearch('');
-                  },
-                ),
+    return EnterpriseModuleHub(
+      title: 'Sugestão de Compra',
+      subtitle:
+          'Lista consolidada de produtos para reposição — automáticos e manuais.',
+      tag: AppNavSections.pharmacy,
+      mobileKpisHorizontalScroll: true,
+      actions: [
+        if (!isMobile)
+          PopupMenuButton<String>(
+            tooltip: 'Exportar',
+            enabled: !state.isLoading && !reportBusy,
+            icon: const Icon(Icons.file_download_outlined),
+            onSelected: (format) => _exportReport(ref, format, state),
+            itemBuilder: (context) => [
+              const PopupMenuItem(value: 'print', child: Text('Imprimir')),
+              const PopupMenuItem(value: 'pdf', child: Text('Exportar PDF')),
+              const PopupMenuItem(value: 'excel', child: Text('Exportar Excel')),
+            ],
+          ),
+        OutlinedButton.icon(
+          onPressed: state.isLoading || state.isMutating
+              ? null
+              : () => _showAddProductDialog(context, ref),
+          icon: const Icon(Icons.add_rounded),
+          label: const Text('Adicionar Produto'),
+        ),
+      ],
+      kpis: [
+        EnterpriseStatCard(
+          title: 'Produtos sugeridos',
+          value: '${state.dashboard.produtosAbaixoMinimo}',
+          icon: Icons.inventory_2_outlined,
+        ),
+        EnterpriseStatCard(
+          title: 'Sem stock',
+          value: '${state.dashboard.produtosSemStock}',
+          icon: Icons.error_outline,
+          accent: StatCardAccent.danger,
+        ),
+        EnterpriseStatCard(
+          title: 'Qtd. total sugerida',
+          value: '${state.dashboard.quantidadeTotalSugerida}',
+          icon: Icons.functions_outlined,
+        ),
+        EnterpriseStatCard(
+          title: 'Fornecedores',
+          value: '${state.dashboard.fornecedoresEnvolvidos}',
+          icon: Icons.local_shipping_outlined,
+        ),
+        EnterpriseStatCard(
+          title: 'Valor estimado',
+          value: '${state.dashboard.valorEstimadoCompra} MZN',
+          icon: Icons.payments_outlined,
+        ),
+      ],
+      child: Column(
+        children: [
+          if (isMobile)
+            EnterpriseMobileToolbar(
+              searchController: _searchController,
+              searchHint: 'Pesquisar produto...',
+              enabled: !state.isLoading,
+              isLoading: state.isLoading,
+              hasFilters: false,
+              showFiltersButton: false,
+              showRefreshButton: false,
+              onSearchSubmitted: controller.setSearch,
+              onOpenFilters: () {},
+              onRefresh: controller.load,
+              reportAction: PopupMenuButton<String>(
+                tooltip: 'Exportar',
+                enabled: !state.isLoading && !reportBusy,
+                icon: const Icon(Icons.file_download_outlined),
+                onSelected: (format) => _exportReport(ref, format, state),
+                itemBuilder: (context) => [
+                  const PopupMenuItem(value: 'print', child: Text('Imprimir')),
+                  const PopupMenuItem(value: 'pdf', child: Text('Exportar PDF')),
+                  const PopupMenuItem(value: 'excel', child: Text('Exportar Excel')),
+                ],
               ),
-              DropdownButton<PurchaseSuggestionOriginFilter>(
-                value: state.originFilter,
-                items: const [
-                  DropdownMenuItem(
-                    value: PurchaseSuggestionOriginFilter.todas,
-                    child: Text('Todas'),
+            )
+          else
+            Padding(
+              padding: EdgeInsets.only(bottom: s.md),
+              child: EnterpriseDesktopListToolbar(
+                searchController: _searchController,
+                searchHint: 'Pesquisar produto...',
+                isLoading: state.isLoading,
+                onSearchSubmitted: controller.setSearch,
+                hasFilters: false,
+                filterWidgets: [
+                  TextButton.icon(
+                    onPressed: state.isLoading || state.isMutating || state.items.isEmpty
+                        ? null
+                        : () => _confirmClear(context, controller),
+                    icon: const Icon(Icons.delete_sweep_outlined),
+                    label: const Text('Limpar lista'),
                   ),
-                  DropdownMenuItem(
-                    value: PurchaseSuggestionOriginFilter.automatica,
-                    child: Text('Automáticas'),
-                  ),
-                  DropdownMenuItem(
-                    value: PurchaseSuggestionOriginFilter.manual,
-                    child: Text('Manuais'),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 8.0, top: 12.0),
+                    child: Text(
+                      '$totalLabel sugestão(ões)',
+                      style: Theme.of(context)
+                          .textTheme
+                          .erpBodySecondary
+                          .copyWith(color: t.textMuted),
+                    ),
                   ),
                 ],
-                onChanged: state.isLoading
-                    ? null
-                    : (value) {
-                        if (value != null) controller.setOriginFilter(value);
-                      },
               ),
-              TextButton.icon(
-                onPressed: state.isLoading || state.isMutating || state.items.isEmpty
-                    ? null
-                    : () => _confirmClear(context, controller),
-                icon: const Icon(Icons.delete_sweep_outlined),
-                label: const Text('Limpar lista'),
-              ),
-              Text(
-                '$totalLabel sugestão(ões) · ${state.selectedCount} selecionada(s)',
+            ),
+          if (state.errorMessage != null)
+            Padding(
+              padding: EdgeInsets.only(bottom: s.sm),
+              child: Text(
+                state.errorMessage!,
                 style: Theme.of(context)
                     .textTheme
                     .erpBodySecondary
-                    .copyWith(color: t.textMuted),
+                    .copyWith(color: t.posDanger),
               ),
-            ],
-          ),
-          child: Column(
-            children: [
-              _DashboardCards(dashboard: state.dashboard),
-              if (state.errorMessage != null)
-                Padding(
-                  padding: EdgeInsets.only(bottom: s.sm),
-                  child: Text(
-                    state.errorMessage!,
-                    style: Theme.of(context)
-                        .textTheme
-                        .erpBodySecondary
-                        .copyWith(color: t.posDanger),
-                  ),
-                ),
-              if (state.successMessage != null)
-                Padding(
-                  padding: EdgeInsets.only(bottom: s.sm),
-                  child: Text(
-                    state.successMessage!,
-                    style: Theme.of(context)
-                        .textTheme
-                        .erpBodySecondary
-                        .copyWith(color: t.posSuccess),
-                  ),
-                ),
-              if (state.isLoading) const LinearProgressIndicator(),
-              Expanded(
-                child: state.items.isEmpty && !state.isLoading
-                    ? const Center(child: Text('Nenhuma sugestão de compra registada'))
-                    : EnterpriseDataTable(
-                        showCheckboxColumn: true,
-                        onSelectAll: controller.toggleSelectAll,
-                        columns: const [
-                          DataColumn(label: Text('PRODUTO')),
-                          DataColumn(label: Text('ORIGEM')),
-                          DataColumn(label: Text('CATEGORIA')),
-                          DataColumn(label: Text('FORNECEDOR')),
-                          DataColumn(label: Text('STOCK')),
-                          DataColumn(label: Text('MÍNIMO')),
-                          DataColumn(label: Text('CONSUMO/DIA')),
-                          DataColumn(label: Text('QTD. SUGERIDA')),
-                          DataColumn(label: Text('QTD. APROVADA')),
-                          DataColumn(label: Text('PREÇO')),
-                          DataColumn(label: Text('')),
-                        ],
-                        rowCount: state.items.length,
-                        rowBuilder: (context, index) {
-                          final item = state.items[index];
-                          return DataRow(
-                            selected: item.selected,
-                            onSelectChanged: (value) =>
-                                controller.toggleItem(item.produtoId, value),
-                            cells: [
-                              DataCell(
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(item.produtoNome),
-                                    if (item.observacao != null &&
-                                        item.observacao!.isNotEmpty)
-                                      Text(
-                                        item.observacao!,
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .erpBodySecondary
-                                            .copyWith(color: t.textMuted),
-                                      ),
-                                  ],
+            ),
+          if (state.successMessage != null)
+            Padding(
+              padding: EdgeInsets.only(bottom: s.sm),
+              child: Text(
+                state.successMessage!,
+                style: Theme.of(context)
+                    .textTheme
+                    .erpBodySecondary
+                    .copyWith(color: t.posSuccess),
+              ),
+            ),
+          if (state.isLoading) const LinearProgressIndicator(),
+          Expanded(
+            child: state.items.isEmpty && !state.isLoading
+                ? const Center(child: Text('Nenhuma sugestão de compra registada'))
+                : EnterpriseDataTable(
+                    columns: const [
+                      DataColumn(label: Text('PRODUTO')),
+                      DataColumn(label: Text('ORIGEM')),
+                      DataColumn(label: Text('FORNECEDOR')),
+                      DataColumn(label: Text('ESTOQUE ATUAL')),
+                      DataColumn(label: Text('EST. MÍNIMO')),
+                      DataColumn(label: Text('CONSUMO/DIA')),
+                      DataColumn(label: Text('QTD. SUGERIDA')),
+                      DataColumn(label: Text('OBSERVAÇÃO')),
+                      DataColumn(label: Text('')),
+                    ],
+                    rowCount: state.items.length,
+                    rowBuilder: (context, index) {
+                      final item = state.items[index];
+                      return DataRow(
+                        cells: [
+                          DataCell(Text(item.produtoNome)),
+                          DataCell(Text(item.origemLabel)),
+                          DataCell(Text(item.fornecedorNome)),
+                          DataCell(Text(_formatQty(item.estoqueAtual))),
+                          DataCell(Text(_formatQty(item.estoqueMinimo))),
+                          DataCell(Text(_formatQty(item.consumoMedioDiario))),
+                          DataCell(Text(_formatQty(item.quantidadeSugerida))),
+                          DataCell(Text(item.observacao ?? '—')),
+                          DataCell(
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  tooltip: 'Editar',
+                                  onPressed: state.isMutating
+                                      ? null
+                                      : () => _showAddProductDialog(context, ref, item: item),
+                                  icon: const Icon(Icons.edit_outlined, size: 18),
                                 ),
-                              ),
-                              DataCell(Text(item.origemLabel)),
-                              DataCell(Text(item.categoriaNome)),
-                              DataCell(Text(item.fornecedorNome)),
-                              DataCell(Text(_formatQty(item.estoqueAtual))),
-                              DataCell(Text(_formatQty(item.estoqueMinimo))),
-                              DataCell(Text(_formatQty(item.consumoMedioDiario))),
-                              DataCell(Text(_formatQty(item.quantidadeSugerida))),
-                              DataCell(
-                                SizedBox(
-                                  width: 88,
-                                  child: TextFormField(
-                                    key: ValueKey(
-                                      '${item.produtoId}-${item.quantidadeSugerida}',
-                                    ),
-                                    initialValue: '${item.quantidadeAprovada}',
-                                    keyboardType: const TextInputType.numberWithOptions(
-                                      decimal: true,
-                                    ),
-                                    onChanged: (value) => controller.updateQuantidadeAprovada(
-                                      item.produtoId,
-                                      value,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              DataCell(Text(item.ultimoPreco.toString())),
-                              DataCell(
                                 IconButton(
                                   tooltip: 'Remover',
                                   onPressed: state.isMutating
@@ -219,28 +236,28 @@ class PurchaseSuggestionsPage extends ConsumerWidget {
                                       : () => controller.removeSuggestion(item.produtoId),
                                   icon: const Icon(Icons.close_rounded, size: 18),
                                 ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-              ),
-              if (constraints.isTabletOrWider && (state.totalCount ?? 0) > 0)
-                EnterprisePagination(
-                  page: state.page,
-                  pageSize: state.pageSize,
-                  totalCount: state.totalCount,
-                  hasMore: state.hasMore,
-                  itemsOnPage: state.items.length,
-                  itemLabel: 'sugestões',
-                  onPageChanged: controller.goToPage,
-                  onPageSizeChanged: controller.setPageSize,
-                  isBusy: state.isLoading,
-                ),
-            ],
+                              ],
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
           ),
-        );
-      },
+          if (!isMobile && (state.totalCount ?? 0) > 0)
+            EnterprisePagination(
+              page: state.page,
+              pageSize: state.pageSize,
+              totalCount: state.totalCount,
+              hasMore: state.hasMore,
+              itemsOnPage: state.items.length,
+              itemLabel: 'sugestões',
+              onPageChanged: controller.goToPage,
+              onPageSizeChanged: controller.setPageSize,
+              isBusy: state.isLoading,
+            ),
+        ],
+      ),
     );
   }
 
@@ -254,12 +271,6 @@ class PurchaseSuggestionsPage extends ConsumerWidget {
   static Map<String, dynamic> _reportParams(PurchaseSuggestionsState state) {
     return <String, dynamic>{
       if (state.search.trim().isNotEmpty) 'q': state.search.trim(),
-      if (state.originFilter != PurchaseSuggestionOriginFilter.todas)
-        'origem': switch (state.originFilter) {
-          PurchaseSuggestionOriginFilter.automatica => 'AUTOMATICA',
-          PurchaseSuggestionOriginFilter.manual => 'MANUAL',
-          PurchaseSuggestionOriginFilter.todas => 'TODAS',
-        },
     };
   }
 
@@ -317,228 +328,191 @@ class PurchaseSuggestionsPage extends ConsumerWidget {
     }
   }
 
-  static Future<void> _showAddProductDialog(BuildContext context, WidgetRef ref) async {
-    await showDialog<void>(
+  static Future<void> _showAddProductDialog(
+    BuildContext context,
+    WidgetRef ref, {
+    PurchaseSuggestionItem? item,
+  }) async {
+    await AdaptiveNavigator.openForm<void>(
       context: context,
-      builder: (dialogContext) => _AddProductDialog(parentRef: ref),
+      title: Text(item == null ? 'Adicionar produto' : 'Editar sugestão'),
+      sideSheetWidth: 460,
+      contentBuilder: (formContext) => _AddProductDialogBody(
+        parentRef: ref,
+        item: item,
+      ),
     );
   }
 }
 
-class _AddProductDialog extends ConsumerStatefulWidget {
-  const _AddProductDialog({required this.parentRef});
+class _AddProductDialogBody extends ConsumerStatefulWidget {
+  const _AddProductDialogBody({required this.parentRef, this.item});
 
   final WidgetRef parentRef;
+  final PurchaseSuggestionItem? item;
 
   @override
-  ConsumerState<_AddProductDialog> createState() => _AddProductDialogState();
+  ConsumerState<_AddProductDialogBody> createState() => _AddProductDialogBodyState();
 }
 
-class _AddProductDialogState extends ConsumerState<_AddProductDialog> {
-  final _searchController = TextEditingController();
-  final _qtyController = TextEditingController(text: '1');
-  final _obsController = TextEditingController();
-  String? _selectedProdutoId;
-  String? _selectedProdutoNome;
-  bool _isSearching = false;
-  List<Map<String, dynamic>> _results = const [];
+class _AddProductDialogBodyState extends ConsumerState<_AddProductDialogBody> {
+  late final TextEditingController _produtoController;
+  late final TextEditingController _fornecedorController;
+  late final TextEditingController _qtyController;
+  late final TextEditingController _obsController;
+  
+  ProdutoSearchResult? _selectedProduto;
+  FornecedorDetalheModel? _selectedFornecedor;
+  bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _produtoController = TextEditingController(text: widget.item?.produtoNome ?? '');
+    _fornecedorController = TextEditingController(text: widget.item?.fornecedorNome ?? '');
+    _qtyController = TextEditingController(
+      text: widget.item != null ? widget.item!.quantidadeSugerida.toString() : '1',
+    );
+    _obsController = TextEditingController(text: widget.item?.observacao ?? '');
+    
+    if (widget.item != null) {
+      _selectedProduto = ProdutoSearchResult(
+        id: widget.item!.produtoId,
+        nomeComercial: widget.item!.produtoNome,
+      );
+      if (widget.item!.fornecedorId != null) {
+        _selectedFornecedor = FornecedorDetalheModel(
+          id: widget.item!.fornecedorId!,
+          nome: widget.item!.fornecedorNome,
+          ativo: true,
+        );
+      }
+    }
+  }
 
   @override
   void dispose() {
-    _searchController.dispose();
+    _produtoController.dispose();
+    _fornecedorController.dispose();
     _qtyController.dispose();
     _obsController.dispose();
     super.dispose();
   }
 
-  Future<void> _search() async {
-    final query = _searchController.text.trim();
-    if (query.length < 2) return;
-
-    setState(() => _isSearching = true);
-    try {
-      final dataSource = ref.read(productRemoteDataSourceProvider);
-      final response = await dataSource.searchProducts(query: query, pageSize: 10);
-      setState(() {
-        _results = response.items
-            .map(
-              (p) => <String, dynamic>{
-                'id': p.id,
-                'nome': p.nomeComercial,
-              },
-            )
-            .toList();
-      });
-    } finally {
-      if (mounted) setState(() => _isSearching = false);
-    }
-  }
-
   Future<void> _submit() async {
-    final produtoId = _selectedProdutoId;
+    final produto = _selectedProduto;
+    final fornecedor = _selectedFornecedor;
     final qty = num.tryParse(_qtyController.text.replaceAll(',', '.'));
-    if (produtoId == null || qty == null || qty <= 0) return;
+    if (produto == null || fornecedor == null || qty == null || qty <= 0) return;
 
+    setState(() => _isSubmitting = true);
     final controller = widget.parentRef.read(purchaseSuggestionsProvider.notifier);
     await controller.addManualSuggestion(
-      produtoId: produtoId,
+      produtoId: produto.id,
+      supplierId: fornecedor.id,
       quantidadeSugerida: qty,
       observacao: _obsController.text.trim().isEmpty ? null : _obsController.text.trim(),
     );
 
     if (!mounted) return;
-    Navigator.pop(context);
+    final state = widget.parentRef.read(purchaseSuggestionsProvider);
+    if (state.errorMessage == null) {
+      AdaptiveNavigator.complete(context);
+    } else {
+      setState(() => _isSubmitting = false);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Adicionar produto'),
-      content: SizedBox(
-        width: 420,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        AsyncTypeAheadField<ProdutoSearchResult>(
+          controller: _produtoController,
+          labelText: 'Produto',
+          hintText: 'Nome comercial, dosagem ou forma',
+          suggestionsCallback: (query) => ref
+              .read(estoqueRemoteDataSourceProvider)
+              .searchProdutos(query: query),
+          itemLabel: (item) => item.nomeComercial,
+          itemSubtitle: (item) => item.detalhesLabel,
+          onSelected: (item) {
+            setState(() {
+              _selectedProduto = item;
+              _produtoController.text = item.displayLabel;
+            });
+          },
+        ),
+        const SizedBox(height: 16),
+        AsyncTypeAheadField<FornecedorDetalheModel>(
+          controller: _fornecedorController,
+          labelText: 'Fornecedor',
+          hintText: 'Digite para pesquisar o fornecedor',
+          suggestionsCallback: (query) async {
+            final result = await ref
+                .read(fornecedorRemoteDataSourceProvider)
+                .search(query: query, pageSize: 10);
+            return result.items;
+          },
+          itemLabel: (fornecedor) => fornecedor.nome,
+          itemSubtitle: (fornecedor) {
+            final parts = <String>[
+              if (fornecedor.nuit != null &&
+                  fornecedor.nuit!.trim().isNotEmpty)
+                'NUIT ${fornecedor.nuit}',
+              if (fornecedor.telefone != null &&
+                  fornecedor.telefone!.trim().isNotEmpty)
+                fornecedor.telefone!.trim(),
+            ];
+            return parts.join(' · ');
+          },
+          onSelected: (fornecedor) {
+            setState(() {
+              _selectedFornecedor = fornecedor;
+              _fornecedorController.text = fornecedor.nome;
+            });
+          },
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _qtyController,
+          decoration: const InputDecoration(labelText: 'Quantidade sugerida'),
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+        ),
+        const SizedBox(height: 16),
+        TextField(
+          controller: _obsController,
+          decoration: const InputDecoration(labelText: 'Observação (opcional)'),
+          maxLines: 2,
+        ),
+        const SizedBox(height: 24),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                labelText: 'Pesquisar produto',
-                suffixIcon: IconButton(
-                  icon: _isSearching
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.search_rounded),
-                  onPressed: _isSearching ? null : _search,
-                ),
-              ),
-              onSubmitted: (_) => _search(),
+            TextButton(
+              onPressed: _isSubmitting ? null : () => AdaptiveNavigator.complete(context),
+              child: const Text('Cancelar'),
             ),
-            const SizedBox(height: 12),
-            if (_results.isNotEmpty)
-              SizedBox(
-                height: 140,
-                child: ListView.builder(
-                  itemCount: _results.length,
-                  itemBuilder: (context, index) {
-                    final item = _results[index];
-                    final id = item['id']?.toString() ?? '';
-                    final nome = item['nome']?.toString() ?? '—';
-                    final selected = _selectedProdutoId == id;
-                    return ListTile(
-                      dense: true,
-                      selected: selected,
-                      title: Text(nome),
-                      onTap: () {
-                        setState(() {
-                          _selectedProdutoId = id;
-                          _selectedProdutoNome = nome;
-                        });
-                      },
-                    );
-                  },
-                ),
-              ),
-            if (_selectedProdutoNome != null) ...[
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: Text('Seleccionado: $_selectedProdutoNome'),
-              ),
-            ],
-            const SizedBox(height: 12),
-            TextField(
-              controller: _qtyController,
-              decoration: const InputDecoration(labelText: 'Quantidade sugerida'),
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _obsController,
-              decoration: const InputDecoration(labelText: 'Observação (opcional)'),
-              maxLines: 2,
+            const SizedBox(width: 8),
+            FilledButton(
+              onPressed: _selectedProduto == null ||
+                      _selectedFornecedor == null ||
+                      _isSubmitting
+                  ? null
+                  : _submit,
+              child: _isSubmitting
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('Guardar'),
             ),
           ],
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancelar'),
-        ),
-        FilledButton(
-          onPressed: _selectedProdutoId == null ? null : _submit,
-          child: const Text('Adicionar'),
         ),
       ],
     );
   }
 }
 
-class _DashboardCards extends StatelessWidget {
-  const _DashboardCards({required this.dashboard});
-
-  final PurchaseSuggestionDashboard dashboard;
-
-  @override
-  Widget build(BuildContext context) {
-    final s = context.spacing;
-    final cards = [
-      _MetricCard(label: 'Produtos sugeridos', value: '${dashboard.produtosAbaixoMinimo}'),
-      _MetricCard(label: 'Sem stock', value: '${dashboard.produtosSemStock}'),
-      _MetricCard(label: 'Qtd. total sugerida', value: '${dashboard.quantidadeTotalSugerida}'),
-      _MetricCard(label: 'Fornecedores', value: '${dashboard.fornecedoresEnvolvidos}'),
-      _MetricCard(label: 'Valor estimado', value: '${dashboard.valorEstimadoCompra} MZN'),
-    ];
-
-    return Padding(
-      padding: EdgeInsets.only(bottom: s.md),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final width = constraints.maxWidth;
-          final columns = width > 1100 ? 5 : width > 700 ? 3 : 2;
-          return GridView.count(
-            crossAxisCount: columns,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: s.sm,
-            crossAxisSpacing: s.sm,
-            childAspectRatio: 2.8,
-            children: cards,
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _MetricCard extends StatelessWidget {
-  const _MetricCard({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              label,
-              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
-            ),
-            const SizedBox(height: 4),
-            Text(value, style: Theme.of(context).textTheme.titleMedium),
-          ],
-        ),
-      ),
-    );
-  }
-}

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../app/providers/session_access_notifier.dart';
 import '../../../../../core/theme/design_tokens.dart';
-import '../../../lots/presentation/widgets/lot_actions_helper.dart';
 import '../../domain/entities/estoque_item.dart';
 import 'estoque_lote_actions_helper.dart';
 import 'estoque_stock_entry_helper.dart';
@@ -54,7 +53,8 @@ class EstoqueActionsMenu extends ConsumerWidget {
         size: compact ? t.iconSm : t.iconMd,
         color: t.textMuted,
       ),
-      onSelected: (action) => _handleAction(context, ref, action, item, fornecedores),
+      onSelected: (action) =>
+          _handleAction(context, ref, action, item, fornecedores),
       itemBuilder: (context) => actions,
     );
   }
@@ -75,19 +75,12 @@ class EstoqueActionsMenu extends ConsumerWidget {
     if (access.can('LOTES', 'UPDATE')) {
       add('editar', 'Editar lote');
       add('preco', 'Alterar preço do lote');
-      add('sanitaria', 'Movimentação sanitária');
-      if (LotActionsHelper.canMoveToQuarentena(item.toActionMap())) {
-        add('bloquear', 'Bloquear lote');
-      }
-      if (LotActionsHelper.canRevertQuarentena(item.toActionMap())) {
-        add('liberar', 'Liberar lote');
+      if (item.acoesPermitidas.isNotEmpty) {
+        add('sanitaria', 'Movimentação sanitária');
       }
     }
     if (access.can('INVENTARIO', 'ADJUST_STOCK')) {
       add('ajustar', 'Ajustar stock');
-    }
-    if (access.can('INVENTARIO', 'CREATE')) {
-      add('inventario', 'Adicionar ao inventário');
     }
 
     return entries;
@@ -116,12 +109,6 @@ class EstoqueActionsMenu extends ConsumerWidget {
         await EstoqueLoteActionsHelper.alterarPreco(context, ref, item);
       case 'sanitaria':
         await EstoqueLoteActionsHelper.movimentacaoSanitaria(context, ref, item);
-      case 'bloquear':
-        await EstoqueLoteActionsHelper.bloquearLote(context, ref, item);
-      case 'liberar':
-        await EstoqueLoteActionsHelper.liberarLote(context, ref, item);
-      case 'inventario':
-        EstoqueLoteActionsHelper.adicionarAoInventario(context);
     }
   }
 }

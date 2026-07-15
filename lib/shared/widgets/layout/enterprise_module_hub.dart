@@ -129,7 +129,12 @@ class EnterpriseModuleHub extends StatelessWidget {
           _buildKpis(context, size),
         ],
         SizedBox(height: size == PharmaScreenSize.mobile ? s.md : s.lg),
-        if (scrollable) child else Expanded(child: child),
+        if (scrollable)
+          child
+        else
+          Expanded(
+            child: child,
+          ),
       ],
     );
 

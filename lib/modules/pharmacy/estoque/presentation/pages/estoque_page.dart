@@ -125,9 +125,19 @@ class _EstoquePageState extends ConsumerState<EstoquePage> {
               icon: Icons.layers_outlined,
             ),
             EnterpriseStatCard(
-              title: 'Produtos sem stock',
-              value: '${dash.produtosSemStock}',
-              icon: Icons.remove_shopping_cart_outlined,
+              title: 'Recall',
+              value: '${dash.lotesEmRecall}',
+              icon: Icons.report_outlined,
+            ),
+            EnterpriseStatCard(
+              title: 'Quarentena',
+              value: '${dash.lotesEmQuarentena}',
+              icon: Icons.health_and_safety_outlined,
+            ),
+            EnterpriseStatCard(
+              title: 'Incineração',
+              value: '${dash.lotesIncinerados}',
+              icon: Icons.local_fire_department_outlined,
             ),
             EnterpriseStatCard(
               title: 'Lotes a expirar',
@@ -169,7 +179,6 @@ class _EstoquePageState extends ConsumerState<EstoquePage> {
                       : () => EstoqueStockEntryHelper.novoLote(
                             context,
                             ref,
-                            _fornecedores,
                           ),
                   child: const Icon(Icons.add),
                 )
@@ -189,7 +198,6 @@ class _EstoquePageState extends ConsumerState<EstoquePage> {
                           : () => EstoqueStockEntryHelper.novoLote(
                                 context,
                                 ref,
-                                _fornecedores,
                               ),
                       icon: const Icon(Icons.add),
                       label: const Text('Novo Lote'),

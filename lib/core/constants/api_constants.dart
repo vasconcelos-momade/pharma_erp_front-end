@@ -59,6 +59,8 @@ abstract final class ApiConstants {
   static const tenantDashboardFinanceiroTables =
       '/tenant/dashboard/financeiro/tables';
   static const tenantFinanceCashflowContext = '/tenant/finance/cashflow/context';
+  static const tenantFinanceCashflowMovimentos =
+      '/tenant/finance/cashflow/movimentos';
   static const tenantFinanceCashflowSaida = '/tenant/finance/cashflow/saida';
   static const tenantFinanceCashflowSuprimento =
       '/tenant/finance/cashflow/suprimento';

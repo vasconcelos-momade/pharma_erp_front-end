@@ -11,7 +11,6 @@ import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../../shared/widgets/layout/enterprise_mobile_scroll_list.dart';
 import '../../../../../shared/widgets/layout/enterprise_mobile_toolbar.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
-import '../../../../../shared/widgets/layout/enterprise_module_search_bar.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../../../../shared/widgets/tables/enterprise_pagination.dart';
 import '../../../lots/presentation/widgets/open_lote_details.dart';

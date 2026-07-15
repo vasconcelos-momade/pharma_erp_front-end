@@ -93,6 +93,9 @@ class EstoqueRemoteDataSource {
         lotesAExpirar: 0,
         lotesExpirados: _int(payload['lotesExpirados']),
         valorTotalInventario: 0,
+        lotesEmRecall: 0,
+        lotesEmQuarentena: 0,
+        lotesIncinerados: 0,
       );
     } on DioException catch (e) {
       throw ApiFailure.fromDio(e);
@@ -415,14 +418,7 @@ class EstoqueRemoteDataSource {
       final items = (payload['items'] as List<dynamic>? ?? <dynamic>[])
           .whereType<Map<String, dynamic>>();
       return items
-          .map(
-            (item) => ProdutoSearchResult(
-              id: item['id']?.toString() ?? '',
-              nome: item['nomeComercial']?.toString() ??
-                  item['nome']?.toString() ??
-                  'Produto',
-            ),
-          )
+          .map(ProdutoSearchResult.fromJson)
           .where((item) => item.id.isNotEmpty)
           .toList();
     } on DioException catch (e) {
@@ -432,10 +428,50 @@ class EstoqueRemoteDataSource {
 }
 
 class ProdutoSearchResult {
-  const ProdutoSearchResult({required this.id, required this.nome});
+  const ProdutoSearchResult({
+    required this.id,
+    required this.nomeComercial,
+    this.dosagem,
+    this.forma,
+  });
 
   final String id;
-  final String nome;
+  final String nomeComercial;
+  final String? dosagem;
+  final String? forma;
+
+  /// Compatibilidade com usos que ainda leem `.nome`.
+  String get nome => nomeComercial;
+
+  String get detalhesLabel {
+    final parts = <String>[
+      if (dosagem != null && dosagem!.trim().isNotEmpty) dosagem!.trim(),
+      if (forma != null && forma!.trim().isNotEmpty) forma!.trim(),
+    ];
+    return parts.join(' · ');
+  }
+
+  String get displayLabel {
+    final details = detalhesLabel;
+    return details.isEmpty ? nomeComercial : '$nomeComercial · $details';
+  }
+
+  factory ProdutoSearchResult.fromJson(Map<String, dynamic> json) {
+    return ProdutoSearchResult(
+      id: json['id']?.toString() ?? '',
+      nomeComercial: json['nomeComercial']?.toString() ??
+          json['nome']?.toString() ??
+          'Produto',
+      dosagem: _nullableString(json['dosagem']),
+      forma: _nullableString(json['forma']),
+    );
+  }
+
+  static String? _nullableString(dynamic value) {
+    final text = value?.toString().trim();
+    if (text == null || text.isEmpty) return null;
+    return text;
+  }
 }
 
 final estoqueRemoteDataSourceProvider = Provider<EstoqueRemoteDataSource>(

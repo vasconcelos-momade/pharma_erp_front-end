@@ -10,6 +10,7 @@ class AsyncTypeAheadField<T> extends StatelessWidget {
     required this.suggestionsCallback,
     required this.itemLabel,
     required this.onSelected,
+    this.itemSubtitle,
     this.controller,
     this.minSearchLength = 2,
     this.debounceDuration = const Duration(milliseconds: 350),
@@ -19,6 +20,7 @@ class AsyncTypeAheadField<T> extends StatelessWidget {
   final String hintText;
   final Future<List<T>> Function(String query) suggestionsCallback;
   final String Function(T item) itemLabel;
+  final String Function(T item)? itemSubtitle;
   final ValueChanged<T> onSelected;
   final TextEditingController? controller;
   final int minSearchLength;
@@ -31,7 +33,7 @@ class AsyncTypeAheadField<T> extends StatelessWidget {
       debounceDuration: debounceDuration,
       hideOnEmpty: true,
       autoFlipDirection: true,
-      constraints: const BoxConstraints(maxHeight: 220),
+      constraints: const BoxConstraints(maxHeight: 280),
       suggestionsCallback: (pattern) async {
         final query = pattern.trim();
         if (query.length < minSearchLength) {
@@ -52,9 +54,21 @@ class AsyncTypeAheadField<T> extends StatelessWidget {
         );
       },
       itemBuilder: (context, item) {
+        final subtitle = itemSubtitle?.call(item).trim();
         return ListTile(
           dense: true,
-          title: Text(itemLabel(item)),
+          title: Text(
+            itemLabel(item),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          subtitle: subtitle == null || subtitle.isEmpty
+              ? null
+              : Text(
+                  subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
         );
       },
       onSelected: onSelected,

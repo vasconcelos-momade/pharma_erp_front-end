@@ -13,9 +13,11 @@ class MovimentacoesOverviewCards extends StatelessWidget {
   final MovimentacaoOverview overview;
   final bool hasFilters;
 
-  @override
-  Widget build(BuildContext context) {
-    final cards = [
+  static List<Widget> buildCards({
+    required MovimentacaoOverview overview,
+    required bool hasFilters,
+  }) {
+    return [
       EnterpriseStatCard(
         title: 'Total',
         value: '${overview.totalMovimentos}',
@@ -49,11 +51,17 @@ class MovimentacoesOverviewCards extends StatelessWidget {
         density: StatCardDensity.compact,
       ),
     ];
-
-    return EnterpriseKpiGrid(cards: cards, useDesktopRowWhenSingleLine: true);
   }
 
-  String _qtyLabel(double quantidade) {
+  @override
+  Widget build(BuildContext context) {
+    return EnterpriseKpiGrid(
+      cards: buildCards(overview: overview, hasFilters: hasFilters),
+      useDesktopRowWhenSingleLine: true,
+    );
+  }
+
+  static String _qtyLabel(double quantidade) {
     final normalized = quantidade == quantidade.roundToDouble()
         ? quantidade.toInt().toString()
         : quantidade.toStringAsFixed(2);

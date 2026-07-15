@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/spacing.dart';
 import '../../../../../shared/navigation/adaptive_navigator.dart';
-import '../../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
+import '../../../../../shared/widgets/layout/adaptive_side_sheet.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../domain/entities/customer.dart';
 
 class CustomerFormResult {
@@ -44,35 +45,60 @@ class CustomerFormResult {
       );
 }
 
-Future<CustomerFormResult?> showCustomerFormDialog(
+Future<CustomerFormResult?> showCustomerFormSheet(
   BuildContext context, {
   CustomerDetail? customer,
 }) {
-  final title = Text(customer != null ? 'Editar cliente' : 'Novo cliente');
-  return AdaptiveNavigator.openEmbeddedForm<CustomerFormResult>(
+  return AdaptiveSideSheet.show<CustomerFormResult>(
     context: context,
-    title: title,
-    routeSettings: RouteSettings(
-      name: customer == null ? '/clientes/novo' : '/clientes/${customer.id}/editar',
-    ),
-    formBuilder: (ctx, {required embedded}) =>
-        CustomerFormDialog(customer: customer, embedded: embedded),
+    builder: (sheetContext) {
+      final s = sheetContext.spacing;
+      final titleText = customer != null ? 'Editar cliente' : 'Novo cliente';
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: EdgeInsets.fromLTRB(s.lg, s.lg, s.sm, s.sm),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    titleText,
+                    style: Theme.of(sheetContext).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Fechar',
+                  onPressed: () => closeAdaptiveSideSheet(sheetContext),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          Expanded(
+            child: CustomerForm(customer: customer),
+          ),
+        ],
+      );
+    },
   );
 }
 
-class CustomerFormDialog extends StatefulWidget {
-  const CustomerFormDialog({super.key, this.customer, this.embedded = false});
+class CustomerForm extends StatefulWidget {
+  const CustomerForm({super.key, this.customer});
 
   final CustomerDetail? customer;
-  final bool embedded;
 
   bool get isEditing => customer != null;
 
   @override
-  State<CustomerFormDialog> createState() => _CustomerFormDialogState();
+  State<CustomerForm> createState() => _CustomerFormState();
 }
 
-class _CustomerFormDialogState extends State<CustomerFormDialog> {
+class _CustomerFormState extends State<CustomerForm> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _nomeController;
   late final TextEditingController _telefoneController;
@@ -240,38 +266,37 @@ class _CustomerFormDialogState extends State<CustomerFormDialog> {
     );
   }
 
-  List<Widget> _buildActions() => [
-        TextButton(
-          onPressed: () => AdaptiveNavigator.cancel(context),
-          child: const Text('Cancelar'),
-        ),
-        FilledButton(
-          onPressed: _submit,
-          child: Text(widget.isEditing ? 'Guardar' : 'Criar'),
-        ),
-      ];
-
   @override
   Widget build(BuildContext context) {
-    if (widget.embedded) {
-      return Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildFormBody(context),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: _buildActions(),
+    final s = context.spacing;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.all(s.lg),
+            child: _buildFormBody(context),
           ),
-        ],
-      );
-    }
-
-    return PharmaResponsiveDialog(
-      title: Text(widget.isEditing ? 'Editar cliente' : 'Novo cliente'),
-      content: _buildFormBody(context),
-      actions: _buildActions(),
+        ),
+        const Divider(height: 1),
+        Padding(
+          padding: EdgeInsets.all(s.lg),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () => closeAdaptiveSideSheet(context),
+                child: const Text('Cancelar'),
+              ),
+              SizedBox(width: s.sm),
+              FilledButton(
+                onPressed: _submit,
+                child: Text(widget.isEditing ? 'Guardar' : 'Criar'),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

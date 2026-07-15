@@ -5,6 +5,7 @@ import '../../../../core/errors/api_failure.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/extensions.dart';
 import '../../../../shared/responsive/responsive_builder.dart';
+import '../../../../shared/widgets/cards/enterprise_list_card.dart';
 import '../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../../shared/widgets/layout/enterprise_mobile_scroll_list.dart';
@@ -254,47 +255,34 @@ class _FornecedorCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
-    final s = context.spacing;
-    return Card(
-      margin: EdgeInsets.only(bottom: s.sm),
-      child: Padding(
-        padding: EdgeInsets.all(s.md),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(fornecedor.nome, style: Theme.of(context).textTheme.titleMedium),
-            SizedBox(height: s.xs),
-            Text(
-              [
-                if (fornecedor.nuit != null) 'NUIT: ${fornecedor.nuit}',
-                if (fornecedor.telefone != null) fornecedor.telefone,
-                if (fornecedor.email != null) fornecedor.email,
-              ].whereType<String>().join(' • '),
-              style: Theme.of(context).textTheme.erpBodySecondary.copyWith(color: t.textMuted),
-            ),
-            SizedBox(height: s.md),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                OutlinedButton.icon(
-                  onPressed: onEdit,
-                  icon: const Icon(Icons.edit_outlined, size: 18),
-                  label: const Text('Editar'),
-                ),
-                SizedBox(width: s.sm),
-                OutlinedButton.icon(
-                  onPressed: onDelete,
-                  icon: const Icon(Icons.delete_outline, size: 18),
-                  label: const Text('Excluir'),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: t.posDanger,
-                    side: BorderSide(color: t.posDanger.withValues(alpha: 0.5)),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
+    final contact = [
+      if (fornecedor.nuit != null) 'NUIT ${fornecedor.nuit}',
+      if (fornecedor.telefone != null) fornecedor.telefone,
+      if (fornecedor.email != null) fornecedor.email,
+      if (fornecedor.cidade != null) fornecedor.cidade,
+    ].whereType<String>().join(' · ');
+
+    return EnterpriseListCard(
+      leading: Icons.local_shipping_outlined,
+      title: fornecedor.nome,
+      subtitle: contact.isEmpty ? null : contact,
+      chip: EnterpriseStatusChip(
+        label: fornecedor.ativo ? 'ACTIVO' : 'INACTIVO',
+        color: fornecedor.ativo ? t.posSuccess : t.textMuted,
+      ),
+      actions: PopupMenuButton<String>(
+        icon: Icon(Icons.more_vert, color: t.textSecondary),
+        onSelected: (value) {
+          if (value == 'edit') onEdit();
+          if (value == 'delete') onDelete();
+        },
+        itemBuilder: (context) => [
+          const PopupMenuItem(value: 'edit', child: Text('Editar')),
+          PopupMenuItem(
+            value: 'delete',
+            child: Text('Excluir', style: TextStyle(color: t.posDanger)),
+          ),
+        ],
       ),
     );
   }

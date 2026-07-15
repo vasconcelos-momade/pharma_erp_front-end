@@ -34,6 +34,7 @@ class AuditAdaptiveListBody<T> extends StatefulWidget {
     required this.onPageSizeChanged,
     this.headerActions = const [],
     this.accumulatedItems = const [],
+    this.kpis,
   });
 
   final AuditListState<T> state;
@@ -54,6 +55,7 @@ class AuditAdaptiveListBody<T> extends StatefulWidget {
   final ValueChanged<int> onPageSizeChanged;
   final List<Widget> headerActions;
   final List<T> accumulatedItems;
+  final List<Widget>? kpis;
 
   @override
   State<AuditAdaptiveListBody<T>> createState() => _AuditAdaptiveListBodyState<T>();
@@ -95,6 +97,7 @@ class _AuditAdaptiveListBodyState<T> extends State<AuditAdaptiveListBody<T>> {
                 )
               : null,
           mobileList: EnterpriseMobileScrollList(
+            kpis: widget.kpis,
             stickyHeader: EnterpriseMobileToolbar(
               searchController: widget.searchController,
               searchHint: widget.searchHint,

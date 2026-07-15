@@ -51,6 +51,10 @@ class EnterpriseDataTable extends StatelessWidget {
     this.dataRowMinHeight,
     this.dataRowMaxHeight,
     this.columnSpacing,
+    this.hasMore = false,
+    this.isLoading = false,
+    this.onLoadMore,
+    this.onRefresh,
   });
 
   final List<DataColumn> columns;
@@ -64,6 +68,59 @@ class EnterpriseDataTable extends StatelessWidget {
   final double? dataRowMinHeight;
   final double? dataRowMaxHeight;
   final double? columnSpacing;
+  
+  /// Parâmetros de paginação (opcionais, usados para carregar mais dados)
+  final bool hasMore;
+  final bool isLoading;
+  final VoidCallback? onLoadMore;
+  final Future<void> Function()? onRefresh;
+
+  Widget _buildTableContent(BuildContext context, BoxConstraints c, PharmaTokens t, DensityTokens s) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minWidth: c.maxWidth.isFinite ? c.maxWidth : responsive.Breakpoints.tablet,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DataTable(
+              showCheckboxColumn: showCheckboxColumn,
+              sortColumnIndex: sortColumnIndex,
+              sortAscending: sortAscending,
+              onSelectAll: onSelectAll,
+              headingRowColor: WidgetStatePropertyAll(
+                t.bgSecondary.withValues(alpha: 0.92),
+              ),
+              dataRowMinHeight:
+                  dataRowMinHeight ?? DesignMetrics.tableRowHeightMin,
+              dataRowMaxHeight:
+                  dataRowMaxHeight ?? DesignMetrics.tableRowHeightMax,
+              horizontalMargin: PharmaScreenLayout.isDesktop(context) ? s.lg : s.md,
+              columnSpacing: columnSpacing ??
+                  (PharmaScreenLayout.isDesktop(context) ? s.xxl : s.lg),
+              columns: columns,
+              rows: List.generate(rowCount, (i) => rowBuilder(context, i)),
+            ),
+            if (hasMore || isLoading)
+              Padding(
+                padding: EdgeInsets.all(s.md),
+                child: Center(
+                  child: isLoading
+                      ? const CircularProgressIndicator()
+                      : TextButton(
+                          onPressed: onLoadMore,
+                          child: const Text('Carregar mais'),
+                        ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -76,14 +133,27 @@ class EnterpriseDataTable extends StatelessWidget {
         final boundedHeight = c.hasBoundedHeight && c.maxHeight.isFinite;
 
         if (useCards) {
-          return ListView.separated(
+          Widget listView = ListView.separated(
             shrinkWrap: !boundedHeight,
             physics: boundedHeight
                 ? const ClampingScrollPhysics()
                 : const NeverScrollableScrollPhysics(),
-            itemCount: rowCount,
+            itemCount: rowCount + (hasMore || isLoading ? 1 : 0),
             separatorBuilder: (_, _) => SizedBox(height: s.xs),
             itemBuilder: (context, i) {
+              if (i == rowCount) {
+                return Padding(
+                  padding: EdgeInsets.all(s.md),
+                  child: Center(
+                    child: isLoading
+                        ? const CircularProgressIndicator()
+                        : TextButton(
+                            onPressed: onLoadMore,
+                            child: const Text('Carregar mais'),
+                          ),
+                  ),
+                );
+              }
               final row = rowBuilder(context, i);
               final parts = row.cells
                   .map((e) => _describeCellWidget(e.child))
@@ -137,42 +207,36 @@ class EnterpriseDataTable extends StatelessWidget {
               );
             },
           );
+
+          if (onRefresh != null && boundedHeight) {
+            return RefreshIndicator(
+              onRefresh: onRefresh!,
+              child: listView,
+            );
+          }
+          return listView;
         }
 
-        return PharmaSurface(
+        Widget tableContent = PharmaSurface(
           clipBehavior: Clip.antiAlias,
-          child: SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minWidth: c.maxWidth.isFinite ? c.maxWidth : responsive.Breakpoints.tablet,
-              ),
-              child: SingleChildScrollView(
-                physics: boundedHeight
-                    ? const ClampingScrollPhysics()
-                    : const NeverScrollableScrollPhysics(),
-                child: DataTable(
-                  showCheckboxColumn: showCheckboxColumn,
-                  sortColumnIndex: sortColumnIndex,
-                  sortAscending: sortAscending,
-                  onSelectAll: onSelectAll,
-                  headingRowColor: WidgetStatePropertyAll(
-                    t.bgSecondary.withValues(alpha: 0.92),
-                  ),
-                  dataRowMinHeight:
-                      dataRowMinHeight ?? DesignMetrics.tableRowHeightMin,
-                  dataRowMaxHeight:
-                      dataRowMaxHeight ?? DesignMetrics.tableRowHeightMax,
-                  horizontalMargin: PharmaScreenLayout.isDesktop(context) ? s.lg : s.md,
-                  columnSpacing: columnSpacing ??
-                      (PharmaScreenLayout.isDesktop(context) ? s.xxl : s.lg),
-                  columns: columns,
-                  rows: List.generate(rowCount, (i) => rowBuilder(context, i)),
-                ),
-              ),
-            ),
-          ),
+          child: _buildTableContent(context, c, t, s),
         );
+
+        if (boundedHeight) {
+          tableContent = SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            child: tableContent,
+          );
+        }
+
+        if (onRefresh != null && boundedHeight) {
+          return RefreshIndicator(
+            onRefresh: onRefresh!,
+            child: tableContent,
+          );
+        }
+
+        return tableContent;
       },
     );
   }

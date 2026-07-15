@@ -63,7 +63,7 @@ class CustomerDashboard {
 class CustomerQuery {
   const CustomerQuery({
     this.page = 1,
-    this.pageSize = 20,
+    this.pageSize = 10,
     this.search = '',
     this.tipo,
     this.comCredito,

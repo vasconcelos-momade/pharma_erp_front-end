@@ -10,6 +10,8 @@ import '../../../../../shared/widgets/inputs/async_type_ahead_field.dart';
 import '../../domain/entities/estoque_item.dart';
 import '../providers/estoque_provider.dart';
 import '../../data/datasources/estoque_remote_datasource.dart';
+import '../../../../stock/data/datasources/fornecedor_remote_datasource.dart';
+import '../../../../stock/data/models/fornecedor_model.dart';
 import '../../../../stock/presentation/providers/movimentacao_provider.dart';
 
 import '../../../../../shared/navigation/adaptive_navigator.dart';
@@ -58,7 +60,6 @@ abstract final class EstoqueStockEntryHelper {
   static Future<void> novoLote(
     BuildContext context,
     WidgetRef ref,
-    List<({String id, String nome})> fornecedores,
   ) async {
     final width = AdaptiveNavigator.widthOf(context);
     final panelWidth = width >= AdaptiveSideSheetMetrics.desktopBreakpoint
@@ -73,11 +74,10 @@ abstract final class EstoqueStockEntryHelper {
         if (AdaptiveNavigator.isMobile(detailContext)) {
           return Scaffold(
             appBar: AppBar(title: const Text('Novo lote')),
-            body: _NovoLoteFormContent(fornecedores: fornecedores, showHeader: false),
+            body: const _NovoLoteFormContent(showHeader: false),
           );
         }
         return _NovoLoteFormContent(
-          fornecedores: fornecedores,
           showHeader: true,
           onClose: () => AdaptiveNavigator.close(detailContext),
         );
@@ -348,12 +348,10 @@ class _EntradaCompraFormContentState extends ConsumerState<_EntradaCompraFormCon
 
 class _NovoLoteFormContent extends ConsumerStatefulWidget {
   const _NovoLoteFormContent({
-    required this.fornecedores,
     this.showHeader = true,
     this.onClose,
   });
 
-  final List<({String id, String nome})> fornecedores;
   final bool showHeader;
   final VoidCallback? onClose;
 
@@ -363,6 +361,7 @@ class _NovoLoteFormContent extends ConsumerStatefulWidget {
 
 class _NovoLoteFormContentState extends ConsumerState<_NovoLoteFormContent> {
   final _produtoController = TextEditingController();
+  final _fornecedorController = TextEditingController();
   final _quantidadeController = TextEditingController();
   final _compraController = TextEditingController();
   final _vendaController = TextEditingController();
@@ -372,10 +371,12 @@ class _NovoLoteFormContentState extends ConsumerState<_NovoLoteFormContent> {
   String? _produtoId;
   String? _produtoLabel;
   String? _fornecedorId;
+  String? _fornecedorLabel;
 
   @override
   void dispose() {
     _produtoController.dispose();
+    _fornecedorController.dispose();
     _quantidadeController.dispose();
     _compraController.dispose();
     _vendaController.dispose();
@@ -489,37 +490,50 @@ class _NovoLoteFormContentState extends ConsumerState<_NovoLoteFormContent> {
                 AsyncTypeAheadField<ProdutoSearchResult>(
                   controller: _produtoController,
                   labelText: 'Produto',
-                  hintText: _produtoLabel ?? 'Digite para pesquisar…',
+                  hintText: _produtoLabel ?? 'Nome comercial, dosagem ou forma…',
                   suggestionsCallback: (query) => ref
                       .read(estoqueRemoteDataSourceProvider)
                       .searchProdutos(query: query),
-                  itemLabel: (produto) => produto.nome,
+                  itemLabel: (produto) => produto.nomeComercial,
+                  itemSubtitle: (produto) => produto.detalhesLabel,
                   onSelected: (produto) {
                     setState(() {
                       _produtoId = produto.id;
-                      _produtoLabel = produto.nome;
-                      _produtoController.text = produto.nome;
+                      _produtoLabel = produto.displayLabel;
+                      _produtoController.text = produto.displayLabel;
                     });
                   },
                 ),
                 SizedBox(height: s.sm),
-                DropdownButtonFormField<String>(
-                  key: ValueKey('novo-fornecedor-$_fornecedorId'),
-                  initialValue: _fornecedorId,
-                  decoration: const InputDecoration(
-                    labelText: 'Fornecedor',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: widget.fornecedores
-                      .map(
-                        (f) => DropdownMenuItem(
-                          value: f.id,
-                          child: Text(f.nome),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (value) =>
-                      setState(() => _fornecedorId = value),
+                AsyncTypeAheadField<FornecedorDetalheModel>(
+                  controller: _fornecedorController,
+                  labelText: 'Fornecedor',
+                  hintText: _fornecedorLabel ?? 'Digite para pesquisar…',
+                  suggestionsCallback: (query) async {
+                    final result = await ref
+                        .read(fornecedorRemoteDataSourceProvider)
+                        .search(query: query, pageSize: 10);
+                    return result.items;
+                  },
+                  itemLabel: (fornecedor) => fornecedor.nome,
+                  itemSubtitle: (fornecedor) {
+                    final parts = <String>[
+                      if (fornecedor.nuit != null &&
+                          fornecedor.nuit!.trim().isNotEmpty)
+                        'NUIT ${fornecedor.nuit}',
+                      if (fornecedor.telefone != null &&
+                          fornecedor.telefone!.trim().isNotEmpty)
+                        fornecedor.telefone!.trim(),
+                    ];
+                    return parts.join(' · ');
+                  },
+                  onSelected: (fornecedor) {
+                    setState(() {
+                      _fornecedorId = fornecedor.id;
+                      _fornecedorLabel = fornecedor.nome;
+                      _fornecedorController.text = fornecedor.nome;
+                    });
+                  },
                 ),
                 SizedBox(height: s.sm),
                 TextField(

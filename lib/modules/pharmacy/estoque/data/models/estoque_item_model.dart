@@ -9,6 +9,9 @@ class EstoqueDashboardModel {
     required this.lotesAExpirar,
     required this.lotesExpirados,
     required this.valorTotalInventario,
+    this.lotesEmRecall = 0,
+    this.lotesEmQuarentena = 0,
+    this.lotesIncinerados = 0,
   });
 
   factory EstoqueDashboardModel.fromJson(Map<String, dynamic> json) {
@@ -19,6 +22,9 @@ class EstoqueDashboardModel {
       lotesAExpirar: _int(json['lotesAExpirar']),
       lotesExpirados: _int(json['lotesExpirados']),
       valorTotalInventario: _num(json['valorTotalInventario']),
+      lotesEmRecall: _int(json['lotesEmRecall']),
+      lotesEmQuarentena: _int(json['lotesEmQuarentena']),
+      lotesIncinerados: _int(json['lotesIncinerados']),
     );
   }
 
@@ -28,6 +34,9 @@ class EstoqueDashboardModel {
   final int lotesAExpirar;
   final int lotesExpirados;
   final num valorTotalInventario;
+  final int lotesEmRecall;
+  final int lotesEmQuarentena;
+  final int lotesIncinerados;
 
   EstoqueDashboard toEntity() => EstoqueDashboard(
         produtosEmStock: produtosEmStock,
@@ -36,6 +45,9 @@ class EstoqueDashboardModel {
         lotesAExpirar: lotesAExpirar,
         lotesExpirados: lotesExpirados,
         valorTotalInventario: valorTotalInventario,
+        lotesEmRecall: lotesEmRecall,
+        lotesEmQuarentena: lotesEmQuarentena,
+        lotesIncinerados: lotesIncinerados,
       );
 }
 
@@ -61,15 +73,19 @@ class EstoqueItemModel {
     this.quantidadeTotal = 0,
     this.quantidadeInicial = 0,
     this.quantidadeQuarentena = 0,
+    this.quantidadeIncinerada = 0,
     this.precoCompra = 0,
     this.precoVenda,
     this.estadoSanitario,
+    this.estadoSanitarioEfetivo,
+    this.acoesPermitidas = const [],
     this.disponibilidade,
     this.ultimaAtualizacao,
     this.estoqueMinimo = 0,
   });
 
   factory EstoqueItemModel.fromJson(Map<String, dynamic> json) {
+    final rawAcoes = json['acoesPermitidas'];
     return EstoqueItemModel(
       id: json['id']?.toString() ?? '',
       produtoId: json['produtoId']?.toString() ?? '',
@@ -92,9 +108,14 @@ class EstoqueItemModel {
       quantidadeTotal: _readTotal(json),
       quantidadeInicial: _num(json['quantidadeInicial']),
       quantidadeQuarentena: _num(json['quantidadeQuarentena']),
+      quantidadeIncinerada: _num(json['quantidadeIncinerada']),
       precoCompra: _num(json['precoCompra']),
       precoVenda: json['precoVenda'] == null ? null : _num(json['precoVenda']),
       estadoSanitario: json['estadoSanitario']?.toString(),
+      estadoSanitarioEfetivo: json['estadoSanitarioEfetivo']?.toString(),
+      acoesPermitidas: rawAcoes is List
+          ? rawAcoes.map((e) => e.toString()).toList()
+          : const [],
       disponibilidade: json['disponibilidade']?.toString(),
       ultimaAtualizacao: _date(json['ultimaAtualizacao']),
       estoqueMinimo: _num(json['estoqueMinimo']),
@@ -121,9 +142,12 @@ class EstoqueItemModel {
   final num quantidadeTotal;
   final num quantidadeInicial;
   final num quantidadeQuarentena;
+  final num quantidadeIncinerada;
   final num precoCompra;
   final num? precoVenda;
   final String? estadoSanitario;
+  final String? estadoSanitarioEfetivo;
+  final List<String> acoesPermitidas;
   final String? disponibilidade;
   final DateTime? ultimaAtualizacao;
   final num estoqueMinimo;
@@ -149,9 +173,12 @@ class EstoqueItemModel {
         quantidadeTotal: quantidadeTotal,
         quantidadeInicial: quantidadeInicial,
         quantidadeQuarentena: quantidadeQuarentena,
+        quantidadeIncinerada: quantidadeIncinerada,
         precoCompra: precoCompra,
         precoVenda: precoVenda,
         estadoSanitario: estadoSanitario,
+        estadoSanitarioEfetivo: estadoSanitarioEfetivo,
+        acoesPermitidas: acoesPermitidas,
         disponibilidade: disponibilidade,
         ultimaAtualizacao: ultimaAtualizacao,
         estoqueMinimo: estoqueMinimo,
@@ -175,45 +202,37 @@ num _num(dynamic value) {
 }
 
 num _readDisponivel(Map<String, dynamic> json) {
-  final top = _num(json['quantidadeDisponivel']);
-  if (top > 0) return top;
+  if (json.containsKey('quantidadeDisponivel') &&
+      json['quantidadeDisponivel'] != null) {
+    return _num(json['quantidadeDisponivel']);
+  }
 
   final balance = json['stockBalance'];
-  if (balance is Map<String, dynamic>) {
-    final nested = _num(balance['quantidadeDisponivel']);
-    if (nested > 0) return nested;
-    final total = _num(balance['quantidadeTotal']);
-    if (total > 0) {
-      final quarentena = _num(json['quantidadeQuarentena']);
-      return total > quarentena ? total - quarentena : 0;
-    }
+  if (balance is Map<String, dynamic> &&
+      balance['quantidadeDisponivel'] != null) {
+    return _num(balance['quantidadeDisponivel']);
   }
 
-  final total = _num(json['quantidadeTotal']);
-  if (total > 0) {
-    final quarentena = _num(json['quantidadeQuarentena']);
-    return total > quarentena ? total - quarentena : 0;
-  }
-
-  return top;
+  final total = _readTotal(json);
+  final quarentena = _num(json['quantidadeQuarentena']);
+  return total > quarentena ? total - quarentena : 0;
 }
 
 num _readTotal(Map<String, dynamic> json) {
-  final top = _num(json['quantidadeTotal']);
-  if (top > 0) return top;
-
-  final balance = json['stockBalance'];
-  if (balance is Map<String, dynamic>) {
-    final nested = _num(balance['quantidadeTotal']);
-    if (nested > 0) return nested;
-    final disponivel = _num(balance['quantidadeDisponivel']);
-    if (disponivel > 0) return disponivel;
+  if (json.containsKey('quantidadeTotal') && json['quantidadeTotal'] != null) {
+    return _num(json['quantidadeTotal']);
   }
 
-  final disponivel = _num(json['quantidadeDisponivel']);
-  if (disponivel > 0) return disponivel;
+  final balance = json['stockBalance'];
+  if (balance is Map<String, dynamic> && balance['quantidadeTotal'] != null) {
+    return _num(balance['quantidadeTotal']);
+  }
 
-  return top;
+  if (json['quantidadeDisponivel'] != null) {
+    return _num(json['quantidadeDisponivel']);
+  }
+
+  return 0;
 }
 
 DateTime? _date(dynamic value) {

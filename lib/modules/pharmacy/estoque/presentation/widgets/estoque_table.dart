@@ -29,6 +29,8 @@ class EstoqueTable extends StatelessWidget {
     'P. compra',
     'P. venda',
     'Stock',
+    'Quarentena',
+    'Incineração',
     'Ações',
   ];
 
@@ -47,7 +49,7 @@ class EstoqueTable extends StatelessWidget {
       columns: [
         for (var i = 0; i < _columnLabels.length; i++)
           DataColumn(
-            numeric: i >= 3 && i <= 5,
+            numeric: i >= 3 && i <= 7,
             label: Text(
               _columnLabels[i].toUpperCase(),
               style: textTheme.erpTableHeader.copyWith(color: t.textMuted),
@@ -83,6 +85,16 @@ class EstoqueTable extends StatelessWidget {
                   Text(LoteStockUtils.formatDisponivelFromNum(item.quantidadeDisponivel)),
                   EstoqueBadges.stock(context, item),
                 ],
+              ),
+            ),
+            DataCell(
+              Text(
+                LoteStockUtils.formatDisponivelFromNum(item.quantidadeQuarentena),
+              ),
+            ),
+            DataCell(
+              Text(
+                LoteStockUtils.formatDisponivelFromNum(item.quantidadeIncinerada),
               ),
             ),
             DataCell(

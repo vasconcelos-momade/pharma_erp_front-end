@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../../../../../app/router/routes.dart';
 import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/utils/lote_stock_utils.dart';
@@ -12,7 +10,6 @@ import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/inputs/formatters/date_input_formatter.dart';
 import '../../../../../shared/widgets/layout/adaptive_side_sheet.dart';
-import '../../../lots/presentation/widgets/lot_actions_helper.dart';
 import '../../data/datasources/estoque_remote_datasource.dart';
 import '../../domain/entities/estoque_item.dart';
 import '../providers/estoque_provider.dart';
@@ -88,42 +85,6 @@ abstract final class EstoqueLoteActionsHelper {
         onClose: onClose,
       ),
     );
-  }
-
-  static Future<void> bloquearLote(
-    BuildContext context,
-    WidgetRef ref,
-    EstoqueItem item,
-  ) async {
-    final controller = ref.read(estoqueListProvider.notifier);
-    controller.setActionLoteId(item.id);
-    try {
-      await LotActionsHelper.moveToQuarentena(context, ref, item.toActionMap());
-      await controller.syncAfterMutation();
-      ref.invalidate(movimentacaoListProvider);
-    } finally {
-      controller.setActionLoteId(null);
-    }
-  }
-
-  static Future<void> liberarLote(
-    BuildContext context,
-    WidgetRef ref,
-    EstoqueItem item,
-  ) async {
-    final controller = ref.read(estoqueListProvider.notifier);
-    controller.setActionLoteId(item.id);
-    try {
-      await LotActionsHelper.revertQuarentena(context, ref, item.toActionMap());
-      await controller.syncAfterMutation();
-      ref.invalidate(movimentacaoListProvider);
-    } finally {
-      controller.setActionLoteId(null);
-    }
-  }
-
-  static void adicionarAoInventario(BuildContext context) {
-    context.push(AppRoutePaths.stockInventory);
   }
 }
 
@@ -676,15 +637,26 @@ class _MovimentacaoSanitariaFormContent extends ConsumerStatefulWidget {
 
 class _MovimentacaoSanitariaFormContentState
     extends ConsumerState<_MovimentacaoSanitariaFormContent> {
-  String _tipo = 'QUARENTENA';
+  static const _tipoLabels = <String, String>{
+    'QUARENTENA': 'Quarentena',
+    'LIBERACAO': 'Liberação',
+    'INCINERACAO': 'Incineração',
+    'RECALL': 'Recall',
+    'DEVOLUCAO_FORNECEDOR': 'Devolução ao fornecedor',
+  };
+
+  late String _tipo;
   late final TextEditingController _quantidadeController;
   late final TextEditingController _motivoController;
   late final TextEditingController _documentoController;
   bool _isSubmitting = false;
 
+  List<String> get _acoesPermitidas => widget.item.acoesPermitidas;
+
   @override
   void initState() {
     super.initState();
+    _tipo = _acoesPermitidas.isNotEmpty ? _acoesPermitidas.first : 'QUARENTENA';
     _quantidadeController = TextEditingController();
     _motivoController = TextEditingController();
     _documentoController = TextEditingController();
@@ -699,6 +671,21 @@ class _MovimentacaoSanitariaFormContentState
   }
 
   Future<void> _submit() async {
+    if (_acoesPermitidas.isEmpty) {
+      PharmaFeedback.error(
+        context,
+        'Não existem movimentações sanitárias permitidas para este lote.',
+      );
+      return;
+    }
+    if (!_acoesPermitidas.contains(_tipo)) {
+      PharmaFeedback.error(
+        context,
+        'A acção seleccionada não é permitida no estado sanitário actual.',
+      );
+      return;
+    }
+
     final motivo = _motivoController.text.trim();
     final documento = _documentoController.text.trim();
     final quantidade =
@@ -748,6 +735,8 @@ class _MovimentacaoSanitariaFormContentState
   Widget build(BuildContext context) {
     final s = context.spacing;
     final requiresQty = _tipo != 'RECALL';
+    final estado =
+        widget.item.estadoSanitarioEfetivo ?? widget.item.estadoSanitario ?? '—';
 
     return _EstoqueActionFormShell(
       title: 'Movimentação sanitária',
@@ -759,38 +748,38 @@ class _MovimentacaoSanitariaFormContentState
       form: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          DropdownButtonFormField<String>(
-            key: ValueKey('sanitaria-tipo-$_tipo'),
-            initialValue: _tipo,
-            decoration: const InputDecoration(
-              labelText: 'Tipo de movimentação',
-              border: OutlineInputBorder(),
-            ),
-            items: const [
-              DropdownMenuItem(
-                value: 'QUARENTENA',
-                child: Text('Quarentena'),
-              ),
-              DropdownMenuItem(
-                value: 'LIBERACAO',
-                child: Text('Liberação'),
-              ),
-              DropdownMenuItem(
-                value: 'INCINERACAO',
-                child: Text('Incineração'),
-              ),
-              DropdownMenuItem(value: 'RECALL', child: Text('Recall')),
-              DropdownMenuItem(
-                value: 'DEVOLUCAO_FORNECEDOR',
-                child: Text('Devolução ao fornecedor'),
-              ),
-            ],
-            onChanged: (value) {
-              if (value == null) return;
-              setState(() => _tipo = value);
-            },
+          Text(
+            'Estado sanitário: $estado',
+            style: Theme.of(context).textTheme.bodyMedium,
           ),
-          if (requiresQty) ...[
+          SizedBox(height: s.sm),
+          if (_acoesPermitidas.isEmpty)
+            Text(
+              'Nenhuma movimentação permitida neste estado (ex.: lote incinerado).',
+              style: Theme.of(context).textTheme.bodyMedium,
+            )
+          else
+            DropdownButtonFormField<String>(
+              key: ValueKey('sanitaria-tipo-$_tipo'),
+              initialValue: _acoesPermitidas.contains(_tipo) ? _tipo : _acoesPermitidas.first,
+              decoration: const InputDecoration(
+                labelText: 'Tipo de movimentação',
+                border: OutlineInputBorder(),
+              ),
+              items: _acoesPermitidas
+                  .map(
+                    (value) => DropdownMenuItem(
+                      value: value,
+                      child: Text(_tipoLabels[value] ?? value),
+                    ),
+                  )
+                  .toList(),
+              onChanged: (value) {
+                if (value == null) return;
+                setState(() => _tipo = value);
+              },
+            ),
+          if (requiresQty && _acoesPermitidas.isNotEmpty) ...[
             SizedBox(height: s.sm),
             TextField(
               controller: _quantidadeController,
@@ -801,23 +790,25 @@ class _MovimentacaoSanitariaFormContentState
               ),
             ),
           ],
-          SizedBox(height: s.sm),
-          TextField(
-            controller: _motivoController,
-            decoration: const InputDecoration(
-              labelText: 'Motivo',
-              border: OutlineInputBorder(),
+          if (_acoesPermitidas.isNotEmpty) ...[
+            SizedBox(height: s.sm),
+            TextField(
+              controller: _motivoController,
+              decoration: const InputDecoration(
+                labelText: 'Motivo',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 2,
             ),
-            maxLines: 2,
-          ),
-          SizedBox(height: s.sm),
-          TextField(
-            controller: _documentoController,
-            decoration: const InputDecoration(
-              labelText: 'Documento de referência (opcional)',
-              border: OutlineInputBorder(),
+            SizedBox(height: s.sm),
+            TextField(
+              controller: _documentoController,
+              decoration: const InputDecoration(
+                labelText: 'Documento de referência (opcional)',
+                border: OutlineInputBorder(),
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );

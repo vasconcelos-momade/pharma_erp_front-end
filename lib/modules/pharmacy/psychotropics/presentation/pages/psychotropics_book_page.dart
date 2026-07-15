@@ -7,8 +7,12 @@ import '../../../../../core/contracts/pagination_response.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
 import '../../../../../shared/navigation/adaptive_navigator.dart';
+import '../../../../../shared/responsive/responsive_builder.dart';
+import '../../../../../shared/widgets/cards/enterprise_list_card.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
+import '../../../../../shared/widgets/layout/enterprise_mobile_scroll_list.dart';
+import '../../../../../shared/widgets/layout/enterprise_mobile_toolbar.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../../../stock/presentation/widgets/movimentacoes_pagination.dart';
 import '../../../regulatory/data/datasources/regulatory_remote_datasource.dart';
@@ -194,171 +198,311 @@ class _PsychotropicsBookPageState extends ConsumerState<PsychotropicsBookPage> {
   Widget build(BuildContext context) {
     final dash = _dashboard?['kpis'] as Map<String, dynamic>?;
     final t = context.pharmaTokens;
-    return EnterpriseModuleHub(
-      title: 'Livro de Psicotrópicos',
-      subtitle:
-          'Livro oficial de entradas e saídas com saldos, conformidade e auditoria regulatória.',
-      tag: 'Regulatório',
-      actions: [IconButton(onPressed: _load, icon: const Icon(Icons.refresh))],
-      kpis: dash == null
-          ? null
-          : [
-              EnterpriseStatCard(
-                title: 'Movimentos',
-                value: '${dash['totalMovimentos'] ?? 0}',
-                icon: Icons.menu_book_outlined,
-              ),
-              EnterpriseStatCard(
-                title: 'Entradas',
-                value: '${dash['entradas'] ?? 0}',
-                icon: Icons.call_received_outlined,
-              ),
-              EnterpriseStatCard(
-                title: 'Saídas',
-                value: '${dash['saidas'] ?? 0}',
-                icon: Icons.call_made_outlined,
-              ),
-              EnterpriseStatCard(
-                title: 'Produtos',
-                value: '${dash['produtosMonitorados'] ?? 0}',
-                icon: Icons.medication_outlined,
-              ),
-            ],
-      filters: Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: [
-          SizedBox(
-            width: 280,
-            child: TextField(
-              controller: _searchController,
-              decoration: const InputDecoration(
-                hintText: 'Documento, produto, lote...',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(),
-              ),
-              onSubmitted: (value) {
-                setState(() {
-                  _search = value.trim();
-                  _page = 1;
-                });
-                _load();
-              },
+    final kpiCards = dash == null
+        ? <EnterpriseStatCard>[]
+        : [
+            EnterpriseStatCard(
+              title: 'Movimentos',
+              value: '${dash['totalMovimentos'] ?? 0}',
+              icon: Icons.menu_book_outlined,
+              density: StatCardDensity.compact,
             ),
-          ),
-          SizedBox(
-            width: 180,
-            child: DropdownButtonFormField<String?>(
-              initialValue: _tipoMovimento,
-              decoration: const InputDecoration(
-                labelText: 'Movimento',
-                border: OutlineInputBorder(),
-              ),
-              items: const [
-                DropdownMenuItem(value: null, child: Text('Todos')),
-                DropdownMenuItem(value: 'ENTRADA', child: Text('Entrada')),
-                DropdownMenuItem(value: 'SAIDA', child: Text('Saída')),
-                DropdownMenuItem(
-                  value: 'IMPORTACAO',
-                  child: Text('Importação'),
-                ),
-              ],
-              onChanged: (value) {
-                setState(() {
-                  _tipoMovimento = value;
-                  _page = 1;
-                });
-                _load();
-              },
+            EnterpriseStatCard(
+              title: 'Entradas',
+              value: '${dash['entradas'] ?? 0}',
+              icon: Icons.call_received_outlined,
+              density: StatCardDensity.compact,
             ),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          if (_loading) const LinearProgressIndicator(),
-          if (_error != null)
-            Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: Text(
-                _error!,
-                style: Theme.of(
-                  context,
-                ).textTheme.erpBody.copyWith(color: t.posDanger),
-              ),
+            EnterpriseStatCard(
+              title: 'Saídas',
+              value: '${dash['saidas'] ?? 0}',
+              icon: Icons.call_made_outlined,
+              density: StatCardDensity.compact,
             ),
-          Expanded(
-            child: _items.isEmpty && !_loading
-                ? const Center(
-                    child: Text('Sem resultados para os filtros selecionados.'),
-                  )
-                : EnterpriseDataTable(
-                    columns: const [
-                      DataColumn(label: Text('DOCUMENTO')),
-                      DataColumn(label: Text('PRODUTO')),
-                      DataColumn(label: Text('LOTE')),
-                      DataColumn(label: Text('MOVIMENTO')),
-                      DataColumn(label: Text('QTD')),
-                      DataColumn(label: Text('SALDO')),
-                    ],
-                    rowCount: _items.length,
-                    rowBuilder: (context, index) {
-                      final item = _items[index];
-                      return DataRow(
-                        onSelectChanged: (_) =>
-                            _openDetail(item['id'].toString()),
-                        cells: [
-                          DataCell(
-                            Text(item['numeroDocumento']?.toString() ?? '—'),
-                          ),
-                          DataCell(
-                            Text(item['produto']?['nome']?.toString() ?? '—'),
-                          ),
-                          DataCell(
-                            Text(
-                              item['lote']?['numeroLote']?.toString() ?? '—',
-                            ),
-                          ),
-                          DataCell(
-                            _PsychBadge(
-                              label: item['tipoMovimento']?.toString(),
-                            ),
-                          ),
-                          DataCell(Text('${item['quantidade'] ?? 0}')),
-                          DataCell(Text('${item['saldoAtual'] ?? 0}')),
-                        ],
-                      );
+            EnterpriseStatCard(
+              title: 'Produtos',
+              value: '${dash['produtosMonitorados'] ?? 0}',
+              icon: Icons.medication_outlined,
+              density: StatCardDensity.compact,
+            ),
+          ];
+
+    return ResponsiveBuilder(
+      builder: (context, constraints) {
+        final isMobile = !constraints.isTabletOrWider;
+
+        return EnterpriseModuleHub(
+          title: 'Livro de Psicotrópicos',
+          subtitle:
+              'Livro oficial de entradas e saídas com saldos, conformidade e auditoria regulatória.',
+          tag: 'Regulatório',
+          mobileKpisHorizontalScroll: true,
+          actions: isMobile
+              ? null
+              : [IconButton(onPressed: _load, icon: const Icon(Icons.refresh))],
+          kpis: isMobile ? null : (kpiCards.isEmpty ? null : kpiCards),
+          filters: isMobile ? null : _buildFilters(),
+          child: isMobile
+              ? EnterpriseMobileScrollList(
+                  kpis: kpiCards.isEmpty ? null : kpiCards,
+                  errorText: _error,
+                  stickyHeader: EnterpriseMobileToolbar(
+                    searchController: _searchController,
+                    searchHint: 'Documento, produto, lote...',
+                    enabled: !_loading,
+                    isLoading: _loading,
+                    hasFilters: _tipoMovimento != null || _search.isNotEmpty,
+                    onSearchSubmitted: (value) {
+                      setState(() {
+                        _search = value.trim();
+                        _page = 1;
+                      });
+                      _load();
                     },
+                    onOpenFilters: () => _openMobileFilters(context),
+                    onClearFilters: () async {
+                      setState(() {
+                        _search = '';
+                        _tipoMovimento = null;
+                        _page = 1;
+                        _searchController.clear();
+                      });
+                      await _load();
+                    },
+                    onRefresh: _load,
                   ),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          MovimentacoesPagination(
-            page: _page,
-            pageSize: _pageSize,
-            hasMore: _hasMore,
-            isBusy: _loading,
-            totalCount: _total,
-            itemsOnPage: _items.length,
-            onPageChanged: (nextPage) {
-              setState(() => _page = nextPage);
-              _load();
-            },
-            onPageSizeChanged: (value) {
+                  itemCount: _items.length,
+                  itemBuilder: (context, index) {
+                    final item = _items[index];
+                    return EnterpriseListCard(
+                      leading: Icons.menu_book_outlined,
+                      title: item['produto']?['nome']?.toString() ?? '—',
+                      subtitle: item['numeroDocumento']?.toString() ?? '—',
+                      chip: EnterpriseStatusChip(
+                        label: item['tipoMovimento']?.toString() ?? '—',
+                      ),
+                      metadata: [
+                        EnterpriseListCardMeta(
+                          label:
+                              'Lote: ${item['lote']?['numeroLote']?.toString() ?? '—'}',
+                        ),
+                        EnterpriseListCardMeta(
+                          label:
+                              'Qtd: ${item['quantidade'] ?? 0} · Saldo: ${item['saldoAtual'] ?? 0}',
+                          emphasized: true,
+                        ),
+                      ],
+                      onTap: () => _openDetail(item['id'].toString()),
+                    );
+                  },
+                  hasMore: false,
+                  isLoading: _loading,
+                  emptyMessage: 'Sem resultados para os filtros selecionados.',
+                  totalCount: _total,
+                  totalCountLabel: 'movimentos',
+                )
+              : Column(
+                  children: [
+                    if (_loading) const LinearProgressIndicator(),
+                    if (_error != null)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                        child: Text(
+                          _error!,
+                          style: Theme.of(context)
+                              .textTheme
+                              .erpBody
+                              .copyWith(color: t.posDanger),
+                        ),
+                      ),
+                    Expanded(
+                      child: _items.isEmpty && !_loading
+                          ? const Center(
+                              child: Text(
+                                'Sem resultados para os filtros selecionados.',
+                              ),
+                            )
+                          : EnterpriseDataTable(
+                              columns: const [
+                                DataColumn(label: Text('DOCUMENTO')),
+                                DataColumn(label: Text('PRODUTO')),
+                                DataColumn(label: Text('LOTE')),
+                                DataColumn(label: Text('MOVIMENTO')),
+                                DataColumn(label: Text('QTD')),
+                                DataColumn(label: Text('SALDO')),
+                              ],
+                              rowCount: _items.length,
+                              rowBuilder: (context, index) {
+                                final item = _items[index];
+                                return DataRow(
+                                  onSelectChanged: (_) =>
+                                      _openDetail(item['id'].toString()),
+                                  cells: [
+                                    DataCell(
+                                      Text(
+                                        item['numeroDocumento']?.toString() ??
+                                            '—',
+                                      ),
+                                    ),
+                                    DataCell(
+                                      Text(
+                                        item['produto']?['nome']?.toString() ??
+                                            '—',
+                                      ),
+                                    ),
+                                    DataCell(
+                                      Text(
+                                        item['lote']?['numeroLote']
+                                                ?.toString() ??
+                                            '—',
+                                      ),
+                                    ),
+                                    DataCell(
+                                      _PsychBadge(
+                                        label: item['tipoMovimento']?.toString(),
+                                      ),
+                                    ),
+                                    DataCell(Text('${item['quantidade'] ?? 0}')),
+                                    DataCell(Text('${item['saldoAtual'] ?? 0}')),
+                                  ],
+                                );
+                              },
+                            ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    MovimentacoesPagination(
+                      page: _page,
+                      pageSize: _pageSize,
+                      hasMore: _hasMore,
+                      isBusy: _loading,
+                      totalCount: _total,
+                      itemsOnPage: _items.length,
+                      onPageChanged: (nextPage) {
+                        setState(() => _page = nextPage);
+                        _load();
+                      },
+                      onPageSizeChanged: (value) {
+                        setState(() {
+                          _pageSize = value;
+                          _page = 1;
+                        });
+                        _load();
+                      },
+                    ),
+                    Text(
+                      'Total: $_total movimento(s)',
+                      style: Theme.of(context)
+                          .textTheme
+                          .erpCaption
+                          .copyWith(color: t.textMuted),
+                    ),
+                  ],
+                ),
+        );
+      },
+    );
+  }
+
+  Widget _buildFilters() {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        SizedBox(
+          width: 280,
+          child: TextField(
+            controller: _searchController,
+            decoration: const InputDecoration(
+              hintText: 'Documento, produto, lote...',
+              prefixIcon: Icon(Icons.search),
+              border: OutlineInputBorder(),
+            ),
+            onSubmitted: (value) {
               setState(() {
-                _pageSize = value;
+                _search = value.trim();
                 _page = 1;
               });
               _load();
             },
           ),
-          Text(
-            'Total: $_total movimento(s)',
-            style: Theme.of(
-              context,
-            ).textTheme.erpCaption.copyWith(color: t.textMuted),
+        ),
+        SizedBox(
+          width: 180,
+          child: DropdownButtonFormField<String?>(
+            initialValue: _tipoMovimento,
+            decoration: const InputDecoration(
+              labelText: 'Movimento',
+              border: OutlineInputBorder(),
+            ),
+            items: const [
+              DropdownMenuItem(value: null, child: Text('Todos')),
+              DropdownMenuItem(value: 'ENTRADA', child: Text('Entrada')),
+              DropdownMenuItem(value: 'SAIDA', child: Text('Saída')),
+              DropdownMenuItem(
+                value: 'IMPORTACAO',
+                child: Text('Importação'),
+              ),
+            ],
+            onChanged: (value) {
+              setState(() {
+                _tipoMovimento = value;
+                _page = 1;
+              });
+              _load();
+            },
           ),
-        ],
-      ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _openMobileFilters(BuildContext context) async {
+    String? tipo = _tipoMovimento;
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DropdownButtonFormField<String?>(
+                    initialValue: tipo,
+                    decoration: const InputDecoration(
+                      labelText: 'Movimento',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: null, child: Text('Todos')),
+                      DropdownMenuItem(value: 'ENTRADA', child: Text('Entrada')),
+                      DropdownMenuItem(value: 'SAIDA', child: Text('Saída')),
+                      DropdownMenuItem(
+                        value: 'IMPORTACAO',
+                        child: Text('Importação'),
+                      ),
+                    ],
+                    onChanged: (value) => setModalState(() => tipo = value),
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton(
+                    onPressed: () {
+                      setState(() {
+                        _tipoMovimento = tipo;
+                        _page = 1;
+                      });
+                      Navigator.of(context).pop();
+                      _load();
+                    },
+                    child: const Text('Aplicar'),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 }

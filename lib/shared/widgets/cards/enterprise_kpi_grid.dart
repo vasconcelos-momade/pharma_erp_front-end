@@ -27,6 +27,25 @@ class EnterpriseKpiGrid extends StatelessWidget {
     final screen = context.pharmaScreen;
     final cardHeight = PharmaScreenLayout.kpiCardHeight(screen);
 
+    // Mobile: métricas em scroll horizontal (design system).
+    if (screen == PharmaScreenSize.mobile) {
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            for (var i = 0; i < cards.length; i++) ...[
+              SizedBox(
+                width: 220,
+                height: cardHeight,
+                child: cards[i],
+              ),
+              if (i < cards.length - 1) SizedBox(width: s.sm),
+            ],
+          ],
+        ),
+      );
+    }
+
     return LayoutBuilder(
       builder: (context, constraints) {
         final cross = PharmaScreenLayout.kpiCrossAxisCount(constraints.maxWidth);

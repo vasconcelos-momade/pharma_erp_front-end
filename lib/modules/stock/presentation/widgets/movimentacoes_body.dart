@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/spacing.dart';
 import '../../../../shared/responsive/pharma_screen_layout.dart';
+import '../../../../shared/widgets/layout/enterprise_mobile_scroll_list.dart';
+import '../../domain/entities/movimentacao.dart';
 import '../providers/movimentacao_provider.dart';
+import 'movimentacoes_mobile_card.dart';
 import 'movimentacoes_overview_cards.dart';
 import 'movimentacoes_pagination.dart';
 import 'movimentacoes_state_widgets.dart';
@@ -66,7 +69,7 @@ class MovimentacoesBody extends ConsumerWidget {
   }
 }
 
-class _MovimentacoesMobileBody extends ConsumerWidget {
+class _MovimentacoesMobileBody extends ConsumerStatefulWidget {
   const _MovimentacoesMobileBody({
     required this.searchController,
     required this.listState,
@@ -76,52 +79,73 @@ class _MovimentacoesMobileBody extends ConsumerWidget {
   final MovimentacaoListState listState;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final s = context.spacing;
-    final query = listState.query;
-    final notifier = ref.read(movimentacaoListProvider.notifier);
+  ConsumerState<_MovimentacoesMobileBody> createState() =>
+      _MovimentacoesMobileBodyState();
+}
 
-    return CustomScrollView(
-      slivers: [
-        SliverToBoxAdapter(
-          child: MovimentacoesToolbar(
-            searchController: searchController,
-            state: listState,
+class _MovimentacoesMobileBodyState
+    extends ConsumerState<_MovimentacoesMobileBody> {
+  List<Movimentacao> _accumulatedItems = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _accumulatedItems = List.of(widget.listState.items);
+  }
+
+  @override
+  void didUpdateWidget(covariant _MovimentacoesMobileBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final prev = oldWidget.listState;
+    final next = widget.listState;
+    if (prev.query.page != next.query.page ||
+        prev.query.search != next.query.search ||
+        prev.query.tipo != next.query.tipo ||
+        prev.query.origem != next.query.origem ||
+        prev.query.quickFilter != next.query.quickFilter ||
+        prev.query.dataInicio != next.query.dataInicio ||
+        prev.query.dataFim != next.query.dataFim ||
+        prev.query.pageSize != next.query.pageSize) {
+      if (next.query.page == 1) {
+        _accumulatedItems = List.of(next.items);
+      } else {
+        _accumulatedItems = [
+          ..._accumulatedItems,
+          ...next.items.where(
+            (e) => !_accumulatedItems.any((a) => a.id == e.id),
           ),
-        ),
-        SliverToBoxAdapter(child: SizedBox(height: s.md)),
-        SliverToBoxAdapter(
-          child: MovimentacoesOverviewCards(
-            overview: listState.overview,
-            hasFilters: query.hasFilters,
-          ),
-        ),
-        if (listState.errorMessage != null) ...[
-          SliverToBoxAdapter(child: SizedBox(height: s.md)),
-          SliverToBoxAdapter(
-            child: MovimentacoesInfoBanner(message: listState.errorMessage!),
-          ),
-        ],
-        SliverToBoxAdapter(child: SizedBox(height: s.md)),
-        SliverToBoxAdapter(
-          child: _MovimentacoesResultsPane(
-            listState: listState,
-            embedded: true,
-          ),
-        ),
-        SliverToBoxAdapter(child: SizedBox(height: s.md)),
-        SliverToBoxAdapter(
-          child: MovimentacoesPagination(
-            page: query.page,
-            pageSize: query.pageSize,
-            totalCount: listState.overview.totalMovimentos,
-            hasMore: listState.hasMore,
-            isBusy: listState.isBusy,
-            onPageChanged: notifier.goToPage,
-            onPageSizeChanged: notifier.setPageSize,
-          ),
-        ),
-      ],
+        ];
+      }
+    } else if (prev.items != next.items && next.query.page == 1) {
+      _accumulatedItems = List.of(next.items);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final listState = widget.listState;
+    final notifier = ref.read(movimentacaoListProvider.notifier);
+    final kpiCards = MovimentacoesOverviewCards.buildCards(
+      overview: listState.overview,
+      hasFilters: listState.query.hasFilters,
+    );
+
+    return EnterpriseMobileScrollList(
+      kpis: kpiCards,
+      errorText: listState.errorMessage,
+      stickyHeader: MovimentacoesToolbar(
+        searchController: widget.searchController,
+        state: listState,
+      ),
+      itemCount: _accumulatedItems.length,
+      itemBuilder: (context, index) =>
+          MovimentacoesMobileCard(item: _accumulatedItems[index]),
+      hasMore: listState.hasMore,
+      isLoading: listState.isBusy,
+      onLoadMore: () => notifier.goToPage(listState.query.page + 1),
+      emptyMessage: 'Nenhuma movimentação registada',
+      totalCount: listState.overview.totalMovimentos,
+      totalCountLabel: 'movimentos',
     );
   }
 }
@@ -129,11 +153,9 @@ class _MovimentacoesMobileBody extends ConsumerWidget {
 class _MovimentacoesResultsPane extends ConsumerWidget {
   const _MovimentacoesResultsPane({
     required this.listState,
-    this.embedded = false,
   });
 
   final MovimentacaoListState listState;
-  final bool embedded;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -145,9 +167,7 @@ class _MovimentacoesResultsPane extends ConsumerWidget {
       switchInCurve: Curves.easeOut,
       switchOutCurve: Curves.easeIn,
       child: switch (listState.viewState) {
-        MovimentacaoViewState.loading => MovimentacoesLoadingSkeleton(
-          embedded: embedded,
-        ),
+        MovimentacaoViewState.loading => const MovimentacoesLoadingSkeleton(),
         MovimentacaoViewState.updating => Stack(
           children: [
             MovimentacoesTable(items: listState.items),

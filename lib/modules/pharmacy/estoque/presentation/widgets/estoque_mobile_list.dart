@@ -134,6 +134,20 @@ class EstoqueMobileCard extends StatelessWidget {
                 ],
               ),
               SizedBox(height: s.xxs),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Quarentena: ${LoteStockUtils.formatDisponivelFromNum(item.quantidadeQuarentena)}',
+                    style: theme.textTheme.erpCaption.copyWith(color: t.textMuted),
+                  ),
+                  Text(
+                    'Incineração: ${LoteStockUtils.formatDisponivelFromNum(item.quantidadeIncinerada)}',
+                    style: theme.textTheme.erpCaption.copyWith(color: t.textMuted),
+                  ),
+                ],
+              ),
+              SizedBox(height: s.xxs),
               Text(
                 '${item.fornecedorNome ?? '—'} • Compra ${item.precoCompra} • Venda ${item.precoVenda ?? '—'}',
                 style: theme.textTheme.erpCaption.copyWith(color: t.textMuted),
