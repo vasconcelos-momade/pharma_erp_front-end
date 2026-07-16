@@ -460,6 +460,7 @@ class _PsychotropicsBookPageState extends ConsumerState<PsychotropicsBookPage> {
     String? tipo = _tipoMovimento;
     await showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       builder: (sheetContext) {
         return StatefulBuilder(
           builder: (context, setModalState) {

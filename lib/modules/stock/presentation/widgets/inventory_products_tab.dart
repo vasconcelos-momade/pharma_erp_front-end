@@ -6,7 +6,7 @@ import '../../../../core/theme/extensions.dart';
 import '../../../../shared/widgets/cards/enterprise_list_card.dart';
 import '../../../../shared/widgets/layout/enterprise_mobile_scroll_list.dart';
 import '../../../../shared/widgets/layout/enterprise_mobile_toolbar.dart';
-import '../../../../shared/widgets/layout/enterprise_module_search_bar.dart';
+import '../../../../shared/widgets/inputs/enterprise_search_field.dart';
 import '../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../../../shared/widgets/tables/table_typography.dart';
 import '../../../../shared/widgets/tables/enterprise_pagination.dart';
@@ -126,13 +126,11 @@ class _InventoryProductsTabState extends ConsumerState<InventoryProductsTab> {
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Expanded(
-              child: EnterpriseModuleSearchBar(
+            IgnorePointer(
+              ignoring: catalogState.isLoading,
+              child: EnterpriseSearchField(
                 controller: widget.searchController,
-                hintText:
-                    'Pesquisar por nome, substancia activa ou fornecedor...',
-                enabled: !catalogState.isLoading,
-                onSubmitted: catalogController.onSearchChanged,
+                hintText: 'Pesquisar por nome, substancia activa ou fornecedor...',
                 onChanged: catalogController.onSearchChanged,
               ),
             ),

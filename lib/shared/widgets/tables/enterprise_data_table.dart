@@ -76,50 +76,61 @@ class EnterpriseDataTable extends StatelessWidget {
   final Future<void> Function()? onRefresh;
 
   Widget _buildTableContent(BuildContext context, BoxConstraints c, PharmaTokens t, DensityTokens s) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          minWidth: c.maxWidth.isFinite ? c.maxWidth : responsive.Breakpoints.tablet,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            DataTable(
-              showCheckboxColumn: showCheckboxColumn,
-              sortColumnIndex: sortColumnIndex,
-              sortAscending: sortAscending,
-              onSelectAll: onSelectAll,
-              headingRowColor: WidgetStatePropertyAll(
-                t.bgSecondary.withValues(alpha: 0.92),
-              ),
-              dataRowMinHeight:
-                  dataRowMinHeight ?? DesignMetrics.tableRowHeightMin,
-              dataRowMaxHeight:
-                  dataRowMaxHeight ?? DesignMetrics.tableRowHeightMax,
-              horizontalMargin: PharmaScreenLayout.isDesktop(context) ? s.lg : s.md,
-              columnSpacing: columnSpacing ??
-                  (PharmaScreenLayout.isDesktop(context) ? s.xxl : s.lg),
-              columns: columns,
-              rows: List.generate(rowCount, (i) => rowBuilder(context, i)),
+    final viewportWidth = c.maxWidth.isFinite
+        ? c.maxWidth
+        : responsive.Breakpoints.tablet;
+
+    final tableBody = SizedBox(
+      width: viewportWidth,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          DataTable(
+            showCheckboxColumn: showCheckboxColumn,
+            sortColumnIndex: sortColumnIndex,
+            sortAscending: sortAscending,
+            onSelectAll: onSelectAll,
+            headingRowColor: WidgetStatePropertyAll(
+              t.bgSecondary.withValues(alpha: 0.92),
             ),
-            if (hasMore || isLoading)
-              Padding(
-                padding: EdgeInsets.all(s.md),
-                child: Center(
-                  child: isLoading
-                      ? const CircularProgressIndicator()
-                      : TextButton(
-                          onPressed: onLoadMore,
-                          child: const Text('Carregar mais'),
-                        ),
-                ),
+            dataRowMinHeight:
+                dataRowMinHeight ?? DesignMetrics.tableRowHeightMin,
+            dataRowMaxHeight:
+                dataRowMaxHeight ?? DesignMetrics.tableRowHeightMax,
+            horizontalMargin: PharmaScreenLayout.isDesktop(context)
+                ? s.lg
+                : s.md,
+            columnSpacing: columnSpacing ??
+                (PharmaScreenLayout.isDesktop(context) ? s.xxl : s.lg),
+            columns: columns,
+            rows: List.generate(rowCount, (i) => rowBuilder(context, i)),
+          ),
+          if (hasMore || isLoading)
+            Padding(
+              padding: EdgeInsets.all(s.md),
+              child: Center(
+                child: isLoading
+                    ? const CircularProgressIndicator()
+                    : TextButton(
+                        onPressed: onLoadMore,
+                        child: const Text('Carregar mais'),
+                      ),
               ),
-          ],
-        ),
+            ),
+        ],
       ),
     );
+
+    // Scroll horizontal só quando o viewport é estreito para muitas colunas.
+    if (viewportWidth < responsive.Breakpoints.tablet && columns.length > 4) {
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: tableBody,
+      );
+    }
+
+    return tableBody;
   }
 
   @override
@@ -221,6 +232,13 @@ class EnterpriseDataTable extends StatelessWidget {
           clipBehavior: Clip.antiAlias,
           child: _buildTableContent(context, c, t, s),
         );
+
+        if (c.maxWidth.isFinite) {
+          tableContent = SizedBox(
+            width: c.maxWidth,
+            child: tableContent,
+          );
+        }
 
         if (boundedHeight) {
           tableContent = SingleChildScrollView(

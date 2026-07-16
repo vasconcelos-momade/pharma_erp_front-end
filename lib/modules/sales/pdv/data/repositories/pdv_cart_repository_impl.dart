@@ -97,28 +97,43 @@ class PdvCartRepositoryImpl implements PdvCartRepository {
     required String terminalId,
     required String idempotencyKey,
     required PdvPaymentMethod metodoPagamento,
+    String? clienteId,
     PdvCheckoutPatient? paciente,
     double? valorRecebido,
   }) async {
+    final pacienteNome = paciente?.nome?.trim();
+    final pacienteNid = paciente?.nid?.trim();
+    final prescritor = paciente?.prescritor?.trim();
+    final unidadeSanitaria = paciente?.unidadeSanitaria?.trim();
+    final hasPacientePayload =
+        (pacienteNome != null && pacienteNome.isNotEmpty) ||
+        paciente?.idade != null ||
+        (pacienteNid != null && pacienteNid.isNotEmpty);
+    final hasReceitaPayload =
+        (pacienteNid != null && pacienteNid.isNotEmpty) ||
+        (prescritor != null && prescritor.isNotEmpty) ||
+        (unidadeSanitaria != null && unidadeSanitaria.isNotEmpty);
+
     final response = await _remote.finalizarVenda(
       FinalizarVendaRequestModel(
         terminalId: terminalId,
         metodoPagamento: _toMetodoPagamentoModel(metodoPagamento),
         idempotencyKey: idempotencyKey,
+        clienteId: clienteId,
         valorRecebido: valorRecebido,
-        paciente: paciente == null
+        paciente: !hasPacientePayload
             ? null
             : PacienteCheckoutModel(
-                nome: paciente.nome,
-                idade: paciente.idade,
-                nid: paciente.nid,
+                nome: pacienteNome,
+                idade: paciente?.idade,
+                nid: pacienteNid,
               ),
-        receita: paciente == null
+        receita: !hasReceitaPayload
             ? null
             : ReceitaCheckoutModel(
-                numero: paciente.nid,
-                prescritor: paciente.prescritor,
-                unidadeSanitaria: paciente.unidadeSanitaria,
+                numero: pacienteNid,
+                prescritor: prescritor,
+                unidadeSanitaria: unidadeSanitaria,
               ),
       ),
     );

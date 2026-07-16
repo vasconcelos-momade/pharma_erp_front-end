@@ -33,7 +33,6 @@ class ProdutoCard extends StatelessWidget {
       subtitle: substancia != null && substancia.isNotEmpty
           ? 'Nome genérico: $substancia'
           : null,
-      leading: Icons.medication_outlined,
       chip: StatusBadge(active: product.ativo),
       metadata: metadata,
       trailingMeta: EnterpriseListCardMeta(

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/theme/design_tokens.dart';
-import '../../../core/theme/extensions.dart';
+import '../inputs/enterprise_search_field.dart';
 
 /// Campo de pesquisa padronizado para módulos enterprise (mobile e desktop).
 class EnterpriseModuleSearchBar extends StatefulWidget {
@@ -58,36 +57,17 @@ class _EnterpriseModuleSearchBarState extends State<EnterpriseModuleSearchBar> {
 
   @override
   Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
-    final field = TextField(
-      controller: widget.controller,
-      focusNode: widget.focusNode,
-      autofocus: widget.autofocus,
-      enabled: widget.enabled,
-      onSubmitted: widget.onSubmitted,
-      onChanged: widget.onChanged,
-      style: Theme.of(context).textTheme.erpBody.copyWith(color: t.textPrimary),
-      decoration: InputDecoration(
+    // Mantido por compatibilidade: todo o sistema deve usar EnterpriseSearchField.
+    // `onSubmitted` é mapeado para `onChanged` (mesmo fluxo de filtros/busca nas telas).
+    final onChanged = widget.onChanged ?? widget.onSubmitted;
+    return IgnorePointer(
+      ignoring: !widget.enabled,
+      child: EnterpriseSearchField(
         hintText: widget.hintText,
-        prefixIcon: Icon(Icons.search_rounded, color: t.textMuted, size: t.iconSm),
-        suffixIcon: widget.controller.text.isNotEmpty
-            ? IconButton(
-                icon: Icon(Icons.clear_rounded, color: t.textMuted, size: t.iconSm),
-                onPressed: widget.enabled
-                    ? () {
-                        widget.controller.clear();
-                        widget.onSubmitted('');
-                      }
-                    : null,
-              )
-            : null,
+        controller: widget.controller,
+        focusNode: widget.focusNode,
+        onChanged: onChanged,
       ),
-    );
-
-    if (widget.maxWidth == null) return field;
-    return ConstrainedBox(
-      constraints: BoxConstraints(maxWidth: widget.maxWidth!),
-      child: field,
     );
   }
 }

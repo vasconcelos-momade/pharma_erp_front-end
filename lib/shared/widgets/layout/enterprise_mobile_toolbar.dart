@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/design_metrics.dart';
 import '../../../core/theme/design_tokens.dart';
-import 'enterprise_module_search_bar.dart';
+import '../inputs/enterprise_search_field.dart';
 
 /// Barra de ferramentas mobile com pesquisa, filtros, exportação e atualização.
 class EnterpriseMobileToolbar extends StatelessWidget {
@@ -51,13 +51,6 @@ class EnterpriseMobileToolbar extends StatelessWidget {
       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
       visualDensity: VisualDensity.compact,
     );
-    final compactTextButtonStyle = TextButton.styleFrom(
-      minimumSize: Size(0, DesignMetrics.tabHeightMin),
-      padding: EdgeInsets.symmetric(horizontal: s.sm, vertical: 0),
-      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      visualDensity: VisualDensity.compact,
-    );
-
     return ColoredBox(
       color: t.bgPrimary,
       child: Container(
@@ -74,11 +67,13 @@ class EnterpriseMobileToolbar extends StatelessWidget {
               const LinearProgressIndicator(minHeight: 2),
               SizedBox(height: s.sm),
             ],
-            EnterpriseModuleSearchBar(
-              controller: searchController,
-              hintText: searchHint,
-              enabled: enabled,
-              onSubmitted: onSearchSubmitted,
+            IgnorePointer(
+              ignoring: !enabled,
+              child: EnterpriseSearchField(
+                controller: searchController,
+                hintText: searchHint,
+                onChanged: onSearchSubmitted,
+              ),
             ),
             SizedBox(height: s.sm),
             Row(
@@ -120,20 +115,25 @@ class EnterpriseMobileToolbar extends StatelessWidget {
                       ),
                     ),
                   ),
+                if ((showFiltersButton || reportAction != null || showRefreshButton) &&
+                    hasFilters &&
+                    onClearFilters != null)
+                  SizedBox(width: s.sm),
+                if (hasFilters && onClearFilters != null)
+                  SizedBox(
+                    width: DesignMetrics.toolbarHeight,
+                    height: DesignMetrics.toolbarHeight,
+                    child: IconButton(
+                      tooltip: 'Limpar filtros',
+                      onPressed: enabled ? () => onClearFilters?.call() : null,
+                      icon: Icon(
+                        Icons.filter_alt_off_outlined,
+                        size: t.iconSm,
+                      ),
+                    ),
+                  ),
               ],
             ),
-            if (hasFilters && onClearFilters != null) ...[
-              SizedBox(height: s.xs),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  style: compactTextButtonStyle,
-                  onPressed: enabled ? onClearFilters : null,
-                  icon: Icon(Icons.filter_alt_off_outlined, size: t.iconSm),
-                  label: const Text('Limpar filtros'),
-                ),
-              ),
-            ],
           ],
         ),
       ),
@@ -153,7 +153,6 @@ class EnterpriseDesktopListToolbar extends StatefulWidget {
     this.hasFilters = false,
     this.onClearFilters,
     this.trailingActions = const [],
-    this.searchMaxWidth = 520,
   });
 
   final TextEditingController searchController;
@@ -164,7 +163,6 @@ class EnterpriseDesktopListToolbar extends StatefulWidget {
   final bool hasFilters;
   final VoidCallback? onClearFilters;
   final List<Widget> trailingActions;
-  final double searchMaxWidth;
 
   @override
   State<EnterpriseDesktopListToolbar> createState() => _EnterpriseDesktopListToolbarState();
@@ -204,14 +202,12 @@ class _EnterpriseDesktopListToolbarState extends State<EnterpriseDesktopListTool
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Expanded(
-          flex: 3,
-          child: EnterpriseModuleSearchBar(
+        IgnorePointer(
+          ignoring: widget.isLoading,
+          child: EnterpriseSearchField(
             controller: widget.searchController,
             hintText: widget.searchHint,
-            enabled: !widget.isLoading,
-            onSubmitted: widget.onSearchSubmitted,
-            maxWidth: widget.searchMaxWidth,
+            onChanged: widget.onSearchSubmitted,
           ),
         ),
         for (final filter in widget.filterWidgets) ...[
@@ -226,18 +222,16 @@ class _EnterpriseDesktopListToolbarState extends State<EnterpriseDesktopListTool
             label: const Text('Limpar'),
           ),
         ],
+        const Spacer(),
         if (widget.trailingActions.isNotEmpty) ...[
           SizedBox(width: s.md),
-          Expanded(
-            flex: 2,
-            child: Align(
-              alignment: Alignment.topRight,
-              child: Wrap(
-                spacing: s.sm,
-                runSpacing: s.sm,
-                alignment: WrapAlignment.end,
-                children: widget.trailingActions,
-              ),
+          Align(
+            alignment: Alignment.topRight,
+            child: Wrap(
+              spacing: s.sm,
+              runSpacing: s.sm,
+              alignment: WrapAlignment.end,
+              children: widget.trailingActions,
             ),
           ),
         ],

@@ -66,15 +66,27 @@ class AppNavSection {
   final List<AppNavItem> items;
 }
 
-/// Menu ERP simplificado — hubs com tabs internas em vez de rotas duplicadas.
+/// Menu ERP — Dashboard com páginas dedicadas (sem hub de tabs).
 const List<AppNavSection> kAppNavSections = <AppNavSection>[
   AppNavSection(
     title: AppNavSections.dashboard,
     items: <AppNavItem>[
       AppNavItem(
-        label: 'Painel',
+        label: 'Executivo',
         path: AppRoutePaths.dashboard,
         icon: Icons.dashboard_outlined,
+        permissionModule: 'RELATORIOS',
+      ),
+      AppNavItem(
+        label: 'Farmácia',
+        path: AppRoutePaths.dashboardPharmacy,
+        icon: Icons.local_pharmacy_outlined,
+        permissionModule: 'RELATORIOS',
+      ),
+      AppNavItem(
+        label: 'Financeiro',
+        path: AppRoutePaths.dashboardFinance,
+        icon: Icons.account_balance_outlined,
         permissionModule: 'RELATORIOS',
       ),
     ],
@@ -120,7 +132,7 @@ const List<AppNavSection> kAppNavSections = <AppNavSection>[
       AppNavItem(
         label: 'Produtos',
         path: AppRoutePaths.products,
-        icon: Icons.inventory_outlined,
+        icon: Icons.medication_outlined,
         permissionModule: 'PRODUTOS',
       ),
       AppNavItem(

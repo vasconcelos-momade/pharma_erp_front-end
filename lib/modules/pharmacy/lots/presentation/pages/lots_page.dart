@@ -480,6 +480,7 @@ class _LotsPageState extends ConsumerState<LotsPage> {
   ) {
     showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       useSafeArea: true,
       builder: (_) => _LotsFiltersBottomSheet(

@@ -33,6 +33,10 @@ class _PharmacyDashboardPageState extends ConsumerState<PharmacyDashboardPage> {
     final dataSource = ref.watch(dashboardRemoteDataSourceProvider);
 
     return EnterpriseModuleHub(
+      title: 'Painel farmácia',
+      subtitle:
+          'Visão operacional de produtos, stock, validades e alertas sanitários.',
+      tag: 'Dashboard',
       scrollable: true,
       filters: DashboardPeriodFilters(
         query: _query,

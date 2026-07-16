@@ -117,7 +117,7 @@ class _CashflowPageState extends ConsumerState<CashflowPage> {
     if (!mounted || result == null) return;
 
     setState(() => _tableReloadToken++);
-    ref.invalidate(financeDashboardProvider(_query));
+    invalidateExecutiveAndFinanceDashboardsFrom(ref);
     _page = 1;
     _fetchTable();
 
@@ -306,7 +306,7 @@ class _CashflowPageState extends ConsumerState<CashflowPage> {
                   ? null
                   : () {
                       setState(() => _tableReloadToken++);
-                      ref.invalidate(financeDashboardProvider(_query));
+                      invalidateExecutiveAndFinanceDashboardsFrom(ref);
                       _page = 1;
                       _fetchTable();
                     },
@@ -349,7 +349,7 @@ class _CashflowPageState extends ConsumerState<CashflowPage> {
                     ? null
                     : () {
                         setState(() => _tableReloadToken++);
-                        ref.invalidate(financeDashboardProvider(_query));
+                        invalidateExecutiveAndFinanceDashboardsFrom(ref);
                         _page = 1;
                         _fetchTable();
                       },

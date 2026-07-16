@@ -27,6 +27,18 @@ final stockDashboardProvider =
   return ref.watch(dashboardRemoteDataSourceProvider).stockDashboard(query);
 });
 
+/// Invalida KPIs executivos e financeiros (ex.: após movimentos de fluxo de caixa).
+void invalidateExecutiveAndFinanceDashboards(Ref ref) {
+  ref.invalidate(executiveDashboardProvider);
+  ref.invalidate(financeDashboardProvider);
+}
+
+/// Variante para [WidgetRef] (páginas Consumer).
+void invalidateExecutiveAndFinanceDashboardsFrom(WidgetRef ref) {
+  ref.invalidate(executiveDashboardProvider);
+  ref.invalidate(financeDashboardProvider);
+}
+
 const _defaultExecutiveQuery = DashboardQuery();
 
 /// Contagem operacional para o indicador de alertas no shell (dados reais do dashboard executivo).

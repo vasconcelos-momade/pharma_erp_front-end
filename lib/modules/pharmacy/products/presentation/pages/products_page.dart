@@ -8,6 +8,7 @@ import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
 import '../../../../../shared/responsive/responsive_builder.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
+import '../../../../../shared/widgets/dialogs/enterprise_overlay_tokens.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../categories/domain/entities/category.dart';
 import '../../../categories/presentation/providers/category_provider.dart';
@@ -226,8 +227,9 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
     final scheme = Theme.of(context).colorScheme;
     showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
-      barrierColor: scheme.scrim.withValues(alpha: 0),
+      barrierColor: enterpriseOverlayScrim(context),
       backgroundColor: scheme.surface.withValues(alpha: 0),
       builder: (_) => ProdutoFiltersBottomSheet(
         initialAtivo: state.ativoFilter,
@@ -299,6 +301,7 @@ class _ProductsPageState extends ConsumerState<ProductsPage> {
           'A operação seguirá o padrão actual do sistema.',
       confirmText: 'Excluir',
       cancelText: 'Cancelar',
+      destructive: true,
     );
     if (!context.mounted || confirmed != true) return;
 

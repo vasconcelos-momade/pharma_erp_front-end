@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/catalog/pdv_catalog_cache_policy.dart';
 import '../../../../../core/errors/api_failure.dart';
+import '../../../customers/data/repositories/customer_repository_impl.dart';
+import '../../../customers/domain/entities/customer.dart';
 import '../../../../pharmacy/products/presentation/providers/product_provider.dart';
 import '../../../invoices/services/invoice_cache_policy.dart';
 import '../../../invoices/presentation/providers/invoice_list_provider.dart';
@@ -41,6 +43,8 @@ class PdvCheckoutController extends Notifier<PdvCheckoutState> {
     required PdvPaymentMethod metodoPagamento,
     PdvCheckoutPatient? paciente,
     double? valorRecebido,
+    String? nomeClienteDigitado,
+    bool criarClienteSeNecessario = false,
   }) async {
     final sessao = ref.read(caixaSessaoProvider).sessaoAtual;
     final cartState = ref.read(pdvCartProvider);
@@ -57,10 +61,33 @@ class PdvCheckoutController extends Notifier<PdvCheckoutState> {
     state = state.copyWith(isSubmitting: true, clearError: true);
 
     try {
+      var clienteId = cartState.hasSelectedCliente
+          ? cartState.selectedClienteId
+          : null;
+      final nomeDigitado = nomeClienteDigitado?.trim() ?? '';
+
+      if (
+        clienteId == null &&
+        criarClienteSeNecessario &&
+        nomeDigitado.isNotEmpty &&
+        nomeDigitado.toLowerCase() !=
+            PdvCartState.defaultClienteLabel.toLowerCase()
+      ) {
+        final created = await ref.read(customerRepositoryProvider).createCustomer(
+              CustomerFormPayload(
+                nome: nomeDigitado,
+                tipo: 'PACIENTE',
+                temPrescricao: cartState.requiresPatientDetails,
+              ),
+            );
+        clienteId = created.id;
+      }
+
       final result = await ref.read(pdvCartRepositoryProvider).finalizarVenda(
             terminalId: terminalId,
             idempotencyKey: idempotencyKey,
             metodoPagamento: metodoPagamento,
+            clienteId: clienteId,
             paciente: paciente,
             valorRecebido: valorRecebido,
           );

@@ -42,6 +42,7 @@ abstract class PdvCartRepository {
     required String terminalId,
     required String idempotencyKey,
     required PdvPaymentMethod metodoPagamento,
+    String? clienteId,
     PdvCheckoutPatient? paciente,
     double? valorRecebido,
   });

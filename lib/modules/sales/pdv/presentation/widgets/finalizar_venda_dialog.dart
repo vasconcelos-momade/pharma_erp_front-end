@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
 
 import '../../../../../core/errors/api_failure.dart';
 import '../../../../../core/theme/app_radius.dart';
@@ -11,7 +12,10 @@ import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/buttons/pharma_button_loader.dart';
+import '../../../customers/data/repositories/customer_repository_impl.dart';
+import '../../../customers/domain/entities/customer.dart';
 import '../../domain/entities/pdv_checkout.dart';
+import '../providers/pdv_cart_provider.dart';
 import '../providers/pdv_checkout_provider.dart';
 
 Future<PdvCheckoutResult?> showFinalizarVendaDialog(
@@ -68,6 +72,7 @@ class _FinalizarVendaDialogState
   late final TextEditingController _valorRecebidoController;
 
   PdvPaymentMethod _selectedMethod = PdvPaymentMethod.dinheiro;
+  bool _isApplyingCustomerSelection = false;
 
   bool get _isCashPayment => _selectedMethod == PdvPaymentMethod.dinheiro;
 
@@ -78,7 +83,9 @@ class _FinalizarVendaDialogState
   @override
   void initState() {
     super.initState();
-    _nomeController = TextEditingController();
+    _nomeController = TextEditingController(
+      text: PdvCartState.defaultClienteLabel,
+    );
     _idadeController = TextEditingController();
     _nidController = TextEditingController();
     _prescritorController = TextEditingController();
@@ -99,6 +106,7 @@ class _FinalizarVendaDialogState
 
   Future<void> _submit() async {
     final checkoutState = ref.read(pdvCheckoutProvider);
+    final cartState = ref.read(pdvCartProvider);
     if (checkoutState.isSubmitting) {
       return;
     }
@@ -108,18 +116,33 @@ class _FinalizarVendaDialogState
     }
 
     try {
+      final nomeDigitado = _nomeController.text.trim();
+      final nomePaciente = cartState.hasSelectedCliente
+          ? cartState.selectedClienteNome?.trim()
+          : (nomeDigitado.isEmpty ? null : nomeDigitado);
+      final idadeTexto = _idadeController.text.trim();
+      final nid = _nidController.text.trim();
+      final prescritor = _prescritorController.text.trim();
+      final unidadeSanitaria = _unidadeSanitariaController.text.trim();
+      final paciente = widget.requiresPatientDetails
+          ? PdvCheckoutPatient(
+              nome: nomePaciente,
+              idade: idadeTexto.isEmpty ? null : int.tryParse(idadeTexto),
+              nid: nid.isEmpty ? null : nid,
+              prescritor: prescritor.isEmpty ? null : prescritor,
+              unidadeSanitaria: unidadeSanitaria.isEmpty
+                  ? null
+                  : unidadeSanitaria,
+            )
+          : null;
+
       final result = await ref.read(pdvCheckoutProvider.notifier).finalizarVenda(
             metodoPagamento: _selectedMethod,
             valorRecebido: _isCashPayment ? _valorRecebido : null,
-            paciente: widget.requiresPatientDetails
-                ? PdvCheckoutPatient(
-                    nome: _nomeController.text.trim(),
-                    idade: int.tryParse(_idadeController.text.trim()) ?? 0,
-                    nid: _nidController.text.trim(),
-                    prescritor: _prescritorController.text.trim(),
-                    unidadeSanitaria: _unidadeSanitariaController.text.trim(),
-                  )
-                : null,
+            paciente: paciente,
+            nomeClienteDigitado: nomeDigitado,
+            criarClienteSeNecessario:
+                !cartState.hasSelectedCliente && nomeDigitado.isNotEmpty,
           );
 
       if (!mounted) {
@@ -147,21 +170,114 @@ class _FinalizarVendaDialogState
     }
   }
 
-  Widget _buildNomeField() {
-    return TextFormField(
+  InputDecoration _fieldDecoration(String label) {
+    return InputDecoration(
+      labelText: label,
+    );
+  }
+
+  Future<List<CustomerSummary>> _searchCustomers(String query) async {
+    final response = await ref.read(customerRepositoryProvider).listCustomers(
+          CustomerQuery(
+            page: 1,
+            pageSize: 8,
+            search: query,
+          ),
+        );
+    return response.items
+        .where(
+          (customer) =>
+              customer.nome.trim().toLowerCase() !=
+              PdvCartState.defaultClienteLabel.toLowerCase(),
+        )
+        .toList(growable: false);
+  }
+
+  void _applySelectedCustomer(CustomerSummary customer) {
+    _isApplyingCustomerSelection = true;
+    _nomeController
+      ..text = customer.nome
+      ..selection = TextSelection.collapsed(offset: customer.nome.length);
+    ref.read(pdvCartProvider.notifier).setSelectedCliente(
+          id: customer.id,
+          nome: customer.nome,
+        );
+    _isApplyingCustomerSelection = false;
+  }
+
+  void _handleNomeChanged(String value) {
+    if (_isApplyingCustomerSelection) {
+      return;
+    }
+    final trimmed = value.trim();
+    final cartState = ref.read(pdvCartProvider);
+    final selectedName = cartState.selectedClienteNome?.trim();
+    if (
+      cartState.hasSelectedCliente &&
+      (selectedName == null || trimmed.toLowerCase() != selectedName.toLowerCase())
+    ) {
+      ref.read(pdvCartProvider.notifier).clearSelectedCliente();
+    }
+  }
+
+  Widget _buildNomeField(PdvCartState cartState) {
+    return TypeAheadField<CustomerSummary>(
       controller: _nomeController,
-      decoration: const InputDecoration(
-        labelText: 'Nome do paciente',
-      ),
-      validator: (value) {
-        if (!widget.requiresPatientDetails) {
-          return null;
+      debounceDuration: const Duration(milliseconds: 350),
+      hideOnEmpty: true,
+      autoFlipDirection: true,
+      constraints: const BoxConstraints(maxHeight: 280),
+      suggestionsCallback: (pattern) async {
+        final query = pattern.trim();
+        if (query.length < 2) {
+          return const <CustomerSummary>[];
         }
-        if (value == null || value.trim().isEmpty) {
-          return 'Campo obrigatório.';
+        try {
+          return await _searchCustomers(query);
+        } catch (_) {
+          return const <CustomerSummary>[];
         }
-        return null;
       },
+      builder: (context, controller, focusNode) {
+        return TextFormField(
+          controller: controller,
+          focusNode: focusNode,
+          decoration: InputDecoration(
+            labelText: 'Nome do paciente',
+            helperText: cartState.hasSelectedCliente
+                ? 'Cliente encontrado e associado a venda.'
+                : 'Opcional. Pesquise um cliente, digite um novo nome ou deixe como Consumidor Final.',
+            suffixIcon: const Icon(Icons.search),
+          ),
+          onChanged: _handleNomeChanged,
+        );
+      },
+      itemBuilder: (context, customer) {
+        final subtitle = customer.telefone?.trim();
+        return ListTile(
+          dense: true,
+          title: Text(
+            customer.nome,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          subtitle: subtitle == null || subtitle.isEmpty
+              ? null
+              : Text(
+                  subtitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+        );
+      },
+      onSelected: _applySelectedCustomer,
+      emptyBuilder: (context) => const Padding(
+        padding: EdgeInsets.all(12),
+        child: Text(
+          'Nenhum cliente encontrado. Continue a digitar para usar como novo registo.',
+          textAlign: TextAlign.center,
+        ),
+      ),
     );
   }
 
@@ -170,17 +286,13 @@ class _FinalizarVendaDialogState
       controller: _idadeController,
       keyboardType: TextInputType.number,
       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-      decoration: const InputDecoration(
-        labelText: 'Idade',
-      ),
+      decoration: _fieldDecoration('Idade'),
       validator: (value) {
-        if (!widget.requiresPatientDetails) {
+        final trimmed = value?.trim() ?? '';
+        if (trimmed.isEmpty) {
           return null;
         }
-        if (value == null || value.trim().isEmpty) {
-          return 'Campo obrigatório.';
-        }
-        final idade = int.tryParse(value.trim());
+        final idade = int.tryParse(trimmed);
         if (idade == null || idade <= 0 || idade > _maxPatientAge) {
           return 'Informe uma idade entre 1 e $_maxPatientAge anos.';
         }
@@ -192,54 +304,21 @@ class _FinalizarVendaDialogState
   Widget _buildNidField() {
     return TextFormField(
       controller: _nidController,
-      decoration: const InputDecoration(
-        labelText: 'NID da receita/doente',
-      ),
-      validator: (value) {
-        if (!widget.requiresPatientDetails) {
-          return null;
-        }
-        if (value == null || value.trim().isEmpty) {
-          return 'Campo obrigatório.';
-        }
-        return null;
-      },
+      decoration: _fieldDecoration('NID da receita/doente'),
     );
   }
 
   Widget _buildPrescritorField() {
     return TextFormField(
       controller: _prescritorController,
-      decoration: const InputDecoration(
-        labelText: 'Prescritor',
-      ),
-      validator: (value) {
-        if (!widget.requiresPatientDetails) {
-          return null;
-        }
-        if (value == null || value.trim().isEmpty) {
-          return 'Campo obrigatório.';
-        }
-        return null;
-      },
+      decoration: _fieldDecoration('Prescritor'),
     );
   }
 
   Widget _buildUnidadeSanitariaField() {
     return TextFormField(
       controller: _unidadeSanitariaController,
-      decoration: const InputDecoration(
-        labelText: 'Unidade Sanitaria',
-      ),
-      validator: (value) {
-        if (!widget.requiresPatientDetails) {
-          return null;
-        }
-        if (value == null || value.trim().isEmpty) {
-          return 'Campo obrigatório.';
-        }
-        return null;
-      },
+      decoration: _fieldDecoration('Unidade sanitária'),
     );
   }
 
@@ -252,7 +331,7 @@ class _FinalizarVendaDialogState
         FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
       ],
       decoration: const InputDecoration(
-        labelText: 'Valor recebido',
+        labelText: 'Valor recebido *',
         suffixText: 'MT',
       ),
       validator: (value) {
@@ -261,7 +340,7 @@ class _FinalizarVendaDialogState
         }
         final recebido = _parseCheckoutMoneyInput(value ?? '');
         if (recebido == null) {
-          return 'Campo obrigatório.';
+          return 'Informe o valor recebido.';
         }
         return null;
       },
@@ -329,6 +408,7 @@ class _FinalizarVendaDialogState
   ) {
     final t = context.pharmaTokens;
     final s = context.spacing;
+    final cartState = ref.watch(pdvCartProvider);
 
     return Form(
       key: _formKey,
@@ -337,17 +417,19 @@ class _FinalizarVendaDialogState
         mainAxisSize: MainAxisSize.min,
         children: [
           _CheckoutSummaryCard(total: widget.total),
+          SizedBox(height: s.lg),
+          _buildNomeField(cartState),
           if (widget.requiresPatientDetails) ...[
             SizedBox(height: s.lg),
             Text(
-              'Dados do paciente',
+              'Dados da receita',
               style: Theme.of(context).textTheme.erpTabLabel.copyWith(
                     color: t.textPrimary,
                   ),
             ),
             SizedBox(height: s.xs),
             Text(
-              'O backend exigiu identificação do paciente e do prescritor para concluir esta venda.',
+              'Os campos são opcionais. Pode pesquisar um cliente pelo nome do paciente, criar um novo registo ao digitar ou concluir como Consumidor Final.',
               style: Theme.of(context).textTheme.erpCaption.copyWith(
                     color: t.textMuted,
                   ),
@@ -355,12 +437,6 @@ class _FinalizarVendaDialogState
             SizedBox(height: s.md),
             _ResponsiveFormGrid(
               items: [
-                _ResponsiveFormGridItem(
-                  child: _buildNomeField(),
-                  mobileSpan: 2,
-                  tabletSpan: 2,
-                  desktopSpan: 2,
-                ),
                 _ResponsiveFormGridItem(
                   child: _buildIdadeField(),
                   mobileSpan: 1,

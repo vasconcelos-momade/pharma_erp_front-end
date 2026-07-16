@@ -161,10 +161,10 @@ class _DashboardLayoutState extends ConsumerState<DashboardLayout> {
                   NavigationDestination(
                     tooltip: 'Produtos',
                     icon: Icon(
-                      Icons.inventory_outlined,
+                      Icons.medication_outlined,
                       color: t.textSecondary,
                     ),
-                    selectedIcon: Icon(Icons.inventory, color: t.brandGreen),
+                    selectedIcon: Icon(Icons.medication, color: t.brandGreen),
                     label: '',
                   ),
                   NavigationDestination(

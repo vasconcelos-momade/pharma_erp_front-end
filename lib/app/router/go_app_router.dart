@@ -14,7 +14,10 @@ import '../../modules/central/presentation/pages/platform_list_page.dart';
 import '../../modules/central/presentation/pages/platform_tenant_detail_page.dart';
 import '../../modules/central/presentation/pages/platform_tenants_page.dart';
 import '../../modules/central/presentation/shell/platform_main_shell.dart';
-import '../../modules/dashboard/presentation/pages/dashboard_hub_page.dart';
+import '../../modules/dashboard/presentation/pages/executive_dashboard_page.dart';
+import '../../modules/dashboard/presentation/pages/finance_dashboard_page.dart';
+import '../../modules/dashboard/presentation/pages/pharmacy_dashboard_page.dart';
+import '../../modules/dashboard/presentation/pages/stock_dashboard_page.dart';
 import '../../modules/finance/presentation/pages/cashflow_page.dart';
 import '../../modules/finance/presentation/pages/finance_hub_page.dart';
 import '../../modules/pharmacy/presentation/pages/pharmacy_stock_hub_page.dart';
@@ -293,19 +296,22 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: AppRoutePaths.dashboard,
             name: 'dashboard',
-            builder: (context, state) => const DashboardHubPage(),
+            builder: (context, state) => const ExecutiveDashboardPage(),
           ),
           GoRoute(
             path: AppRoutePaths.dashboardPharmacy,
-            redirect: (context, state) => AppRoutePaths.dashboard,
+            name: 'dashboard-pharmacy',
+            builder: (context, state) => const PharmacyDashboardPage(),
           ),
           GoRoute(
             path: AppRoutePaths.dashboardFinance,
-            redirect: (context, state) => AppRoutePaths.dashboard,
+            name: 'dashboard-finance',
+            builder: (context, state) => const FinanceDashboardPage(),
           ),
           GoRoute(
             path: AppRoutePaths.dashboardStock,
-            redirect: (context, state) => AppRoutePaths.dashboard,
+            name: 'dashboard-stock',
+            builder: (context, state) => const StockDashboardPage(),
           ),
           GoRoute(
             path: AppRoutePaths.products,

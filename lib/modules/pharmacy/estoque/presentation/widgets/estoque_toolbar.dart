@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../../shared/responsive/pharma_screen_layout.dart';
 import '../../../../../shared/widgets/layout/enterprise_mobile_toolbar.dart';
-import '../../../../../shared/widgets/layout/enterprise_module_search_bar.dart';
+import '../../../../../shared/widgets/inputs/enterprise_search_field.dart';
 import '../../../categories/domain/entities/category.dart';
 import '../providers/estoque_provider.dart';
 
@@ -62,12 +62,13 @@ class _EstoqueToolbarState extends State<EstoqueToolbar> {
   Widget build(BuildContext context) {
     final screen = context.pharmaScreen;
     if (screen == PharmaScreenSize.mobile) {
-      return EnterpriseModuleSearchBar(
-        controller: widget.searchController,
-        hintText: 'Produto, código ou lote...',
-        enabled: !widget.state.isLoading,
-        onSubmitted: widget.onSearchChanged,
-        onChanged: widget.onSearchChanged,
+      return IgnorePointer(
+        ignoring: widget.state.isLoading,
+        child: EnterpriseSearchField(
+          controller: widget.searchController,
+          hintText: 'Produto, código ou lote...',
+          onChanged: widget.onSearchChanged,
+        ),
       );
     }
 

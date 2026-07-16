@@ -13,7 +13,7 @@ import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../../shared/widgets/feedback/module_data_states.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
-import '../../../../../shared/widgets/layout/enterprise_module_search_bar.dart';
+import '../../../../../shared/widgets/inputs/enterprise_search_field.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../../../../shared/widgets/tables/enterprise_pagination.dart';
 import '../../data/repositories/user_repository_impl.dart';
@@ -125,13 +125,13 @@ class _UsersPageState extends ConsumerState<UsersPage> {
                   ],
             filters: isMobile
                 ? null
-                : EnterpriseModuleSearchBar(
-                    controller: _searchController,
-                    hintText: 'Nome ou email...',
-                    enabled: !state.isBusy,
-                    onSubmitted: notifier.onSearchChanged,
-                    onChanged: notifier.onSearchChanged,
-                    maxWidth: 260,
+                : IgnorePointer(
+                    ignoring: state.isBusy,
+                    child: EnterpriseSearchField(
+                      controller: _searchController,
+                      hintText: 'Nome ou email...',
+                      onChanged: notifier.onSearchChanged,
+                    ),
                   ),
             kpis: [
               EnterpriseStatCard(

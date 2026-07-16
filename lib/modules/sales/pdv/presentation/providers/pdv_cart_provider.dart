@@ -18,12 +18,18 @@ class PdvCartState {
     this.isLoading = false,
     this.isMutating = false,
     this.busyLineId,
+    this.selectedClienteId,
+    this.selectedClienteNome,
   });
 
   final PdvCart cart;
   final bool isLoading;
   final bool isMutating;
   final String? busyLineId;
+
+  /// Cliente cadastrado seleccionado. Null = venda rápida (Consumidor Final no backend).
+  final String? selectedClienteId;
+  final String? selectedClienteNome;
 
   List<PdvCartLine> get lines => cart.lines;
 
@@ -37,6 +43,17 @@ class PdvCartState {
   double get total => cart.total;
   bool get requiresPatientDetails => cart.requiresPatientDetails;
 
+  /// Rótulo mostrado na UI quando nenhum cliente cadastrado foi escolhido.
+  static const defaultClienteLabel = 'Consumidor Final';
+
+  String get displayClienteNome =>
+      (selectedClienteNome != null && selectedClienteNome!.trim().isNotEmpty)
+          ? selectedClienteNome!.trim()
+          : defaultClienteLabel;
+
+  bool get hasSelectedCliente =>
+      selectedClienteId != null && selectedClienteId!.trim().isNotEmpty;
+
   bool isLineBusy(String lineId) => isMutating && busyLineId == lineId;
 
   PdvCartState copyWith({
@@ -45,12 +62,21 @@ class PdvCartState {
     bool? isMutating,
     String? busyLineId,
     bool clearBusyLineId = false,
+    String? selectedClienteId,
+    String? selectedClienteNome,
+    bool clearSelectedCliente = false,
   }) {
     return PdvCartState(
       cart: cart ?? this.cart,
       isLoading: isLoading ?? this.isLoading,
       isMutating: isMutating ?? this.isMutating,
       busyLineId: clearBusyLineId ? null : (busyLineId ?? this.busyLineId),
+      selectedClienteId: clearSelectedCliente
+          ? null
+          : (selectedClienteId ?? this.selectedClienteId),
+      selectedClienteNome: clearSelectedCliente
+          ? null
+          : (selectedClienteNome ?? this.selectedClienteNome),
     );
   }
 
@@ -334,6 +360,17 @@ class PdvCartController extends Notifier<PdvCartState> {
     _clearPersistedCartKey();
     state = PdvCartState.initial;
     _didLoadForSession = false;
+  }
+
+  void setSelectedCliente({required String id, required String nome}) {
+    state = state.copyWith(
+      selectedClienteId: id,
+      selectedClienteNome: nome,
+    );
+  }
+
+  void clearSelectedCliente() {
+    state = state.copyWith(clearSelectedCliente: true);
   }
 
   void applyCheckoutReset(String nextCartIdempotencyKey) {

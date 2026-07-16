@@ -279,6 +279,7 @@ class _ProdutoFormDialogState extends ConsumerState<ProdutoFormDialog> {
   @override
   Widget build(BuildContext context) {
     final s = context.spacing;
+    final isMobileViewport = AdaptiveNavigator.isMobile(context);
     final authReady = ref.watch(
       authSessionProvider.select(
         (session) => !session.isBootstrapping && session.hasTenantContext,
@@ -471,16 +472,22 @@ class _ProdutoFormDialogState extends ConsumerState<ProdutoFormDialog> {
     );
 
     final actions = [
-      TextButton(
+      OutlinedButton(
         onPressed: () => AdaptiveNavigator.cancel(context),
         child: const Text('Cancelar'),
       ),
-      FilledButton.icon(
+      FilledButton(
         onPressed: _submit,
-        icon: const Icon(Icons.save_outlined),
-        label: Text(widget.isEditing ? 'Guardar' : 'Criar'),
+        child: Text(widget.isEditing ? 'Guardar' : 'Criar'),
       ),
     ];
+    final actionsSection = PharmaResponsiveDialogActions(
+      breakpoint: pharmaDialogBreakpointForWidth(MediaQuery.sizeOf(context).width),
+      children: actions,
+    );
+    final pinnedBodyPadding = EdgeInsets.all(
+      widget.embedded && !isMobileViewport ? 0 : s.lg,
+    );
 
     final formBody = Form(
       key: _formKey,
@@ -490,13 +497,17 @@ class _ProdutoFormDialogState extends ConsumerState<ProdutoFormDialog> {
               children: [
                 Expanded(
                   child: SingleChildScrollView(
+                    padding: pinnedBodyPadding,
                     child: formFields,
                   ),
                 ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: actions,
+                const Divider(height: 1),
+                SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: pinnedBodyPadding,
+                    child: actionsSection,
+                  ),
                 ),
               ],
             )
@@ -522,11 +533,8 @@ class _ProdutoFormDialogState extends ConsumerState<ProdutoFormDialog> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           formBody,
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: actions,
-          ),
+          SizedBox(height: s.md),
+          actionsSection,
         ],
       );
     }
@@ -555,9 +563,12 @@ Future<ProdutoFormDialogResult?> showProdutoFormDialog(
       if (AdaptiveNavigator.isMobile(formContext)) {
         return Scaffold(
           appBar: AppBar(title: title),
-          body: SingleChildScrollView(
-            padding: EdgeInsets.all(formContext.spacing.lg),
-            child: ProdutoFormDialog(product: product, embedded: true),
+          body: SafeArea(
+            child: ProdutoFormDialog(
+              product: product,
+              embedded: true,
+              pinnedFooter: true,
+            ),
           ),
         );
       }

@@ -59,4 +59,20 @@ abstract final class DesignMetrics {
   static const double dialogMaxHeightFractionDesktop = 0.88;
   static const double dialogBodyMaxHeightFraction = 0.65;
   static const double dialogSelectableListHeightFraction = 0.32;
+
+  /// Presets de largura enterprise (Small / Medium / Large).
+  static const double dialogSizeSmall = 400;
+  static const double dialogSizeMedium = 560;
+  static const double dialogSizeLarge = 720;
+
+  static const double sideSheetSizeSmall = 400;
+  static const double sideSheetSizeMedium = 560;
+  static const double sideSheetSizeLarge = 640;
+
+  /// Opacidade do scrim (modal barrier) do Design System.
+  static const double overlayScrimOpacity = 0.38;
+
+  /// Breakpoints de overlay (alinham com AdaptiveNavigator / side sheet).
+  static const double overlayMobileBreakpoint = 768;
+  static const double overlayDesktopBreakpoint = 1200;
 }

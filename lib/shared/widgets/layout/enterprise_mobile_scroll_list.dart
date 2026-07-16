@@ -4,6 +4,7 @@ import '../../../core/theme/design_metrics.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/theme/extensions.dart';
 import '../cards/enterprise_list_card.dart';
+import '../dialogs/enterprise_overlay_tokens.dart';
 import 'pharma_pinned_sliver_header.dart';
 
 typedef EnterpriseMobileItemBuilder = Widget Function(BuildContext context, int index);
@@ -241,15 +242,21 @@ class EnterpriseAdaptiveListBody extends StatelessWidget {
   }
 }
 
-/// Bottom sheet genérico para filtros mobile.
+/// Bottom sheet genérico para filtros mobile (scrim do Design System).
+///
+/// O [child] deve trazer o próprio chrome (muitos filtros já incluem título/ações).
 Future<void> showEnterpriseFiltersSheet({
   required BuildContext context,
   required Widget child,
+  String title = 'Filtros',
 }) {
   return showModalBottomSheet<void>(
     context: context,
+    useRootNavigator: true,
     isScrollControlled: true,
     useSafeArea: true,
+    backgroundColor: Colors.transparent,
+    barrierColor: enterpriseOverlayScrim(context),
     builder: (_) => child,
   );
 }

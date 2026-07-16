@@ -738,6 +738,7 @@ class _PdvPageState extends ConsumerState<PdvPage>
       discount: cartState.discount,
       total: cartState.total,
       cart: cart,
+      clienteNome: cartState.displayClienteNome,
       t: t,
       compact: isMobile || isTablet,
       caixaAberto: caixaAberto,
@@ -849,6 +850,7 @@ class _MobileCartScreen extends ConsumerWidget {
             discount: cartState.discount,
             total: cartState.total,
             cart: cart,
+            clienteNome: cartState.displayClienteNome,
             t: t,
             compact: true,
             caixaAberto: caixaAberto,
@@ -882,6 +884,7 @@ class _CartPane extends StatelessWidget {
     required this.discount,
     required this.total,
     required this.cart,
+    required this.clienteNome,
     required this.t,
     required this.compact,
     required this.caixaAberto,
@@ -900,6 +903,7 @@ class _CartPane extends StatelessWidget {
   final double discount;
   final double total;
   final List<PdvCartLine> cart;
+  final String clienteNome;
   final PharmaTokens t;
   final bool compact;
   final bool caixaAberto;
@@ -922,6 +926,23 @@ class _CartPane extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            Row(
+              children: [
+                Icon(Icons.person_outline, size: 18, color: t.textMuted),
+                SizedBox(width: s.xs),
+                Expanded(
+                  child: Text(
+                    'Cliente: $clienteNome',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.erpLabel.copyWith(
+                          color: t.textPrimary,
+                        ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: s.sm),
             Expanded(
               child: cart.isEmpty
                   ? const ModuleEmptyState(

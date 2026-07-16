@@ -309,6 +309,7 @@ class _EstoquePageState extends ConsumerState<EstoquePage> {
   ) {
     showModalBottomSheet<void>(
       context: context,
+      useRootNavigator: true,
       isScrollControlled: true,
       useSafeArea: true,
       builder: (_) => EstoqueFiltersBottomSheet(

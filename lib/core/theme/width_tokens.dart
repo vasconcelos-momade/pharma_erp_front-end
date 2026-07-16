@@ -12,6 +12,12 @@ class WidthTokens extends ThemeExtension<WidthTokens> {
     required this.formMax,
     required this.authCardMax,
     required this.sideSheetMax,
+    required this.dialogSmall,
+    required this.dialogMedium,
+    required this.dialogLarge,
+    required this.sideSheetSmall,
+    required this.sideSheetMedium,
+    required this.sideSheetLarge,
     required this.dialogMobileInset,
     required this.dialogTabletFraction,
     required this.dialogDesktopFraction,
@@ -22,6 +28,12 @@ class WidthTokens extends ThemeExtension<WidthTokens> {
   final double formMax;
   final double authCardMax;
   final double sideSheetMax;
+  final double dialogSmall;
+  final double dialogMedium;
+  final double dialogLarge;
+  final double sideSheetSmall;
+  final double sideSheetMedium;
+  final double sideSheetLarge;
   final double dialogMobileInset;
   final double dialogTabletFraction;
   final double dialogDesktopFraction;
@@ -32,7 +44,13 @@ class WidthTokens extends ThemeExtension<WidthTokens> {
       contentMax: DesignMetrics.contentMaxWidth,
       formMax: 640,
       authCardMax: 440,
-      sideSheetMax: 560,
+      sideSheetMax: DesignMetrics.sideSheetSizeMedium,
+      dialogSmall: DesignMetrics.dialogSizeSmall,
+      dialogMedium: DesignMetrics.dialogSizeMedium,
+      dialogLarge: DesignMetrics.dialogSizeLarge,
+      sideSheetSmall: DesignMetrics.sideSheetSizeSmall,
+      sideSheetMedium: DesignMetrics.sideSheetSizeMedium,
+      sideSheetLarge: DesignMetrics.sideSheetSizeLarge,
       dialogMobileInset: DesignMetrics.dialogMobileHorizontalInset,
       dialogTabletFraction: DesignMetrics.dialogWidthFractionTablet,
       dialogDesktopFraction: DesignMetrics.dialogWidthFractionDesktop,
@@ -59,6 +77,12 @@ class WidthTokens extends ThemeExtension<WidthTokens> {
     double? formMax,
     double? authCardMax,
     double? sideSheetMax,
+    double? dialogSmall,
+    double? dialogMedium,
+    double? dialogLarge,
+    double? sideSheetSmall,
+    double? sideSheetMedium,
+    double? sideSheetLarge,
     double? dialogMobileInset,
     double? dialogTabletFraction,
     double? dialogDesktopFraction,
@@ -69,6 +93,12 @@ class WidthTokens extends ThemeExtension<WidthTokens> {
       formMax: formMax ?? this.formMax,
       authCardMax: authCardMax ?? this.authCardMax,
       sideSheetMax: sideSheetMax ?? this.sideSheetMax,
+      dialogSmall: dialogSmall ?? this.dialogSmall,
+      dialogMedium: dialogMedium ?? this.dialogMedium,
+      dialogLarge: dialogLarge ?? this.dialogLarge,
+      sideSheetSmall: sideSheetSmall ?? this.sideSheetSmall,
+      sideSheetMedium: sideSheetMedium ?? this.sideSheetMedium,
+      sideSheetLarge: sideSheetLarge ?? this.sideSheetLarge,
       dialogMobileInset: dialogMobileInset ?? this.dialogMobileInset,
       dialogTabletFraction: dialogTabletFraction ?? this.dialogTabletFraction,
       dialogDesktopFraction: dialogDesktopFraction ?? this.dialogDesktopFraction,
@@ -85,6 +115,12 @@ class WidthTokens extends ThemeExtension<WidthTokens> {
       formMax: lerpDouble(formMax, other.formMax, t)!,
       authCardMax: lerpDouble(authCardMax, other.authCardMax, t)!,
       sideSheetMax: lerpDouble(sideSheetMax, other.sideSheetMax, t)!,
+      dialogSmall: lerpDouble(dialogSmall, other.dialogSmall, t)!,
+      dialogMedium: lerpDouble(dialogMedium, other.dialogMedium, t)!,
+      dialogLarge: lerpDouble(dialogLarge, other.dialogLarge, t)!,
+      sideSheetSmall: lerpDouble(sideSheetSmall, other.sideSheetSmall, t)!,
+      sideSheetMedium: lerpDouble(sideSheetMedium, other.sideSheetMedium, t)!,
+      sideSheetLarge: lerpDouble(sideSheetLarge, other.sideSheetLarge, t)!,
       dialogMobileInset:
           lerpDouble(dialogMobileInset, other.dialogMobileInset, t)!,
       dialogTabletFraction:

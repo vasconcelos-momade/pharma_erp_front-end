@@ -11,41 +11,44 @@ enum MetodoPagamentoModel {
 
 class PacienteCheckoutModel {
   PacienteCheckoutModel({
-    required this.nome,
-    required this.idade,
-    required this.nid,
+    this.nome,
+    this.idade,
+    this.nid,
   });
 
-  final String nome;
-  final int idade;
-  final String nid;
+  final String? nome;
+  final int? idade;
+  final String? nid;
 
   Map<String, dynamic> toJson() {
     return {
-      'nome': nome,
-      'idade': idade,
-      'nid': nid,
+      if (nome != null && nome!.trim().isNotEmpty) 'nome': nome,
+      if (idade != null) 'idade': idade,
+      if (nid != null && nid!.trim().isNotEmpty) 'nid': nid,
     };
   }
 }
 
 class ReceitaCheckoutModel {
   ReceitaCheckoutModel({
-    required this.numero,
-    required this.prescritor,
-    required this.unidadeSanitaria,
+    this.numero,
+    this.prescritor,
+    this.unidadeSanitaria,
   });
 
-  final String numero;
-  final String prescritor;
-  final String unidadeSanitaria;
+  final String? numero;
+  final String? prescritor;
+  final String? unidadeSanitaria;
 
   Map<String, dynamic> toJson() {
     return {
-      'numero': numero,
-      'prescritor': prescritor,
-      'medicoNome': prescritor,
-      'unidadeSanitaria': unidadeSanitaria,
+      if (numero != null && numero!.trim().isNotEmpty) 'numero': numero,
+      if (prescritor != null && prescritor!.trim().isNotEmpty) ...{
+        'prescritor': prescritor,
+        'medicoNome': prescritor,
+      },
+      if (unidadeSanitaria != null && unidadeSanitaria!.trim().isNotEmpty)
+        'unidadeSanitaria': unidadeSanitaria,
     };
   }
 }

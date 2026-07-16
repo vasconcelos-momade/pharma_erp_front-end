@@ -5,7 +5,7 @@ import '../../../../../core/theme/extensions.dart';
 import '../../../categories/domain/entities/category.dart';
 import 'produto_filters_content.dart';
 
-class ProdutoFiltersBottomSheet extends StatelessWidget {
+class ProdutoFiltersBottomSheet extends StatefulWidget {
   const ProdutoFiltersBottomSheet({
     super.key,
     required this.initialAtivo,
@@ -20,22 +20,53 @@ class ProdutoFiltersBottomSheet extends StatelessWidget {
   final void Function(bool? ativo, String? categoriaId) onApply;
 
   @override
+  State<ProdutoFiltersBottomSheet> createState() => _ProdutoFiltersBottomSheetState();
+}
+
+class _ProdutoFiltersBottomSheetState extends State<ProdutoFiltersBottomSheet> {
+  late bool? _ativo;
+  late String? _categoriaId;
+
+  @override
+  void initState() {
+    super.initState();
+    _ativo = widget.initialAtivo;
+    _categoriaId = widget.initialCategoriaId;
+  }
+
+  void _clearFilters() {
+    setState(() {
+      _ativo = null;
+      _categoriaId = null;
+    });
+    widget.onApply(null, null);
+    Navigator.of(context).pop();
+  }
+
+  void _applyFilters() {
+    widget.onApply(_ativo, _categoriaId);
+    Navigator.of(context).pop();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
     final s = context.spacing;
     final theme = Theme.of(context);
 
-    return DraggableScrollableSheet(
-      initialChildSize: 0.55,
-      maxChildSize: 0.90,
-      minChildSize: 0.30,
-      expand: false,
-      builder: (context, scrollController) {
-        return Material(
-          color: theme.colorScheme.surface,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(t.radiusXl)),
-          clipBehavior: Clip.antiAlias,
+    // Considera a altura do teclado caso existam inputs
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: bottomInset),
+      child: Material(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(t.radiusXl)),
+        clipBehavior: Clip.antiAlias,
+        child: SafeArea(
+          top: false,
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               SizedBox(height: s.sm),
               Container(
@@ -65,27 +96,47 @@ class ProdutoFiltersBottomSheet extends StatelessWidget {
                 ),
               ),
               Divider(height: 1, color: t.border.withValues(alpha: 0.45)),
-              Expanded(
-                child: ListView(
-                  controller: scrollController,
-                  padding: EdgeInsets.all(s.md),
+              Flexible(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.fromLTRB(s.md, s.md, s.md, s.sm),
+                  child: ProdutoFiltersContent(
+                    ativo: _ativo,
+                    categoriaId: _categoriaId,
+                    categories: widget.categories,
+                    onAtivoChanged: (value) => setState(() => _ativo = value),
+                    onCategoriaChanged: (value) =>
+                        setState(() => _categoriaId = value),
+                    onClear: _clearFilters,
+                    onApply: (_, _) => _applyFilters(),
+                    showActions: false,
+                  ),
+                ),
+              ),
+              Divider(height: 1, color: t.border.withValues(alpha: 0.45)),
+              Padding(
+                padding: EdgeInsets.fromLTRB(s.md, s.sm, s.md, s.md),
+                child: Row(
                   children: [
-                    ProdutoFiltersContent(
-                      initialAtivo: initialAtivo,
-                      initialCategoriaId: initialCategoriaId,
-                      categories: categories,
-                      onApply: (ativo, categoriaId) {
-                        onApply(ativo, categoriaId);
-                        Navigator.of(context).pop();
-                      },
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: _clearFilters,
+                        child: const Text('Limpar'),
+                      ),
+                    ),
+                    SizedBox(width: s.md),
+                    Expanded(
+                      child: FilledButton(
+                        onPressed: _applyFilters,
+                        child: const Text('Aplicar filtros'),
+                      ),
                     ),
                   ],
                 ),
               ),
             ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 }

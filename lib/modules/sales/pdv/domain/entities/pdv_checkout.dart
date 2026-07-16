@@ -7,18 +7,18 @@ enum PdvPaymentMethod {
 
 class PdvCheckoutPatient {
   const PdvCheckoutPatient({
-    required this.nome,
-    required this.idade,
-    required this.nid,
-    required this.prescritor,
-    required this.unidadeSanitaria,
+    this.nome,
+    this.idade,
+    this.nid,
+    this.prescritor,
+    this.unidadeSanitaria,
   });
 
-  final String nome;
-  final int idade;
-  final String nid;
-  final String prescritor;
-  final String unidadeSanitaria;
+  final String? nome;
+  final int? idade;
+  final String? nid;
+  final String? prescritor;
+  final String? unidadeSanitaria;
 }
 
 class PdvCheckoutLine {

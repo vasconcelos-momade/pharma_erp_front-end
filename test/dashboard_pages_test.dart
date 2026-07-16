@@ -8,6 +8,8 @@ import 'package:pharma_erp/modules/dashboard/data/datasources/dashboard_remote_d
 import 'package:pharma_erp/modules/dashboard/domain/dashboard_query.dart';
 import 'package:pharma_erp/modules/dashboard/presentation/pages/executive_dashboard_page.dart';
 import 'package:pharma_erp/modules/dashboard/presentation/pages/finance_dashboard_page.dart';
+import 'package:pharma_erp/shared/widgets/tables/enterprise_data_table.dart';
+import 'package:pharma_erp/core/theme/pharma_surface.dart';
 
 void main() {
   testWidgets('Finance dashboard renders and scrolls without exceptions', (
@@ -44,6 +46,54 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('EnterpriseDataTable renders inside vertical scroll without layout assertions', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1440, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      _buildHarness(
+        SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 24),
+              EnterpriseDataTable(
+                showCheckboxColumn: false,
+                columns: const [
+                  DataColumn(label: Text('Empresa')),
+                  DataColumn(label: Text('Tenant')),
+                  DataColumn(label: Text('Estado')),
+                ],
+                rowCount: 3,
+                rowBuilder: (context, index) => DataRow(
+                  cells: [
+                    DataCell(Text('Empresa ${index + 1}')),
+                    DataCell(Text('tenant_${index + 1}')),
+                    const DataCell(Text('trial')),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 200));
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('Empresa 1'), findsOneWidget);
+
+    final surface = tester.widget<PharmaSurface>(find.byType(PharmaSurface));
+    final surfaceBox = tester.renderObject<RenderBox>(
+      find.byWidget(surface),
+    );
+    expect(surfaceBox.size.width, greaterThan(1200));
   });
 }
 

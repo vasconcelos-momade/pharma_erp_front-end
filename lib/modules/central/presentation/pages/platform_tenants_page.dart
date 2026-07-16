@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../../app/router/routes.dart';
 import '../../../../shared/widgets/feedback/module_data_states.dart';
 import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
-import '../../../../shared/widgets/layout/enterprise_module_search_bar.dart';
+import '../../../../shared/widgets/inputs/enterprise_search_field.dart';
 import '../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../../../shared/widgets/cards/enterprise_list_card.dart';
 import '../../domain/entities/platform_entities.dart';
@@ -52,10 +52,9 @@ class _PlatformTenantsPageState extends ConsumerState<PlatformTenantsPage> {
           label: const Text('Atualizar'),
         ),
       ],
-      filters: EnterpriseModuleSearchBar(
+      filters: EnterpriseSearchField(
         controller: _searchCtrl,
         hintText: 'Pesquisar empresa ou tenant…',
-        onSubmitted: notifier.setSearch,
         onChanged: notifier.setSearch,
       ),
       child: async.when(

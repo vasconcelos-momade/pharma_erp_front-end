@@ -16,6 +16,7 @@ import '../../../../../shared/widgets/cards/enterprise_list_card.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/widgets/layout/adaptive_side_sheet.dart';
+import '../../../../../shared/widgets/dialogs/enterprise_overlay_tokens.dart';
 import '../../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
@@ -186,24 +187,26 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
                             DataCell(Text(item.descricao ?? '—')),
                             DataCell(Text('${item.productCount}')),
                             DataCell(_StatusChip(ativo: item.ativo)),
-                            DataCell(Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                OutlinedButton.icon(
-                                  onPressed: () => _openForm(context, category: item),
-                                  icon: const Icon(Icons.edit_outlined, size: 18),
-                                  label: const Text('Editar'),
-                                ),
-                                SizedBox(width: s.sm),
-                                OutlinedButton.icon(
-                                  onPressed: () => _confirmDelete(context, item),
-                                  icon: const Icon(Icons.delete_outline, size: 18),
-                                  label: const Text('Excluir'),
-                                  style: OutlinedButton.styleFrom(
-                                    foregroundColor: t.posDanger,
-                                    side: BorderSide(color: t.posDanger.withValues(alpha: 0.5)),
-                                  ),
-                                ),
+                            DataCell(PopupMenuButton<String>(
+                              padding: EdgeInsets.zero,
+                              constraints: BoxConstraints(
+                                minWidth: t.minTouchTarget * 0.6,
+                                minHeight: t.minTouchTarget * 0.6,
+                              ),
+                              icon: Icon(Icons.more_vert, size: t.iconSm, color: t.textMuted),
+                              onSelected: (action) {
+                                switch (action) {
+                                  case 'editar':
+                                    _openForm(context, category: item);
+                                    break;
+                                  case 'excluir':
+                                    _confirmDelete(context, item);
+                                    break;
+                                }
+                              },
+                              itemBuilder: (context) => const [
+                                PopupMenuItem(value: 'editar', child: Text('Editar')),
+                                PopupMenuItem(value: 'excluir', child: Text('Excluir')),
                               ],
                             )),
                           ],
@@ -239,22 +242,56 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
                   ).single,
                   onSearchSubmitted: controller.onSearchChanged,
                   onOpenFilters: () {
+                    final scheme = Theme.of(context).colorScheme;
                     showModalBottomSheet<void>(
                       context: context,
-                      builder: (_) => SafeArea(
+                      useRootNavigator: true,
+                      isScrollControlled: true,
+                      barrierColor: enterpriseOverlayScrim(context),
+                      backgroundColor: scheme.surface,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(context.pharmaTokens.radiusXl),
+                        ),
+                      ),
+                      builder: (sheetContext) => SafeArea(
                         child: Padding(
                           padding: EdgeInsets.all(s.md),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              Text('Filtros', style: Theme.of(context).textTheme.titleLarge),
+                              Container(
+                                width: 40,
+                                height: 4,
+                                margin: EdgeInsets.only(bottom: s.md),
+                                decoration: BoxDecoration(
+                                  color: context.pharmaTokens.textMuted.withValues(alpha: 0.3),
+                                  borderRadius: BorderRadius.circular(context.pharmaTokens.radiusMd / 2),
+                                ),
+                              ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Filtros',
+                                    style: Theme.of(context).textTheme.erpCardTitle.copyWith(
+                                          color: context.pharmaTokens.textPrimary,
+                                        ),
+                                  ),
+                                  IconButton(
+                                    icon: Icon(Icons.close_rounded, color: context.pharmaTokens.textMuted, size: context.pharmaTokens.iconSm),
+                                    onPressed: () => Navigator.of(sheetContext).pop(),
+                                  ),
+                                ],
+                              ),
+                              Divider(height: 1, color: context.pharmaTokens.border.withValues(alpha: 0.45)),
                               SizedBox(height: s.md),
                               SwitchListTile(
                                 title: const Text('Mostrar inactivas'),
                                 value: state.includeInactive,
                                 onChanged: (val) {
                                   controller.setIncludeInactive(val);
-                                  Navigator.of(context).pop();
+                                  Navigator.of(sheetContext).pop();
                                 },
                               ),
                             ],
@@ -263,6 +300,7 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
                       ),
                     );
                   },
+                  showRefreshButton: false,
                   onClearFilters: () async => controller.setIncludeInactive(false),
                   onRefresh: () async => controller.goToPage(1),
                 ),
@@ -467,7 +505,6 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
         onPressed: () => AdaptiveNavigator.cancel(context),
         child: const Text('Cancelar'),
       ),
-      SizedBox(width: s.sm),
       FilledButton(
         onPressed: () {
           if (!_formKey.currentState!.validate()) return;
@@ -479,9 +516,14 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
             'ativo': _ativo,
           });
         },
-        child: const Text('Guardar'),
+        child: Text(widget.category == null ? 'Criar' : 'Guardar'),
       ),
     ];
+
+    final actionsSection = PharmaResponsiveDialogActions(
+      breakpoint: pharmaDialogBreakpointForWidth(MediaQuery.sizeOf(context).width),
+      children: actions,
+    );
 
     final form = Form(
       key: _formKey,
@@ -516,12 +558,12 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
                     child: formFields,
                   ),
                 ),
-                if (widget.showHeader) const Divider(height: 1),
-                Padding(
-                  padding: EdgeInsets.all(s.md),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: actions,
+                const Divider(height: 1),
+                SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: EdgeInsets.all(s.md),
+                    child: actionsSection,
                   ),
                 ),
               ],
@@ -530,7 +572,18 @@ class _CategoryFormDialogState extends State<_CategoryFormDialog> {
     );
 
     if (widget.embedded) {
-      return form;
+      if (widget.pinnedFooter) {
+        return form;
+      }
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          form,
+          SizedBox(height: s.md),
+          actionsSection,
+        ],
+      );
     }
 
     return PharmaResponsiveDialog(
@@ -588,7 +641,6 @@ class _CategoryMobileCard extends StatelessWidget {
     return EnterpriseListCard(
       title: fnmCategoryLabel(category.nome),
       subtitle: descricao != null && descricao.isNotEmpty ? descricao : null,
-      leading: Icons.category_outlined,
       chip: EnterpriseStatusChip(
         label: category.ativo ? 'Activa' : 'Inactiva',
         color: category.ativo ? t.brandGreen : t.textMuted,

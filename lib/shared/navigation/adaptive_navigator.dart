@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/extensions.dart';
-import '../widgets/dialogs/pharma_responsive_dialog.dart';
+import '../widgets/dialogs/enterprise_dialog.dart';
+import '../widgets/dialogs/enterprise_overlay_tokens.dart';
+import '../widgets/dialogs/enterprise_side_sheet.dart';
 import '../widgets/layout/adaptive_side_sheet.dart';
 
 /// Callback para construir painéis de detalhe / histórico.
@@ -16,7 +18,9 @@ typedef AdaptiveEmbeddedFormBuilder = Widget Function(
   required bool embedded,
 });
 
-/// Navegação adaptativa conforme o padrão do ERP.
+/// Navegação adaptativa conforme o padrão do ERP / Design System.
+///
+/// Mobile → página ou Bottom Sheet · Tablet → Side Sheet · Desktop → Dialog / Side Sheet.
 abstract final class AdaptiveNavigator {
   AdaptiveNavigator._();
 
@@ -102,6 +106,7 @@ abstract final class AdaptiveNavigator {
     bool barrierDismissible = true,
     RouteSettings? routeSettings,
     double? sideSheetWidth,
+    EnterpriseOverlaySize size = EnterpriseOverlaySize.medium,
   }) {
     if (isMobile(context)) {
       return Navigator.of(context, rootNavigator: true).push<T>(
@@ -113,30 +118,27 @@ abstract final class AdaptiveNavigator {
     }
 
     if (isDesktop(context)) {
-      return showPharmaResponsiveDialog<T>(
+      return showEnterpriseDialog<T>(
         context: context,
         barrierDismissible: barrierDismissible,
-        builder: (dialogContext) => PharmaResponsiveDialog(
-          title: title,
-          content: contentBuilder(dialogContext),
-          scrollable: true,
-        ),
+        title: title,
+        size: size,
+        body: Builder(builder: contentBuilder),
+        showClose: true,
       );
     }
 
-    return AdaptiveSideSheet.show<T>(
+    return EnterpriseSideSheet.showChrome<T>(
       context: context,
+      title: title,
       width: sideSheetWidth,
+      size: size,
       barrierDismissible: barrierDismissible,
-      builder: (sheetContext) => _AdaptiveFormSheetChrome(
-        title: title,
-        onClose: () => closeAdaptiveSideSheet<T>(sheetContext),
-        child: contentBuilder(sheetContext),
-      ),
+      body: Builder(builder: contentBuilder),
     );
   }
 
-  /// Formulário com corpo incorporável (sem [PharmaResponsiveDialog] duplicado).
+  /// Formulário com corpo incorporável (sem dialog duplicado).
   static Future<T?> openEmbeddedForm<T>({
     required BuildContext context,
     required Widget title,
@@ -144,6 +146,7 @@ abstract final class AdaptiveNavigator {
     RouteSettings? routeSettings,
     double? sideSheetWidth,
     bool barrierDismissible = true,
+    EnterpriseOverlaySize size = EnterpriseOverlaySize.medium,
   }) {
     return openForm<T>(
       context: context,
@@ -151,6 +154,7 @@ abstract final class AdaptiveNavigator {
       routeSettings: routeSettings,
       sideSheetWidth: sideSheetWidth,
       barrierDismissible: barrierDismissible,
+      size: size,
       contentBuilder: (formContext) {
         final form = formBuilder(formContext, embedded: true);
         if (isMobile(formContext)) {
@@ -169,7 +173,7 @@ abstract final class AdaptiveNavigator {
     );
   }
 
-  /// Desktop/Tablet → [AdaptiveSideSheet]; Mobile → push no [rootNavigator].
+  /// Desktop/Tablet → [EnterpriseSideSheet]; Mobile → push no [rootNavigator].
   static Future<T?> open<T>({
     required BuildContext context,
     required WidgetBuilder builder,
@@ -177,12 +181,14 @@ abstract final class AdaptiveNavigator {
     bool barrierDismissible = true,
     RouteSettings? routeSettings,
     bool fullscreenDialog = false,
+    EnterpriseOverlaySize size = EnterpriseOverlaySize.medium,
   }) {
     if (useSideSheet(context)) {
-      return AdaptiveSideSheet.show<T>(
+      return EnterpriseSideSheet.show<T>(
         context: context,
         builder: builder,
         width: sideSheetWidth,
+        size: size,
         barrierDismissible: barrierDismissible,
       );
     }
@@ -208,52 +214,5 @@ abstract final class AdaptiveNavigator {
     } else {
       Navigator.of(context).maybePop<T>(result);
     }
-  }
-}
-
-class _AdaptiveFormSheetChrome extends StatelessWidget {
-  const _AdaptiveFormSheetChrome({
-    required this.title,
-    required this.onClose,
-    required this.child,
-  });
-
-  final Widget title;
-  final VoidCallback onClose;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final s = context.spacing;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Padding(
-          padding: EdgeInsets.fromLTRB(s.lg, s.lg, s.sm, s.sm),
-          child: Row(
-            children: [
-              Expanded(
-                child: DefaultTextStyle.merge(
-                  style: Theme.of(context).textTheme.erpCardTitle,
-                  child: title,
-                ),
-              ),
-              IconButton(
-                tooltip: 'Fechar',
-                onPressed: onClose,
-                icon: const Icon(Icons.close),
-              ),
-            ],
-          ),
-        ),
-        const Divider(height: 1),
-        Expanded(
-          child: SingleChildScrollView(
-            padding: EdgeInsets.all(s.lg),
-            child: child,
-          ),
-        ),
-      ],
-    );
   }
 }
