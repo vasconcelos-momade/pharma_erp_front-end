@@ -197,6 +197,7 @@ class PharmaInstantDropdown<T> extends StatelessWidget {
     required this.value,
     required this.onChanged,
     this.width,
+    this.menuMaxHeight,
   });
 
   final String label;
@@ -204,6 +205,7 @@ class PharmaInstantDropdown<T> extends StatelessWidget {
   final T? value;
   final ValueChanged<T?>? onChanged;
   final double? width;
+  final double? menuMaxHeight;
 
   @override
   Widget build(BuildContext context) {
@@ -224,6 +226,7 @@ class PharmaInstantDropdown<T> extends StatelessWidget {
         key: ValueKey<Object?>('$value-${items.length}'),
         initialValue: value,
         isExpanded: true,
+        menuMaxHeight: menuMaxHeight,
         items: items,
         onChanged: onChanged,
         decoration: InputDecoration(

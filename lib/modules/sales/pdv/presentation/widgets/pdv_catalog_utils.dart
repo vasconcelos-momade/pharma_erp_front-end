@@ -10,3 +10,17 @@ String pdvFormatMoney(num value) {
   final hasDecimals = amount != amount.truncateToDouble();
   return '${amount.toStringAsFixed(hasDecimals ? 2 : 0)} MT';
 }
+
+/// Título do produto no catálogo PDV: nome comercial - dosagem - forma.
+String pdvProductDisplayTitle({
+  required String nomeComercial,
+  String? dosagem,
+  String? forma,
+}) {
+  final parts = <String>[
+    nomeComercial,
+    if (dosagem != null && dosagem.trim().isNotEmpty) dosagem.trim(),
+    if (forma != null && forma.trim().isNotEmpty) forma.trim(),
+  ];
+  return parts.join(' - ');
+}

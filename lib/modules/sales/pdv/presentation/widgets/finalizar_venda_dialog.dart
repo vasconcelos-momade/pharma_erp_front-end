@@ -27,6 +27,7 @@ Future<PdvCheckoutResult?> showFinalizarVendaDialog(
     context: context,
     title: const Text('Finalizar Venda'),
     routeSettings: const RouteSettings(name: '/pdv/checkout'),
+    mobileWrapInScrollView: false,
     formBuilder: (ctx, {required embedded}) => FinalizarVendaDialog(
       total: total,
       requiresPatientDetails: requiresPatientDetails,
@@ -83,9 +84,7 @@ class _FinalizarVendaDialogState
   @override
   void initState() {
     super.initState();
-    _nomeController = TextEditingController(
-      text: PdvCartState.defaultClienteLabel,
-    );
+    _nomeController = TextEditingController();
     _idadeController = TextEditingController();
     _nidController = TextEditingController();
     _prescritorController = TextEditingController();
@@ -246,7 +245,7 @@ class _FinalizarVendaDialogState
             labelText: 'Nome do paciente',
             helperText: cartState.hasSelectedCliente
                 ? 'Cliente encontrado e associado a venda.'
-                : 'Opcional. Pesquise um cliente, digite um novo nome ou deixe como Consumidor Final.',
+                : 'Opcional. Pesquise um cliente ou digite um novo nome.',
             suffixIcon: const Icon(Icons.search),
           ),
           onChanged: _handleNomeChanged,
@@ -418,25 +417,15 @@ class _FinalizarVendaDialogState
         children: [
           _CheckoutSummaryCard(total: widget.total),
           SizedBox(height: s.lg),
-          _buildNomeField(cartState),
-          if (widget.requiresPatientDetails) ...[
-            SizedBox(height: s.lg),
-            Text(
-              'Dados da receita',
-              style: Theme.of(context).textTheme.erpTabLabel.copyWith(
-                    color: t.textPrimary,
-                  ),
-            ),
-            SizedBox(height: s.xs),
-            Text(
-              'Os campos são opcionais. Pode pesquisar um cliente pelo nome do paciente, criar um novo registo ao digitar ou concluir como Consumidor Final.',
-              style: Theme.of(context).textTheme.erpCaption.copyWith(
-                    color: t.textMuted,
-                  ),
-            ),
-            SizedBox(height: s.md),
+          if (widget.requiresPatientDetails)
             _ResponsiveFormGrid(
               items: [
+                _ResponsiveFormGridItem(
+                  child: _buildNomeField(cartState),
+                  mobileSpan: 1,
+                  tabletSpan: 2,
+                  desktopSpan: 2,
+                ),
                 _ResponsiveFormGridItem(
                   child: _buildIdadeField(),
                   mobileSpan: 1,
@@ -448,21 +437,18 @@ class _FinalizarVendaDialogState
                 _ResponsiveFormGridItem(
                   child: _buildPrescritorField(),
                   mobileSpan: 1,
-                  tabletSpan: 1,
-                  desktopSpan: 2,
                 ),
                 _ResponsiveFormGridItem(
                   child: _buildUnidadeSanitariaField(),
                   mobileSpan: 1,
-                  tabletSpan: 1,
-                  desktopSpan: 2,
                 ),
               ],
-              mobileColumns: 2,
+              mobileColumns: 1,
               tabletColumns: 2,
-              desktopColumns: 4,
-            ),
-          ],
+              desktopColumns: 2,
+            )
+          else
+            _buildNomeField(cartState),
           SizedBox(height: s.lg),
           Text(
             'Método de pagamento',
@@ -511,13 +497,6 @@ class _FinalizarVendaDialogState
           ),
           if (_isCashPayment) ...[
             SizedBox(height: s.md),
-            Text(
-              'O valor recebido é enviado ao backend e qualquer validação ou troco vem apenas na resposta final da venda.',
-              style: Theme.of(context).textTheme.erpCaption.copyWith(
-                    color: t.textMuted,
-                  ),
-            ),
-            SizedBox(height: s.sm),
             _buildValorRecebidoField(!checkoutState.isSubmitting),
           ],
           if (checkoutState.errorMessage != null) ...[
@@ -553,6 +532,33 @@ class _FinalizarVendaDialogState
     final content = _buildFormContent(context, checkoutState);
 
     if (widget.embedded) {
+      if (AdaptiveNavigator.isMobile(context)) {
+        return Column(
+          children: [
+            Expanded(
+              child: SingleChildScrollView(
+                child: content,
+              ),
+            ),
+            Container(
+              padding: EdgeInsets.fromLTRB(0, s.sm, 0, 0),
+              decoration: BoxDecoration(
+                color: t.bgPrimary,
+                border: Border(
+                  top: BorderSide(
+                    color: t.border.withValues(alpha: 0.5),
+                  ),
+                ),
+              ),
+              child: PharmaResponsiveDialogActions(
+                breakpoint: PharmaDialogBreakpoint.mobile,
+                children: actions,
+              ),
+            ),
+          ],
+        );
+      }
+
       return Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,

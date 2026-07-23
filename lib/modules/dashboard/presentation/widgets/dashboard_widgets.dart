@@ -13,74 +13,14 @@ import '../../../../shared/widgets/tables/table_typography.dart';
 import '../../../reports/presentation/controllers/report_controller.dart';
 import '../../../stock/presentation/widgets/movimentacoes_pagination.dart';
 import '../../domain/dashboard_query.dart';
+import '../../domain/models/dashboard_filter_option.dart';
+import '../../domain/models/dashboard_paged_table_result.dart';
+import '../../domain/utils/dashboard_data_utils.dart';
 import 'dashboard_state_widgets.dart';
 
-class DashboardPagedTableResult {
-  const DashboardPagedTableResult({
-    required this.items,
-    required this.page,
-    required this.pageSize,
-    required this.hasMore,
-    this.totalCount,
-    this.totalPages,
-    this.hasPrevious = false,
-  });
-
-  final List<Map<String, dynamic>> items;
-  final int page;
-  final int pageSize;
-  final bool hasMore;
-  final int? totalCount;
-  final int? totalPages;
-  final bool hasPrevious;
-
-  factory DashboardPagedTableResult.fromMap(Map<String, dynamic> json) {
-    int asInt(dynamic value, {int fallback = 0}) {
-      if (value is int) return value;
-      if (value is num) return value.toInt();
-      if (value is String) return int.tryParse(value) ?? fallback;
-      return fallback;
-    }
-
-    final page = asInt(json['page'], fallback: 1);
-    final pageSize = asInt(json['pageSize'], fallback: 10);
-    final totalCount =
-        json['totalCount'] == null ? null : asInt(json['totalCount']);
-    final totalPages = json['totalPages'] == null
-        ? (totalCount == null ? null : (totalCount / pageSize).ceil().clamp(1, 9999))
-        : asInt(json['totalPages'], fallback: 1);
-
-    return DashboardPagedTableResult(
-      items: dashList(json['items']),
-      page: page,
-      pageSize: pageSize,
-      hasMore: json['hasMore'] == true,
-      totalCount: totalCount,
-      totalPages: totalPages,
-      hasPrevious: json['hasPrevious'] == true || page > 1,
-    );
-  }
-}
-
-class DashboardFilterOption {
-  const DashboardFilterOption({
-    required this.value,
-    required this.label,
-  });
-
-  final String value;
-  final String label;
-}
-
-class DashboardTableColumn {
-  const DashboardTableColumn({
-    required this.label,
-    this.sortKey,
-  });
-
-  final String label;
-  final String? sortKey;
-}
+export '../../domain/models/dashboard_filter_option.dart';
+export '../../domain/models/dashboard_paged_table_result.dart';
+export '../../domain/utils/dashboard_data_utils.dart';
 
 class DashboardFilterSelect extends StatelessWidget {
   const DashboardFilterSelect({
@@ -124,65 +64,14 @@ class DashboardFilterSelect extends StatelessWidget {
   }
 }
 
-String dashKpi(Map<String, dynamic>? data, String key, {String suffix = ''}) {
-  final value = data?[key];
-  if (value == null) return '—';
-  if (value is num) {
-    final rounded = value == value.roundToDouble()
-        ? value.toInt().toString()
-        : value.toStringAsFixed(2);
-    return '$rounded$suffix';
-  }
-  return '$value$suffix';
-}
+class DashboardTableColumn {
+  const DashboardTableColumn({
+    required this.label,
+    this.sortKey,
+  });
 
-List<Map<String, dynamic>> dashList(dynamic value) {
-  if (value is List) {
-    return value.whereType<Map<String, dynamic>>().toList();
-  }
-  return const [];
-}
-
-Map<String, dynamic>? dashMap(dynamic value) {
-  return value is Map<String, dynamic> ? value : null;
-}
-
-String dashLabel(dynamic value, {int max = 8}) {
-  final label = value?.toString() ?? '';
-  if (label.isEmpty) return '—';
-  if (RegExp(r'^\d{4}-\d{2}-\d{2}$').hasMatch(label)) {
-    return '${label.substring(8, 10)}/${label.substring(5, 7)}';
-  }
-  if (RegExp(r'^\d{4}-\d{2}-\d{2}T').hasMatch(label)) {
-    return '${label.substring(8, 10)}/${label.substring(5, 7)}';
-  }
-  if (RegExp(r'^\d{4}-\d{2}$').hasMatch(label)) {
-    return '${label.substring(5, 7)}/${label.substring(2, 4)}';
-  }
-  if (label.length <= max) return label;
-  return label.substring(0, max);
-}
-
-List<DashboardFilterOption> dashboardUniqueOptions(
-  Iterable<dynamic> values, {
-  Map<String, String>? labels,
-}) {
-  final seen = <String>{};
-  final items = <DashboardFilterOption>[];
-  for (final value in values) {
-    final normalized = value?.toString().trim();
-    if (normalized == null || normalized.isEmpty || !seen.add(normalized)) {
-      continue;
-    }
-    items.add(
-      DashboardFilterOption(
-        value: normalized,
-        label: labels?[normalized] ?? normalized,
-      ),
-    );
-  }
-  items.sort((a, b) => a.label.compareTo(b.label));
-  return items;
+  final String label;
+  final String? sortKey;
 }
 
 /// Altura mínima e máxima recomendadas para a área de gráfico dentro do card.
@@ -363,11 +252,13 @@ Widget dashboardLineChart({
 
   return _dashboardScrollableChart(
     minWidth: minWidth,
-    child: ClipRect(
+    child: Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 4),
       child: LineChart(
         LineChartData(
           minY: 0,
           maxY: chartMax,
+          clipData: const FlClipData.none(),
           gridData: FlGridData(
             show: true,
             drawVerticalLine: false,
@@ -408,7 +299,7 @@ Widget dashboardLineChart({
               isCurved: true,
               color: color ?? t.brandGreen,
               barWidth: 2.5,
-              dotData: const FlDotData(show: false),
+              dotData: FlDotData(show: points.length <= 14),
               belowBarData: BarAreaData(
                 show: true,
                 color: (color ?? t.brandGreen).withValues(alpha: 0.1),
@@ -517,6 +408,246 @@ Widget dashboardBarChart({
         }),
       ),
     ),
+  );
+}
+
+double _dashboardNumeric(dynamic value) {
+  if (value is num) return value.toDouble();
+  if (value is String) return double.tryParse(value) ?? 0;
+  return 0;
+}
+
+/// Barras verticais para séries temporais (receita, vendas, saldo por período).
+///
+/// Diferencia-se do [dashboardBarChart] categórico: barras mais estreitas,
+/// gradiente suave e espaçamento optimizado para datas/meses.
+/// Com [allowNegative], o eixo inclui valores abaixo de zero (ex.: saldo).
+Widget dashboardTrendBarChart({
+  required BuildContext context,
+  required List<Map<String, dynamic>> points,
+  required String valueKey,
+  required String labelKey,
+  Color? color,
+  Color? negativeColor,
+  double barWidth = 14,
+  bool allowNegative = false,
+}) {
+  final t = context.pharmaTokens;
+  if (points.isEmpty) {
+    return _dashboardChartEmptyState(context);
+  }
+
+  final positiveColor = color ?? t.brandGreen;
+  final deficitColor = negativeColor ?? t.posDanger;
+  final values = points
+      .map((point) => _dashboardNumeric(point[valueKey]))
+      .toList(growable: false);
+
+  var maxY = 0.0;
+  var minY = 0.0;
+  for (final value in values) {
+    if (value > maxY) maxY = value;
+    if (allowNegative && value < minY) minY = value;
+  }
+  final chartMax = maxY > 0
+      ? maxY * 1.15
+      : (minY < 0 ? (-minY * 0.08).clamp(1.0, double.infinity) : 1.0);
+  final chartMin = allowNegative && minY < 0 ? minY * 1.15 : 0.0;
+  final minWidth = _dashboardChartMinWidthForCount(points.length, perItem: 52);
+
+  return _dashboardScrollableChart(
+    minWidth: minWidth,
+    child: BarChart(
+      BarChartData(
+        minY: chartMin,
+        maxY: chartMax,
+        gridData: FlGridData(
+          show: true,
+          drawVerticalLine: false,
+          getDrawingHorizontalLine: (v) =>
+              FlLine(color: t.border.withValues(alpha: 0.22), strokeWidth: 1),
+        ),
+        borderData: FlBorderData(show: false),
+        titlesData: FlTitlesData(
+          bottomTitles: AxisTitles(
+            sideTitles: SideTitles(
+              showTitles: true,
+              reservedSize: 28,
+              getTitlesWidget: (value, meta) {
+                final i = value.toInt();
+                if (i < 0 || i >= points.length) return const SizedBox.shrink();
+                return DefaultTextStyle(
+                  style: Theme.of(context).textTheme.erpBodySecondary.copyWith(
+                        color: t.textMuted,
+                      ),
+                  child: _dashboardAxisLabel(
+                    context: context,
+                    meta: meta,
+                    label: dashLabel(points[i][labelKey], max: 10),
+                    angle: points.length > 8 ? -0.45 : 0,
+                  ),
+                );
+              },
+            ),
+          ),
+          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+        ),
+        barGroups: List.generate(points.length, (i) {
+          final value = values[i];
+          final isNegative = value < 0;
+          final barColor = isNegative ? deficitColor : positiveColor;
+          return BarChartGroupData(
+            x: i,
+            barRods: [
+              BarChartRodData(
+                fromY: 0,
+                toY: value,
+                width: barWidth,
+                gradient: LinearGradient(
+                  begin: isNegative ? Alignment.topCenter : Alignment.bottomCenter,
+                  end: isNegative ? Alignment.bottomCenter : Alignment.topCenter,
+                  colors: [
+                    barColor.withValues(alpha: 0.45),
+                    barColor,
+                  ],
+                ),
+                borderRadius: BorderRadius.vertical(
+                  top: isNegative ? Radius.zero : const Radius.circular(6),
+                  bottom: isNegative ? const Radius.circular(6) : Radius.zero,
+                ),
+              ),
+            ],
+          );
+        }),
+      ),
+    ),
+  );
+}
+
+/// Barras agrupadas para séries temporais com receitas e despesas.
+Widget dashboardDualTrendBarChart({
+  required BuildContext context,
+  required List<Map<String, dynamic>> points,
+  required String labelKey,
+  String receitasKey = 'receitas',
+  String despesasKey = 'despesas',
+  Color? receitasColor,
+  Color? despesasColor,
+  double barWidth = 10,
+}) {
+  final t = context.pharmaTokens;
+  if (points.isEmpty) {
+    return _dashboardChartEmptyState(context);
+  }
+
+  final incomeColor = receitasColor ?? t.brandGreen;
+  final expenseColor = despesasColor ?? t.brandBlue;
+  final receitas = points
+      .map((point) => (point[receitasKey] as num?)?.toDouble() ?? 0)
+      .toList(growable: false);
+  final despesas = points
+      .map((point) => (point[despesasKey] as num?)?.toDouble() ?? 0)
+      .toList(growable: false);
+  final maxY = [
+    ...receitas,
+    ...despesas,
+  ].fold<double>(0, (a, b) => a > b ? a : b);
+  final chartMax = maxY < 1 ? 1.0 : maxY * 1.15;
+  final minWidth = _dashboardChartMinWidthForCount(points.length, perItem: 72);
+
+  BarChartRodData rod({
+    required double value,
+    required Color baseColor,
+  }) {
+    return BarChartRodData(
+      toY: value,
+      width: barWidth,
+      gradient: LinearGradient(
+        begin: Alignment.bottomCenter,
+        end: Alignment.topCenter,
+        colors: [
+          baseColor.withValues(alpha: 0.45),
+          baseColor,
+        ],
+      ),
+      borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+    );
+  }
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      Expanded(
+        child: _dashboardScrollableChart(
+          minWidth: minWidth,
+          child: BarChart(
+            BarChartData(
+              maxY: chartMax,
+              gridData: FlGridData(
+                show: true,
+                drawVerticalLine: false,
+                getDrawingHorizontalLine: (v) => FlLine(
+                  color: t.border.withValues(alpha: 0.22),
+                  strokeWidth: 1,
+                ),
+              ),
+              borderData: FlBorderData(show: false),
+              titlesData: FlTitlesData(
+                bottomTitles: AxisTitles(
+                  sideTitles: SideTitles(
+                    showTitles: true,
+                    reservedSize: 28,
+                    getTitlesWidget: (value, meta) {
+                      final i = value.toInt();
+                      if (i < 0 || i >= points.length) {
+                        return const SizedBox.shrink();
+                      }
+                      return DefaultTextStyle(
+                        style: Theme.of(context)
+                            .textTheme
+                            .erpBodySecondary
+                            .copyWith(color: t.textMuted),
+                        child: _dashboardAxisLabel(
+                          context: context,
+                          meta: meta,
+                          label: dashLabel(points[i][labelKey], max: 10),
+                          angle: points.length > 8 ? -0.45 : 0,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                leftTitles:
+                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                topTitles:
+                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                rightTitles:
+                    const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              ),
+              barGroups: List.generate(points.length, (i) {
+                return BarChartGroupData(
+                  x: i,
+                  barsSpace: 4,
+                  barRods: [
+                    rod(value: receitas[i], baseColor: incomeColor),
+                    rod(value: despesas[i], baseColor: expenseColor),
+                  ],
+                );
+              }),
+            ),
+          ),
+        ),
+      ),
+      const SizedBox(height: AppSpacing.xs),
+      _dashboardChartLegend(
+        items: [
+          ('Receitas', incomeColor),
+          ('Despesas', expenseColor),
+        ],
+      ),
+    ],
   );
 }
 

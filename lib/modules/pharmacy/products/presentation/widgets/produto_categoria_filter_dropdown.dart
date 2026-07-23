@@ -47,6 +47,7 @@ class ProdutoCategoriaFilterDropdown extends ConsumerWidget {
         value: currentValue,
         onChanged: onChanged,
         items: items,
+        menuMaxHeight: 400,
       );
     }
 

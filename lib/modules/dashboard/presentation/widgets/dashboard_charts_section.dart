@@ -1,7 +1,7 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/spacing.dart';
+import '../../../../shared/responsive/pharma_screen_layout.dart';
 import 'dashboard_widgets.dart';
 
 /// Proporção preferida da área do gráfico (largura : altura).
@@ -61,6 +61,12 @@ class DashboardChartsSection extends StatelessWidget {
             : minChartWidth;
         final spacing = AppSpacing.lg;
 
+        final crossAxisCount = PharmaScreenLayout.adaptiveCrossAxisCount(
+          availableWidth,
+          minChartWidth,
+          maxColumns: 2,
+        );
+
         final rows = <Widget>[];
         var gridBatch = <Widget>[];
 
@@ -71,6 +77,7 @@ class DashboardChartsSection extends StatelessWidget {
               charts: gridBatch,
               availableWidth: availableWidth,
               spacing: spacing,
+              crossAxisCount: crossAxisCount,
             ),
           );
           gridBatch = [];
@@ -123,9 +130,8 @@ class DashboardChartsSection extends StatelessWidget {
     required List<Widget> charts,
     required double availableWidth,
     required double spacing,
+    required int crossAxisCount,
   }) {
-    final crossAxisCount = math.max(1, (availableWidth / minChartWidth).floor());
-
     final rows = <Widget>[];
     for (var i = 0; i < charts.length; i += crossAxisCount) {
       final rowChildren = charts.skip(i).take(crossAxisCount).toList();

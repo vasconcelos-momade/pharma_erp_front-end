@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/design_tokens.dart';
+import '../../../../../core/theme/extensions.dart';
 import '../../../../../shared/widgets/buttons/pharma_button_loader.dart';
 import '../../../../../shared/widgets/cards/enterprise_list_card.dart';
 import '../../../../pharmacy/products/domain/entities/product.dart';
@@ -25,17 +26,63 @@ class PdvProductCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
+    final textTheme = Theme.of(context).textTheme;
     final hasStock = product.estoqueAtual > 0;
+    final lowStock = product.estoqueAtual <= product.estoqueMinimo;
     final canInteract = canAdd && !isAdding && hasStock;
+    final dosagem = product.dosagem?.trim();
+    final forma = product.forma?.trim();
     final metadataLine =
-        'PV ${pdvFormatMoney(product.precoVenda)} • Val. ${pdvFormatDate(product.dataValidade)} • Lote ${product.lote ?? '—'} • Stock ${product.estoqueAtual.toInt()}';
+        'PV ${pdvFormatMoney(product.precoVenda)} • Val. ${pdvFormatDate(product.dataValidade)} • Lote ${product.lote ?? '—'}';
+    final titleStyle = textTheme.erpCardTitle.copyWith(color: t.textPrimary);
+    final titleDetailStyle = titleStyle.copyWith(
+      color: t.textSecondary,
+      fontWeight: FontWeight.w400,
+    );
+    final titleWidget =
+        (compactAction &&
+            ((dosagem != null && dosagem.isNotEmpty) ||
+                (forma != null && forma.isNotEmpty)))
+        ? RichText(
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            text: TextSpan(
+              style: titleStyle,
+              children: [
+                TextSpan(text: product.nomeComercial),
+                if (dosagem != null && dosagem.isNotEmpty) ...[
+                  TextSpan(text: ' - ', style: titleDetailStyle),
+                  TextSpan(text: dosagem, style: titleDetailStyle),
+                ],
+                if (forma != null && forma.isNotEmpty) ...[
+                  TextSpan(text: ' - ', style: titleDetailStyle),
+                  TextSpan(text: forma, style: titleDetailStyle),
+                ],
+              ],
+            ),
+          )
+        : null;
+    final Widget actionButton = compactAction
+        ? FilledButton(
+            onPressed: canInteract ? onAdd : null,
+            child: isAdding
+                ? PharmaButtonLoader(color: t.brandBlue)
+                : const Text('+'),
+          )
+        : FilledButton.tonalIcon(
+            onPressed: canInteract ? onAdd : null,
+            icon: isAdding
+                ? PharmaButtonLoader(color: t.brandBlue)
+                : const Icon(Icons.add_shopping_cart_rounded),
+            label: const Text('Adicionar'),
+          );
 
     return EnterpriseListCard(
       title: product.nomeComercial,
+      titleWidget: titleWidget,
       subtitle: (product.nomeGenerico ?? '').isNotEmpty
           ? product.nomeGenerico
           : null,
-      leading: Icons.medication_outlined,
       chip: product.requiresPsychotropicBook
           ? EnterpriseStatusChip(
               label: 'Psicotrópico',
@@ -51,14 +98,16 @@ class PdvProductCard extends StatelessWidget {
         EnterpriseListCardMeta(label: product.categoriaNome ?? '—'),
         EnterpriseListCardMeta(label: metadataLine),
       ],
+      trailingMeta: compactAction
+          ? EnterpriseListCardMeta(
+              label: 'Stock: ${product.estoqueAtual.toInt()}',
+              color: lowStock ? t.posDanger : t.textMuted,
+              alignEnd: true,
+              emphasized: true,
+            )
+          : null,
       onTap: canInteract ? onAdd : null,
-      actions: FilledButton.tonalIcon(
-        onPressed: canInteract ? onAdd : null,
-        icon: isAdding
-            ? PharmaButtonLoader(color: t.brandBlue)
-            : const Icon(Icons.add_shopping_cart_rounded),
-        label: Text(compactAction ? 'Add' : 'Adicionar'),
-      ),
+      actions: actionButton,
     );
   }
 }

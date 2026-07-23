@@ -122,13 +122,18 @@ class PdvProductTable extends StatelessWidget {
     final s = context.spacing;
     final textTheme = Theme.of(context).textTheme;
     final substancia = product.nomeGenerico?.trim();
+    final title = pdvProductDisplayTitle(
+      nomeComercial: product.nomeComercial,
+      dosagem: product.dosagem,
+      forma: product.forma,
+    );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          product.nomeComercial,
+          title,
           style: textTheme.erpTablePrimary.copyWith(color: t.textPrimary),
           maxLines: 2,
           overflow: TextOverflow.ellipsis,

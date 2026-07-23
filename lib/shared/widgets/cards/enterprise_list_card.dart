@@ -28,6 +28,7 @@ class EnterpriseListCard extends StatelessWidget {
   const EnterpriseListCard({
     super.key,
     required this.title,
+    this.titleWidget,
     this.subtitle,
     this.leading,
     this.trailing,
@@ -40,6 +41,7 @@ class EnterpriseListCard extends StatelessWidget {
   });
 
   final String title;
+  final Widget? titleWidget;
   final String? subtitle;
   final IconData? leading;
   final Widget? trailing;
@@ -81,14 +83,17 @@ class EnterpriseListCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Text(
-                              title,
-                              style: theme.textTheme.erpCardTitle.copyWith(
-                                color: t.textPrimary,
+                            if (titleWidget != null)
+                              titleWidget!
+                            else
+                              Text(
+                                title,
+                                style: theme.textTheme.erpCardTitle.copyWith(
+                                  color: t.textPrimary,
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
                             if (subtitle != null) ...[
                               SizedBox(height: s.xxs),
                               Text(

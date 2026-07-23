@@ -22,6 +22,9 @@ class DraftCartItemModel {
     required this.requiresPsychotropicBook,
     this.estoqueAtual,
     this.tipoServicoClinico,
+    this.dosagem,
+    this.forma,
+    this.nomeGenerico,
   });
 
   final String id;
@@ -44,6 +47,9 @@ class DraftCartItemModel {
   final bool requiresPsychotropicBook;
   final double? estoqueAtual;
   final String? tipoServicoClinico;
+  final String? dosagem;
+  final String? forma;
+  final String? nomeGenerico;
 
   bool get isProduto => tipo == 'produto';
   bool get isServico => tipo == 'servico';
@@ -73,6 +79,9 @@ class DraftCartItemModel {
       requiresPsychotropicBook: json['requiresPsychotropicBook'] as bool? ?? false,
       estoqueAtual: json['estoqueAtual'] == null ? null : _toDouble(json['estoqueAtual']),
       tipoServicoClinico: json['tipoServicoClinico'] as String?,
+      dosagem: json['dosagem'] as String?,
+      forma: json['forma'] as String?,
+      nomeGenerico: json['nomeGenerico'] as String?,
     );
   }
 

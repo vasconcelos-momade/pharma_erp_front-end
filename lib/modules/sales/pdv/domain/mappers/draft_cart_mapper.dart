@@ -11,6 +11,9 @@ abstract final class DraftCartMapper {
     return Product(
       id: item.produtoId ?? '',
       nomeComercial: item.nome,
+      nomeGenerico: item.nomeGenerico,
+      dosagem: item.dosagem,
+      forma: item.forma,
       ativo: true,
       tipoDispensacao: item.tipoDispensacao ?? 'VENDA_LIVRE',
       requiresPrescription: item.requiresPrescription,

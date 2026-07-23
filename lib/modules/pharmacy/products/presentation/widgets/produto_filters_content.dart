@@ -54,6 +54,7 @@ class ProdutoFiltersContent extends StatelessWidget {
           key: ValueKey('produto-filter-categoria-$categoriaId'),
           initialValue: categoriaId,
           isExpanded: true,
+          menuMaxHeight: 400,
           decoration: _dropdownDecoration(context, 'Categoria'),
           items: [
             const DropdownMenuItem<String?>(value: null, child: Text('Todas')),

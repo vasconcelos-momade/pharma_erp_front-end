@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/extensions.dart';
 import '../../../../../shared/widgets/buttons/pharma_button_loader.dart';
+import '../../../../../shared/widgets/dialogs/enterprise_dialog.dart';
 import '../../../../../shared/widgets/feedback/module_data_states.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_search_bar.dart';
@@ -357,83 +358,88 @@ class _PdvPageState extends ConsumerState<PdvPage>
   }
 
   Future<void> _showCheckoutActions(PdvCheckoutResult result) async {
-    await PharmaFeedback.showForm<void>(
-      context: context,
-      title: const Text('Fatura emitida'),
-      content: Text(
-        'A fatura ${result.numero} foi emitida com sucesso. Deseja abrir o PDF ou preparar o recibo de reimpressão?',
-      ),
-      scrollable: false,
-      actions: [
+    final isMobile = MediaQuery.sizeOf(context).width < Breakpoints.tablet;
+    final actions = <Widget>[
+      if (!isMobile)
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
           child: const Text('Fechar'),
         ),
-        OutlinedButton.icon(
-          onPressed: () async {
-            Navigator.of(context).pop();
-            try {
-              await ref
-                  .read(invoiceActionProvider.notifier)
-                  .printReceipt(invoiceId: result.id);
-              if (!mounted) {
-                return;
-              }
-              PharmaFeedback.success(
-                context,
-                'Recibo de reimpressão disponibilizado com sucesso.',
-              );
-            } on ApiFailure catch (e) {
-              if (!mounted) {
-                return;
-              }
-              PharmaFeedback.error(context, e.message);
-            } catch (_) {
-              if (!mounted) {
-                return;
-              }
-              PharmaFeedback.error(
-                context,
-                'Não foi possível preparar o recibo para impressão.',
-              );
+      OutlinedButton.icon(
+        onPressed: () async {
+          Navigator.of(context).pop();
+          try {
+            await ref
+                .read(invoiceActionProvider.notifier)
+                .printReceipt(invoiceId: result.id);
+            if (!mounted) {
+              return;
             }
-          },
-          icon: const Icon(Icons.print_outlined),
-          label: const Text('Reimprimir'),
-        ),
-        FilledButton.icon(
-          onPressed: () async {
-            Navigator.of(context).pop();
-            try {
-              await ref
-                  .read(invoiceActionProvider.notifier)
-                  .exportPdf(invoiceId: result.id);
-              if (!mounted) {
-                return;
-              }
-              PharmaFeedback.success(
-                context,
-                'PDF da fatura disponibilizado com sucesso.',
-              );
-            } on ApiFailure catch (e) {
-              if (!mounted) {
-                return;
-              }
-              PharmaFeedback.error(context, e.message);
-            } catch (_) {
-              if (!mounted) {
-                return;
-              }
-              PharmaFeedback.error(
-                context,
-                'Não foi possível exportar o PDF da fatura.',
-              );
+            PharmaFeedback.success(
+              context,
+              'Recibo de reimpressão disponibilizado com sucesso.',
+            );
+          } on ApiFailure catch (e) {
+            if (!mounted) {
+              return;
             }
-          },
-          icon: const Icon(Icons.picture_as_pdf_outlined),
-          label: const Text('Exportar PDF'),
-        ),
-      ],
+            PharmaFeedback.error(context, e.message);
+          } catch (_) {
+            if (!mounted) {
+              return;
+            }
+            PharmaFeedback.error(
+              context,
+              'Não foi possível preparar o recibo para impressão.',
+            );
+          }
+        },
+        icon: const Icon(Icons.print_outlined),
+        label: const Text('Reimprimir'),
+      ),
+      FilledButton.icon(
+        onPressed: () async {
+          Navigator.of(context).pop();
+          try {
+            await ref
+                .read(invoiceActionProvider.notifier)
+                .exportPdf(invoiceId: result.id);
+            if (!mounted) {
+              return;
+            }
+            PharmaFeedback.success(
+              context,
+              'PDF da fatura disponibilizado com sucesso.',
+            );
+          } on ApiFailure catch (e) {
+            if (!mounted) {
+              return;
+            }
+            PharmaFeedback.error(context, e.message);
+          } catch (_) {
+            if (!mounted) {
+              return;
+            }
+            PharmaFeedback.error(
+              context,
+              'Não foi possível exportar o PDF da fatura.',
+            );
+          }
+        },
+        icon: const Icon(Icons.picture_as_pdf_outlined),
+        label: const Text('Exportar PDF'),
+      ),
+    ];
+
+    await showEnterpriseDialog<void>(
+      context: context,
+      title: const Text('Fatura emitida'),
+      body: Text(
+        'A fatura ${result.numero} foi emitida com sucesso. Deseja abrir o PDF ou preparar o recibo de reimpressão?',
+      ),
+      scrollable: false,
+      showClose: isMobile,
+      actions: actions,
     );
   }
 
@@ -606,26 +612,11 @@ class _PdvPageState extends ConsumerState<PdvPage>
           ),
           if (_isProductsTab) ...[
             SizedBox(height: s.sm),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: ProdutoCategoriaFilterDropdown(
-                    value: productState.categoriaId,
-                    width: double.infinity,
-                    enabled: true,
-                    onChanged: _onCategoryChanged,
-                  ),
-                ),
-                SizedBox(width: s.sm),
-                IconButton(
-                  tooltip: 'Actualizar catálogo',
-                  onPressed: productState.isLoading
-                      ? null
-                      : () => unawaited(productController.refreshCatalogAndPage()),
-                  icon: Icon(Icons.refresh_rounded, color: t.brandBlue),
-                ),
-              ],
+            ProdutoCategoriaFilterDropdown(
+              value: productState.categoriaId,
+              width: double.infinity,
+              enabled: true,
+              onChanged: _onCategoryChanged,
             ),
           ],
         ] else
@@ -646,10 +637,10 @@ class _PdvPageState extends ConsumerState<PdvPage>
               ],
               Expanded(
                 child: Align(
-                  alignment: Alignment.centerLeft,
+                  alignment: Alignment.centerRight,
                   child: ConstrainedBox(
                     constraints: BoxConstraints(
-                      maxWidth: _isProductsTab ? double.infinity : 720,
+                      maxWidth: _isProductsTab ? 520 : 720,
                     ),
                     child: EnterpriseModuleSearchBar(
                       controller: _search,
@@ -669,20 +660,6 @@ class _PdvPageState extends ConsumerState<PdvPage>
                   ),
                 ),
               ),
-              if (_isProductsTab) ...[
-                SizedBox(width: s.sm),
-                IconButton(
-                  tooltip: 'Actualizar catálogo',
-                  onPressed: productState.isLoading
-                      ? null
-                      : () => unawaited(productController.refreshCatalogAndPage()),
-                  icon: Icon(
-                    Icons.refresh_rounded,
-                    color: t.brandBlue,
-                    size: t.iconMd,
-                  ),
-                ),
-              ],
             ],
           ),
         SizedBox(height: isMobile ? s.sm : s.md),
@@ -738,7 +715,6 @@ class _PdvPageState extends ConsumerState<PdvPage>
       discount: cartState.discount,
       total: cartState.total,
       cart: cart,
-      clienteNome: cartState.displayClienteNome,
       t: t,
       compact: isMobile || isTablet,
       caixaAberto: caixaAberto,
@@ -850,7 +826,6 @@ class _MobileCartScreen extends ConsumerWidget {
             discount: cartState.discount,
             total: cartState.total,
             cart: cart,
-            clienteNome: cartState.displayClienteNome,
             t: t,
             compact: true,
             caixaAberto: caixaAberto,
@@ -884,7 +859,6 @@ class _CartPane extends StatelessWidget {
     required this.discount,
     required this.total,
     required this.cart,
-    required this.clienteNome,
     required this.t,
     required this.compact,
     required this.caixaAberto,
@@ -903,7 +877,6 @@ class _CartPane extends StatelessWidget {
   final double discount;
   final double total;
   final List<PdvCartLine> cart;
-  final String clienteNome;
   final PharmaTokens t;
   final bool compact;
   final bool caixaAberto;
@@ -914,6 +887,51 @@ class _CartPane extends StatelessWidget {
   final void Function(PdvCartLine) onRemove;
   final void Function(PdvCartLine) onDelete;
   final bool Function(String lineId) isLineBusy;
+
+  Widget _buildLineTitle(BuildContext context, PdvCartLine line) {
+    final t = context.pharmaTokens;
+    final s = context.spacing;
+    final textTheme = Theme.of(context).textTheme;
+    final product = line.product;
+
+    if (product == null) {
+      return Text(
+        line.nome,
+        style: textTheme.erpTablePrimary.copyWith(color: t.textPrimary),
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
+
+    final substancia = product.nomeGenerico?.trim();
+    final title = pdvProductDisplayTitle(
+      nomeComercial: product.nomeComercial,
+      dosagem: product.dosagem,
+      forma: product.forma,
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          title,
+          style: textTheme.erpTablePrimary.copyWith(color: t.textPrimary),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        if (substancia != null && substancia.isNotEmpty) ...[
+          SizedBox(height: s.xxs),
+          Text(
+            substancia,
+            style: textTheme.erpTableMeta.copyWith(color: t.textSecondary),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -926,23 +944,6 @@ class _CartPane extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              children: [
-                Icon(Icons.person_outline, size: 18, color: t.textMuted),
-                SizedBox(width: s.xs),
-                Expanded(
-                  child: Text(
-                    'Cliente: $clienteNome',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.erpLabel.copyWith(
-                          color: t.textPrimary,
-                        ),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: s.sm),
             Expanded(
               child: cart.isEmpty
                   ? const ModuleEmptyState(
@@ -964,14 +965,7 @@ class _CartPane extends StatelessWidget {
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text(
-                                      line.nome,
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.erpLabel.copyWith(
-                                        color: t.textPrimary,
-                                      ),
-                                    ),
+                                    _buildLineTitle(context, line),
                                     SizedBox(height: s.xxs),
                                     Text(
                                       '${pdvFormatMoney(line.precoUnitario)} / un',

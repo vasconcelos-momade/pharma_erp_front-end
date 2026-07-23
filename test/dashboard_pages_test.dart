@@ -180,8 +180,11 @@ class _FakeDashboardRemoteDataSource extends DashboardRemoteDataSource {
     return {
       'kpis': {
         'receita': 1200,
-        'despesas': 700,
-        'lucro': 500,
+        'despesas': 500,
+        'saidas': 500,
+        'suprimentos': 200,
+        'sangrias': 150,
+        'lucro': 550,
         'fluxoCaixa': 300,
         'saldoAtual': 2000,
         'contasReceber': 900,

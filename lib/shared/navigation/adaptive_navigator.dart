@@ -146,6 +146,7 @@ abstract final class AdaptiveNavigator {
     RouteSettings? routeSettings,
     double? sideSheetWidth,
     bool barrierDismissible = true,
+    bool mobileWrapInScrollView = true,
     EnterpriseOverlaySize size = EnterpriseOverlaySize.medium,
   }) {
     return openForm<T>(
@@ -158,14 +159,20 @@ abstract final class AdaptiveNavigator {
       contentBuilder: (formContext) {
         final form = formBuilder(formContext, embedded: true);
         if (isMobile(formContext)) {
+          final body = mobileWrapInScrollView
+              ? SingleChildScrollView(
+                  padding: EdgeInsets.all(context.spacing.lg),
+                  child: form,
+                )
+              : Padding(
+                  padding: EdgeInsets.all(context.spacing.lg),
+                  child: form,
+                );
           return Scaffold(
             appBar: AppBar(
               title: title is Text ? title : const Text('Formulário'),
             ),
-            body: SingleChildScrollView(
-              padding: EdgeInsets.all(context.spacing.lg),
-              child: form,
-            ),
+            body: body,
           );
         }
         return form;
