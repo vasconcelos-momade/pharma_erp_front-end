@@ -46,10 +46,11 @@ class EnterpriseMobileToolbar extends StatelessWidget {
     final t = context.pharmaTokens;
     final s = context.spacing;
     final compactButtonStyle = OutlinedButton.styleFrom(
-      minimumSize: Size(0, DesignMetrics.toolbarHeight),
-      padding: EdgeInsets.symmetric(horizontal: s.sm, vertical: 0),
+      minimumSize: const Size(0, DesignMetrics.buttonHeight),
+      maximumSize: const Size(double.infinity, DesignMetrics.buttonHeight),
+      padding: EdgeInsets.symmetric(horizontal: s.sm),
       tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-      visualDensity: VisualDensity.compact,
+      visualDensity: VisualDensity.standard,
     );
     return ColoredBox(
       color: t.bgPrimary,
@@ -80,18 +81,15 @@ class EnterpriseMobileToolbar extends StatelessWidget {
               children: [
                 if (showFiltersButton)
                   Expanded(
-                    child: SizedBox(
-                      height: DesignMetrics.toolbarHeight,
-                      child: OutlinedButton.icon(
-                        style: compactButtonStyle,
-                        onPressed: enabled ? onOpenFilters : null,
-                        icon: Icon(Icons.tune_rounded, size: t.iconSm),
-                        label: Text(
-                          hasFilters ? '$filterLabel *' : filterLabel,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          softWrap: false,
-                        ),
+                    child: OutlinedButton.icon(
+                      style: compactButtonStyle,
+                      onPressed: enabled ? onOpenFilters : null,
+                      icon: Icon(Icons.tune_rounded, size: t.iconSm),
+                      label: Text(
+                        hasFilters ? '$filterLabel *' : filterLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: false,
                       ),
                     ),
                   ),
@@ -100,18 +98,15 @@ class EnterpriseMobileToolbar extends StatelessWidget {
                 if (reportAction != null) SizedBox(width: s.sm),
                 if (showRefreshButton)
                   Expanded(
-                    child: SizedBox(
-                      height: DesignMetrics.toolbarHeight,
-                      child: OutlinedButton.icon(
-                        style: compactButtonStyle,
-                        onPressed: enabled ? onRefresh : null,
-                        icon: Icon(Icons.refresh_rounded, size: t.iconSm),
-                        label: Text(
-                          refreshLabel,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          softWrap: false,
-                        ),
+                    child: OutlinedButton.icon(
+                      style: compactButtonStyle,
+                      onPressed: enabled ? onRefresh : null,
+                      icon: Icon(Icons.refresh_rounded, size: t.iconSm),
+                      label: Text(
+                        refreshLabel,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: false,
                       ),
                     ),
                   ),

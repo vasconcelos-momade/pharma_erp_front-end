@@ -144,6 +144,8 @@ class PharmaTokens extends ThemeExtension<PharmaTokens> {
     required this.radius2xl,
     required this.radius3xl,
     required this.minTouchTarget,
+    required this.controlHeight,
+    required this.compactControlHeight,
     required this.iconMd,
     required this.iconSm,
     required this.avatarMd,
@@ -182,6 +184,8 @@ class PharmaTokens extends ThemeExtension<PharmaTokens> {
   final double radius2xl;
   final double radius3xl;
   final double minTouchTarget;
+  final double controlHeight;
+  final double compactControlHeight;
   final double iconMd;
   final double iconSm;
   final double avatarMd;
@@ -225,6 +229,8 @@ class PharmaTokens extends ThemeExtension<PharmaTokens> {
       radius2xl: SpacingTokens.xl,
       radius3xl: SpacingTokens.xxl,
       minTouchTarget: DesignMetrics.minTouchTarget,
+      controlHeight: DesignMetrics.controlHeight,
+      compactControlHeight: DesignMetrics.compactControlHeight,
       iconMd: DesignMetrics.iconMd,
       iconSm: DesignMetrics.iconSm,
       avatarMd: DesignMetrics.avatarMd,
@@ -266,6 +272,8 @@ class PharmaTokens extends ThemeExtension<PharmaTokens> {
       radius2xl: SpacingTokens.xl,
       radius3xl: SpacingTokens.xxl,
       minTouchTarget: DesignMetrics.minTouchTarget,
+      controlHeight: DesignMetrics.controlHeight,
+      compactControlHeight: DesignMetrics.compactControlHeight,
       iconMd: DesignMetrics.iconMd,
       iconSm: DesignMetrics.iconSm,
       avatarMd: DesignMetrics.avatarMd,

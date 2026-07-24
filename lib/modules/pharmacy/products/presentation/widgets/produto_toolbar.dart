@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../shared/responsive/pharma_screen_layout.dart';
+import '../../../../../shared/widgets/inputs/enterprise_select_field.dart';
 import '../../../../../shared/widgets/layout/enterprise_mobile_toolbar.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_search_bar.dart';
 import '../../../categories/domain/entities/category.dart';
@@ -72,32 +73,28 @@ class _ProdutoToolbarState extends State<ProdutoToolbar> {
       );
     }
 
-    final statusDropdown = DropdownButtonFormField<bool?>(
+    final statusDropdown = EnterpriseSelectField<bool>(
       key: ValueKey('produto-status-${state.ativoFilter}'),
-      isExpanded: true,
-      initialValue: state.ativoFilter,
-      decoration: const InputDecoration(labelText: 'Status'),
-      items: const [
-        DropdownMenuItem<bool?>(value: null, child: Text('Todos')),
-        DropdownMenuItem<bool?>(value: true, child: Text('Activos')),
-        DropdownMenuItem<bool?>(value: false, child: Text('Inactivos')),
+      label: 'Status',
+      emptyLabel: 'Todos',
+      value: state.ativoFilter,
+      options: const [
+        EnterpriseSelectOption<bool>(value: true, label: 'Activos'),
+        EnterpriseSelectOption<bool>(value: false, label: 'Inactivos'),
       ],
       onChanged: state.isLoading ? null : controller.setAtivoFilter,
     );
 
-    final categoryDropdown = DropdownButtonFormField<String?>(
-      key: ValueKey('produto-categoria-${state.categoriaId}-${widget.categories.length}'),
-      isExpanded: true,
-      initialValue: state.categoriaId,
-      decoration: const InputDecoration(labelText: 'Categoria'),
-      items: [
-        const DropdownMenuItem<String?>(value: null, child: Text('Todas')),
-        ...widget.categories.map(
-          (cat) => DropdownMenuItem<String?>(
-            value: cat.id,
-            child: Text(cat.nome, overflow: TextOverflow.ellipsis),
-          ),
-        ),
+    final categoryDropdown = EnterpriseSelectField<String>(
+      key: ValueKey(
+        'produto-categoria-${state.categoriaId}-${widget.categories.length}',
+      ),
+      label: 'Categoria',
+      emptyLabel: 'Todas',
+      value: state.categoriaId,
+      options: [
+        for (final cat in widget.categories)
+          EnterpriseSelectOption<String>(value: cat.id, label: cat.nome),
       ],
       onChanged: state.isLoading ? null : controller.setCategoriaIdFilter,
     );

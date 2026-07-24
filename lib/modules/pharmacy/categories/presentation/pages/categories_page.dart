@@ -19,6 +19,7 @@ import '../../../../../shared/widgets/layout/adaptive_side_sheet.dart';
 import '../../../../../shared/widgets/dialogs/enterprise_overlay_tokens.dart';
 import '../../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
+import '../../../../../shared/widgets/inputs/enterprise_select_field.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../domain/entities/category.dart';
@@ -150,15 +151,17 @@ class _CategoriesPageState extends ConsumerState<CategoriesPage> {
                 filterWidgets: [
                   SizedBox(
                     width: 170,
-                    child: DropdownButtonFormField<bool>(
-                      isExpanded: true,
-                      initialValue: state.includeInactive,
-                      decoration: const InputDecoration(labelText: 'Mostrar inactivas'),
-                      items: const [
-                        DropdownMenuItem(value: false, child: Text('Não')),
-                        DropdownMenuItem(value: true, child: Text('Sim')),
+                    child: EnterpriseSelectField<bool>(
+                      label: 'Mostrar inactivas',
+                      value: state.includeInactive,
+                      options: const [
+                        EnterpriseSelectOption<bool>(value: false, label: 'Não'),
+                        EnterpriseSelectOption<bool>(value: true, label: 'Sim'),
                       ],
-                      onChanged: state.isLoading ? null : (val) => controller.setIncludeInactive(val ?? false),
+                      onChanged: state.isLoading
+                          ? null
+                          : (val) =>
+                              controller.setIncludeInactive(val ?? false),
                     ),
                   ),
                 ],

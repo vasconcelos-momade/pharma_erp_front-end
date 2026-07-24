@@ -12,6 +12,7 @@ import '../../../../../shared/widgets/feedback/module_data_states.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_search_bar.dart';
 import '../../../../../shared/widgets/tables/enterprise_pagination.dart';
+import '../../../../../shared/responsive/pharma_screen_layout.dart';
 import '../../../../pharmacy/products/presentation/widgets/produto_categoria_filter_dropdown.dart';
 import '../../../../pharmacy/products/domain/entities/product.dart';
 import '../../../../pharmacy/products/presentation/providers/product_provider.dart';
@@ -611,74 +612,85 @@ class _PdvPageState extends ConsumerState<PdvPage>
           ),
         ),
         SizedBox(height: isMobile ? s.sm : s.md),
-        if (isMobile) ...[
-          EnterpriseModuleSearchBar(
-            controller: _search,
-            focusNode: _searchFocusNode,
-            autofocus: true,
-            hintText: _isProductsTab
-                ? 'Pesquisar ou escanear...'
-                : 'Pesquisar serviço...',
-            enabled: true,
-            onSubmitted: (_) => _onSearchSubmitted(
-              products: productState.items,
-              services: serviceState.items,
-              accumulatedProducts: displayProducts,
-            ),
-            onChanged: _onSearchChanged,
-          ),
-          if (_isProductsTab) ...[
-            SizedBox(height: s.sm),
-            ProdutoCategoriaFilterDropdown(
-              value: productState.categoriaId,
-              width: double.infinity,
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final availableWidth = constraints.maxWidth.isFinite && constraints.maxWidth > 0
+                ? constraints.maxWidth
+                : MediaQuery.sizeOf(context).width;
+            
+            final columns = PharmaScreenLayout.adaptiveCrossAxisCount(
+              availableWidth,
+              280,
+              maxColumns: availableWidth >= 1440 ? 5 : 4,
+            );
+            final fieldWidth = ((availableWidth - (columns - 1) * s.sm) / columns).clamp(220.0, 360.0);
+
+            Widget filterField(Widget child) => SizedBox(
+                  width: isMobile ? double.infinity : fieldWidth,
+                  child: child,
+                );
+
+            final searchBar = EnterpriseModuleSearchBar(
+              controller: _search,
+              focusNode: _searchFocusNode,
+              autofocus: true,
+              hintText: _isProductsTab
+                  ? (isMobile ? 'Pesquisar ou escanear...' : 'Pesquisar por código, nome ou EAN')
+                  : (isMobile ? 'Pesquisar serviço...' : 'Pesquisar por nome do serviço'),
               enabled: true,
-              onChanged: _onCategoryChanged,
-            ),
-          ],
-        ] else
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (_isProductsTab) ...[
-                SizedBox(
-                  width: 260,
-                  child: ProdutoCategoriaFilterDropdown(
-                    value: productState.categoriaId,
-                    width: 260,
-                    enabled: true,
-                    onChanged: _onCategoryChanged,
-                  ),
-                ),
-                SizedBox(width: s.sm),
-              ],
-              Expanded(
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: ConstrainedBox(
-                    constraints: BoxConstraints(
-                      maxWidth: _isProductsTab ? 520 : 720,
-                    ),
-                    child: EnterpriseModuleSearchBar(
-                      controller: _search,
-                      focusNode: _searchFocusNode,
-                      autofocus: true,
-                      hintText: _isProductsTab
-                          ? 'Pesquisar por código, nome ou EAN'
-                          : 'Pesquisar por nome do serviço',
+              onSubmitted: (_) => _onSearchSubmitted(
+                products: productState.items,
+                services: serviceState.items,
+                accumulatedProducts: displayProducts,
+              ),
+              onChanged: _onSearchChanged,
+            );
+
+            if (isMobile) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  searchBar,
+                  if (_isProductsTab) ...[
+                    SizedBox(height: s.sm),
+                    ProdutoCategoriaFilterDropdown(
+                      value: productState.categoriaId,
+                      width: double.infinity,
                       enabled: true,
-                      onSubmitted: (_) => _onSearchSubmitted(
-                        products: productState.items,
-                        services: serviceState.items,
-                        accumulatedProducts: displayProducts,
-                      ),
-                      onChanged: _onSearchChanged,
+                      onChanged: _onCategoryChanged,
                     ),
-                  ),
+                  ],
+                ],
+              );
+            }
+
+            return Align(
+              alignment: Alignment.centerRight,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                reverse: true, // starts from right
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    filterField(searchBar),
+                    if (_isProductsTab) ...[
+                      SizedBox(width: s.sm),
+                      filterField(
+                        ProdutoCategoriaFilterDropdown(
+                          value: productState.categoriaId,
+                          width: null,
+                          enabled: true,
+                          onChanged: _onCategoryChanged,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
-            ],
-          ),
+            );
+          },
+        ),
         SizedBox(height: isMobile ? s.sm : s.md),
         Expanded(
           child: _isProductsTab

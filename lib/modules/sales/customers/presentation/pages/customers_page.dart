@@ -10,6 +10,7 @@ import '../../../../reports/presentation/controllers/report_controller.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../../shared/widgets/feedback/module_data_states.dart';
 import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
+import '../../../../../shared/widgets/inputs/enterprise_select_field.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../../../../shared/widgets/tables/table_typography.dart';
@@ -119,16 +120,28 @@ class _CustomersPageState extends ConsumerState<CustomersPage> {
               ),
             ),
           ),
-          DropdownButton<String?>(
-            value: state.query.tipo,
-            hint: const Text('Tipo'),
-            items: const [
-              DropdownMenuItem(value: null, child: Text('Todos os tipos')),
-              DropdownMenuItem(value: 'PACIENTE', child: Text('Paciente')),
-              DropdownMenuItem(value: 'EMPRESA', child: Text('Empresa')),
-              DropdownMenuItem(value: 'CONVENIO', child: Text('Convénio')),
-            ],
-            onChanged: state.isBusy ? null : notifier.setTipoFilter,
+          SizedBox(
+            width: 200,
+            child: EnterpriseSelectField<String>(
+              label: 'Tipo',
+              emptyLabel: 'Todos os tipos',
+              value: state.query.tipo,
+              options: const [
+                EnterpriseSelectOption<String>(
+                  value: 'PACIENTE',
+                  label: 'Paciente',
+                ),
+                EnterpriseSelectOption<String>(
+                  value: 'EMPRESA',
+                  label: 'Empresa',
+                ),
+                EnterpriseSelectOption<String>(
+                  value: 'CONVENIO',
+                  label: 'Convénio',
+                ),
+              ],
+              onChanged: state.isBusy ? null : notifier.setTipoFilter,
+            ),
           ),
           FilterChip(
             label: const Text('Com crédito'),

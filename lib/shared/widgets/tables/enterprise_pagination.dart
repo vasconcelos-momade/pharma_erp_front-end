@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/contracts/pagination_response.dart';
+import '../../../core/theme/design_metrics.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/theme/extensions.dart';
 import '../../../core/theme/pharma_surface.dart';
@@ -264,9 +265,10 @@ class _PaginationGap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const size = DesignMetrics.paginationButtonSize;
     return SizedBox(
-      width: 40,
-      height: 40,
+      width: size,
+      height: size,
       child: Center(
         child: Text(
           label,
@@ -296,17 +298,18 @@ class _PaginationSegmentButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = context.pharmaTokens;
     final scheme = Theme.of(context).colorScheme;
+    const size = DesignMetrics.paginationButtonSize;
 
     return SizedBox(
-      width: 40,
-      height: 40,
+      width: size,
+      height: size,
       child: TextButton(
         onPressed: enabled ? onPressed : null,
         style: pharmaInstantButtonStyle(
           ButtonStyle(
             padding: WidgetStateProperty.all(EdgeInsets.zero),
-            minimumSize: WidgetStateProperty.all(const Size(40, 40)),
-            maximumSize: WidgetStateProperty.all(const Size(40, 40)),
+            minimumSize: WidgetStateProperty.all(const Size.square(size)),
+            maximumSize: WidgetStateProperty.all(const Size.square(size)),
             shape: WidgetStateProperty.all(const CircleBorder()),
             backgroundColor: WidgetStateProperty.resolveWith((states) {
               if (!enabled) return scheme.surface.withValues(alpha: 0);

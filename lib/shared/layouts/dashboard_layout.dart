@@ -8,6 +8,7 @@ import '../../app/providers/auth_session_notifier.dart';
 import '../../app/providers/session_access_notifier.dart';
 import '../../app/router/routes.dart';
 import '../../core/theme/app_shadows.dart';
+import '../../core/theme/design_metrics.dart';
 import '../../core/theme/design_tokens.dart';
 import '../../core/theme/extensions.dart';
 import '../../core/theme/pharma_surface.dart';
@@ -556,7 +557,12 @@ class _Sidebar extends StatelessWidget {
                           backgroundColor: t.card,
                           side: BorderSide(color: t.border),
                           elevation: 2,
-                          minimumSize: const Size(32, 32),
+                          minimumSize: const Size.square(
+                            DesignMetrics.iconButtonCompactSize,
+                          ),
+                          maximumSize: const Size.square(
+                            DesignMetrics.iconButtonCompactSize,
+                          ),
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
                       ),
@@ -565,7 +571,7 @@ class _Sidebar extends StatelessWidget {
                         expanded
                             ? Icons.chevron_left_rounded
                             : Icons.chevron_right_rounded,
-                        size: 18,
+                        size: DesignMetrics.iconSm,
                         color: t.textMuted,
                       ),
                     ),

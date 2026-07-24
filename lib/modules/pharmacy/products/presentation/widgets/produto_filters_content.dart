@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../../core/theme/design_tokens.dart';
 import '../../../../../core/theme/spacing.dart';
+import '../../../../../shared/widgets/inputs/enterprise_select_field.dart';
 import '../../../categories/domain/entities/category.dart';
 
 /// Painel de filtros reutilizado no dropdown (desktop) e bottom sheet (mobile).
@@ -37,33 +37,27 @@ class ProdutoFiltersContent extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        DropdownButtonFormField<bool?>(
+        EnterpriseSelectField<bool>(
           key: ValueKey('produto-filter-status-$ativo'),
-          initialValue: ativo,
-          isExpanded: true,
-          decoration: _dropdownDecoration(context, 'Status'),
-          items: const [
-            DropdownMenuItem<bool?>(value: null, child: Text('Todos')),
-            DropdownMenuItem<bool?>(value: true, child: Text('Activos')),
-            DropdownMenuItem<bool?>(value: false, child: Text('Inactivos')),
+          label: 'Status',
+          emptyLabel: 'Todos',
+          value: ativo,
+          options: const [
+            EnterpriseSelectOption<bool>(value: true, label: 'Activos'),
+            EnterpriseSelectOption<bool>(value: false, label: 'Inactivos'),
           ],
           onChanged: onAtivoChanged,
         ),
         SizedBox(height: s.md),
-        DropdownButtonFormField<String?>(
+        EnterpriseSelectField<String>(
           key: ValueKey('produto-filter-categoria-$categoriaId'),
-          initialValue: categoriaId,
-          isExpanded: true,
+          label: 'Categoria',
+          emptyLabel: 'Todas',
+          value: categoriaId,
           menuMaxHeight: 400,
-          decoration: _dropdownDecoration(context, 'Categoria'),
-          items: [
-            const DropdownMenuItem<String?>(value: null, child: Text('Todas')),
-            ...categories.map(
-              (cat) => DropdownMenuItem<String?>(
-                value: cat.id,
-                child: Text(cat.nome, overflow: TextOverflow.ellipsis),
-              ),
-            ),
+          options: [
+            for (final cat in categories)
+              EnterpriseSelectOption<String>(value: cat.id, label: cat.nome),
           ],
           onChanged: onCategoriaChanged,
         ),
@@ -88,29 +82,6 @@ class ProdutoFiltersContent extends StatelessWidget {
           ),
         ],
       ],
-    );
-  }
-
-  InputDecoration _dropdownDecoration(BuildContext context, String label) {
-    final t = context.pharmaTokens;
-    return InputDecoration(
-      labelText: label,
-      filled: true,
-      fillColor: t.card,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(t.radiusMd),
-        borderSide: BorderSide(color: t.border.withValues(alpha: 0.45)),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(t.radiusMd),
-        borderSide: BorderSide(color: t.border.withValues(alpha: 0.45)),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(t.radiusMd),
-        borderSide: BorderSide(color: t.brandBlue, width: 2),
-      ),
-      isDense: true,
-      contentPadding: t.density.inputPadding,
     );
   }
 }

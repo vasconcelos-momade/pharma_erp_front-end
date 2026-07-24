@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../shared/responsive/pharma_screen_layout.dart';
-import '../../../../../shared/widgets/layout/enterprise_mobile_toolbar.dart';
 import '../../../../../shared/widgets/inputs/enterprise_search_field.dart';
+import '../../../../../shared/widgets/inputs/enterprise_select_field.dart';
+import '../../../../../shared/widgets/layout/enterprise_mobile_toolbar.dart';
 import '../../../categories/domain/entities/category.dart';
 import '../providers/estoque_provider.dart';
 
@@ -85,16 +86,14 @@ class _EstoqueToolbarState extends State<EstoqueToolbar> {
       filterWidgets: [
         SizedBox(
           width: 170,
-          child: DropdownButtonFormField<String?>(
+          child: EnterpriseSelectField<String>(
             key: ValueKey('estoque-cat-${state.categoriaId}'),
-            isExpanded: true,
-            initialValue: state.categoriaId,
-            decoration: const InputDecoration(labelText: 'Categoria'),
-            items: [
-              const DropdownMenuItem<String?>(value: null, child: Text('Todas')),
-              ...widget.categories.map(
-                (c) => DropdownMenuItem<String?>(value: c.id, child: Text(c.nome)),
-              ),
+            label: 'Categoria',
+            emptyLabel: 'Todas',
+            value: state.categoriaId,
+            options: [
+              for (final c in widget.categories)
+                EnterpriseSelectOption<String>(value: c.id, label: c.nome),
             ],
             onChanged: widget.state.isLoading
                 ? null
@@ -103,16 +102,14 @@ class _EstoqueToolbarState extends State<EstoqueToolbar> {
         ),
         SizedBox(
           width: 170,
-          child: DropdownButtonFormField<String?>(
+          child: EnterpriseSelectField<String>(
             key: ValueKey('estoque-forn-${state.fornecedorId}'),
-            isExpanded: true,
-            initialValue: state.fornecedorId,
-            decoration: const InputDecoration(labelText: 'Fornecedor'),
-            items: [
-              const DropdownMenuItem<String?>(value: null, child: Text('Todos')),
-              ...widget.fornecedores.map(
-                (f) => DropdownMenuItem<String?>(value: f.id, child: Text(f.nome)),
-              ),
+            label: 'Fornecedor',
+            emptyLabel: 'Todos',
+            value: state.fornecedorId,
+            options: [
+              for (final f in widget.fornecedores)
+                EnterpriseSelectOption<String>(value: f.id, label: f.nome),
             ],
             onChanged: widget.state.isLoading
                 ? null
@@ -121,17 +118,22 @@ class _EstoqueToolbarState extends State<EstoqueToolbar> {
         ),
         SizedBox(
           width: 160,
-          child: DropdownButtonFormField<String?>(
+          child: EnterpriseSelectField<String>(
             key: ValueKey('estoque-estado-${state.estadoSanitario}'),
-            isExpanded: true,
-            initialValue: state.estadoSanitario,
-            decoration: const InputDecoration(labelText: 'Estado sanitário'),
-            items: const [
-              DropdownMenuItem<String?>(value: null, child: Text('Todos')),
-              DropdownMenuItem<String?>(value: 'VALIDO', child: Text('Válido')),
-              DropdownMenuItem<String?>(value: 'EXPIRADO', child: Text('Expirado')),
-              DropdownMenuItem<String?>(value: 'RECALL', child: Text('Recall')),
-              DropdownMenuItem<String?>(value: 'QUARENTENA', child: Text('Quarentena')),
+            label: 'Estado sanitário',
+            emptyLabel: 'Todos',
+            value: state.estadoSanitario,
+            options: const [
+              EnterpriseSelectOption<String>(value: 'VALIDO', label: 'Válido'),
+              EnterpriseSelectOption<String>(
+                value: 'EXPIRADO',
+                label: 'Expirado',
+              ),
+              EnterpriseSelectOption<String>(value: 'RECALL', label: 'Recall'),
+              EnterpriseSelectOption<String>(
+                value: 'QUARENTENA',
+                label: 'Quarentena',
+              ),
             ],
             onChanged: widget.state.isLoading
                 ? null
@@ -140,16 +142,24 @@ class _EstoqueToolbarState extends State<EstoqueToolbar> {
         ),
         SizedBox(
           width: 150,
-          child: DropdownButtonFormField<String?>(
+          child: EnterpriseSelectField<String>(
             key: ValueKey('estoque-disp-${state.disponibilidade}'),
-            isExpanded: true,
-            initialValue: state.disponibilidade,
-            decoration: const InputDecoration(labelText: 'Disponibilidade'),
-            items: const [
-              DropdownMenuItem<String?>(value: null, child: Text('Todas')),
-              DropdownMenuItem<String?>(value: 'DISPONIVEL', child: Text('Disponível')),
-              DropdownMenuItem<String?>(value: 'BLOQUEADO', child: Text('Bloqueado')),
-              DropdownMenuItem<String?>(value: 'INDISPONIVEL', child: Text('Indisponível')),
+            label: 'Disponibilidade',
+            emptyLabel: 'Todas',
+            value: state.disponibilidade,
+            options: const [
+              EnterpriseSelectOption<String>(
+                value: 'DISPONIVEL',
+                label: 'Disponível',
+              ),
+              EnterpriseSelectOption<String>(
+                value: 'BLOQUEADO',
+                label: 'Bloqueado',
+              ),
+              EnterpriseSelectOption<String>(
+                value: 'INDISPONIVEL',
+                label: 'Indisponível',
+              ),
             ],
             onChanged: widget.state.isLoading
                 ? null

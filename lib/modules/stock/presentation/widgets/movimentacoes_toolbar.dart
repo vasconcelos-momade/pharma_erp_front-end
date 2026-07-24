@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/extensions.dart';
 import '../../../../shared/responsive/pharma_screen_layout.dart';
+import '../../../../shared/widgets/inputs/enterprise_select_field.dart';
 import '../../domain/entities/movimentacao.dart';
 import '../providers/movimentacao_provider.dart';
 
@@ -107,54 +108,30 @@ class MovimentacoesToolbar extends ConsumerWidget {
       ),
     );
 
-    final tipoDropdown = DropdownButtonFormField<String?>(
-      initialValue: query.tipo,
-      decoration: InputDecoration(
-        labelText: 'Tipo',
-        filled: true,
-        fillColor: t.card,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(t.radiusMd),
-        ),
-        isDense: true,
-      ),
-      items: [
-        const DropdownMenuItem<String?>(
-          value: null,
-          child: Text('Todos os tipos'),
-        ),
-        ...state.filters.tipos.map(
-          (option) => DropdownMenuItem<String?>(
+    final tipoDropdown = EnterpriseSelectField<String>(
+      label: 'Tipo',
+      emptyLabel: 'Todos os tipos',
+      value: query.tipo,
+      options: [
+        for (final option in state.filters.tipos)
+          EnterpriseSelectOption<String>(
             value: option.value,
-            child: Text(option.label),
+            label: option.label,
           ),
-        ),
       ],
       onChanged: state.isBusy ? null : notifier.setTipoFilter,
     );
 
-    final origemDropdown = DropdownButtonFormField<String?>(
-      initialValue: query.origem,
-      decoration: InputDecoration(
-        labelText: 'Origem',
-        filled: true,
-        fillColor: t.card,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(t.radiusMd),
-        ),
-        isDense: true,
-      ),
-      items: [
-        const DropdownMenuItem<String?>(
-          value: null,
-          child: Text('Todas as origens'),
-        ),
-        ...state.filters.origens.map(
-          (option) => DropdownMenuItem<String?>(
+    final origemDropdown = EnterpriseSelectField<String>(
+      label: 'Origem',
+      emptyLabel: 'Todas as origens',
+      value: query.origem,
+      options: [
+        for (final option in state.filters.origens)
+          EnterpriseSelectOption<String>(
             value: option.value,
-            child: Text(option.label),
+            label: option.label,
           ),
-        ),
       ],
       onChanged: state.isBusy ? null : notifier.setOrigemFilter,
     );

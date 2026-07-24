@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/design_metrics.dart';
 import '../../../core/theme/design_tokens.dart';
 import '../../../core/theme/extensions.dart';
 
@@ -129,9 +130,9 @@ class _EnterpriseTabHubState extends State<EnterpriseTabHub>
             tabs: widget.tabs
                 .map(
                   (tab) => Tab(
-                    icon: Icon(tab.icon, size: 18),
+                    icon: Icon(tab.icon, size: DesignMetrics.iconSm),
                     text: tab.label,
-                    height: 48,
+                    height: DesignMetrics.tabHeightMax,
                   ),
                 )
                 .toList(),

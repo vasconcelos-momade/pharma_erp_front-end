@@ -16,6 +16,8 @@ abstract final class DesignMetrics {
 
   // Touch targets MD3
   static const double minTouchTarget = 48;
+  static const double controlHeight = 48;
+  static const double compactControlHeight = 40;
 
   static const double iconMd = 24;
   static const double iconSm = 18;
@@ -27,14 +29,24 @@ abstract final class DesignMetrics {
   static const double feedbackIconSize = iconMd;
 
   // Alturas de componentes (MD3 / prompt ERP)
-  static const double buttonHeight = minTouchTarget;
+  /// Altura visual partilhada por campos e botões de acção.
   static const double fieldHeightMin = minTouchTarget;
   static const double fieldHeightMax = 52;
+  static const double buttonHeight = fieldHeightMin;
   static const double tabHeightMin = 44;
   static const double tabHeightMax = minTouchTarget;
-  static const double toolbarHeight = minTouchTarget;
+  static const double toolbarHeight = fieldHeightMin;
   static const double tableRowHeightMin = 52;
   static const double tableRowHeightMax = 56;
+  /// Botões circulares de paginação / segmentos.
+  static const double paginationButtonSize = avatarMd;
+
+  /// Controlo compacto (ex.: toggle da sidebar).
+  static const double iconButtonCompactSize = iconMd + SpacingTokens.sm;
+
+  /// Largura máxima do campo de pesquisa em toolbars (design system).
+  static const double searchFieldMaxWidthDesktop = 320;
+  static const double searchFieldMaxWidthTablet = 300;
 
   // Shell / layout
   static const double topBarDesktop = 72;

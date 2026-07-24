@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../shared/widgets/inputs/enterprise_select_field.dart';
 import 'design_tokens.dart';
+import 'extensions.dart';
 import 'typography.dart';
 
 /// Duração zero para superfícies Material (evita atraso ao trocar tema).
@@ -188,7 +190,7 @@ class PharmaInstantField extends StatelessWidget {
   }
 }
 
-/// Dropdown com borda estática (sem animação de borda ao mudar tema).
+/// Dropdown enterprise (hover interno + menu abaixo). Mantém API com [DropdownMenuItem].
 class PharmaInstantDropdown<T> extends StatelessWidget {
   const PharmaInstantDropdown({
     super.key,
@@ -207,48 +209,34 @@ class PharmaInstantDropdown<T> extends StatelessWidget {
   final double? width;
   final double? menuMaxHeight;
 
+  static String _labelOf(DropdownMenuItem<Object?> item) {
+    final child = item.child;
+    if (child is Text) return child.data ?? '';
+    return item.value?.toString() ?? '';
+  }
+
   @override
   Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
-    final textTheme = Theme.of(context).textTheme;
-    final scheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final emptyItems = items.where((item) => item.value == null).toList();
+    final valueItems = items.where((item) => item.value != null).toList();
+    final emptyLabel =
+        emptyItems.isEmpty ? null : _labelOf(emptyItems.first);
 
-    final field = DecoratedBox(
-      decoration: BoxDecoration(
-        color: scheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(t.radiusMd),
-        border: Border.all(
-          color: scheme.outline.withValues(alpha: isDark ? 0.6 : 0.85),
-        ),
-      ),
-      child: DropdownButtonFormField<T>(
-        key: ValueKey<Object?>('$value-${items.length}'),
-        initialValue: value,
-        isExpanded: true,
-        menuMaxHeight: menuMaxHeight,
-        items: items,
-        onChanged: onChanged,
-        decoration: InputDecoration(
-          labelText: label,
-          isDense: true,
-          filled: false,
-          border: InputBorder.none,
-          enabledBorder: InputBorder.none,
-          focusedBorder: InputBorder.none,
-          disabledBorder: InputBorder.none,
-          errorBorder: InputBorder.none,
-          focusedErrorBorder: InputBorder.none,
-          contentPadding: t.density.inputPadding,
-          labelStyle: textTheme.erpSelectLabel.copyWith(color: t.textSecondary),
-        ),
-        dropdownColor: scheme.surfaceContainerHighest,
-        style: textTheme.erpSelectValue.copyWith(color: t.textPrimary),
-      ),
+    return EnterpriseSelectField<T>(
+      label: label,
+      width: width,
+      menuMaxHeight: menuMaxHeight,
+      emptyLabel: emptyLabel,
+      value: value,
+      enabled: onChanged != null,
+      options: [
+        for (final item in valueItems)
+          EnterpriseSelectOption<T>(
+            value: item.value as T,
+            label: _labelOf(item),
+          ),
+      ],
+      onChanged: onChanged,
     );
-
-    if (width == null) return field;
-
-    return SizedBox(width: width, child: field);
   }
 }

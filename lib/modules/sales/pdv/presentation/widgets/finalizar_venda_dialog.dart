@@ -170,8 +170,32 @@ class _FinalizarVendaDialogState
   }
 
   InputDecoration _fieldDecoration(String label) {
+    final t = context.pharmaTokens;
+    final theme = Theme.of(context);
+    
     return InputDecoration(
       labelText: label,
+      isDense: true,
+      contentPadding: t.density.inputPadding,
+      labelStyle: theme.textTheme.erpSelectLabel.copyWith(color: t.textSecondary),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(t.radiusMd),
+        borderSide: BorderSide(
+          color: theme.colorScheme.outline.withValues(alpha: theme.brightness == Brightness.dark ? 0.6 : 0.85),
+        ),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(t.radiusMd),
+        borderSide: BorderSide(
+          color: theme.colorScheme.outline.withValues(alpha: theme.brightness == Brightness.dark ? 0.6 : 0.85),
+        ),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(t.radiusMd),
+        borderSide: BorderSide(
+          color: theme.colorScheme.primary,
+        ),
+      ),
     );
   }
 
@@ -241,8 +265,8 @@ class _FinalizarVendaDialogState
         return TextFormField(
           controller: controller,
           focusNode: focusNode,
-          decoration: InputDecoration(
-            labelText: 'Nome do paciente',
+          style: Theme.of(context).textTheme.erpBody.copyWith(color: context.pharmaTokens.textPrimary),
+          decoration: _fieldDecoration('Nome do paciente').copyWith(
             helperText: cartState.hasSelectedCliente
                 ? 'Cliente encontrado e associado a venda.'
                 : 'Opcional. Pesquise um cliente ou digite um novo nome.',
@@ -283,6 +307,7 @@ class _FinalizarVendaDialogState
   Widget _buildIdadeField() {
     return TextFormField(
       controller: _idadeController,
+      style: Theme.of(context).textTheme.erpBody.copyWith(color: context.pharmaTokens.textPrimary),
       keyboardType: TextInputType.number,
       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
       decoration: _fieldDecoration('Idade'),
@@ -303,6 +328,7 @@ class _FinalizarVendaDialogState
   Widget _buildNidField() {
     return TextFormField(
       controller: _nidController,
+      style: Theme.of(context).textTheme.erpBody.copyWith(color: context.pharmaTokens.textPrimary),
       decoration: _fieldDecoration('NID da receita/doente'),
     );
   }
@@ -310,6 +336,7 @@ class _FinalizarVendaDialogState
   Widget _buildPrescritorField() {
     return TextFormField(
       controller: _prescritorController,
+      style: Theme.of(context).textTheme.erpBody.copyWith(color: context.pharmaTokens.textPrimary),
       decoration: _fieldDecoration('Prescritor'),
     );
   }
@@ -317,6 +344,7 @@ class _FinalizarVendaDialogState
   Widget _buildUnidadeSanitariaField() {
     return TextFormField(
       controller: _unidadeSanitariaController,
+      style: Theme.of(context).textTheme.erpBody.copyWith(color: context.pharmaTokens.textPrimary),
       decoration: _fieldDecoration('Unidade sanitária'),
     );
   }
@@ -325,12 +353,12 @@ class _FinalizarVendaDialogState
     return TextFormField(
       controller: _valorRecebidoController,
       enabled: enabled,
+      style: Theme.of(context).textTheme.erpBody.copyWith(color: context.pharmaTokens.textPrimary),
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       inputFormatters: [
         FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
       ],
-      decoration: const InputDecoration(
-        labelText: 'Valor recebido *',
+      decoration: _fieldDecoration('Valor recebido *').copyWith(
         suffixText: 'MT',
       ),
       validator: (value) {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../core/theme/extensions.dart';
+import '../../../../../shared/widgets/inputs/enterprise_select_field.dart';
 import '../../../categories/domain/entities/category.dart';
 import '../providers/estoque_provider.dart';
 
@@ -58,63 +59,68 @@ class _EstoqueFiltersBottomSheetState extends State<EstoqueFiltersBottomSheet> {
           children: [
             Text('Filtros', style: Theme.of(context).textTheme.erpSectionTitle),
             SizedBox(height: s.md),
-            DropdownButtonFormField<String?>(
+            EnterpriseSelectField<String>(
               key: ValueKey('sheet-cat-$_categoriaId'),
-              initialValue: _categoriaId,
-              decoration: const InputDecoration(
-                labelText: 'Categoria',
-              ),
-              items: [
-                const DropdownMenuItem<String?>(value: null, child: Text('Todas')),
-                ...widget.categories.map(
-                  (c) => DropdownMenuItem<String?>(value: c.id, child: Text(c.nome)),
-                ),
+              label: 'Categoria',
+              emptyLabel: 'Todas',
+              value: _categoriaId,
+              options: [
+                for (final c in widget.categories)
+                  EnterpriseSelectOption<String>(value: c.id, label: c.nome),
               ],
               onChanged: (value) => setState(() => _categoriaId = value),
             ),
             SizedBox(height: s.md),
-            DropdownButtonFormField<String?>(
+            EnterpriseSelectField<String>(
               key: ValueKey('sheet-forn-$_fornecedorId'),
-              initialValue: _fornecedorId,
-              decoration: const InputDecoration(
-                labelText: 'Fornecedor',
-              ),
-              items: [
-                const DropdownMenuItem<String?>(value: null, child: Text('Todos')),
-                ...widget.fornecedores.map(
-                  (f) => DropdownMenuItem<String?>(value: f.id, child: Text(f.nome)),
-                ),
+              label: 'Fornecedor',
+              emptyLabel: 'Todos',
+              value: _fornecedorId,
+              options: [
+                for (final f in widget.fornecedores)
+                  EnterpriseSelectOption<String>(value: f.id, label: f.nome),
               ],
               onChanged: (value) => setState(() => _fornecedorId = value),
             ),
             SizedBox(height: s.md),
-            DropdownButtonFormField<String?>(
+            EnterpriseSelectField<String>(
               key: ValueKey('sheet-estado-$_estadoSanitario'),
-              initialValue: _estadoSanitario,
-              decoration: const InputDecoration(
-                labelText: 'Estado sanitário',
-              ),
-              items: const [
-                DropdownMenuItem<String?>(value: null, child: Text('Todos')),
-                DropdownMenuItem<String?>(value: 'VALIDO', child: Text('Válido')),
-                DropdownMenuItem<String?>(value: 'EXPIRADO', child: Text('Expirado')),
-                DropdownMenuItem<String?>(value: 'RECALL', child: Text('Recall')),
-                DropdownMenuItem<String?>(value: 'QUARENTENA', child: Text('Quarentena')),
+              label: 'Estado sanitário',
+              emptyLabel: 'Todos',
+              value: _estadoSanitario,
+              options: const [
+                EnterpriseSelectOption<String>(value: 'VALIDO', label: 'Válido'),
+                EnterpriseSelectOption<String>(
+                  value: 'EXPIRADO',
+                  label: 'Expirado',
+                ),
+                EnterpriseSelectOption<String>(value: 'RECALL', label: 'Recall'),
+                EnterpriseSelectOption<String>(
+                  value: 'QUARENTENA',
+                  label: 'Quarentena',
+                ),
               ],
               onChanged: (value) => setState(() => _estadoSanitario = value),
             ),
             SizedBox(height: s.md),
-            DropdownButtonFormField<String?>(
+            EnterpriseSelectField<String>(
               key: ValueKey('sheet-disp-$_disponibilidade'),
-              initialValue: _disponibilidade,
-              decoration: const InputDecoration(
-                labelText: 'Disponibilidade',
-              ),
-              items: const [
-                DropdownMenuItem<String?>(value: null, child: Text('Todas')),
-                DropdownMenuItem<String?>(value: 'DISPONIVEL', child: Text('Disponível')),
-                DropdownMenuItem<String?>(value: 'BLOQUEADO', child: Text('Bloqueado')),
-                DropdownMenuItem<String?>(value: 'INDISPONIVEL', child: Text('Indisponível')),
+              label: 'Disponibilidade',
+              emptyLabel: 'Todas',
+              value: _disponibilidade,
+              options: const [
+                EnterpriseSelectOption<String>(
+                  value: 'DISPONIVEL',
+                  label: 'Disponível',
+                ),
+                EnterpriseSelectOption<String>(
+                  value: 'BLOQUEADO',
+                  label: 'Bloqueado',
+                ),
+                EnterpriseSelectOption<String>(
+                  value: 'INDISPONIVEL',
+                  label: 'Indisponível',
+                ),
               ],
               onChanged: (value) => setState(() => _disponibilidade = value),
             ),

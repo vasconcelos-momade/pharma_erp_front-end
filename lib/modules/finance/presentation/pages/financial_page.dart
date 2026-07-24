@@ -35,7 +35,7 @@ class _FinancialPageState extends ConsumerState<FinancialPage> {
 
     return EnterpriseModuleHub(
       title: 'Visão financeira',
-      subtitle: 'Resumo de receitas, despesas, caixa e contas.',
+      subtitle: 'DRE (receita, CMV, despesas) separado do saldo físico de caixa.',
       tag: AppNavSections.finance,
       scrollable: true,
       mobileKpisHorizontalScroll: true,
@@ -59,7 +59,7 @@ class _FinancialPageState extends ConsumerState<FinancialPage> {
       child: dashboardAsyncBody(
         async: async,
         onRetry: () => ref.invalidate(financeDashboardProvider(_query)),
-        loadingKpiCount: 5,
+        loadingKpiCount: 6,
         builder: (_) => Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -73,26 +73,34 @@ class _FinancialPageState extends ConsumerState<FinancialPage> {
                     accent: StatCardAccent.positive,
                   ),
                   dashboardKpiCard(
+                    title: 'CMV',
+                    value: '${dashKpi(kpis, 'custos')} MZN',
+                    icon: Icons.inventory_2_outlined,
+                    accent: StatCardAccent.warning,
+                  ),
+                  dashboardKpiCard(
+                    title: 'Lucro bruto',
+                    value: '${dashKpi(kpis, 'lucroBruto')} MZN',
+                    icon: Icons.stacked_line_chart,
+                    accent: StatCardAccent.positive,
+                  ),
+                  dashboardKpiCard(
                     title: 'Despesas',
                     value: '${dashKpi(kpis, 'despesas')} MZN',
                     icon: Icons.trending_down,
                     accent: StatCardAccent.warning,
                   ),
                   dashboardKpiCard(
-                    title: 'Saldo caixa',
-                    value: '${dashKpi(kpis, 'saldoAtual')} MZN',
-                    icon: Icons.account_balance_wallet,
+                    title: 'Lucro líquido',
+                    value: '${dashKpi(kpis, 'lucroLiquido')} MZN',
+                    icon: Icons.percent,
                     accent: StatCardAccent.positive,
                   ),
                   dashboardKpiCard(
-                    title: 'A receber',
-                    value: '${dashKpi(kpis, 'contasReceber')} MZN',
-                    icon: Icons.call_received,
-                  ),
-                  dashboardKpiCard(
-                    title: 'A pagar',
-                    value: '${dashKpi(kpis, 'contasPagar')} MZN',
-                    icon: Icons.call_made,
+                    title: 'Saldo caixa',
+                    value: '${dashKpi(kpis, 'saldoAtual')} MZN',
+                    icon: Icons.account_balance_wallet,
+                    accent: StatCardAccent.info,
                   ),
                 ],
               ),

@@ -12,13 +12,16 @@ abstract final class PharmaComponentTheme {
     PharmaTokens tokens, {
     required TextStyle textStyle,
   }) {
+    // Mesma altura dos inputs ([DesignMetrics.buttonHeight] == fieldHeightMin).
+    const height = DesignMetrics.buttonHeight;
     return ButtonStyle(
       animationDuration: kPharmaInstantThemeDuration,
       minimumSize: WidgetStateProperty.all(
-        Size(tokens.minTouchTarget, DesignMetrics.buttonHeight),
+        Size(tokens.minTouchTarget, tokens.minTouchTarget),
       ),
       padding: WidgetStateProperty.all(tokens.density.buttonPadding),
-      tapTargetSize: MaterialTapTargetSize.padded,
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+      visualDensity: VisualDensity.standard,
       shape: WidgetStateProperty.all(
         RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(tokens.radiusMd),
@@ -93,7 +96,6 @@ abstract final class PharmaComponentTheme {
         }
         return scheme.primary;
       }),
-      padding: WidgetStateProperty.all(tokens.density.buttonPadding),
     );
   }
 
@@ -101,14 +103,16 @@ abstract final class PharmaComponentTheme {
     PharmaTokens tokens,
     ColorScheme scheme,
   ) {
+    const size = DesignMetrics.buttonHeight;
     return IconButtonThemeData(
       style: ButtonStyle(
         animationDuration: kPharmaInstantThemeDuration,
-        minimumSize: WidgetStateProperty.all(
-          Size.square(tokens.minTouchTarget),
-        ),
+        minimumSize: WidgetStateProperty.all(const Size.square(size)),
+        maximumSize: WidgetStateProperty.all(const Size.square(size)),
+        fixedSize: WidgetStateProperty.all(const Size.square(size)),
         padding: WidgetStateProperty.all(EdgeInsets.zero),
-        tapTargetSize: MaterialTapTargetSize.padded,
+        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        visualDensity: VisualDensity.standard,
         shape: WidgetStateProperty.all(
           RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(tokens.radiusMd),
@@ -132,32 +136,33 @@ abstract final class PharmaComponentTheme {
   }) {
     final theme = textTheme ?? ThemeData().textTheme;
     final border = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(tokens.radiusMd),
       borderSide: BorderSide(color: tokens.border, width: 1),
     );
 
     return InputDecorationTheme(
       filled: true,
       fillColor: isDark ? tokens.card.withValues(alpha: 0.35) : Colors.white,
-      constraints: const BoxConstraints(
-        minHeight: DesignMetrics.fieldHeightMin,
+      isDense: true,
+      constraints: BoxConstraints(
+        minHeight: tokens.minTouchTarget,
       ),
       contentPadding: tokens.density.inputPadding,
       border: border,
       enabledBorder: border,
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(tokens.radiusMd),
         borderSide: BorderSide(
           color: scheme.primary,
           width: 2,
         ),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(tokens.radiusMd),
         borderSide: BorderSide(color: tokens.posDanger, width: 1),
       ),
       focusedErrorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(tokens.radiusMd),
         borderSide: BorderSide(color: tokens.posDanger, width: 2),
       ),
       labelStyle: theme.erpSelectLabel.copyWith(color: tokens.textSecondary),

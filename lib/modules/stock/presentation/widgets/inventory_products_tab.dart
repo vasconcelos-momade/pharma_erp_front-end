@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/theme/design_metrics.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/extensions.dart';
 import '../../../../shared/widgets/cards/enterprise_list_card.dart';
@@ -273,14 +274,8 @@ class _InventoryProductCard extends StatelessWidget {
       ],
       actions: FilledButton.tonalIcon(
         onPressed: enabled ? onTap : null,
-        icon: const Icon(Icons.playlist_add_rounded, size: 18),
+        icon: Icon(Icons.playlist_add_rounded, size: DesignMetrics.iconSm),
         label: const Text('Adicionar'),
-        style: FilledButton.styleFrom(
-          minimumSize: const Size(0, 36),
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-          visualDensity: VisualDensity.compact,
-        ),
       ),
       onTap: enabled ? onTap : null,
     );

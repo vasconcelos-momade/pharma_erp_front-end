@@ -8,6 +8,7 @@ import '../../../../core/contracts/pagination_response.dart';
 import '../../../../core/theme/design_tokens.dart';
 import '../../../../core/theme/extensions.dart';
 import '../../../../core/theme/pharma_surface.dart';
+import '../../../../shared/widgets/inputs/enterprise_select_field.dart';
 import '../../../../shared/widgets/tables/enterprise_data_table.dart';
 import '../../../../shared/widgets/tables/table_typography.dart';
 import '../../../reports/presentation/controllers/report_controller.dart';
@@ -29,7 +30,6 @@ class DashboardFilterSelect extends StatelessWidget {
     required this.options,
     required this.value,
     required this.onChanged,
-    this.width,
     this.emptyLabel = 'Todos',
   });
 
@@ -37,67 +37,23 @@ class DashboardFilterSelect extends StatelessWidget {
   final List<DashboardFilterOption> options;
   final String? value;
   final ValueChanged<String?> onChanged;
-  final double? width;
   final String emptyLabel;
 
   @override
   Widget build(BuildContext context) {
-    final t = context.pharmaTokens;
-    final textTheme = Theme.of(context).textTheme;
-    final scheme = Theme.of(context).colorScheme;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    final field = DropdownButtonFormField<String>(
-      key: ValueKey<Object?>('$value-${options.length}'),
-      initialValue: options.any((option) => option.value == value) ? value : null,
-      isExpanded: true,
-      decoration: InputDecoration(
-        labelText: label,
-        isDense: true,
-        contentPadding: t.density.inputPadding,
-        labelStyle: textTheme.erpSelectLabel.copyWith(color: t.textSecondary),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(t.radiusMd),
-          borderSide: BorderSide(
-            color: scheme.outline.withValues(alpha: isDark ? 0.6 : 0.85),
-          ),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(t.radiusMd),
-          borderSide: BorderSide(
-            color: scheme.outline.withValues(alpha: isDark ? 0.6 : 0.85),
-          ),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(t.radiusMd),
-          borderSide: BorderSide(
-            color: scheme.primary,
-          ),
-        ),
-      ),
-      dropdownColor: scheme.surfaceContainerHighest,
-      style: textTheme.erpSelectValue.copyWith(color: t.textPrimary),
-      items: [
-        DropdownMenuItem<String>(
-          value: null,
-          child: Text(emptyLabel),
-        ),
-        ...options.map(
-          (option) => DropdownMenuItem<String>(
+    return EnterpriseSelectField<String>(
+      label: label,
+      emptyLabel: emptyLabel,
+      value: options.any((option) => option.value == value) ? value : null,
+      options: [
+        for (final option in options)
+          EnterpriseSelectOption<String>(
             value: option.value,
-            child: Text(
-              option.label,
-              overflow: TextOverflow.ellipsis,
-            ),
+            label: option.label,
           ),
-        ),
       ],
       onChanged: onChanged,
     );
-
-    if (width == null) return field;
-
-    return SizedBox(width: width, child: field);
   }
 }
 
