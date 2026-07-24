@@ -10,6 +10,8 @@ class InvoiceSummary {
     required this.estado,
     required this.tipoPagamento,
     required this.createdAt,
+    this.tipo = 'FT',
+    this.documentMode,
     this.cancelledAt,
     this.valorRecebido,
     this.cliente,
@@ -22,6 +24,8 @@ class InvoiceSummary {
   final String id;
   final String numero;
   final String? serie;
+  final String tipo;
+  final String? documentMode;
   final double subtotal;
   final double ivaTotal;
   final double total;
@@ -43,6 +47,8 @@ class InvoiceSummary {
 
   bool get isPending => estado.toUpperCase() == 'PARCIAL' || estado.toUpperCase() == 'EMITIDA';
 
+  bool get isThermalReceipt => tipo.toUpperCase() == 'FR';
+
   InvoiceSummary copyWith({
     String? estado,
     DateTime? cancelledAt,
@@ -51,6 +57,8 @@ class InvoiceSummary {
       id: id,
       numero: numero,
       serie: serie,
+      tipo: tipo,
+      documentMode: documentMode,
       subtotal: subtotal,
       ivaTotal: ivaTotal,
       total: total,

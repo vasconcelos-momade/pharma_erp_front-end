@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../../shared/widgets/cards/enterprise_list_card.dart';
 import '../../../../shared/widgets/cards/enterprise_stat_card.dart';
 import '../../../../shared/widgets/feedback/module_data_states.dart';
+import '../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../../shared/widgets/layout/enterprise_tab_hub.dart';
 import '../../../../shared/widgets/tables/enterprise_data_table.dart';
@@ -318,18 +319,10 @@ class _PaymentsTab extends ConsumerWidget {
                                           paymentId: p.id,
                                         );
                                     if (!context.mounted) return;
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                        content: Text('Pagamento confirmado.'),
-                                      ),
-                                    );
+                                    PharmaFeedback.success(context, 'Pagamento confirmado.');
                                   } catch (e) {
                                     if (!context.mounted) return;
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(
-                                        content: Text('Erro: $e'),
-                                      ),
-                                    );
+                                    PharmaFeedback.error(context, 'Erro: $e');
                                   }
                                 },
                           child: const Text('Aprovar'),

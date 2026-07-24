@@ -158,9 +158,16 @@ class _SalesInvoicesPageState extends ConsumerState<SalesInvoicesPage> {
     try {
       await ref.read(invoiceActionProvider.notifier).printReceipt(
             invoiceId: invoice.id,
+            tipo: invoice.tipo,
+            previewContext: context,
           );
       if (!mounted) return;
-      PharmaFeedback.success(context, 'Documento enviado para impressão.');
+      PharmaFeedback.success(
+        context,
+        invoice.isThermalReceipt
+            ? 'Recibo 80mm enviado para impressão.'
+            : 'PDF A4 pronto para imprimir.',
+      );
     } catch (e) {
       if (!mounted) return;
       final message =

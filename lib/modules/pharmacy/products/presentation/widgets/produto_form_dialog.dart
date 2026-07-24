@@ -6,6 +6,8 @@ import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/theme/pharma_surface.dart';
 import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
+import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
+
 import '../../../categories/presentation/providers/category_provider.dart';
 import '../../domain/entities/product.dart';
 import '../../domain/entities/product_tax_rule.dart';
@@ -137,16 +139,12 @@ class _ProdutoFormDialogState extends ConsumerState<ProdutoFormDialog> {
     final estoqueMinimo = double.tryParse(estoqueText);
 
     if (_categoriaId == null || _categoriaId!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Seleccione uma categoria')),
-      );
+      PharmaFeedback.error(context, 'Seleccione uma categoria');
       return;
     }
 
     if (estoqueMinimo == null || estoqueMinimo < 0) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Informe um estoque mínimo válido')),
-      );
+      PharmaFeedback.error(context, 'Informe um estoque mínimo válido');
       return;
     }
 

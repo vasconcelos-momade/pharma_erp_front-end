@@ -41,8 +41,14 @@ class InvoiceRepositoryImpl implements InvoiceRepository {
   }
 
   @override
-  Future<({Uint8List bytes, String fileName, String contentType})>
-  getInvoicePrintArtifact(String invoiceId) {
+  Future<
+      ({
+        Uint8List bytes,
+        String fileName,
+        String contentType,
+        String mode,
+        String? tipo,
+      })> getInvoicePrintArtifact(String invoiceId) {
     return _remoteDataSource.getInvoicePrintArtifact(invoiceId);
   }
 

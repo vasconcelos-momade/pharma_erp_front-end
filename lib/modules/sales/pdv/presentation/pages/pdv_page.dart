@@ -359,6 +359,7 @@ class _PdvPageState extends ConsumerState<PdvPage>
 
   Future<void> _showCheckoutActions(PdvCheckoutResult result) async {
     final isMobile = MediaQuery.sizeOf(context).width < Breakpoints.tablet;
+    final isThermal = result.isThermalReceipt;
     final actions = <Widget>[
       if (!isMobile)
         TextButton(
@@ -369,15 +370,19 @@ class _PdvPageState extends ConsumerState<PdvPage>
         onPressed: () async {
           Navigator.of(context).pop();
           try {
-            await ref
-                .read(invoiceActionProvider.notifier)
-                .printReceipt(invoiceId: result.id);
+            await ref.read(invoiceActionProvider.notifier).showDocument(
+                  invoiceId: result.id,
+                  tipo: result.tipo,
+                  previewContext: context,
+                );
             if (!mounted) {
               return;
             }
             PharmaFeedback.success(
               context,
-              'Recibo de reimpressão disponibilizado com sucesso.',
+              isThermal
+                  ? 'PDF do recibo 80mm disponibilizado.'
+                  : 'PDF A4 da fatura disponibilizado.',
             );
           } on ApiFailure catch (e) {
             if (!mounted) {
@@ -390,26 +395,34 @@ class _PdvPageState extends ConsumerState<PdvPage>
             }
             PharmaFeedback.error(
               context,
-              'Não foi possível preparar o recibo para impressão.',
+              isThermal
+                  ? 'Não foi possível mostrar o recibo 80mm.'
+                  : 'Não foi possível abrir o PDF A4.',
             );
           }
         },
-        icon: const Icon(Icons.print_outlined),
-        label: const Text('Reimprimir'),
+        icon: Icon(
+          isThermal ? Icons.receipt_long_outlined : Icons.picture_as_pdf_outlined,
+        ),
+        label: Text(isThermal ? 'Ver PDF 80mm' : 'Ver PDF A4'),
       ),
       FilledButton.icon(
         onPressed: () async {
           Navigator.of(context).pop();
           try {
-            await ref
-                .read(invoiceActionProvider.notifier)
-                .exportPdf(invoiceId: result.id);
+            await ref.read(invoiceActionProvider.notifier).printReceipt(
+                  invoiceId: result.id,
+                  tipo: result.tipo,
+                  previewContext: context,
+                );
             if (!mounted) {
               return;
             }
             PharmaFeedback.success(
               context,
-              'PDF da fatura disponibilizado com sucesso.',
+              isThermal
+                  ? 'Impressão térmica 80mm preparada.'
+                  : 'PDF A4 pronto para imprimir.',
             );
           } on ApiFailure catch (e) {
             if (!mounted) {
@@ -422,20 +435,24 @@ class _PdvPageState extends ConsumerState<PdvPage>
             }
             PharmaFeedback.error(
               context,
-              'Não foi possível exportar o PDF da fatura.',
+              isThermal
+                  ? 'Não foi possível imprimir o recibo 80mm.'
+                  : 'Não foi possível preparar o PDF A4.',
             );
           }
         },
-        icon: const Icon(Icons.picture_as_pdf_outlined),
-        label: const Text('Exportar PDF'),
+        icon: const Icon(Icons.print_outlined),
+        label: Text(isThermal ? 'Imprimir 80mm' : 'Imprimir A4'),
       ),
     ];
 
     await showEnterpriseDialog<void>(
       context: context,
-      title: const Text('Fatura emitida'),
+      title: Text(isThermal ? 'Recibo emitido (FR)' : 'Fatura emitida (FT)'),
       body: Text(
-        'A fatura ${result.numero} foi emitida com sucesso. Deseja abrir o PDF ou preparar o recibo de reimpressão?',
+        isThermal
+            ? 'A fatura-recibo ${result.numero} foi emitida. Deseja abrir o PDF 80mm ou imprimir na térmica?'
+            : 'A fatura ${result.numero} foi emitida. Deseja abrir ou imprimir o PDF A4?',
       ),
       scrollable: false,
       showClose: isMobile,

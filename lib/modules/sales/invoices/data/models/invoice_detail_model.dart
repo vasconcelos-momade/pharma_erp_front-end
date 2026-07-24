@@ -498,15 +498,18 @@ class InvoiceDetailPermissionsModel {
 
 class InvoiceDetailDocumentsModel {
   const InvoiceDetailDocumentsModel({
+    this.mode,
     this.pdfUrl,
     this.printUrl,
   });
 
+  final String? mode;
   final String? pdfUrl;
   final String? printUrl;
 
   factory InvoiceDetailDocumentsModel.fromJson(Map<String, dynamic> json) {
     return InvoiceDetailDocumentsModel(
+      mode: _asNullableString(json['mode']),
       pdfUrl: _asNullableString(json['pdfUrl']),
       printUrl: _asNullableString(json['printUrl']),
     );
@@ -514,6 +517,7 @@ class InvoiceDetailDocumentsModel {
 
   InvoiceDetailDocuments toEntity() {
     return InvoiceDetailDocuments(
+      mode: mode,
       pdfUrl: pdfUrl,
       printUrl: printUrl,
     );

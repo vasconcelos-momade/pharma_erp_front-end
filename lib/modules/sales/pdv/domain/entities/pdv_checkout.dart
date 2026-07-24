@@ -49,6 +49,8 @@ class PdvCheckoutResult {
     required this.subtotal,
     required this.ivaTotal,
     required this.total,
+    this.tipo = 'FR',
+    this.documentMode = 'thermal_80mm',
     this.troco = 0,
     this.items = const [],
     required this.cartReset,
@@ -57,6 +59,8 @@ class PdvCheckoutResult {
 
   final String id;
   final String numero;
+  final String tipo;
+  final String documentMode;
   final String estado;
   final double subtotal;
   final double ivaTotal;
@@ -65,4 +69,6 @@ class PdvCheckoutResult {
   final List<PdvCheckoutLine> items;
   final bool cartReset;
   final String nextCartIdempotencyKey;
+
+  bool get isThermalReceipt => tipo.toUpperCase() == 'FR';
 }

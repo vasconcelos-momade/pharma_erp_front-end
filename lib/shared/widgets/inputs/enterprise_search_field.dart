@@ -76,7 +76,28 @@ class _EnterpriseSearchFieldState extends State<EnterpriseSearchField> {
       onChanged: widget.onChanged,
       style: theme.textTheme.erpBody.copyWith(color: t.textPrimary),
       decoration: InputDecoration(
-        hintText: widget.hintText,
+        labelText: widget.hintText,
+        isDense: true,
+        contentPadding: t.density.inputPadding,
+        labelStyle: theme.textTheme.erpSelectLabel.copyWith(color: t.textSecondary),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(t.radiusMd),
+          borderSide: BorderSide(
+            color: theme.colorScheme.outline.withValues(alpha: theme.brightness == Brightness.dark ? 0.6 : 0.85),
+          ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(t.radiusMd),
+          borderSide: BorderSide(
+            color: theme.colorScheme.outline.withValues(alpha: theme.brightness == Brightness.dark ? 0.6 : 0.85),
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(t.radiusMd),
+          borderSide: BorderSide(
+            color: theme.colorScheme.primary,
+          ),
+        ),
         prefixIcon: Icon(
           Icons.search_rounded,
           color: t.textMuted,

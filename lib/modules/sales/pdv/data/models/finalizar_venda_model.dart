@@ -173,6 +173,8 @@ class FinalizarVendaLineModel {
 class FinalizarVendaResponseModel {
   final String id;
   final String numero;
+  final String tipo;
+  final String documentMode;
   final String estado;
   final double subtotal;
   final double ivaTotal;
@@ -189,6 +191,8 @@ class FinalizarVendaResponseModel {
     required this.subtotal,
     required this.ivaTotal,
     required this.total,
+    this.tipo = 'FR',
+    this.documentMode = 'thermal_80mm',
     this.troco = 0,
     this.items = const [],
     required this.cartReset,
@@ -198,9 +202,16 @@ class FinalizarVendaResponseModel {
   factory FinalizarVendaResponseModel.fromJson(Map<String, dynamic> json) {
     final total = _toDouble(json['total']);
     final rawItems = json['items'] as List<dynamic>? ?? <dynamic>[];
+    final tipo = json['tipo']?.toString().trim().isNotEmpty == true
+        ? json['tipo'].toString().trim().toUpperCase()
+        : 'FR';
     return FinalizarVendaResponseModel(
       id: (json['faturaId'] ?? json['id']).toString(),
       numero: json['numero'] as String? ?? '',
+      tipo: tipo,
+      documentMode: json['documentMode']?.toString().trim().isNotEmpty == true
+          ? json['documentMode'].toString().trim()
+          : (tipo == 'FR' ? 'thermal_80mm' : 'pdf_a4'),
       estado: json['estado'] as String? ?? 'PAGA',
       subtotal: _toDouble(json['subtotal'], fallback: total),
       ivaTotal: _toDouble(json['ivaTotal']),

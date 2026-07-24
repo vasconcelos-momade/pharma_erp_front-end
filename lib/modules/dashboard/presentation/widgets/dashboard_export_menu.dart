@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../reports/presentation/controllers/report_controller.dart';
 import '../../domain/dashboard_query.dart';
 import 'dashboard_widgets.dart';
@@ -36,9 +37,7 @@ class DashboardExportMenu extends ConsumerWidget {
           format: format,
         );
         if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(successMessage)),
-        );
+        PharmaFeedback.success(context, successMessage);
       },
       itemBuilder: (context) => [
         PopupMenuItem(

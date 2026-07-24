@@ -30,6 +30,7 @@ class DashboardFilterSelect extends StatelessWidget {
     required this.value,
     required this.onChanged,
     this.width,
+    this.emptyLabel = 'Todos',
   });
 
   final String label;
@@ -37,17 +38,49 @@ class DashboardFilterSelect extends StatelessWidget {
   final String? value;
   final ValueChanged<String?> onChanged;
   final double? width;
+  final String emptyLabel;
 
   @override
   Widget build(BuildContext context) {
-    return PharmaInstantDropdown<String>(
-      label: label,
-      width: width,
-      value: options.any((option) => option.value == value) ? value : null,
+    final t = context.pharmaTokens;
+    final textTheme = Theme.of(context).textTheme;
+    final scheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final field = DropdownButtonFormField<String>(
+      key: ValueKey<Object?>('$value-${options.length}'),
+      initialValue: options.any((option) => option.value == value) ? value : null,
+      isExpanded: true,
+      decoration: InputDecoration(
+        labelText: label,
+        isDense: true,
+        contentPadding: t.density.inputPadding,
+        labelStyle: textTheme.erpSelectLabel.copyWith(color: t.textSecondary),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(t.radiusMd),
+          borderSide: BorderSide(
+            color: scheme.outline.withValues(alpha: isDark ? 0.6 : 0.85),
+          ),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(t.radiusMd),
+          borderSide: BorderSide(
+            color: scheme.outline.withValues(alpha: isDark ? 0.6 : 0.85),
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(t.radiusMd),
+          borderSide: BorderSide(
+            color: scheme.primary,
+          ),
+        ),
+      ),
+      dropdownColor: scheme.surfaceContainerHighest,
+      style: textTheme.erpSelectValue.copyWith(color: t.textPrimary),
       items: [
-        const DropdownMenuItem<String>(
+        DropdownMenuItem<String>(
           value: null,
-          child: Text('Todos'),
+          child: Text(emptyLabel),
         ),
         ...options.map(
           (option) => DropdownMenuItem<String>(
@@ -61,6 +94,10 @@ class DashboardFilterSelect extends StatelessWidget {
       ],
       onChanged: onChanged,
     );
+
+    if (width == null) return field;
+
+    return SizedBox(width: width, child: field);
   }
 }
 

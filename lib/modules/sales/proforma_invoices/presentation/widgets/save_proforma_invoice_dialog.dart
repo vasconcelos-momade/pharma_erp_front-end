@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../core/theme/extensions.dart';
 import '../../../../../shared/navigation/adaptive_navigator.dart';
 import '../../../../../shared/widgets/dialogs/pharma_responsive_dialog.dart';
+import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
+
 import '../../../customers/data/repositories/customer_repository_impl.dart';
 import '../../../customers/domain/entities/customer.dart';
 
@@ -161,9 +163,7 @@ class _SaveProformaInvoiceDialogState
   void _submit() {
     final cliente = _clienteController.text.trim();
     if (cliente.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Informe o cliente')),
-      );
+      PharmaFeedback.error(context, 'Informe o cliente');
       return;
     }
 

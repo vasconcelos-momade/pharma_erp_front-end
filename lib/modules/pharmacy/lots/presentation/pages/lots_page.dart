@@ -8,6 +8,7 @@ import '../../../../../core/theme/extensions.dart';
 import '../../../../../core/utils/lote_stock_utils.dart';
 import '../../../../../shared/responsive/responsive_builder.dart';
 import '../../../../../shared/widgets/cards/enterprise_stat_card.dart';
+import '../../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../../shared/widgets/layout/enterprise_mobile_scroll_list.dart';
 import '../../../../../shared/widgets/layout/enterprise_mobile_toolbar.dart';
 import '../../../../../shared/widgets/layout/enterprise_module_hub.dart';
@@ -425,11 +426,8 @@ class _LotsPageState extends ConsumerState<LotsPage> {
       'devolver_fornecedor' => 'Devolver lote ao fornecedor',
       _ => action,
     };
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('$label será integrado com o fluxo backend existente.'),
-      ),
-    );
+    // TODO: integrate with backend
+    PharmaFeedback.info(context, '$label será integrado com o fluxo backend existente.');
   }
 
   String _loteSecondaryStatus(Map<String, dynamic> item) {

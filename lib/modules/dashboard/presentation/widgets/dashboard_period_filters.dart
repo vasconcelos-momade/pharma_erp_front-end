@@ -146,6 +146,7 @@ class _DashboardPeriodFiltersState extends ConsumerState<DashboardPeriodFilters>
             filterField(
               DashboardFilterSelect(
                 label: 'Categoria',
+                emptyLabel: 'Todas',
                 options: categoryOptions,
                 value: query.categoriaId,
                 onChanged: (value) => onChanged(

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'internal/material_dialog_channel.dart';
 import 'internal/quick_alert_channel.dart';
-import 'internal/snackbar_channel.dart';
+import 'notification_service.dart';
 
 /// Fachada única de feedback do utilizador.
 ///
@@ -10,9 +10,9 @@ import 'internal/snackbar_channel.dart';
 ///
 /// | Tipo | Método | Canal |
 /// |------|--------|-------|
-/// | Sucesso rápido | [success] | SnackBar |
-/// | Erro rápido | [error] | SnackBar |
-/// | Info / aviso leve | [info] / [warning] | SnackBar |
+/// | Sucesso rápido | [success] | NotificationService |
+/// | Erro rápido | [error] | NotificationService |
+/// | Info / aviso leve | [info] / [warning] | NotificationService |
 /// | Confirmação | [confirm] | QuickAlert (interno) |
 /// | Erro crítico | [criticalError] | QuickAlert (interno) |
 /// | Aviso modal | [alertWarning] | QuickAlert (interno) |
@@ -26,16 +26,16 @@ abstract final class PharmaFeedback {
   // ── SnackBar (notificações rápidas) ──────────────────────────────────────
 
   static void success(BuildContext context, String message) =>
-      SnackbarChannel.showSuccess(context, message);
+      NotificationService.success(context, message);
 
   static void error(BuildContext context, String message) =>
-      SnackbarChannel.showError(context, message);
+      NotificationService.error(context, message);
 
   static void info(BuildContext context, String message) =>
-      SnackbarChannel.showInfo(context, message);
+      NotificationService.info(context, message);
 
   static void warning(BuildContext context, String message) =>
-      SnackbarChannel.showWarning(context, message);
+      NotificationService.warning(context, message);
 
   // ── QuickAlert (modais — via adaptador interno) ──────────────────────────
 

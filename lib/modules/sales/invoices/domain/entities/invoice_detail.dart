@@ -23,6 +23,7 @@ class InvoiceDetail {
     this.cancelledAt,
     this.qrCode,
     this.valorRecebido,
+    this.empresa,
     this.cliente,
     this.terminal,
     this.user,
@@ -48,6 +49,7 @@ class InvoiceDetail {
   final String? tipoOperacao;
   final String? qrCode;
   final double? valorRecebido;
+  final InvoiceEmpresaInfo? empresa;
   final InvoiceDetailCustomer? cliente;
   final InvoiceDetailTerminal? terminal;
   final InvoiceDetailUser? user;
@@ -87,6 +89,7 @@ class InvoiceDetail {
       tipoOperacao: tipoOperacao,
       qrCode: qrCode,
       valorRecebido: valorRecebido,
+      empresa: empresa,
       cliente: cliente,
       terminal: terminal,
       user: user,
@@ -99,6 +102,22 @@ class InvoiceDetail {
       documents: documents,
     );
   }
+}
+
+class InvoiceEmpresaInfo {
+  const InvoiceEmpresaInfo({
+    this.nome,
+    this.nuit,
+    this.endereco,
+    this.email,
+    this.telefone,
+  });
+
+  final String? nome;
+  final String? nuit;
+  final String? endereco;
+  final String? email;
+  final String? telefone;
 }
 
 class InvoiceDetailCustomer {
@@ -255,10 +274,12 @@ class InvoiceDetailPermissions {
 
 class InvoiceDetailDocuments {
   const InvoiceDetailDocuments({
+    this.mode,
     this.pdfUrl,
     this.printUrl,
   });
 
+  final String? mode;
   final String? pdfUrl;
   final String? printUrl;
 }

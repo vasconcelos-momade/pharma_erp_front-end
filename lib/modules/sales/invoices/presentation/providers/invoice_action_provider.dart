@@ -1,14 +1,17 @@
 import 'dart:async';
 
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/errors/api_failure.dart';
-import '../../../../../core/security/secure_storage_service.dart';
 import '../../../../../platform/files/platform_file_delivery.dart';
 import '../../../../../platform/printing/thermal/printer_connection.dart';
 import '../../../../../platform/printing/thermal/thermal_printer_service.dart';
+import '../../../../settings/services/default_printer_service.dart';
 import '../../data/repositories/invoice_repository_impl.dart';
+import '../../domain/invoice_document_mode.dart';
 import '../../services/invoice_cache_policy.dart';
+import '../widgets/thermal_receipt_preview_dialog.dart';
 import 'invoice_detail_provider.dart';
 import 'invoice_list_provider.dart';
 
@@ -48,6 +51,18 @@ class InvoiceActionController extends Notifier<InvoiceActionState> {
   @override
   InvoiceActionState build() => const InvoiceActionState();
 
+  Future<String> _resolveTipo({
+    required String invoiceId,
+    String? tipo,
+  }) async {
+    if (tipo != null && tipo.trim().isNotEmpty) {
+      return tipo.trim().toUpperCase();
+    }
+    final detail =
+        await ref.read(invoiceRepositoryProvider).getInvoiceDetail(invoiceId);
+    return detail.tipo.trim().toUpperCase();
+  }
+
   Future<void> _openInvoicePdf(String invoiceId) async {
     final document = await ref.read(invoiceRepositoryProvider).getInvoicePdf(
           invoiceId,
@@ -60,21 +75,53 @@ class InvoiceActionController extends Notifier<InvoiceActionState> {
     );
   }
 
-  Future<PrinterConnection?> _readDefaultPrinterConnection() async {
-    final raw = await ref.read(secureStorageProvider).readThermalPrinterDefault();
-    if (raw == null || raw.trim().isEmpty) {
-      return null;
-    }
+  Future<PrinterConnection?> _readDefaultPrinterConnection() {
+    return ref.read(defaultPrinterServiceProvider).resolveConnection();
+  }
+
+  /// Mostra o documento: FR → PDF 80mm; FT → PDF A4.
+  Future<void> showDocument({
+    required String invoiceId,
+    String? tipo,
+    BuildContext? previewContext,
+  }) async {
+    state = state.copyWith(
+      isSubmitting: true,
+      activeInvoiceId: invoiceId,
+      lastAction: 'show',
+      clearError: true,
+    );
 
     try {
-      return PrinterConnection.fromStorageValue(raw);
-    } catch (_) {
-      return null;
+      // Ambos os tipos usam /pdf (FR=80mm, FT=A4) — abre no visualizador.
+      await _openInvoicePdf(invoiceId);
+
+      state = state.copyWith(
+        isSubmitting: false,
+        clearActiveInvoice: true,
+        clearError: true,
+      );
+    } on ApiFailure catch (e) {
+      state = state.copyWith(
+        isSubmitting: false,
+        clearActiveInvoice: true,
+        errorMessage: e.message,
+      );
+      rethrow;
+    } catch (e) {
+      state = state.copyWith(
+        isSubmitting: false,
+        clearActiveInvoice: true,
+        errorMessage: e.toString(),
+      );
+      rethrow;
     }
   }
 
+  /// Exportar/abrir PDF — FR = 80mm; FT = A4.
   Future<void> exportPdf({
     required String invoiceId,
+    String? tipo,
   }) async {
     state = state.copyWith(
       isSubmitting: true,
@@ -108,8 +155,11 @@ class InvoiceActionController extends Notifier<InvoiceActionState> {
     }
   }
 
+  /// Imprime: FR → ESC/POS 80mm; FT → abre PDF A4 (impressão sistema).
   Future<void> printReceipt({
     required String invoiceId,
+    String? tipo,
+    BuildContext? previewContext,
   }) async {
     state = state.copyWith(
       isSubmitting: true,
@@ -119,8 +169,9 @@ class InvoiceActionController extends Notifier<InvoiceActionState> {
     );
 
     try {
-      final connection = await _readDefaultPrinterConnection();
-      if (connection == null) {
+      final resolvedTipo = await _resolveTipo(invoiceId: invoiceId, tipo: tipo);
+
+      if (!isThermalReceiptTipo(resolvedTipo)) {
         await _openInvoicePdf(invoiceId);
         state = state.copyWith(
           isSubmitting: false,
@@ -135,15 +186,36 @@ class InvoiceActionController extends Notifier<InvoiceActionState> {
                 invoiceId,
               );
 
-      try {
-        await ThermalPrinterService.printReceipt(
-          bytes: artifact.bytes,
-          fileName: artifact.fileName,
-          contentType: artifact.contentType,
-          connection: connection,
-        );
-      } catch (_) {
-        await _openInvoicePdf(invoiceId);
+      final connection = await _readDefaultPrinterConnection();
+      if (connection == null) {
+        if (previewContext != null && previewContext.mounted) {
+          await showThermalReceiptPreview(
+            previewContext,
+            title: 'Recibo 80mm (sem impressora)',
+            previewText: decodeEscPosPreview(artifact.bytes),
+          );
+        } else {
+          await ThermalPrinterService.downloadFallback(
+            bytes: artifact.bytes,
+            fileName: artifact.fileName,
+            contentType: artifact.contentType,
+          );
+        }
+      } else {
+        try {
+          await ThermalPrinterService.printReceipt(
+            bytes: artifact.bytes,
+            fileName: artifact.fileName,
+            contentType: artifact.contentType,
+            connection: connection,
+          );
+        } catch (_) {
+          await ThermalPrinterService.downloadFallback(
+            bytes: artifact.bytes,
+            fileName: artifact.fileName,
+            contentType: artifact.contentType,
+          );
+        }
       }
 
       state = state.copyWith(
@@ -188,7 +260,6 @@ class InvoiceActionController extends Notifier<InvoiceActionState> {
           );
       invalidateInvoiceListCache();
       ref.invalidate(invoiceListProvider);
-      // Mantém a lista sincronizada mesmo quando o estado anterior vinha de cache.
       unawaited(ref.read(invoiceListProvider.notifier).refresh());
 
       ref.read(invoiceDetailProvider.notifier).markCancelled(invoiceId: invoiceId);

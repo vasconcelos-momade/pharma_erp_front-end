@@ -13,8 +13,14 @@ abstract class InvoiceRepository {
     String invoiceId,
   );
 
-  Future<({Uint8List bytes, String fileName, String contentType})>
-  getInvoicePrintArtifact(String invoiceId);
+  Future<
+      ({
+        Uint8List bytes,
+        String fileName,
+        String contentType,
+        String mode,
+        String? tipo,
+      })> getInvoicePrintArtifact(String invoiceId);
 
   Future<void> cancelInvoice({
     required String invoiceId,

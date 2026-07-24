@@ -41,12 +41,42 @@ class ProdutoCategoriaFilterDropdown extends ConsumerWidget {
       required ValueChanged<String?>? onChanged,
       String? currentValue,
     }) {
-      return PharmaInstantDropdown<String?>(
-        label: 'Categoria',
-        width: width,
+      final t = context.pharmaTokens;
+      final scheme = Theme.of(context).colorScheme;
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+
+      return DropdownButtonFormField<String?>(
+        key: ValueKey<Object?>('$currentValue-${items.length}'),
         value: currentValue,
-        onChanged: onChanged,
+        isExpanded: true,
+        decoration: InputDecoration(
+          labelText: 'Categoria',
+          isDense: true,
+          contentPadding: t.density.inputPadding,
+          labelStyle: textTheme.erpSelectLabel.copyWith(color: t.textSecondary),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(t.radiusMd),
+            borderSide: BorderSide(
+              color: scheme.outline.withValues(alpha: isDark ? 0.6 : 0.85),
+            ),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(t.radiusMd),
+            borderSide: BorderSide(
+              color: scheme.outline.withValues(alpha: isDark ? 0.6 : 0.85),
+            ),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(t.radiusMd),
+            borderSide: BorderSide(
+              color: scheme.primary,
+            ),
+          ),
+        ),
+        dropdownColor: scheme.surfaceContainerHighest,
+        style: textTheme.erpSelectValue.copyWith(color: t.textPrimary),
         items: items,
+        onChanged: onChanged,
         menuMaxHeight: 400,
       );
     }

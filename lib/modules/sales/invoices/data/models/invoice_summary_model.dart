@@ -12,6 +12,8 @@ class InvoiceSummaryModel {
     required this.estado,
     required this.tipoPagamento,
     required this.createdAt,
+    this.tipo = 'FT',
+    this.documentMode,
     this.cancelledAt,
     this.valorRecebido,
     this.cliente,
@@ -24,6 +26,8 @@ class InvoiceSummaryModel {
   final String id;
   final String numero;
   final String? serie;
+  final String tipo;
+  final String? documentMode;
   final double subtotal;
   final double ivaTotal;
   final double total;
@@ -44,6 +48,8 @@ class InvoiceSummaryModel {
       id: _asString(json['id']),
       numero: _asString(json['numero']),
       serie: _asNullableString(json['serie']),
+      tipo: _asString(json['tipo'], fallback: 'FT'),
+      documentMode: _asNullableString(json['documentMode']),
       subtotal: _asDouble(json['subtotal']),
       ivaTotal: _asDouble(json['ivaTotal']),
       total: _asDouble(json['total']),
@@ -80,6 +86,8 @@ class InvoiceSummaryModel {
       id: id,
       numero: numero,
       serie: serie,
+      tipo: tipo,
+      documentMode: documentMode,
       subtotal: subtotal,
       ivaTotal: ivaTotal,
       total: total,

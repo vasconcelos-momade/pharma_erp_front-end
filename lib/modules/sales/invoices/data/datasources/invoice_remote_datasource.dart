@@ -5,7 +5,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../core/constants/api_constants.dart';
-import '../../../../../core/constants/report_paths.dart';
 import '../../../../../core/contracts/api_envelope.dart';
 import '../../../../../core/contracts/pagination_response.dart';
 import '../../../../../core/errors/api_failure.dart';
@@ -23,8 +22,14 @@ abstract class InvoiceRemoteDataSource {
     String invoiceId,
   );
 
-  Future<({Uint8List bytes, String fileName, String contentType})>
-  getInvoicePrintArtifact(String invoiceId);
+  Future<
+      ({
+        Uint8List bytes,
+        String fileName,
+        String contentType,
+        String mode,
+        String? tipo,
+      })> getInvoicePrintArtifact(String invoiceId);
 
   Future<void> cancelInvoice({
     required String invoiceId,
@@ -108,12 +113,9 @@ class InvoiceRemoteDataSourceImpl implements InvoiceRemoteDataSource {
     String invoiceId,
   ) async {
     try {
+      // POS /pdf: FR → PDF 80mm; FT → PDF A4
       final response = await _dio.get<List<int>>(
-        ReportPaths.invoice(invoiceId),
-        queryParameters: const <String, dynamic>{
-          'format': 'pdf',
-          'disposition': 'inline',
-        },
+        ApiConstants.tenantPosFaturaPdf(invoiceId),
         options: Options(responseType: ResponseType.bytes),
       );
 
@@ -141,8 +143,14 @@ class InvoiceRemoteDataSourceImpl implements InvoiceRemoteDataSource {
   }
 
   @override
-  Future<({Uint8List bytes, String fileName, String contentType})>
-  getInvoicePrintArtifact(String invoiceId) async {
+  Future<
+      ({
+        Uint8List bytes,
+        String fileName,
+        String contentType,
+        String mode,
+        String? tipo,
+      })> getInvoicePrintArtifact(String invoiceId) async {
     try {
       final response = await _dio.get<Map<String, dynamic>>(
         ApiConstants.tenantPosFaturaPrint(invoiceId),
@@ -158,16 +166,25 @@ class InvoiceRemoteDataSourceImpl implements InvoiceRemoteDataSource {
         throw const ApiFailure('Resposta inválida do artefacto de impressão.');
       }
 
+      final contentType =
+          payload['contentType']?.toString().trim().isNotEmpty == true
+              ? payload['contentType'].toString().trim()
+              : 'application/octet-stream';
+      final mode = payload['mode']?.toString().trim().isNotEmpty == true
+          ? payload['mode'].toString().trim()
+          : (contentType.contains('pdf') ? 'pdf_a4' : 'thermal_80mm');
+
       return (
         bytes: base64Decode(payloadBase64),
         fileName:
             payload['fileName']?.toString().trim().isNotEmpty == true
             ? payload['fileName'].toString().trim()
-            : 'fatura-$invoiceId.escpos',
-        contentType:
-            payload['contentType']?.toString().trim().isNotEmpty == true
-            ? payload['contentType'].toString().trim()
-            : 'application/octet-stream',
+            : (mode == 'pdf_a4'
+                ? 'fatura-$invoiceId.pdf'
+                : 'fatura-$invoiceId.escpos'),
+        contentType: contentType,
+        mode: mode,
+        tipo: payload['tipo']?.toString(),
       );
     } on DioException catch (e) {
       throw ApiFailure.fromDio(e);

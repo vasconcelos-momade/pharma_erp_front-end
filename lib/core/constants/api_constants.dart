@@ -180,6 +180,15 @@ abstract final class ApiConstants {
   static String tenantTerminal(String terminalId) => '/tenant/terminais/$terminalId';
   static const tenantTerminaisSearch = '/tenant/terminais/search';
 
+  static const centralPrinters = '/central/printers';
+  static String centralPrinter(String id) => '/central/printers/$id';
+  static String centralPrinterTest(String id) => '/central/printers/$id/test';
+  static const centralPrintJobs = '/central/print-jobs';
+  static String centralPrintJob(String id) => '/central/print-jobs/$id';
+  static String centralPrintJobPdf(String id) => '/central/print-jobs/$id/pdf';
+  static String centralPrintJobCancel(String id) =>
+      '/central/print-jobs/$id/cancel';
+
   static const headerAuthorization = 'Authorization';
   static const headerTenantId = 'x-tenant-id';
   static const headerBranchId = 'x-branch-id';

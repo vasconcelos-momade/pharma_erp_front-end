@@ -141,6 +141,8 @@ class PdvCartRepositoryImpl implements PdvCartRepository {
     return PdvCheckoutResult(
       id: response.id,
       numero: response.numero,
+      tipo: response.tipo,
+      documentMode: response.documentMode,
       estado: response.estado,
       subtotal: response.subtotal,
       ivaTotal: response.ivaTotal,

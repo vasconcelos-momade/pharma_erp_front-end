@@ -448,9 +448,7 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
                       AdaptiveNavigator.complete(formContext, true);
                     } catch (error) {
                       if (!formContext.mounted) return;
-                      ScaffoldMessenger.of(
-                        formContext,
-                      ).showSnackBar(SnackBar(content: Text(error.toString())));
+                      PharmaFeedback.error(formContext, error.toString());
                     }
                   },
                   child: const Text('Guardar'),
@@ -491,9 +489,7 @@ class _RecipesBookPageState extends ConsumerState<RecipesBookPage>
       await _loadReceitas();
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(error.toString())));
+      PharmaFeedback.error(context, error.toString());
     }
   }
 

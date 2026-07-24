@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../app/router/routes.dart';
 import '../../../../shared/widgets/feedback/module_data_states.dart';
+import '../../../../shared/widgets/feedback/pharma_feedback.dart';
 import '../../../../shared/widgets/layout/enterprise_module_hub.dart';
 import '../../../../shared/widgets/inputs/enterprise_search_field.dart';
 import '../../../../shared/widgets/tables/enterprise_data_table.dart';
@@ -82,15 +83,11 @@ class _PlatformTenantsPageState extends ConsumerState<PlatformTenantsPage> {
           .read(platformBillingActionsProvider.notifier)
           .registerTenant(result.payload);
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cliente criado com sucesso.')),
-      );
+      PharmaFeedback.success(context, 'Cliente criado com sucesso.');
       ref.read(platformTenantsProvider.notifier).refresh();
     } catch (e) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Falha ao criar cliente: $e')),
-      );
+      PharmaFeedback.error(context, 'Falha ao criar cliente: $e');
     }
   }
 }

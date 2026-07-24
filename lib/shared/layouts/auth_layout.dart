@@ -48,18 +48,15 @@ class AuthLayout extends StatelessWidget {
                           padding: EdgeInsets.only(bottom: s.md),
                           child: Row(
                             children: [
-                              Container(
+                              SizedBox(
                                 width: t.minTouchTarget,
                                 height: t.minTouchTarget,
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  color: t.brandGreen,
+                                child: ClipRRect(
                                   borderRadius: BorderRadius.circular(t.radiusMd),
-                                ),
-                                child: Icon(
-                                  Icons.local_pharmacy_rounded,
-                                  color: t.bgPrimary,
-                                  size: 24,
+                                  child: Image.asset(
+                                    'assets/logos/logo_512.png',
+                                    fit: BoxFit.cover,
+                                  ),
                                 ),
                               ),
                               SizedBox(width: s.md),

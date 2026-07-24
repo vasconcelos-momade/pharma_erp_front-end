@@ -509,20 +509,15 @@ class _Sidebar extends StatelessWidget {
                       child: expanded
                           ? Row(
                               children: [
-                                Container(
+                                SizedBox(
                                   width: t.avatarMd + 4,
                                   height: t.avatarMd + 4,
-                                  alignment: Alignment.center,
-                                  decoration: BoxDecoration(
-                                    color: t.brandGreen,
-                                    borderRadius: BorderRadius.circular(
-                                      t.radiusMd,
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(t.radiusMd),
+                                    child: Image.asset(
+                                      'assets/logos/logo_512.png',
+                                      fit: BoxFit.cover,
                                     ),
-                                  ),
-                                  child: Icon(
-                                    Icons.local_pharmacy_rounded,
-                                    color: t.bgPrimary,
-                                    size: 22,
                                   ),
                                 ),
                                 SizedBox(width: s.md),
@@ -539,20 +534,17 @@ class _Sidebar extends StatelessWidget {
                                 ),
                               ],
                             )
-                          : Container(
-                              width: t.minTouchTarget,
-                              height: t.minTouchTarget,
-                              alignment: Alignment.center,
-                              decoration: BoxDecoration(
-                                color: t.brandGreen,
-                                borderRadius: BorderRadius.circular(t.radiusMd),
+                          : SizedBox(
+                                width: t.minTouchTarget,
+                                height: t.minTouchTarget,
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(t.radiusMd),
+                                  child: Image.asset(
+                                    'assets/logos/logo_512.png',
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
                               ),
-                              child: Icon(
-                                Icons.local_pharmacy_rounded,
-                                color: t.bgPrimary,
-                                size: t.iconMd,
-                              ),
-                            ),
                     ),
                   ),
                   Positioned(
@@ -926,19 +918,15 @@ class _DrawerNav extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    Container(
+                    SizedBox(
                       width: t.minTouchTarget,
                       height: t.minTouchTarget,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [t.brandGreenHover, t.brandGreen],
-                        ),
+                      child: ClipRRect(
                         borderRadius: BorderRadius.circular(t.radiusMd),
-                      ),
-                      child: Icon(
-                        Icons.local_pharmacy_rounded,
-                        color: t.bgPrimary,
-                        size: t.iconMd,
+                        child: Image.asset(
+                          'assets/logos/logo_512.png',
+                          fit: BoxFit.cover,
+                        ),
                       ),
                     ),
                     SizedBox(width: s.md),

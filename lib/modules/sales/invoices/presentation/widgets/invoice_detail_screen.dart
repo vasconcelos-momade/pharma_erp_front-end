@@ -202,6 +202,8 @@ class _InvoiceDetailScaffold extends StatelessWidget {
         SizedBox(height: s.lg),
         _DetailActions(
           invoice: invoice,
+          detailTipo: detail?.tipo,
+          canExportPdf: detail?.permissions.canExportPdf ?? !invoice.isThermalReceipt,
           actionsAsColumn: actionsAsColumn,
           isCancelling: isCancelling,
           canCancel: canCancel,
@@ -481,10 +483,14 @@ class _DetailActions extends ConsumerWidget {
     required this.actionsAsColumn,
     required this.isCancelling,
     required this.canCancel,
+    this.detailTipo,
+    this.canExportPdf = true,
     this.onCancel,
   });
 
   final InvoiceSummary invoice;
+  final String? detailTipo;
+  final bool canExportPdf;
   final bool actionsAsColumn;
   final bool isCancelling;
   final bool canCancel;
@@ -498,17 +504,54 @@ class _DetailActions extends ConsumerWidget {
     final isBusy =
         actionState.isSubmitting && actionState.activeInvoiceId == invoice.id;
     final isPrinting = isBusy && actionState.lastAction == 'print';
+    final isShowing = isBusy && actionState.lastAction == 'show';
     final isExportingPdf = isBusy && actionState.lastAction == 'pdf';
+    final tipo = (detailTipo ?? invoice.tipo).toUpperCase();
+    final isThermal = tipo == 'FR';
 
-    Future<void> exportPdf() async {
+    Future<void> showDocument() async {
       try {
-        await controller.exportPdf(invoiceId: invoice.id);
+        await controller.showDocument(
+          invoiceId: invoice.id,
+          tipo: tipo,
+          previewContext: context,
+        );
         if (!context.mounted) {
           return;
         }
         PharmaFeedback.success(
           context,
-          'PDF da fatura disponibilizado com sucesso.',
+          isThermal
+              ? 'PDF do recibo 80mm disponibilizado.'
+              : 'PDF A4 disponibilizado.',
+        );
+      } on ApiFailure catch (e) {
+        if (!context.mounted) {
+          return;
+        }
+        PharmaFeedback.error(context, e.message);
+      } catch (_) {
+        if (!context.mounted) {
+          return;
+        }
+        PharmaFeedback.error(
+          context,
+          isThermal
+              ? 'Não foi possível mostrar o recibo 80mm.'
+              : 'Não foi possível abrir o PDF A4.',
+        );
+      }
+    }
+
+    Future<void> exportPdf() async {
+      try {
+        await controller.exportPdf(invoiceId: invoice.id, tipo: tipo);
+        if (!context.mounted) {
+          return;
+        }
+        PharmaFeedback.success(
+          context,
+          'PDF A4 da fatura disponibilizado com sucesso.',
         );
       } on ApiFailure catch (e) {
         if (!context.mounted) {
@@ -528,13 +571,19 @@ class _DetailActions extends ConsumerWidget {
 
     Future<void> printReceipt() async {
       try {
-        await controller.printReceipt(invoiceId: invoice.id);
+        await controller.printReceipt(
+          invoiceId: invoice.id,
+          tipo: tipo,
+          previewContext: context,
+        );
         if (!context.mounted) {
           return;
         }
         PharmaFeedback.success(
           context,
-          'Recibo de reimpressão disponibilizado com sucesso.',
+          isThermal
+              ? 'Impressão térmica 80mm preparada.'
+              : 'PDF A4 pronto para imprimir.',
         );
       } on ApiFailure catch (e) {
         if (!context.mounted) {
@@ -547,26 +596,40 @@ class _DetailActions extends ConsumerWidget {
         }
         PharmaFeedback.error(
           context,
-          'Não foi possível preparar o recibo para impressão.',
+          isThermal
+              ? 'Não foi possível imprimir o recibo 80mm.'
+              : 'Não foi possível preparar o PDF A4.',
         );
       }
     }
 
     final children = <Widget>[
       OutlinedButton.icon(
+        onPressed: isBusy ? null : showDocument,
+        icon: isShowing
+            ? const PharmaButtonLoader()
+            : Icon(
+                isThermal
+                    ? Icons.receipt_long_outlined
+                    : Icons.visibility_outlined,
+              ),
+        label: Text(isThermal ? 'Ver PDF 80mm' : 'Ver A4'),
+      ),
+      OutlinedButton.icon(
         onPressed: isBusy ? null : printReceipt,
         icon: isPrinting
             ? const PharmaButtonLoader()
             : const Icon(Icons.print_outlined),
-        label: const Text('Reimprimir'),
+        label: Text(isThermal ? 'Imprimir 80mm' : 'Imprimir A4'),
       ),
-      OutlinedButton.icon(
-        onPressed: isBusy ? null : exportPdf,
-        icon: isExportingPdf
-            ? const PharmaButtonLoader()
-            : const Icon(Icons.picture_as_pdf_outlined),
-        label: const Text('Exportar PDF'),
-      ),
+      if (!isThermal && canExportPdf)
+        OutlinedButton.icon(
+          onPressed: isBusy ? null : exportPdf,
+          icon: isExportingPdf
+              ? const PharmaButtonLoader()
+              : const Icon(Icons.picture_as_pdf_outlined),
+          label: const Text('Exportar PDF'),
+        ),
       FilledButton.icon(
         onPressed: isBusy || isCancelling || !canCancel ? null : onCancel,
         icon: isCancelling
@@ -580,11 +643,10 @@ class _DetailActions extends ConsumerWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          children[0],
-          SizedBox(height: s.sm),
-          children[1],
-          SizedBox(height: s.sm),
-          children[2],
+          for (var i = 0; i < children.length; i++) ...[
+            if (i > 0) SizedBox(height: s.sm),
+            children[i],
+          ],
         ],
       );
     }
